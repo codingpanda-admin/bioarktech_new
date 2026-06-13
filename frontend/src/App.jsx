@@ -30,6 +30,20 @@ const resources = [
   ['Product Spotlight', 'BioArk Agarose LE: High Resolution You Can Trust', 'April 10, 2024', '2 min read'],
 ]
 
+const adminLinks = [
+  'Overview',
+  'Homepage',
+  'Users',
+  'Products',
+  'Featured Products',
+  'Reagents',
+  'Services',
+  'Blog',
+  'Quotes',
+  'Email (SMTP)',
+  'Media',
+]
+
 function SiteHeader() {
   return (
     <header className="site-header">
@@ -64,6 +78,23 @@ function SiteHeader() {
         </div>
         <a className="quote-button" href="/request-quote">Request a Quote</a>
       </nav>
+    </header>
+  )
+}
+
+function AdminHeader() {
+  return (
+    <header className="admin-header">
+      <div className="admin-topbar">
+        <div className="admin-brand" aria-label="Bio Ark Tech">
+          <img src={logo} alt="Bio Ark Tech" />
+        </div>
+        <h1>Admin Console</h1>
+        <div className="admin-header-actions">
+          <a className="admin-home-button" href="/">Homepage</a>
+          <button className="admin-auth-button" type="button">Sign In / Sign Out</button>
+        </div>
+      </div>
     </header>
   )
 }
@@ -361,6 +392,33 @@ function RequestQuotePage() {
   )
 }
 
+function AdminPage() {
+  return (
+    <main className="admin-page" aria-label="Admin Console">
+      <aside className="admin-sidebar" aria-label="Admin navigation">
+        <nav>
+          {adminLinks.map((label) => (
+            <a href={`#${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} key={label}>
+              {label}
+            </a>
+          ))}
+        </nav>
+      </aside>
+
+      <section className="admin-content" aria-labelledby="admin-content-title">
+        <h2 id="admin-content-title">Overview</h2>
+        <div className="admin-link-list">
+          {adminLinks.map((label) => (
+            <a href={`#${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} key={label}>
+              {label}
+            </a>
+          ))}
+        </div>
+      </section>
+    </main>
+  )
+}
+
 function SiteFooter() {
   return (
       <footer className="site-footer">
@@ -409,13 +467,15 @@ function SiteFooter() {
 }
 
 function App() {
-  const isRequestQuotePage = window.location.pathname === '/request-quote'
+  const path = window.location.pathname
+  const isRequestQuotePage = path === '/request-quote'
+  const isAdminPage = path === '/admin'
 
   return (
     <div className="site-shell">
-      <SiteHeader />
-      {isRequestQuotePage ? <RequestQuotePage /> : <HomePage />}
-      <SiteFooter />
+      {isAdminPage ? <AdminHeader /> : <SiteHeader />}
+      {isAdminPage ? <AdminPage /> : isRequestQuotePage ? <RequestQuotePage /> : <HomePage />}
+      {!isAdminPage && <SiteFooter />}
     </div>
   )
 }
