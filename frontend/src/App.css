@@ -183,6 +183,69 @@ input {
   border-radius: 6px;
 }
 
+.admin-header {
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 8px 26px rgba(4, 34, 82, 0.06);
+}
+
+.admin-topbar {
+  display: grid;
+  grid-template-columns: 245px 1fr 245px;
+  align-items: center;
+  gap: 24px;
+  width: min(1320px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 18px 0;
+}
+
+.admin-topbar h1 {
+  margin: 0;
+  text-align: center;
+  color: var(--ink);
+  font-size: clamp(22px, 2.6vw, 32px);
+  line-height: 1.1;
+}
+
+.admin-brand img {
+  display: block;
+  width: 245px;
+  height: auto;
+}
+
+.admin-header-actions {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-home-button,
+.admin-auth-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 6px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.admin-home-button {
+  color: var(--blue-dark);
+  border: 1px solid #cfe0f4;
+  background: #eef5ff;
+}
+
+.admin-auth-button {
+  color: #fff;
+  background: linear-gradient(135deg, #0066ed, #00b95c);
+  box-shadow: 0 10px 20px rgba(0, 98, 236, 0.18);
+}
+
 .hero-section {
   position: relative;
   min-height: 445px;
@@ -1140,6 +1203,93 @@ input {
   font-weight: 900;
 }
 
+.admin-page {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 28px;
+  min-height: calc(100vh - 86px);
+  padding: 28px;
+  background: #f7fbff;
+}
+
+.admin-sidebar,
+.admin-content {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 26px rgba(5, 31, 78, 0.07);
+}
+
+.admin-sidebar {
+  align-self: start;
+  padding: 14px;
+}
+
+.admin-sidebar nav,
+.admin-link-list {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-sidebar a,
+.admin-link-list a {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.admin-sidebar a {
+  padding: 0 14px;
+}
+
+.admin-sidebar a:first-child,
+.admin-sidebar a:hover,
+.admin-sidebar a:focus-visible {
+  border-color: #cfe0f4;
+  color: var(--blue-dark);
+  background: #eef5ff;
+}
+
+.admin-content {
+  min-width: 0;
+  padding: 28px;
+}
+
+.admin-content h2 {
+  margin: 0 0 22px;
+  color: var(--ink);
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.admin-link-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-link-list a {
+  justify-content: space-between;
+  padding: 0 16px;
+  border-color: var(--line);
+  background: #fff;
+}
+
+.admin-link-list a::after {
+  content: ">";
+  color: var(--blue);
+  font-weight: 900;
+}
+
+.admin-link-list a:hover,
+.admin-link-list a:focus-visible {
+  border-color: #b8d2f3;
+  background: #f4f9ff;
+}
+
 .site-footer {
   color: var(--muted);
   background: #fff;
@@ -1234,6 +1384,14 @@ input {
     width: 230px;
   }
 
+  .admin-brand img {
+    width: 230px;
+  }
+
+  .admin-topbar {
+    grid-template-columns: 230px 1fr auto;
+  }
+
   .main-nav {
     overflow-x: auto;
     justify-content: flex-start;
@@ -1270,10 +1428,19 @@ input {
   .quote-layout {
     grid-template-columns: 1fr;
   }
+
+  .admin-page {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-link-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 720px) {
   .topbar,
+  .admin-topbar,
   .main-nav,
   .category-row,
   .product-grid,
@@ -1286,6 +1453,45 @@ input {
   .topbar {
     gap: 14px;
     padding-top: 14px;
+  }
+
+  .admin-topbar {
+    gap: 14px;
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .admin-brand img {
+    width: 190px;
+  }
+
+  .admin-topbar h1 {
+    order: 2;
+    font-size: 24px;
+  }
+
+  .admin-header-actions {
+    order: 3;
+    justify-self: center;
+  }
+
+  .admin-home-button,
+  .admin-auth-button {
+    padding: 0 14px;
+    font-size: 13px;
+  }
+
+  .admin-page {
+    gap: 18px;
+    padding: 18px 14px;
+  }
+
+  .admin-content {
+    padding: 20px;
+  }
+
+  .admin-link-list {
+    grid-template-columns: 1fr;
   }
 
   .header-actions {
