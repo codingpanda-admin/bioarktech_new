@@ -9,6 +9,7 @@ function HomePage({ navigate, searchParams }) {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [featuredStartIndex, setFeaturedStartIndex] = useState(0);
 
   // Smooth scroll logic
   useEffect(() => {
@@ -36,7 +37,7 @@ function HomePage({ navigate, searchParams }) {
 
       try {
         const prodData = await apiFetch('/api/products/get-latest-featured-products/');
-        setFeaturedProducts(prodData.length > 0 ? prodData : mockProducts);
+        setFeaturedProducts(Array.isArray(prodData) && prodData.length > 0 ? prodData : mockProducts);
       } catch (err) {
         setFeaturedProducts(mockProducts);
       }
@@ -53,6 +54,27 @@ function HomePage({ navigate, searchParams }) {
 
     loadHomeData();
   }, []);
+
+  useEffect(() => {
+    setFeaturedStartIndex(0);
+  }, [featuredProducts.length]);
+
+  const visibleFeaturedProducts = featuredProducts.length
+    ? Array.from({ length: Math.min(4, featuredProducts.length) }, (_, offset) => {
+        const index = (featuredStartIndex + offset) % featuredProducts.length;
+        return { product: featuredProducts[index], index };
+      })
+    : [];
+
+  const rollFeaturedProducts = (direction) => {
+    if (featuredProducts.length <= 1) return;
+
+    setFeaturedStartIndex((currentIndex) => (
+      direction === 'next'
+        ? (currentIndex + 1) % featuredProducts.length
+        : (currentIndex - 1 + featuredProducts.length) % featuredProducts.length
+    ));
+  };
 
   if (loading) {
     return <div className="spinner" />;
@@ -116,14 +138,25 @@ function HomePage({ navigate, searchParams }) {
           <p className="section-subtitle">
             High-performance reagents designed to accelerate your research and deliver reliable results.
           </p>
-          <div className="product-grid">
-            {featuredProducts.map((prod, idx) => {
+          <div className="products-carousel" aria-label="Featured products carousel">
+            <button
+              className="product-carousel-control product-carousel-prev"
+              type="button"
+              aria-label="Previous featured products"
+              onClick={() => rollFeaturedProducts('prev')}
+              disabled={featuredProducts.length <= 1}
+            />
+            <div className="product-carousel-viewport">
+              <div className="product-grid product-carousel-grid">
+            {visibleFeaturedProducts.map(({ product: prod, index }) => {
               const name = prod.product_name;
               const priceStr = prod.unit_price ? `$${prod.unit_price}` : '$29.00 - $129.00';
               const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
+              const productId = prod.catalog_number || prod.product_sku;
+              const productHref = productId ? `/product/${productId}` : `/search?q=${encodeURIComponent(name)}`;
               
               return (
-                <article className="product-card" key={idx}>
+                <article className="product-card" key={`${prod.catalog_number || prod.product_sku || name}-${index}`}>
                   {imgUrl ? (
                     <div style={{ height: '140px', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '20px 0' }}>
                       <img src={imgUrl} alt={name} style={{ maxHeight: '100%', maxWidth: '100%', borderRadius: '8px' }} />
@@ -134,10 +167,19 @@ function HomePage({ navigate, searchParams }) {
                   <h3>{name}</h3>
                   <p className="rating">★★★★★ <span>({prod.reviews || '45'})</span></p>
                   <p className="price">{priceStr}</p>
-                  <a href="#" onClick={(e) => { e.preventDefault(); navigate(`/product/${prod.catalog_number || 'featured'}`); }}>View Product <span>→</span></a>
+                  <a href={productHref} onClick={(e) => { e.preventDefault(); navigate(productHref); }}>View Product <span>→</span></a>
                 </article>
               );
             })}
+              </div>
+            </div>
+            <button
+              className="product-carousel-control product-carousel-next"
+              type="button"
+              aria-label="Next featured products"
+              onClick={() => rollFeaturedProducts('next')}
+              disabled={featuredProducts.length <= 1}
+            />
           </div>
           <a className="view-all" href="#" onClick={(e) => { e.preventDefault(); navigate('/search?q='); }}>View All Products <span>→</span></a>
         </section>
@@ -178,7 +220,7 @@ function HomePage({ navigate, searchParams }) {
               </article>
             ))}
           </div>
-          <a className="view-all" href="#" onClick={(e) => e.preventDefault()}>View All Resources <span>→</span></a>
+          <a className="view-all" href="/resources" onClick={(e) => { e.preventDefault(); navigate('/resources'); }}>View All Resources <span>→</span></a>
         </section>
 
         <section className="bulk-cta">

@@ -32,7 +32,7 @@ function CartPage({ navigate, cart, onUpdateQty, onRemoveItem, onClearCart }) {
           <div className="cart-container">
             {/* Items Panel */}
             <div className="cart-items-panel">
-              <div className="cart-item-row" style={{ fontWeight: 'bold', borderBottom: '2px solid var(--line)', paddingBottom: '10px' }}>
+              <div className="cart-item-row" style={{ fontWeight: 500, borderBottom: '2px solid var(--line)', paddingBottom: '10px' }}>
                 <div></div>
                 <div>Product</div>
                 <div>Quantity</div>
@@ -61,10 +61,10 @@ function CartPage({ navigate, cart, onUpdateQty, onRemoveItem, onClearCart }) {
                       <button type="button" onClick={() => onUpdateQty(item.sku, item.unitSize, item.quantity + 1)}>+</button>
                     </div>
                     <div>
-                      <span style={{ fontWeight: 'bold' }}>${item.price.toFixed(2)}</span>
+                      <span style={{ fontWeight: 500 }}>${item.price.toFixed(2)}</span>
                     </div>
                     <div>
-                      <span style={{ color: isConsumable ? '#e53935' : 'var(--green)', fontSize: '14px', fontWeight: 'bold' }}>
+                      <span style={{ color: isConsumable ? '#e53935' : 'var(--green)', fontSize: '14px', fontWeight: 500 }}>
                         {isConsumable ? '$100 Class' : '$40 Class'}
                       </span>
                       <span style={{ display: 'block', fontSize: '11px', color: 'var(--muted)', fontStyle: 'italic' }}>
@@ -72,7 +72,7 @@ function CartPage({ navigate, cart, onUpdateQty, onRemoveItem, onClearCart }) {
                       </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                      <span style={{ fontWeight: 'bold', color: 'var(--blue)' }}>${itemTotal.toFixed(2)}</span>
+                      <span style={{ fontWeight: 500, color: 'var(--blue)' }}>${itemTotal.toFixed(2)}</span>
                       <button 
                         type="button" 
                         onClick={() => onRemoveItem(item.sku, item.unitSize)}

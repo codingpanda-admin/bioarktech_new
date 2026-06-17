@@ -98,9 +98,9 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
 
         .search-header-banner h1 {
           font-size: 2.2rem;
-          font-weight: 800;
+          font-weight: 600;
           margin: 0 0 10px 0;
-          letter-spacing: -0.5px;
+          letter-spacing: 0;
           color: #ffffff;
         }
 
@@ -131,7 +131,7 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
           color: #64748b;
           padding: 14px 28px;
           font-size: 15px;
-          font-weight: 700;
+          font-weight: 500;
           cursor: pointer;
           position: relative;
           transition: all 0.2s ease;
@@ -162,7 +162,7 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
         .search-stats {
           font-size: 15px;
           color: #475569;
-          font-weight: 600;
+          font-weight: 500;
         }
 
         .search-filter-actions {
@@ -178,7 +178,7 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
           background-color: white;
           color: #1e293b;
           font-size: 14px;
-          font-weight: 600;
+          font-weight: 500;
           outline: none;
           cursor: pointer;
           transition: all 0.2s ease;
@@ -232,11 +232,11 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
 
         .badge-category {
           font-size: 11px;
-          font-weight: 700;
+          font-weight: 600;
           padding: 4px 10px;
           border-radius: 20px;
           text-transform: uppercase;
-          letter-spacing: 0.3px;
+          letter-spacing: 0;
         }
 
         .badge-category.reagent {
@@ -256,7 +256,7 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
           color: #475569;
           border: 1px solid #e2e8f0;
           font-size: 11px;
-          font-weight: 700;
+          font-weight: 500;
           padding: 4px 10px;
           border-radius: 20px;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
@@ -294,16 +294,16 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
 
         .card-sku {
           font-size: 11px;
-          font-weight: 700;
+          font-weight: 500;
           color: #94a3b8;
-          letter-spacing: 0.5px;
+          letter-spacing: 0;
           margin-bottom: 6px;
           text-transform: uppercase;
         }
 
         .card-title {
           font-size: 15px;
-          font-weight: 700;
+          font-weight: 600;
           color: #1e293b;
           line-height: 1.4;
           margin: 0 0 12px 0;
@@ -324,7 +324,7 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
 
         .card-price {
           font-size: 18px;
-          font-weight: 900;
+          font-weight: 600;
           color: #0f172a;
         }
 
@@ -344,7 +344,7 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
           color: #0064df;
           padding: 10px 16px;
           font-size: 14px;
-          font-weight: 800;
+          font-weight: 500;
           border-radius: 8px;
           cursor: pointer;
           transition: all 0.2s ease;
@@ -380,7 +380,7 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
           font-size: 1.25rem;
           color: #334155;
           margin-bottom: 8px;
-          font-weight: 700;
+          font-weight: 600;
         }
 
         .search-empty p {
@@ -393,7 +393,7 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
           color: white;
           border: none;
           padding: 12px 24px;
-          font-weight: 700;
+          font-weight: 500;
           border-radius: 8px;
           cursor: pointer;
           transition: background-color 0.2s ease;

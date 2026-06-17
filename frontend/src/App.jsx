@@ -17,6 +17,10 @@ import SearchPage from './pages/SearchPage';
 import AdminPage from './pages/AdminPage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
 import CartPage from './pages/CartPage';
+import ResourcesPage from './pages/ResourcesPage';
+import InvestorsPage from './pages/InvestorsPage';
+import AboutBioArkPage from './pages/AboutBioArkPage';
+import BlogDetailPage from './pages/BlogDetailPage';
 
 function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -149,6 +153,10 @@ function App() {
   const isSearchPage = currentPath === '/search';
   const isProductPage = currentPath.startsWith('/product/');
   const isCartPage = currentPath === '/cart';
+  const isResourcesPage = currentPath === '/resources' || currentPath === '/resource';
+  const isBlogPage = currentPath.startsWith('/blog/');
+  const isInvestorsPage = currentPath === '/investors';
+  const isAboutBioArkPage = currentPath === '/about-bioark';
 
   return (
     <div className="site-shell">
@@ -188,6 +196,17 @@ function App() {
           onRemoveItem={handleRemoveItem} 
           onClearCart={handleClearCart}
         />
+      ) : isResourcesPage ? (
+        <ResourcesPage navigate={navigate} />
+      ) : isBlogPage ? (
+        <BlogDetailPage
+          navigate={navigate}
+          blogId={currentPath.substring('/blog/'.length)}
+        />
+      ) : isInvestorsPage ? (
+        <InvestorsPage navigate={navigate} />
+      ) : isAboutBioArkPage ? (
+        <AboutBioArkPage navigate={navigate} />
       ) : (
         <HomePage navigate={navigate} searchParams={searchParams} />
       )}

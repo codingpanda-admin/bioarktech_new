@@ -121,12 +121,12 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
         <div className="product-container" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <h2>{name}</h2>
           <p>Cat. #: <strong>{sku}</strong></p>
-          <p className="availability" style={{ color: 'var(--green)', fontWeight: 'bold' }}>Availability: In Stock</p>
+          <p className="availability" style={{ color: 'var(--green)', fontWeight: 500 }}>Availability: In Stock</p>
 
           {/* Unit Size Selection (Featured only) */}
           {isFeatured && product.unit_prices && product.unit_prices.length > 0 && (
             <div className="spec-container" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span className="spec-label" style={{ fontWeight: 'bold', color: 'var(--muted)' }}>Spec:</span>
+              <span className="spec-label" style={{ fontWeight: 500, color: 'var(--muted)' }}>Spec:</span>
               <div className="spec-options" style={{ display: 'flex', gap: '8px' }}>
                 {product.unit_prices.map((unit) => (
                   <button
@@ -139,7 +139,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
                       borderRadius: '6px',
                       border: selectedUnitSize?.id === unit.id ? '2px solid var(--blue)' : '1px solid var(--line)',
                       background: selectedUnitSize?.id === unit.id ? 'rgba(0, 111, 242, 0.05)' : '#fff',
-                      fontWeight: 'bold',
+                      fontWeight: 500,
                       cursor: 'pointer'
                     }}
                   >
@@ -153,7 +153,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
           {/* Price display */}
           {onDiscount ? (
             <div>
-              <p className="discount-price" style={{ margin: 0, fontSize: '24px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <p className="discount-price" style={{ margin: 0, fontSize: '24px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span className="discount-percent" style={{ background: '#f44336', color: '#fff', padding: '3px 8px', borderRadius: '4px', fontSize: '14px' }}>
                   -{discountPercent}%
                 </span>
@@ -164,14 +164,14 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
               </p>
             </div>
           ) : (
-            <p className="price" style={{ fontSize: '28px', fontWeight: '800', color: 'var(--blue)', margin: 0 }}>
+            <p className="price" style={{ fontSize: '28px', fontWeight: 600, color: 'var(--blue)', margin: 0 }}>
               ${price || '0.00'}
             </p>
           )}
 
           {/* Quantity Selector */}
           <div className="quantity" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px' }}>
-            <label htmlFor="qty" style={{ fontWeight: 'bold' }}>Qty</label>
+            <label htmlFor="qty" style={{ fontWeight: 500 }}>Qty</label>
             <input 
               id="qty" 
               type="number" 
@@ -212,7 +212,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
               <a
                 className={`nav-link ${activeTab === 'specifications' ? 'active' : ''}`}
                 onClick={() => setActiveTab('specifications')}
-                style={{ display: 'block', padding: '12px 0', fontWeight: 'bold', cursor: 'pointer', borderBottom: activeTab === 'specifications' ? '2px solid var(--blue)' : 'none', color: activeTab === 'specifications' ? 'var(--blue)' : 'var(--muted)' }}
+                style={{ display: 'block', padding: '12px 0', fontWeight: 500, cursor: 'pointer', borderBottom: activeTab === 'specifications' ? '2px solid var(--blue)' : 'none', color: activeTab === 'specifications' ? 'var(--blue)' : 'var(--muted)' }}
               >
                 Specifications
               </a>
@@ -222,7 +222,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
                 <a
                   className={`nav-link ${activeTab === 'performance-data' ? 'active' : ''}`}
                   onClick={() => setActiveTab('performance-data')}
-                  style={{ display: 'block', padding: '12px 0', fontWeight: 'bold', cursor: 'pointer', borderBottom: activeTab === 'performance-data' ? '2px solid var(--blue)' : 'none', color: activeTab === 'performance-data' ? 'var(--blue)' : 'var(--muted)' }}
+                  style={{ display: 'block', padding: '12px 0', fontWeight: 500, cursor: 'pointer', borderBottom: activeTab === 'performance-data' ? '2px solid var(--blue)' : 'none', color: activeTab === 'performance-data' ? 'var(--blue)' : 'var(--muted)' }}
                 >
                   Performance Data
                 </a>
@@ -233,7 +233,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
                 <a
                   className={`nav-link ${activeTab === 'manuals' ? 'active' : ''}`}
                   onClick={() => setActiveTab('manuals')}
-                  style={{ display: 'block', padding: '12px 0', fontWeight: 'bold', cursor: 'pointer', borderBottom: activeTab === 'manuals' ? '2px solid var(--blue)' : 'none', color: activeTab === 'manuals' ? 'var(--blue)' : 'var(--muted)' }}
+                  style={{ display: 'block', padding: '12px 0', fontWeight: 500, cursor: 'pointer', borderBottom: activeTab === 'manuals' ? '2px solid var(--blue)' : 'none', color: activeTab === 'manuals' ? 'var(--blue)' : 'var(--muted)' }}
                 >
                   Manuals
                 </a>
@@ -245,7 +245,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
         {/* Specifications Tab */}
         {activeTab === 'specifications' && (
           <div style={{ marginTop: '24px' }}>
-            <div className="tab-header" style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Product Information</div>
+            <div className="tab-header" style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Product Information</div>
             <table className="product-specifications-table">
               <tbody>
                 {isFeatured ? (
@@ -345,7 +345,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
         {/* Performance Data Tab */}
         {activeTab === 'performance-data' && isFeatured && (
           <div style={{ marginTop: '24px' }}>
-            <div className="tab-header" style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Performance Data</div>
+            <div className="tab-header" style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Performance Data</div>
             <table className="product-specifications-table">
               <tbody>
                 <tr>
@@ -359,7 +359,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
         {/* Manuals Tab */}
         {activeTab === 'manuals' && isFeatured && (
           <div style={{ marginTop: '24px' }}>
-            <div className="tab-header" style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Manuals</div>
+            <div className="tab-header" style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Manuals</div>
             <div className="manual-table">
               <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {product.manuals.map((man, idx) => (
@@ -368,7 +368,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
                       target="_blank"
                       rel="noopener noreferrer"
                       href={formatAssetUrl(man.manual)}
-                      style={{ color: 'var(--blue)', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}
+                      style={{ color: 'var(--blue)', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500 }}
                     >
                       📄 {man.name}
                     </a>
