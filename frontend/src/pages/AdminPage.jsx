@@ -1,26 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
+
+const adminLinks = [
+  'Overview',
+  'Homepage',
+  'Users',
+  'Products',
+  'Featured Products',
+  'Reagents',
+  'Services',
+  'Blog',
+  'Quotes',
+  'Email (SMTP)',
+  'Media',
+];
 
 function AdminPage() {
-  const adminLinks = [
-    'Overview',
-    'Homepage',
-    'Users',
-    'Products',
-    'Featured Products',
-    'Reagents',
-    'Services',
-    'Blog',
-    'Quotes',
-    'Email (SMTP)',
-    'Media',
-  ];
+  const [activeSection, setActiveSection] = useState('Overview');
+  const [activeUserTab, setActiveUserTab] = useState('Admin User');
+  const [isAddAdminOpen, setIsAddAdminOpen] = useState(true);
+  const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(true);
+  const homepageSettings = ['Background Images', 'Hero Text', 'CTA Button', 'Metrics'];
 
   return (
     <main className="admin-page" aria-label="Admin Console">
       <aside className="admin-sidebar" aria-label="Admin navigation">
         <nav>
           {adminLinks.map((label) => (
-            <a href={`#${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} key={label}>
+            <a
+              className={activeSection === label ? 'is-active' : undefined}
+              href={`#${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+              key={label}
+              onClick={(event) => {
+                event.preventDefault();
+                setActiveSection(label);
+              }}
+            >
               {label}
             </a>
           ))}
@@ -28,14 +42,229 @@ function AdminPage() {
       </aside>
 
       <section className="admin-content" aria-labelledby="admin-content-title">
-        <h2 id="admin-content-title">Overview</h2>
-        <div className="admin-link-list">
-          {adminLinks.map((label) => (
-            <a href={`#${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} key={label}>
-              {label}
-            </a>
-          ))}
-        </div>
+        {activeSection === 'Homepage' ? (
+          <>
+            <h2 id="admin-content-title">Homepage Settings</h2>
+            <div className="homepage-settings-grid">
+              {homepageSettings.map((section) => (
+                <article className="homepage-setting-card" key={section}>
+                  <h3>{section}</h3>
+                </article>
+              ))}
+            </div>
+          </>
+        ) : activeSection === 'Users' ? (
+          <>
+            <h2 id="admin-content-title">Users</h2>
+            <div className="admin-tabs" role="tablist" aria-label="User type">
+              <button
+                className={activeUserTab === 'Admin User' ? 'is-active' : undefined}
+                type="button"
+                role="tab"
+                aria-selected={activeUserTab === 'Admin User'}
+                onClick={() => setActiveUserTab('Admin User')}
+              >
+                Admin User
+              </button>
+              <button
+                className={activeUserTab === 'Client User' ? 'is-active' : undefined}
+                type="button"
+                role="tab"
+                aria-selected={activeUserTab === 'Client User'}
+                onClick={() => setActiveUserTab('Client User')}
+              >
+                Client User
+              </button>
+            </div>
+            {activeUserTab === 'Admin User' ? (
+              <section className="admin-form-section collapsible-section" aria-labelledby="add-admin-title">
+                <button
+                  className="collapsible-header"
+                  type="button"
+                  aria-expanded={isAddAdminOpen}
+                  aria-controls="add-admin-panel"
+                  onClick={() => setIsAddAdminOpen((isOpen) => !isOpen)}
+                >
+                  <span id="add-admin-title">Add Admin</span>
+                  <span aria-hidden="true">{isAddAdminOpen ? '−' : '+'}</span>
+                </button>
+                {isAddAdminOpen && (
+                  <form className="admin-user-form" id="add-admin-panel">
+                    <label>
+                      Email
+                      <input type="email" name="adminEmail" placeholder="admin@bioarktech.com" />
+                    </label>
+                    <label>
+                      Full name (optional)
+                      <input type="text" name="adminFullName" placeholder="Full name" />
+                    </label>
+                    <label>
+                      Password
+                      <input type="password" name="adminPassword" placeholder="Create a password" />
+                    </label>
+                    <button className="primary-button" type="submit">Add Admin</button>
+                  </form>
+                )}
+              </section>
+            ) : (
+              <>
+                <section className="admin-form-section collapsible-section" aria-labelledby="add-customer-title">
+                  <button
+                    className="collapsible-header"
+                    type="button"
+                    aria-expanded={isAddCustomerOpen}
+                    aria-controls="add-customer-panel"
+                    onClick={() => setIsAddCustomerOpen((isOpen) => !isOpen)}
+                  >
+                    <span id="add-customer-title">Add Customer</span>
+                    <span aria-hidden="true">{isAddCustomerOpen ? '−' : '+'}</span>
+                  </button>
+                  {isAddCustomerOpen && (
+                    <form className="admin-user-form customer-form" id="add-customer-panel">
+                      <label>
+                        Email
+                        <input type="email" name="customerEmail" placeholder="customer@example.com" />
+                      </label>
+                      <label>
+                        Full name (optional)
+                        <input type="text" name="customerFullName" placeholder="Full name" />
+                      </label>
+                      <label>
+                        Password
+                        <input type="password" name="customerPassword" placeholder="Create a password" />
+                      </label>
+                      <label className="full-span">
+                        Address (optional)
+                        <textarea name="customerAddress" rows="4" placeholder="Street address, city, state, ZIP" />
+                      </label>
+                      <label>
+                        Status
+                        <select name="customerStatus" defaultValue="Active">
+                          <option>Active</option>
+                          <option>Inactive</option>
+                          <option>Suspended</option>
+                        </select>
+                      </label>
+                      <button className="primary-button" type="submit">Add Customer</button>
+                    </form>
+                  )}
+                </section>
+                <section className="admin-table-section" aria-labelledby="client-user-title">
+                  <h3 id="client-user-title">Client User</h3>
+                  <div className="admin-empty-table">No client users yet.</div>
+                </section>
+              </>
+            )}
+          </>
+        ) : activeSection === 'Email (SMTP)' ? (
+          <>
+            <h2 id="admin-content-title">SMTP Configuration</h2>
+            <form className="smtp-form">
+              <div className="smtp-grid">
+                <label>
+                  Host
+                  <input type="text" name="smtpHost" defaultValue="smtp.gmail.com" />
+                </label>
+                <label>
+                  Port
+                  <input type="text" name="smtpPort" defaultValue="465" />
+                </label>
+              </div>
+              <label className="smtp-check">
+                <input type="checkbox" name="smtpSecure" defaultChecked />
+                Secure (TLS/SSL)
+              </label>
+              <div className="smtp-grid">
+                <label>
+                  User
+                  <input type="email" name="smtpUser" defaultValue="wulipeng@gmail.com" />
+                </label>
+                <label>
+                  Password
+                  <input type="password" name="smtpPassword" placeholder="SMTP password" />
+                </label>
+                <label>
+                  From Email
+                  <input type="email" name="smtpFromEmail" defaultValue="wulipeng@gmail.com" />
+                </label>
+                <label>
+                  Admin To Emails
+                  <input type="text" name="smtpAdminEmails" defaultValue="Lipengwu@bioarktech.com" />
+                </label>
+              </div>
+
+              <section className="smtp-template-section" aria-labelledby="full-form-template-title">
+                <h3 id="full-form-template-title">Full Form Email Template</h3>
+                <p>Used by the full “Request a Quote” form.</p>
+                <label>
+                  Subject
+                  <input type="text" name="fullSubject" defaultValue="New Quote (Full) from {{firstName}} {{lastName}} — {{serviceType}}" />
+                </label>
+                <label>
+                  HTML Body
+                  <textarea
+                    name="fullBody"
+                    rows="10"
+                    defaultValue={`<h2>New Quote (Full) Notification</h2>\n<p><strong>Name:</strong> {{firstName}} {{lastName}}</p>\n<p><strong>Email:</strong> {{email}}</p>\n{{#if phone}}<p><strong>Phone:</strong> {{phone}}</p>{{/if}}\n<p><strong>Company:</strong> {{company}}</p>\n{{#if department}}<p><strong>Department:</strong> {{department}}</p>{{/if}}\n<p><strong>Service:</strong> {{serviceType}}</p>\n<p><strong>Description:</strong> {{projectDescription}}</p>`}
+                  />
+                </label>
+                <button type="button" className="smtp-test-button">Test Full</button>
+              </section>
+
+              <section className="smtp-template-section" aria-labelledby="product-template-title">
+                <h3 id="product-template-title">Product Quote Email Template</h3>
+                <p>Used by the simplified product quote form (name, email, and product info only).</p>
+                <label>
+                  Subject
+                  <input type="text" name="productSubject" defaultValue="New Product Quote from {{firstName}} {{lastName}}" />
+                </label>
+                <label>
+                  HTML Body
+                  <textarea
+                    name="productBody"
+                    rows="8"
+                    defaultValue={`<h2>New Product Quote</h2>\n<p><strong>Name:</strong> {{firstName}} {{lastName}}</p>\n<p><strong>Email:</strong> {{email}}</p>\n<hr/>\n<p><strong>Product:</strong> {{projectDescription}}</p>\n{{#if catalogNumber}}<p><strong>Catalog #:</strong> {{catalogNumber}}</p>{{/if}}`}
+                  />
+                </label>
+                <button type="button" className="smtp-test-button">Test Product</button>
+              </section>
+
+              <p className="smtp-help">
+                {'Template syntax: variables like {{key}}; conditionals {{#if key}}...{{/if}}.'}
+                Available keys: firstName, lastName, email, phone, company, department, serviceType, timeline,
+                budget, projectDescription, additionalInfo, createdAt, and for product template, catalogNumber.
+              </p>
+
+              <div className="smtp-actions">
+                <button type="button" className="secondary-admin-button">Send Test (Default)</button>
+                <button type="submit" className="primary-button">Save</button>
+              </div>
+
+              <p className="smtp-note">
+                Note: After deployment, the server will use the above configuration to send emails via SMTP.
+                The frontend only stores these settings and exposes them for the server to read/use.
+              </p>
+            </form>
+          </>
+        ) : (
+          <>
+            <h2 id="admin-content-title">{activeSection}</h2>
+            <div className="admin-link-list">
+              {adminLinks.map((label) => (
+                <a
+                  href={`#${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                  key={label}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setActiveSection(label);
+                  }}
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
+          </>
+        )}
       </section>
     </main>
   );
