@@ -1,103 +1,103 @@
-# BioArk Tech — Portal de Reactivos y Consumibles Científicos
+# BioArk Tech — Reagents and Laboratory Supplies Portal
 
-Este es el repositorio central de **BioArk Tech**, una plataforma web premium diseñada para la gestión, visualización y cotización de reactivos biológicos y consumibles de laboratorio.
+This is the central repository for **BioArk Tech**, a premium web platform designed for managing, searching, and request quotes for biological reagents and laboratory consumables.
 
-El proyecto está completamente contenedorizado con **Docker Compose**, integrando un frontend moderno en React, un backend robusto en Django y una base de datos PostgreSQL.
+The project is fully containerized using **Docker Compose**, integrating a modern React frontend, a robust Django backend, and a PostgreSQL database.
 
 ---
 
-## 🚀 Requisitos Previos
+## 🚀 Prerequisites
 
-Asegúrate de tener instalado en tu sistema:
-* [Docker Desktop](https://www.docker.com/products/docker-desktop/) (incluyendo Docker Compose)
+Make sure you have the following installed on your system:
+* [Docker Desktop](https://www.docker.com/products/docker-desktop/) (including Docker Compose)
 * Git
 
 ---
 
-## 🛠️ Arquitectura del Proyecto
+## 🛠️ Project Architecture
 
-El entorno se compone de tres contenedores de Docker principales:
+The application environment consists of three main Docker services:
 
-1. **`bioark_postgres` (Base de Datos):**
-   * Motor: PostgreSQL 16.
-   * Inicialización: Carga automáticamente el volcado de la base de datos `backend/bioarktech.sql` la primera vez que se levanta el volumen, asegurando que todo el catálogo de productos esté disponible de inmediato.
+1. **`bioark_postgres` (Database):**
+   * Engine: PostgreSQL 16.
+   * Initialization: Automatically imports the database dump file `backend/bioarktech.sql` on the first startup, ensuring the complete product catalog, categories, images, and user setup are available immediately.
 2. **`bioark_backend` (Backend API):**
    * Framework: Django + Django REST Framework.
-   * Puertos: Expuesto en `http://localhost:8000`.
-   * Responsabilidades: Autenticación de usuarios, endpoints de búsqueda optimizada con soporte de categorías, cálculo de cotizaciones y procesamiento SMTP.
+   * Ports: Exposed at `http://localhost:8000`.
+   * Responsibilities: User authentication, search APIs with category filtering support, shipping cost classification, and SMTP email processing for quotes.
 3. **`bioark_frontend` (Frontend Web):**
-   * Framework: React + Vite (estructurado de forma limpia y modular en `/components` y `/pages`).
-   * Puertos: Expuesto en `http://localhost:5173`.
-   * Estilos: CSS puro con variables y animaciones fluidas (sin TailwindCSS).
+   * Framework: React + Vite (structured modularly under `/components` and `/pages`).
+   * Ports: Exposed at `http://localhost:5173`.
+   * Styling: Pure CSS utilizing modern variables, gradients, and micro-animations (No TailwindCSS).
 
 ---
 
-## 🚦 Cómo Levantar el Proyecto
+## 🚦 Getting Started (How to Run)
 
-Sigue estos sencillos pasos para iniciar todo el entorno de desarrollo:
+Follow these simple steps to spin up the development environment:
 
-### 1. Levantar los Contenedores
-Abre tu terminal en la raíz del proyecto y ejecuta el comando de construcción e inicio:
+### 1. Build and Start the Containers
+Open your terminal in the root directory of the project and execute:
 ```bash
 docker compose up --build -d
 ```
-Esto descargará las imágenes necesarias, compilará el frontend, preparará el backend e importará el esquema inicial de datos.
+This command downloads the required images, builds the frontend/backend servers, initializes the PostgreSQL database, and mounts local directories for hot-reloading.
 
-### 2. Acceso a las Aplicaciones
-Una vez que los contenedores estén activos (puedes verificarlo con `docker ps`), podrás ingresar a:
+### 2. Access the Applications
+Once the containers are up and running (verify with `docker ps`), you can access:
 * **Frontend Web:** [http://localhost:5173](http://localhost:5173)
-* **Consola de Administración:** [http://localhost:5173/admin](http://localhost:5173/admin)
-* **Backend API:** [http://localhost:8000](http://localhost:8000)
+* **Admin Console:** [http://localhost:5173/admin](http://localhost:5173/admin)
+* **Backend REST API:** [http://localhost:8000](http://localhost:8000)
 
 ---
 
-## 📦 Reglas de Negocio del Inventario y Carrito
+## 📦 Inventory & Shipping Business Rules
 
-### 1. Reactivos vs. Consumibles
-El inventario está clasificado en dos grandes tipos a través de la API del backend:
-* **Reactivos y Kits ($40 USD de envío):** Incluye enzimas, marcadores de ADN/proteína, master mixes para qPCR y buffers. Requieren envío refrigerado (hielo húmedo o seco).
-* **Consumibles y Sistemas ($100 USD de envío):** Incluye puntas de pipeta, crioviales, cajas de almacenamiento, placas de qPCR, tubos de centrífuga, platos de cultivo celular y guantes de nitrilo.
+### 1. Reagents vs. Consumables Classification
+The inventory catalog is divided into two primary product types through backend API serialization:
+* **Reagents & Kits ($40 USD shipping):** Includes enzymes, proteins, DNA markers, protein ladders, transfection reagents, and qPCR master mixes. These items generally require specialized shipping conditions (wet ice or dry ice).
+* **Consumables & Supplies ($100 USD shipping):** Includes cryogenic boxes, sterile cryogenic vials, serological pipettes, cell culture dishes, flasks, cell culture plates, qPCR plates, centrifuge tubes, pipette tips, and nitrile gloves.
 
-### 2. Lógica del Envío Plano
-El costo de envío se calcula de forma **plana por pedido completo** (no acumulable por cantidad o tipo de producto individual):
-* Si la orden contiene **al menos un consumible**, la tarifa total de envío de la orden es de **$100.00 USD**.
-* Si la orden contiene **únicamente reactivos**, la tarifa total de envío de la orden es de **$40.00 USD**.
-* Si el carrito está vacío, la tarifa es de **$0.00 USD**.
+### 2. Flat Rate Shipping Logic
+Shipping costs are calculated as a **single flat fee for the entire order** (it does not compound per item or per quantity):
+* If the cart contains **at least one consumable**, the flat shipping fee for the entire order is **$100.00 USD**.
+* If the cart contains **only reagents** (and no consumables), the flat shipping fee is **$40.00 USD**.
+* If the cart is empty, the shipping fee is **$0.00 USD**.
 
 ---
 
-## ⚙️ Comandos Útiles de Mantenimiento
+## ⚙️ Maintenance & Useful Commands
 
-### Levantar y Apagar Servicios
-* **Iniciar entorno:** `docker compose up -d`
-* **Detener entorno (conservando datos):** `docker compose down`
-* **Reiniciar entorno rápidamente:** `docker compose restart`
+### Manage Services
+* **Start the stack:** `docker compose up -d`
+* **Stop the stack (keeps data volume):** `docker compose down`
+* **Quick restart:** `docker compose restart`
 
-### Restablecer la Base de Datos desde Cero
-Si deseas limpiar todos los datos del volumen de PostgreSQL para forzar una reinicialización limpia a partir del volcado SQL de inventario:
+### Reset the Database from Scratch
+If you want to clear all database volumes and force a fresh initialization using the `backend/bioarktech.sql` dump file:
 ```bash
-# Apagar contenedores y limpiar volúmenes de datos
+# Stop containers and destroy the postgres volume
 docker compose down -v
 
-# Levantar de nuevo el proyecto
+# Start the stack back up (init.sql will run automatically)
 docker compose up -d
 ```
 
-### Monitorear Logs en Tiempo Real
-* **Ver todos los logs:** `docker compose logs -f`
-* **Ver logs únicamente del Backend:** `docker compose logs -f backend`
-* **Ver logs únicamente del Frontend:** `docker compose logs -f frontend`
+### Monitor Live Logs
+* **Stream all logs:** `docker compose logs -f`
+* **Stream Backend logs only:** `docker compose logs -f backend`
+* **Stream Frontend logs only:** `docker compose logs -f frontend`
 
 ---
 
-## 📁 Estructura del Código Fuente (Frontend)
+## 📁 Source Code Directory Structure (Frontend)
 
-* `/src/components/`: Componentes reutilizables de UI (encabezados, modales de acceso, badges visuales, pie de página).
-* `/src/pages/`: Páginas principales del sitio:
-  * `HomePage.jsx`: Carrusel de ofertas y categorías populares.
-  * `SearchPage.jsx`: Catálogo con pestañas de filtrado (Reactivos vs. Consumibles), búsqueda de texto, ordenación y badges de envío.
-  * `ProductDetailsPage.jsx`: Vista detallada de especificaciones y carga de manuales técnicos.
-  * `CartPage.jsx`: Tabla del carrito de compras con la lógica del envío plano integrada.
-  * `RequestQuotePage.jsx`: Formulario de solicitud de cotizaciones con auto-poblado desde el carrito.
-  * `AdminPage.jsx`: Consola de administración integrada (SMTP, plantillas y formularios colapsables).
-* `/src/utils/api.js`: Helper de fetches HTTP centralizado con soporte automático de CSRF.
+* `/src/components/`: Reusable UI components (headers, footer, auth modal, product icons, etc.).
+* `/src/pages/`: Page-level components:
+  * `HomePage.jsx`: Hero carousels, category grid, and latest blogs.
+  * `SearchPage.jsx`: Dynamic product catalog with Category Tabs (All, Reagents, Consumables), A-Z/Z-A/Price sorting, search text filtering, and shipping badges.
+  * `ProductDetailsPage.jsx`: Technical specifications and file downloads for product manuals.
+  * `CartPage.jsx`: Shopping cart details featuring the single order-level flat shipping fee summary.
+  * `RequestQuotePage.jsx`: Customized quote request form auto-populated with cart listings.
+  * `AdminPage.jsx`: Consolidated admin console containing User lists, SMTP mail configuration, and HTML email templates.
+* `/src/utils/api.js`: Centralized fetch helper managing cookies, API domain, and CSRF token handshakes.
