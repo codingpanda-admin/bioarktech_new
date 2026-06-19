@@ -275,6 +275,69 @@ def get_latest_featured_products(request):
 
     return Response(serializer.data)
 
+
+@api_view(['GET'])
+def get_product_catalog(request):
+    """
+    Returns the product catalog structured for the navigation mega-menu.
+    Groups products by their ProductCategory (via category_external_id),
+    then by subcategory (product_group), with product counts.
+    Only includes the 6 main product categories.
+    """
+    # The 6 main product categories we want to show in the nav, in display order
+    CATALOG_CATEGORY_IDS = [
+        'genome-editing',      # Genome Editing
+        'vector-clones',       # Vector Stock
+        'category-1764975611348',  # IVT mRNA
+        'category-1764975769330',  # Purified Protein
+        'lentivirus',          # Virus Product
+        'stable-cell-lines',   # Cell Lines
+    ]
+
+    catalog = []
+
+    for cat_ext_id in CATALOG_CATEGORY_IDS:
+        try:
+            category = ProductCategory.objects.get(external_id=cat_ext_id)
+        except ProductCategory.DoesNotExist:
+            continue
+
+        products = Product.objects.filter(
+            category_external_id=cat_ext_id,
+            hidden=False
+        ).order_by('product_group', 'product_name')
+
+        # Group products by product_group (subcategory)
+        subcategories = {}
+        for p in products:
+            group = p.product_group or ''
+            if group not in subcategories:
+                subcategories[group] = []
+            subcategories[group].append({
+                'product_id': p.product_id,
+                'product_name': p.product_name,
+                'external_id': p.external_id,
+                'catalog_number': p.catalog_number or p.external_id,
+            })
+
+        # Build subcategory list
+        subcategory_list = []
+        for group_name, group_products in subcategories.items():
+            subcategory_list.append({
+                'name': group_name,
+                'products': group_products,
+            })
+
+        catalog.append({
+            'category_id': category.category_id,
+            'category_name': category.category_name,
+            'external_id': category.external_id,
+            'product_count': products.count(),
+            'subcategories': subcategory_list,
+        })
+
+    return Response(catalog)
+
 ## HELPER METHODS
 
 

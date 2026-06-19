@@ -1,29 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { apiFetch, logo, mockCategories, mockProducts } from '../utils/api';
-
-const PRODUCT_MENU_EXCLUDED_CATEGORIES = new Set([
-  'all products',
-  'consumables',
-  'reagents & kits',
-]);
-
-const normalizeCategoryName = (name) => String(name || '').trim().toLowerCase();
-
-const inferProductCategory = (product, categories) => {
-  const explicitCategory = product.category_name || product.product_category || product.category;
-  if (explicitCategory) return explicitCategory;
-
-  const name = (product.product_name || '').toLowerCase();
-  const matchedCategory = categories.find((category) => {
-    const categoryName = (category.category_name || '').toLowerCase();
-    return categoryName
-      .split(/[\s/&-]+/)
-      .filter((part) => part.length > 3)
-      .some((part) => name.includes(part));
-  });
-
-  return matchedCategory?.category_name || 'Featured Products';
-};
+import React, { useEffect, useState, useCallback } from 'react';
+import { apiFetch, logo } from '../utils/api';
 
 const serviceMenuGroups = [
   {
@@ -79,109 +55,91 @@ const reagentMenuGroups = [
   },
 ];
 
+// Icons for each category
+const categoryIcons = {
+  'Genome Editing': (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2v6m0 8v6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24M2 12h6m8 0h6M4.93 19.07l4.24-4.24m5.66-5.66l4.24-4.24"/>
+    </svg>
+  ),
+  'Vector Stock': (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/>
+    </svg>
+  ),
+  'IVT mRNA': (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 3v18M18 3v18M6 9c3 0 3-3 6-3s3 3 6 3M6 15c3 0 3-3 6-3s3 3 6 3"/>
+    </svg>
+  ),
+  'Purified Protein': (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 2v4m10-4v4M5 6h14a2 2 0 012 2v2a6 6 0 01-6 6h-6a6 6 0 01-6-6V8a2 2 0 012-2zM9 16v4a2 2 0 002 2h2a2 2 0 002-2v-4"/>
+    </svg>
+  ),
+  'Virus Product': (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="5"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.93 4.93l2.12 2.12m9.9 9.9l2.12 2.12M4.93 19.07l2.12-2.12m9.9-9.9l2.12-2.12"/>
+    </svg>
+  ),
+  'Cell Lines': (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>
+    </svg>
+  ),
+};
+
 function SiteHeader({ navigate, currentUser, onOpenAuth, onLogout, cartCount }) {
   const [query, setQuery] = useState('');
   const [productMenuOpen, setProductMenuOpen] = useState(false);
   const [serviceMenuOpen, setServiceMenuOpen] = useState(false);
   const [reagentMenuOpen, setReagentMenuOpen] = useState(false);
   const [aboutMenuOpen, setAboutMenuOpen] = useState(false);
-  const [categories, setCategories] = useState(mockCategories);
-  const [products, setProducts] = useState(mockProducts);
+  const [catalog, setCatalog] = useState([]);
+  const [activeCategory, setActiveCategory] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
 
-    const loadNavigationCatalog = async () => {
+    const loadCatalog = async () => {
       try {
-        const catData = await apiFetch('/api/products/load-product-categories/');
-        if (isMounted && catData.length > 0) setCategories(catData);
-      } catch (err) {
-        if (isMounted) setCategories(mockCategories);
-      }
-
-      try {
-        const searchData = await apiFetch('/api/search/?q=&category=');
-        if (isMounted && searchData.products?.length > 0) {
-          setProducts(searchData.products);
-          return;
+        const data = await apiFetch('/api/products/get-product-catalog/');
+        if (isMounted && data.length > 0) {
+          setCatalog(data);
+          setActiveCategory(data[0].external_id);
         }
-
-        const featuredData = await apiFetch('/api/products/get-latest-featured-products/');
-        if (isMounted && featuredData.length > 0) setProducts(featuredData);
       } catch (err) {
-        if (isMounted) setProducts(mockProducts);
+        console.error('Failed to load product catalog:', err);
       }
     };
 
-    loadNavigationCatalog();
+    loadCatalog();
 
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
-
-  const productMenuGroups = useMemo(() => {
-    const groupedProducts = products.reduce((groups, product) => {
-      const categoryName = inferProductCategory(product, categories);
-      return {
-        ...groups,
-        [categoryName]: [...(groups[categoryName] || []), product],
-      };
-    }, {});
-
-    const categoryPriorityByName = new Map(
-      categories.map((category, index) => [
-        normalizeCategoryName(category.category_name),
-        Number.isFinite(Number(category.priority)) ? Number(category.priority) : index + 1,
-      ])
-    );
-    const isProductMenuCategory = (name) => !PRODUCT_MENU_EXCLUDED_CATEGORIES.has(normalizeCategoryName(name));
-
-    const categoryGroups = categories
-      .filter((category) => isProductMenuCategory(category.category_name))
-      .sort((a, b) => {
-        const priorityA = categoryPriorityByName.get(normalizeCategoryName(a.category_name)) ?? Number.MAX_SAFE_INTEGER;
-        const priorityB = categoryPriorityByName.get(normalizeCategoryName(b.category_name)) ?? Number.MAX_SAFE_INTEGER;
-        if (priorityA !== priorityB) return priorityA - priorityB;
-        return String(a.category_name || '').localeCompare(String(b.category_name || ''));
-      })
-      .map((category) => ({
-        name: category.category_name,
-        products: groupedProducts[category.category_name] || [],
-      }));
-
-    Object.entries(groupedProducts).forEach(([name, categoryProducts]) => {
-      if (isProductMenuCategory(name) && !categoryGroups.some((group) => group.name === name)) {
-        categoryGroups.push({ name, products: categoryProducts });
-      }
-    });
-
-    return categoryGroups;
-  }, [categories, products]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (query.trim()) {
-      setProductMenuOpen(false);
-      setServiceMenuOpen(false);
-      setReagentMenuOpen(false);
-      setAboutMenuOpen(false);
+      closeMenus();
       navigate(`/search?q=${encodeURIComponent(query.trim())}`);
     }
   };
 
-  const closeMenus = () => {
+  const closeMenus = useCallback(() => {
     setProductMenuOpen(false);
     setServiceMenuOpen(false);
     setReagentMenuOpen(false);
     setAboutMenuOpen(false);
-  };
+  }, []);
 
   const MenuCloseButton = ({ label = 'Close menu' }) => (
     <button className="menu-panel-close" type="button" aria-label={label} onClick={closeMenus}>
       <span aria-hidden="true">×</span>
     </button>
   );
+
+  const activeCatalogEntry = catalog.find((c) => c.external_id === activeCategory);
 
   return (
     <header className="site-header">
@@ -225,61 +183,124 @@ function SiteHeader({ navigate, currentUser, onOpenAuth, onLogout, cartCount }) 
               setReagentMenuOpen(false);
               setAboutMenuOpen(false);
               setProductMenuOpen((isOpen) => !isOpen);
+              if (!productMenuOpen && catalog.length > 0 && !activeCategory) {
+                setActiveCategory(catalog[0].external_id);
+              }
             }}
           >
             Products
           </button>
           {productMenuOpen && (
-            <div className="products-mega-menu" id="products-menu">
+            <div className="products-mega-menu catalog-mega-menu" id="products-menu">
               <MenuCloseButton label="Close products menu" />
-              {productMenuGroups.map((group) => (
-                <div className="product-menu-group" key={group.name}>
-                  <a
-                    className="product-menu-category"
-                    href="#"
+
+              {/* Category sidebar */}
+              <div className="catalog-sidebar">
+                <div className="catalog-sidebar-title">Product Categories</div>
+                {catalog.map((cat) => (
+                  <button
+                    key={cat.external_id}
+                    className={`catalog-category-btn ${activeCategory === cat.external_id ? 'is-active' : ''}`}
+                    type="button"
+                    onMouseEnter={() => setActiveCategory(cat.external_id)}
                     onClick={(e) => {
                       e.preventDefault();
-                      setProductMenuOpen(false);
-                      navigate(`/search?q=${encodeURIComponent(group.name)}`);
+                      setActiveCategory(cat.external_id);
                     }}
                   >
-                    {group.name}
-                  </a>
-                  <div className="product-menu-items">
-                    {group.products.length > 0 ? (
-                      group.products.slice(0, 5).map((product) => {
-                        const name = product.product_name;
-                        const productId = product.product_sku || product.catalog_number;
+                    <span className="catalog-category-icon">
+                      {categoryIcons[cat.category_name] || categoryIcons['Genome Editing']}
+                    </span>
+                    <span className="catalog-category-label">{cat.category_name}</span>
+                    <span className="catalog-category-count">({cat.product_count})</span>
+                    <span className="catalog-category-arrow">›</span>
+                  </button>
+                ))}
+              </div>
 
-                        return (
-                          <a
-                            href="#"
-                            key={productId || name}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setProductMenuOpen(false);
-                              navigate(productId ? `/product/${productId}` : `/search?q=${encodeURIComponent(name)}`);
-                            }}
-                          >
-                            {name}
-                          </a>
-                        );
-                      })
-                    ) : (
+              {/* Detail panel for active category */}
+              <div className="catalog-detail">
+                {activeCatalogEntry && (
+                  <>
+                    <div className="catalog-detail-header">
                       <a
+                        className="catalog-detail-title"
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          setProductMenuOpen(false);
-                          navigate(`/search?q=${encodeURIComponent(group.name)}`);
+                          closeMenus();
+                          navigate(`/search?q=${encodeURIComponent(activeCatalogEntry.category_name)}`);
                         }}
                       >
-                        Browse all
+                        {activeCatalogEntry.category_name}
+                        <span className="catalog-detail-count">{activeCatalogEntry.product_count} products</span>
                       </a>
+                    </div>
+
+                    {activeCatalogEntry.product_count === 0 ? (
+                      <div className="catalog-empty">
+                        <div className="catalog-empty-icon">🧬</div>
+                        <p>Products coming soon</p>
+                        <a
+                          href="#"
+                          className="catalog-browse-link"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            closeMenus();
+                            navigate('/request-quote');
+                          }}
+                        >
+                          Request a quote →
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="catalog-subcategories">
+                        {activeCatalogEntry.subcategories.map((sub) => (
+                          <div className="catalog-subcategory" key={sub.name || '__default'}>
+                            {sub.name && (
+                              <div className="catalog-subcategory-name">
+                                <span className="catalog-sub-dot" />
+                                {sub.name}
+                              </div>
+                            )}
+                            <div className="catalog-products-list">
+                              {sub.products.map((product) => (
+                                <a
+                                  key={product.external_id}
+                                  className="catalog-product-link"
+                                  href="#"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    closeMenus();
+                                    navigate(`/product/${product.catalog_number}`);
+                                  }}
+                                >
+                                  <span className="catalog-product-name">{product.product_name}</span>
+                                  <span className="catalog-product-sku">{product.catalog_number}</span>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
-                  </div>
-                </div>
-              ))}
+
+                    <div className="catalog-detail-footer">
+                      <a
+                        href="#"
+                        className="catalog-view-all"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          closeMenus();
+                          navigate(`/search?q=${encodeURIComponent(activeCatalogEntry.category_name)}`);
+                        }}
+                      >
+                        View all {activeCatalogEntry.category_name} →
+                      </a>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>

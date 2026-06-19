@@ -12,5 +12,6 @@ urlpatterns = [
     path('get-product-sku/', views.get_product_sku),
     path('load-featured-product-page/<str:catalog_number>', views.load_featured_product_page),
     path('get-latest-featured-products/', views.get_latest_featured_products),
+    path('get-product-catalog/', views.get_product_catalog),
     path('update-shelf-price/', views.update_shelf_price),
 ]
