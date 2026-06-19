@@ -1,6 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { apiFetch, logo, mockCategories, mockProducts } from '../utils/api';
 
+const PRODUCT_MENU_EXCLUDED_CATEGORIES = new Set([
+  'all products',
+  'consumables',
+  'reagents & kits',
+]);
+
+const normalizeCategoryName = (name) => String(name || '').trim().toLowerCase();
+
 const inferProductCategory = (product, categories) => {
   const explicitCategory = product.category_name || product.product_category || product.category;
   if (explicitCategory) return explicitCategory;
@@ -121,15 +129,29 @@ function SiteHeader({ navigate, currentUser, onOpenAuth, onLogout, cartCount }) 
       };
     }, {});
 
+    const categoryPriorityByName = new Map(
+      categories.map((category, index) => [
+        normalizeCategoryName(category.category_name),
+        Number.isFinite(Number(category.priority)) ? Number(category.priority) : index + 1,
+      ])
+    );
+    const isProductMenuCategory = (name) => !PRODUCT_MENU_EXCLUDED_CATEGORIES.has(normalizeCategoryName(name));
+
     const categoryGroups = categories
-      .filter((category) => category.category_name !== 'All Products')
+      .filter((category) => isProductMenuCategory(category.category_name))
+      .sort((a, b) => {
+        const priorityA = categoryPriorityByName.get(normalizeCategoryName(a.category_name)) ?? Number.MAX_SAFE_INTEGER;
+        const priorityB = categoryPriorityByName.get(normalizeCategoryName(b.category_name)) ?? Number.MAX_SAFE_INTEGER;
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        return String(a.category_name || '').localeCompare(String(b.category_name || ''));
+      })
       .map((category) => ({
         name: category.category_name,
         products: groupedProducts[category.category_name] || [],
       }));
 
     Object.entries(groupedProducts).forEach(([name, categoryProducts]) => {
-      if (!categoryGroups.some((group) => group.name === name)) {
+      if (isProductMenuCategory(name) && !categoryGroups.some((group) => group.name === name)) {
         categoryGroups.push({ name, products: categoryProducts });
       }
     });
@@ -365,7 +387,7 @@ function SiteHeader({ navigate, currentUser, onOpenAuth, onLogout, cartCount }) 
         </div>
         <a href="#" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/search?category=consumables'); }}>Consumables</a>
         <a href="#" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/request-quote'); }}>Design</a>
-        <a className="nav-link-plain" href="/resources" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/resources'); }}>Resources & Blog</a>
+        <a className="nav-link-plain" href="/resources" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/resources'); }}>Resources & Blogs</a>
         <div className={`nav-dropdown ${aboutMenuOpen ? 'is-open' : ''}`}>
           <button
             className="nav-trigger"

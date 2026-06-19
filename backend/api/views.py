@@ -243,12 +243,14 @@ def resend_verification(request):
 
 def is_product_consumable(product):
     name = product.product_name.lower()
-    sku = product.product_sku.lower()
+    external_id = product.external_id.lower()
+    catalog_number = (product.catalog_number or "").lower()
+    product_group = (product.product_group or "").lower()
     desc = (product.description or "").lower()
     
     # Consumables match keywords: system, device, cell line, cell type, cloning, vector
     consumable_keywords = ['system', 'device', 'cell line', 'cell type', 'cloning', 'vector']
-    if any(kw in name or kw in sku or kw in desc for kw in consumable_keywords):
+    if any(kw in name or kw in external_id or kw in catalog_number or kw in product_group or kw in desc for kw in consumable_keywords):
         return True
     return False
 
@@ -279,50 +281,15 @@ def search_product(request):
         search_query = Q()
         for keyword in list_keywords:
             search_query |= Q(product_name__icontains=keyword)
-            search_query |= Q(product_sku__icontains=keyword)
+            search_query |= Q(external_id__icontains=keyword)
+            search_query |= Q(catalog_number__icontains=keyword)
+            search_query |= Q(category_external_id__icontains=keyword)
+            search_query |= Q(product_group__icontains=keyword)
+            search_query |= Q(source_type__icontains=keyword)
             search_query |= Q(description__icontains=keyword)
+            search_query |= Q(content_text__icontains=keyword)
 
-            if FunctionType.objects.filter(function_type_name__icontains=keyword).exists():
-                function_type_codes = FunctionType.objects.filter(function_type_name__icontains=keyword).values('function_type_symbol')
-                search_query |= Q(function_type_code__in=function_type_codes)
-
-            if StructureType.objects.filter(structure_type_name__icontains=keyword).exists():
-                structure_type_codes = StructureType.objects.filter(structure_type_name__icontains=keyword).values('structure_type_symbol')
-                search_query |= Q(structure_type_code__in=structure_type_codes)
-            
-            if Promoter.objects.filter(promoter_name__icontains=keyword).exists():
-                promoter_codes = Promoter.objects.filter(promoter_name__icontains=keyword).values('promoter_code')
-                search_query |= Q(promoter_code__in=promoter_codes)
-
-            if PromoterSpecialCase.objects.filter(promoter_name__icontains=keyword).exists():
-                promoter_codes = PromoterSpecialCase.objects.filter(promoter_name__icontains=keyword).values('promoter_code')
-                search_query |= Q(promoter_code__in=promoter_codes)
-
-            if Property.objects.filter(property_name__icontains=keyword).exists():
-                property_codes = Property.objects.filter(property_name__icontains=keyword).values('property_code')
-                search_query |= Q(property_code__in=property_codes)
-
-            if ProteinTag.objects.filter(protein_tag_name__icontains=keyword).exists():
-                protein_tag_codes = ProteinTag.objects.filter(protein_tag_name__icontains=keyword).values('protein_tag_code')
-                search_query |= Q(protein_tag_code__in=protein_tag_codes)
-            
-            if FluoresceneMarker.objects.filter(fluorescene_marker_name__icontains=keyword).exists():
-                fluorescene_marker_codes = FluoresceneMarker.objects.filter(fluorescene_marker_name__icontains=keyword).values('fluorescene_marker_code')
-                search_query |= Q(fluorescene_marker_code__in=fluorescene_marker_codes)
-
-            if SelectionMarker.objects.filter(selection_marker_name__icontains=keyword).exists():
-                selection_marker_codes = SelectionMarker.objects.filter(selection_marker_name__icontains=keyword).values('selection_marker_code')
-                search_query |= Q(selection_marker_code__in=selection_marker_codes)
-
-            if BacterialMarker.objects.filter(bacterial_marker_name__icontains=keyword).exists():
-                bacterial_marker_codes = BacterialMarker.objects.filter(bacterial_marker_name__icontains=keyword).values('bacterial_marker_code')
-                search_query |= Q(bacterial_marker_code__in=bacterial_marker_codes)
-
-            if BacterialMarkerSpecialCase.objects.filter(bacterial_marker_name__icontains=keyword).exists():
-                bacterial_marker_codes = BacterialMarkerSpecialCase.objects.filter(bacterial_marker_name__icontains=keyword).values('bacterial_marker_code')
-                search_query |= Q(bacterial_marker_code__in=bacterial_marker_codes)
-
-        products = Product.objects.filter(search_query)
+        products = Product.objects.filter(search_query, hidden=False)
 
         # Query FeaturedProduct table
         featured_search_query = Q()
@@ -333,7 +300,7 @@ def search_product(request):
 
         featured_products = FeaturedProduct.objects.filter(featured_search_query)
     else:
-        products = Product.objects.all()
+        products = Product.objects.filter(hidden=False)
         featured_products = FeaturedProduct.objects.all()
 
     combined_results = []
@@ -351,12 +318,14 @@ def search_product(request):
 
         combined_results.append({
             'product_id': p.product_id,
-            'product_sku': p.product_sku,
+            'product_sku': p.catalog_number or p.external_id,
+            'external_id': p.external_id,
+            'catalog_number': p.catalog_number,
             'product_name': p.product_name,
             'description': p.description,
-            'unit_price': float(p.unit_price) if p.unit_price else 0.0,
-            'list_price': float(p.list_price) if p.list_price else 0.0,
-            'image': None,
+            'unit_price': 0.0,
+            'list_price': p.list_price or p.price_range or '',
+            'image': p.image_url or (p.images[0] if p.images else None),
             'category': prod_cat,
             'shipping_cost': 100.0 if is_consumable else 40.0
         })

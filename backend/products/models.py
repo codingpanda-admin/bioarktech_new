@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Q
+from django.contrib.postgres.fields import ArrayField
 from django.dispatch import receiver
 from django.db.models.signals import pre_save
 from tinymce.models import HTMLField
@@ -119,6 +120,8 @@ class ProductCategory(models.Model):
     category_name = models.CharField(unique=True)
     description = models.CharField(blank=True, null=True)
     priority = models.IntegerField(default=1)
+    external_id = models.CharField(blank=True, null=True)
+    product_type = models.CharField(blank=True, null=True)
 
     class Meta:
         db_table = 'product_category'
@@ -195,39 +198,46 @@ class ProductsUnion(models.Model):
         return self.product_id
 
 class Product(models.Model):
-    product_id = models.AutoField(primary_key=True)
-    product_sku = models.CharField()
-    product_name = models.CharField()
-    description = models.CharField(blank=True, null=True)
-    list_price = models.DecimalField(max_digits=8, decimal_places=2)
-    unit_price = models.DecimalField(max_digits=8, decimal_places=2)
-    unit_size = models.CharField()
-    discount_code = models.CharField(blank=True, null=True)
-    ready_status = models.CharField(blank=True, null=True)
-    target_sequence = models.CharField(max_length=6)
-    units_in_stock = models.IntegerField()
-    units = models.CharField()
-    ship_condition = models.CharField()
-    on_discount = models.BooleanField(default=True)
-    union = models.OneToOneField(ProductsUnion, on_delete=models.CASCADE, blank=True, null=True)
-    # product codes
-    function_type_code = models.CharField()
-    structure_type_code = models.CharField()
-    promoter_code = models.CharField()
-    property_code = models.CharField()
-    protein_tag_code = models.CharField()
-    fluorescene_marker_code = models.CharField()
-    selection_marker_code = models.CharField()
-    bacterial_marker_code = models.CharField()
-    delivery_format_code = models.CharField()
-
-    def save(self, *args, **kwargs):
-        if not self.union:
-            self.union = ProductsUnion.objects.create(product_id=self.product_sku)
-        super().save(*args, **kwargs)
+    product_id = models.BigAutoField(primary_key=True)
+    external_id = models.CharField(max_length=100, unique=True)
+    product_name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    image_url = models.TextField(blank=True, null=True)
+    product_link = models.TextField(blank=True, null=True)
+    category_external_id = models.CharField(max_length=100, blank=True, null=True)
+    product_group = models.CharField(max_length=100, blank=True, null=True)
+    source_type = models.CharField(max_length=50, blank=True, null=True)
+    display_order = models.IntegerField(blank=True, null=True)
+    source_created_at_ms = models.BigIntegerField(blank=True, null=True)
+    source_created_at = models.DateTimeField(blank=True, null=True)
+    catalog_number = models.CharField(max_length=100, blank=True, null=True)
+    availability = models.CharField(max_length=100, blank=True, null=True)
+    list_price = models.CharField(max_length=100, blank=True, null=True)
+    price_range = models.CharField(max_length=100, blank=True, null=True)
+    quote_only = models.BooleanField(default=False)
+    is_featured = models.BooleanField(default=False)
+    show_in_featured = models.BooleanField(default=False)
+    show_in_gene_editing = models.BooleanField(default=False)
+    key_features = ArrayField(models.TextField(), default=list, blank=True)
+    options = ArrayField(models.TextField(), default=list, blank=True)
+    option_prices = models.JSONField(default=dict, blank=True)
+    storage_stability = models.TextField(blank=True, null=True)
+    performance_data = models.TextField(blank=True, null=True)
+    data_description = models.TextField(blank=True, null=True)
+    manuals = ArrayField(models.TextField(), default=list, blank=True)
+    manual_urls = ArrayField(models.TextField(), default=list, blank=True)
+    images = ArrayField(models.TextField(), default=list, blank=True)
+    store_link = models.TextField(blank=True, null=True)
+    content_text = models.TextField(blank=True, null=True)
+    hidden = models.BooleanField(default=False)
+    raw_product = models.JSONField(blank=True, null=True)
+    raw_override = models.JSONField(blank=True, null=True)
+    raw_detail = models.JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'products'
+        db_table = 'product'
 
 
 class FeaturedProduct(models.Model):

@@ -23,7 +23,7 @@ class DeliveryLibraryResource(resources.ModelResource):
 @admin.register(Product)
 class ProductAdmin(ImportExportActionModelAdmin):
     resource_classes = [ProductResource]
-    list_display = ('product_id', 'product_sku', 'product_name', 'unit_price', 'unit_size', 'ready_status')
+    list_display = ('product_id', 'external_id', 'product_name', 'catalog_number', 'category_external_id', 'list_price', 'hidden')
 
 @admin.register(FeaturedProduct)
 class FeaturedProductAdmin(admin.ModelAdmin):

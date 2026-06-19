@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch, formatAssetUrl, mockResources } from '../utils/api';
+import { formatRichText } from '../utils/richText';
 
 const formatBlogDate = (value) => {
   if (!value) return 'BioArkTech';
@@ -51,7 +52,7 @@ function BlogDetailPage({ blogId, navigate }) {
     return (
       <main className="blog-detail-page">
         <button className="blog-back-button" type="button" onClick={() => navigate('/resources')}>
-          Back to Resources
+          Back to Resources & Blogs
         </button>
         <div className="alert-banner error">{error || 'Blog post not found.'}</div>
       </main>
@@ -60,12 +61,14 @@ function BlogDetailPage({ blogId, navigate }) {
 
   const imageUrl = blog.image ? formatAssetUrl(blog.image) : null;
   const title = blog.title || blog.name;
-  const content = blog.content || `<p>${blog.description || blog.summary || 'Explore BioArkTech updates, technical guidance, and research workflow insights.'}</p>`;
+  const content = formatRichText(
+    blog.content || 'Explore BioArkTech updates, technical guidance, and research workflow insights.'
+  );
 
   return (
     <main className="blog-detail-page">
       <button className="blog-back-button" type="button" onClick={() => navigate('/resources')}>
-        Back to Resources
+        Back to Resources & Blogs
       </button>
 
       <article className="blog-detail-article">
@@ -77,7 +80,6 @@ function BlogDetailPage({ blogId, navigate }) {
             <span>{formatBlogDate(blog.date_posted || blog.date)}</span>
             <span>5 min read</span>
           </div>
-          {blog.description && <p className="blog-detail-description">{blog.description}</p>}
         </header>
 
         {imageUrl ? (

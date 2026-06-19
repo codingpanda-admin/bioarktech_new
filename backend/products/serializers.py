@@ -6,7 +6,7 @@ from genes.models import *
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductCategory
-        fields = ['category_id', 'category_name', 'description']
+        fields = ['category_id', 'category_name', 'description', 'priority', 'external_id', 'product_type']
 
 class FunctionCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,86 +34,19 @@ class DeliveryFormatTableSerializer(serializers.BaseSerializer):
         }
 
 class ProductSerializer(serializers.ModelSerializer):
-    function_type_name = serializers.SerializerMethodField()
-    structure_type_name = serializers.SerializerMethodField()
-    delivery_type_name = serializers.SerializerMethodField()
-    promoter_name = serializers.SerializerMethodField()
-    protein_tag_name = serializers.SerializerMethodField()
-    fluorescene_marker_name = serializers.SerializerMethodField()
-    selection_marker_name = serializers.SerializerMethodField()
-    bacterial_marker_name = serializers.SerializerMethodField()
-    delivery_format_name = serializers.SerializerMethodField()
-
     class Meta:
         model = Product
-        fields = ['product_id', 'product_sku', 'product_name', 'description', 'function_type_name', 'structure_type_name', 'delivery_type_name', 'promoter_name', 'protein_tag_name', 'fluorescene_marker_name', 'selection_marker_name', 'bacterial_marker_name', 'delivery_format_name', 'target_sequence', 'unit_price', 'list_price']
-    
-    def get_function_type_name(self, product):
-        try:
-            function_type = FunctionType.objects.filter(function_type_symbol=product.function_type_code).first()
-            return function_type.function_type_name
-        except Exception:
-            return None
-    
-    def get_structure_type_name(self, product):
-        try:
-            structure_type = StructureType.objects.filter(structure_type_symbol=product.structure_type_code).first()
-            return structure_type.structure_type_name
-        except Exception:
-            return None
-
-    def get_delivery_type_name(self, product):
-        try:
-            delivery_type = DeliveryLibrary.objects.filter(delivery_type_symbol=product.delivery_type_code).first()
-            return delivery_type.delivery_type_name
-        except Exception:
-            return None
-    
-    def get_promoter_name(self, product):
-        try:
-            promoter_queryset = Promoter.objects.filter(promoter_code=product.promoter_code).values("promoter_name")
-            promoter_special_case_queryset = PromoterSpecialCase.objects.filter(promoter_code=product.promoter_code).values("promoter_name")
-            promoter = promoter_queryset.union(promoter_special_case_queryset)[0]
-            return promoter['promoter_name']
-        except Exception:
-            return None
-    
-    def get_protein_tag_name(self, product):
-        try:
-            protein_tag = ProteinTag.objects.filter(protein_tag_code=product.protein_tag_code).first()
-            return protein_tag.protein_tag_name
-        except Exception:
-            return None
-    
-    def get_fluorescene_marker_name(self, product):
-        try:
-            fluorescene_marker = FluoresceneMarker.objects.filter(fluorescene_marker_code=product.fluorescene_marker_code).first()
-            return fluorescene_marker.fluorescene_marker_name
-        except Exception:
-            return None
-    
-    def get_selection_marker_name(self, product):
-        try:
-            selection_marker = SelectionMarker.objects.filter(selection_marker_code=product.selection_marker_code).first()
-            return selection_marker.selection_marker_name
-        except Exception:
-            return None
-    
-    def get_bacterial_marker_name(self, product):
-        try:
-            bacterial_marker_queryset = BacterialMarker.objects.filter(bacterial_marker_code=product.bacterial_marker_code).values("bacterial_marker_name")
-            bacterial_marker_special_case_queryset = BacterialMarkerSpecialCase.objects.filter(bacterial_marker_code=product.bacterial_marker_code).values("bacterial_marker_name")
-            bacterial_marker = bacterial_marker_queryset.union(bacterial_marker_special_case_queryset)[0]
-            return bacterial_marker['bacterial_marker_name']
-        except Exception:
-            return None
-    
-    def get_delivery_format_name(self, product):
-        try:
-            delivery_format = DeliveryLibrary.objects.filter(delivery_format_symbol=product.delivery_format_code).first()
-            return delivery_format.delivery_format_name
-        except Exception:
-            return None
+        fields = [
+            'product_id', 'external_id', 'product_name', 'description', 'image_url',
+            'product_link', 'category_external_id', 'product_group', 'source_type',
+            'display_order', 'source_created_at_ms', 'source_created_at',
+            'catalog_number', 'availability', 'list_price', 'price_range',
+            'quote_only', 'is_featured', 'show_in_featured', 'show_in_gene_editing',
+            'key_features', 'options', 'option_prices', 'storage_stability',
+            'performance_data', 'data_description', 'manuals', 'manual_urls',
+            'images', 'store_link', 'content_text', 'hidden', 'raw_product',
+            'raw_override', 'raw_detail', 'created_at', 'updated_at'
+        ]
 
 class FeaturedProductSerializer(serializers.ModelSerializer):
     images = serializers.SerializerMethodField()
@@ -145,16 +78,16 @@ class PreviewFeaturedProductSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
 
     class Meta:
-        model = FeaturedProduct
+        model = Product
         fields = ['product_name', 'catalog_number', 'unit_price', 'image']
     
     def get_unit_price(self, product):
-        up = UnitPrice.objects.filter(union=product.union).first()
-        return up.unit_price if up else None
+        return product.list_price or product.price_range
 
     def get_image(self, product):
-        img = Image.objects.filter(union=product.union).first()
-        return img.image.url if img and img.image else None
+        if product.image_url:
+            return product.image_url
+        return product.images[0] if product.images else None
 
 
 class ImageSerializer(serializers.ModelSerializer):

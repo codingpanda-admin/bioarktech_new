@@ -6,6 +6,7 @@ from products.models import *
 from products.serializers import *
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import F
 from orders.models import OrderItem
 from genes.models import *
 from django.core.paginator import Paginator
@@ -67,7 +68,7 @@ def update_shelf_price(request):
 @api_view(['GET'])
 def load_product_categories(request):
     # if request.user.is_authenticated:
-    queryset = ProductCategory.objects.all().order_by("category_id")
+    queryset = ProductCategory.objects.all().order_by("priority", "category_id")
     serializer = ProductCategorySerializer(queryset, many=True)
     return Response(serializer.data)
     
@@ -266,7 +267,10 @@ def load_featured_product_page(request, catalog_number):
 
 @api_view(['GET'])
 def get_latest_featured_products(request):
-    products = FeaturedProduct.objects.filter(on_display=True).order_by("-catalog_number")[:10]
+    products = Product.objects.filter(is_featured=True, hidden=False).order_by(
+        F("display_order").asc(nulls_last=True),
+        "product_name",
+    )
     serializer = PreviewFeaturedProductSerializer(products, many=True)
 
     return Response(serializer.data)

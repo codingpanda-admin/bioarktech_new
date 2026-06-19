@@ -38,7 +38,7 @@ function ResourcesPage({ navigate }) {
   useEffect(() => {
     const loadBlogs = async () => {
       try {
-        const blogData = await apiFetch('/api/blogs/get-latest-blogs/');
+        const blogData = await apiFetch('/api/blogs/get-all-blogs/');
         setBlogs(blogData.length > 0 ? blogData : mockResources);
       } catch (err) {
         setBlogs(mockResources);
