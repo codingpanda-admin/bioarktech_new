@@ -69,6 +69,9 @@ def view_orders(request):
 
 @api_view(['GET'])
 def view_user_info(request):
+    if not request.user.is_authenticated:
+        return Response({'detail': 'User is not authenticated.'}, status=401)
+
     user = User.objects.get(id=request.user.id)
     serializer = UserSerializer(user)
 
@@ -93,24 +96,42 @@ def list_customer_users(request):
 @api_view(['POST'])
 def update_user_info(request):
     try:
+        if not request.user.is_authenticated:
+            return Response({'detail': 'User is not authenticated.'}, status=401)
+
         user = User.objects.get(id=request.user.id)
         data = request.data
         
-        user.first_name = data.get('firstName')
-        user.last_name = data.get('lastName')
-        user.company = data.get('institution')
+        user.first_name = data.get('firstName', data.get('first_name', user.first_name))
+        user.last_name = data.get('lastName', data.get('last_name', user.last_name))
+        user.title = data.get('title', user.title)
+        user.company = data.get('company', data.get('institution', user.company))
+        user.job_title = data.get('jobTitle', data.get('job_title', user.job_title))
+        user.mobile = data.get('mobile', user.mobile)
+        user.telephone = data.get('telephone', user.telephone)
+
         if user.shipping_address == None:
-            user.shipping_address = Address.objects.create()
-        user.shipping_address.address_line_1 = data.get('address', '')
-        user.shipping_address.apt_suite = data.get('apt', '')
-        user.shipping_address.city = data.get('city', '')
-        user.shipping_address.state = data.get('state', '')
-        user.shipping_address.zipcode = data.get('zipcode', '')
+            user.shipping_address = Address.objects.create(
+                address_line_1='',
+                city='',
+                state='',
+                country='US',
+                zipcode='',
+            )
+
+        user.shipping_address.address_line_1 = data.get('addressLine1', data.get('address', user.shipping_address.address_line_1 or ''))
+        user.shipping_address.address_line_2 = data.get('addressLine2', user.shipping_address.address_line_2)
+        user.shipping_address.apt_suite = data.get('aptSuite', data.get('apt', user.shipping_address.apt_suite))
+        user.shipping_address.city = data.get('city', user.shipping_address.city or '')
+        user.shipping_address.state = data.get('state', user.shipping_address.state or '')
+        user.shipping_address.country = data.get('country', user.shipping_address.country or 'US')
+        user.shipping_address.zipcode = data.get('zipcode', user.shipping_address.zipcode or '')
 
         user.shipping_address.save()
         user.save()
 
-        return Response({"success": True})
+        serializer = UserSerializer(user)
+        return Response({"success": True, "user": serializer.data})
 
         
     except ObjectDoesNotExist:

@@ -21,11 +21,13 @@ import ResourcesPage from './pages/ResourcesPage';
 import InvestorsPage from './pages/InvestorsPage';
 import AboutBioArkPage from './pages/AboutBioArkPage';
 import BlogDetailPage from './pages/BlogDetailPage';
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [searchParams, setSearchParams] = useState(new URLSearchParams(window.location.search));
   const [currentUser, setCurrentUser] = useState(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Cart State & Methods
@@ -122,6 +124,12 @@ function App() {
         const data = await apiFetch('/api/whoami/');
         if (data.username) {
           setCurrentUser(data.username);
+          try {
+            const profile = await apiFetch('/api/users/view-user-info/');
+            setCurrentUserProfile(profile);
+          } catch (profileErr) {
+            setCurrentUserProfile(null);
+          }
         }
       } catch (err) {
         // Not authenticated
@@ -142,6 +150,7 @@ function App() {
     try {
       await apiFetch('/api/logout/', { method: 'POST' });
       setCurrentUser(null);
+      setCurrentUserProfile(null);
       navigate('/');
     } catch (err) {
       console.error(err);
@@ -157,6 +166,7 @@ function App() {
   const isBlogPage = currentPath.startsWith('/blog/');
   const isInvestorsPage = currentPath === '/investors';
   const isAboutBioArkPage = currentPath === '/about-bioark';
+  const isProfilePage = currentPath === '/profile';
 
   return (
     <div className="site-shell">
@@ -166,6 +176,7 @@ function App() {
         <SiteHeader 
           navigate={navigate} 
           currentUser={currentUser} 
+          currentUserProfile={currentUserProfile}
           onOpenAuth={() => setAuthModalOpen(true)} 
           onLogout={handleLogout} 
           cartCount={cartCount}
@@ -198,6 +209,8 @@ function App() {
         />
       ) : isResourcesPage ? (
         <ResourcesPage navigate={navigate} />
+      ) : isProfilePage ? (
+        <ProfilePage navigate={navigate} />
       ) : isBlogPage ? (
         <BlogDetailPage
           navigate={navigate}
@@ -216,7 +229,15 @@ function App() {
       {authModalOpen && (
         <AuthModal 
           onClose={() => setAuthModalOpen(false)} 
-          onLoginSuccess={(email) => setCurrentUser(email)} 
+          onLoginSuccess={async (email) => {
+            setCurrentUser(email);
+            try {
+              const profile = await apiFetch('/api/users/view-user-info/');
+              setCurrentUserProfile(profile);
+            } catch (profileErr) {
+              setCurrentUserProfile(null);
+            }
+          }} 
         />
       )}
     </div>

@@ -283,6 +283,95 @@ def get_latest_featured_products(request):
 
     return Response(serializer.data)
 
+
+@api_view(['GET'])
+def get_product_catalog(request):
+    categories = ProductCategory.objects.exclude(external_id__isnull=True).exclude(external_id='').order_by(
+        'priority',
+        'category_id',
+    )
+
+    catalog = []
+    seen_category_ids = set()
+
+    for category in categories:
+        products = Product.objects.filter(
+            category_external_id=category.external_id,
+            hidden=False,
+        ).order_by(
+            F('display_order').asc(nulls_last=True),
+            'product_group',
+            'product_name',
+        )
+
+        if not products.exists():
+            continue
+
+        seen_category_ids.add(category.external_id)
+        subcategories = {}
+        for product in products:
+            group = product.product_group or ''
+            subcategories.setdefault(group, []).append({
+                'product_id': product.product_id,
+                'product_name': product.product_name,
+                'external_id': product.external_id,
+                'externalId': product.external_id,
+                'catalog_number': product.catalog_number or product.external_id,
+            })
+
+        catalog.append({
+            'category_id': category.category_id,
+            'category_name': category.category_name,
+            'external_id': category.external_id,
+            'externalId': category.external_id,
+            'product_count': products.count(),
+            'subcategories': [
+                {'name': group_name, 'products': group_products}
+                for group_name, group_products in subcategories.items()
+            ],
+        })
+
+    uncategorized_ids = Product.objects.filter(hidden=False).exclude(
+        category_external_id__in=seen_category_ids,
+    ).exclude(category_external_id__isnull=True).exclude(category_external_id='').values_list(
+        'category_external_id',
+        flat=True,
+    ).distinct()
+
+    for category_external_id in uncategorized_ids:
+        products = Product.objects.filter(
+            category_external_id=category_external_id,
+            hidden=False,
+        ).order_by(
+            F('display_order').asc(nulls_last=True),
+            'product_group',
+            'product_name',
+        )
+        subcategories = {}
+        for product in products:
+            group = product.product_group or ''
+            subcategories.setdefault(group, []).append({
+                'product_id': product.product_id,
+                'product_name': product.product_name,
+                'external_id': product.external_id,
+                'externalId': product.external_id,
+                'catalog_number': product.catalog_number or product.external_id,
+            })
+
+        catalog.append({
+            'category_id': None,
+            'category_name': category_external_id,
+            'external_id': category_external_id,
+            'externalId': category_external_id,
+            'product_count': products.count(),
+            'subcategories': [
+                {'name': group_name, 'products': group_products}
+                for group_name, group_products in subcategories.items()
+            ],
+        })
+
+    return Response(catalog)
+
 ## HELPER METHODS
 
 
