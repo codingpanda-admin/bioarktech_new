@@ -17,24 +17,13 @@ function RequestQuotePage({ navigate, cart, onClearCart }) {
   });
   const [status, setStatus] = useState({ type: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
-  // Auto-populate from cart
   useEffect(() => {
     if (cart && cart.length > 0) {
-      const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-      const hasConsumable = cart.some(item => item.shippingCost === 100);
-      const totalShipping = hasConsumable ? 100 : 40;
-      const grandTotal = subtotal + totalShipping;
-
-      const itemsList = cart.map(item => {
-        const isConsumable = item.shippingCost === 100;
-        return `- ${item.name} (${item.unitSize || 'Standard'}), Qty: ${item.quantity}, Price: $${item.price.toFixed(2)} [${isConsumable ? 'Consumable' : 'Reagent'}]`;
-      }).join('\n');
-      
       setFormData(prev => ({
         ...prev,
-        serviceType: 'Featured Products',
-        projectDescription: `Quote Request from Cart:\n\n${itemsList}\n\nSubtotal: $${subtotal.toFixed(2)}\nShipping (${hasConsumable ? 'Flat Consumable' : 'Flat Reagent'}): $${totalShipping.toFixed(2)}\nTotal: $${grandTotal.toFixed(2)}`
+        serviceType: prev.serviceType || 'Featured Products',
       }));
     }
   }, [cart]);
@@ -55,6 +44,13 @@ function RequestQuotePage({ navigate, cart, onClearCart }) {
         email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,
+        phone: formData.phone,
+        company: formData.company,
+        department: formData.department,
+        timeline: formData.timeline,
+        budget: formData.budget,
+        projectDescription: formData.projectDescription,
+        additionalInfo: formData.additionalInformation,
         institution: formData.company,
         productType: formData.serviceType,
         serviceType: formData.serviceType,
@@ -83,11 +79,18 @@ function RequestQuotePage({ navigate, cart, onClearCart }) {
         projectDescription: '',
         additionalInformation: ''
       });
+      setShowConfirmation(true);
+      setStatus({ type: '', message: '' });
     } catch (err) {
       setStatus({ type: 'error', message: err.message || 'Ocurrió un error al enviar el formulario.' });
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleConfirmationClose = () => {
+    setShowConfirmation(false);
+    navigate('/');
   };
 
   return (
@@ -96,6 +99,18 @@ function RequestQuotePage({ navigate, cart, onClearCart }) {
         <h1>Request a Quote</h1>
         <p>Get a customized quote for our products and services tailored to your research needs.</p>
       </section>
+
+      {showConfirmation && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="quote-confirmation-title">
+          <div className="quote-confirmation-modal">
+            <h2 id="quote-confirmation-title">Quote Request Submitted</h2>
+            <p>Your quote request has been submitted successfully. Our team will review the details and contact you shortly.</p>
+            <button type="button" className="primary-button" onClick={handleConfirmationClose}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       <section className="quote-layout" aria-labelledby="quote-form-title">
         <div className="quote-panel">

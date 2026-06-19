@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 from django.contrib.auth import authenticate, login, logout
@@ -14,6 +15,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.db.models import Q
 from django.core.paginator import Paginator
+from django.utils import timezone
 
 
 from rest_framework.decorators import api_view
@@ -22,10 +24,19 @@ from rest_framework.response import Response
 
 from products.serializers import ProductSerializer
 from users.models import User
-from api.models import EmailVerificationToken
+from api.models import EmailVerificationToken, Quote
 from products.models import *
 
 FRONTEND_DOMAIN = os.environ.get('FRONTEND_DOMAIN')
+logger = logging.getLogger(__name__)
+
+
+def generate_quote_external_id(request):
+    if not request.session.session_key:
+        request.session.create()
+
+    timestamp = timezone.localtime(timezone.now()).strftime("%Y%m%d%M%S")
+    return f"q_{request.session.session_key}_{timestamp}"
 
 def get_csrf(request):
     response = JsonResponse({'detail': 'CSRF cookie set', 'csrftoken': get_token(request)})
@@ -182,6 +193,13 @@ def send_quote_form(request):
     email = data.get('email')
     first_name = data.get('firstName')
     last_name = data.get('lastName')
+    phone = data.get('phone')
+    company = data.get('company') or data.get('institution')
+    department = data.get('department')
+    timeline = data.get('timeline')
+    budget = data.get('budget')
+    project_description = data.get('projectDescription') or data.get('project_description')
+    additional_info = data.get('additionalInfo') or data.get('additionalInformation') or data.get('additional_info')
     gene_sequence = data.get('geneSequence')
     gene_species = data.get('geneSpecies')
     institution = data.get('institution')
@@ -191,37 +209,84 @@ def send_quote_form(request):
     service_type = data.get('serviceType')
     cell_line_amount = data.get('cellLineAmount')
     message = data.get('message')
+
+    if not first_name or not last_name or not email:
+        return JsonResponse({'detail': 'First name, last name, and email are required.'}, status=400)
+
+    try:
+        validate_email(email)
+    except ValidationError:
+        return JsonResponse({'detail': 'Invalid email address.'}, status=400)
+
+    external_id = data.get('externalId') or data.get('external_id') or generate_quote_external_id(request)
+
+    quote = Quote.objects.create(
+        external_id=external_id,
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        phone=phone,
+        company=company,
+        department=department,
+        service_type=service_type or data.get('productType'),
+        timeline=timeline,
+        budget=budget,
+        project_description=project_description or message,
+        additional_info=additional_info,
+        read=False,
+    )
     
     email_message = ("New Quote Request from Bioark Tech\n"
                      "Customer Information:\n"
                      "-----------------------\n"
+                     f"Quote ID: {quote.id}\n"
+                     f"External ID: {quote.external_id}\n"
                      f"Name: {first_name} {last_name}\n"
                      f"Email: {email}\n")
 
     def add_field(label, value):
         return f"{label}: {value}\n" if value else ""
 
+    email_message += add_field("Phone", phone)
+    email_message += add_field("Company/Institution", company or institution)
+    email_message += add_field("Department", department)
     email_message += add_field("Gene Sequence", gene_sequence)
     email_message += add_field("Gene Species", gene_species)
-    email_message += add_field("Institution", institution)
+    email_message += add_field("Institution", institution if institution != company else None)
     email_message += add_field("Mammalian Cells", mammalian_cells)
     email_message += add_field("Plasmid Amount", plasmid_amount)
     email_message += add_field("Product Type", product_type)
     email_message += add_field("Service Type", service_type)
     email_message += add_field("Cell Line Amount", cell_line_amount)
+    email_message += add_field("Timeline", timeline)
+    email_message += add_field("Budget", budget)
+
+    if project_description:
+        email_message += f"\nProject Description:\n-----------------------\n{project_description}\n"
+
+    if additional_info:
+        email_message += f"\nAdditional Information:\n-----------------------\n{additional_info}\n"
 
     if message:
         email_message += f"\nCustomer Message:\n-----------------------\n{message}\n"
 
-    # Send the email
-    send_mail(
-        subject="New Quote from Bioark Tech",
-        message=email_message,
-        from_email=settings.EMAIL_HOST_USER,
-        recipient_list=[settings.EMAIL_HOST_USER],
-    )
+    try:
+        send_mail(
+            subject="New Quote from Bioark Tech",
+            message=email_message,
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[settings.EMAIL_HOST_USER],
+        )
+    except Exception:
+        logger.exception("Quote %s was saved, but the notification email failed.", quote.id)
+        return JsonResponse({
+            "detail": "Quote request saved, but the notification email could not be sent.",
+            "id": quote.id,
+            "externalId": quote.external_id,
+            "emailSent": False,
+        }, status=201)
 
-    return JsonResponse({"detail": "Contact form sent."})
+    return JsonResponse({"detail": "Quote request saved.", "id": quote.id, "externalId": quote.external_id, "emailSent": True}, status=201)
 
 @require_POST
 def resend_verification(request):
@@ -320,6 +385,7 @@ def search_product(request):
             'product_id': p.product_id,
             'product_sku': p.catalog_number or p.external_id,
             'external_id': p.external_id,
+            'externalId': p.external_id,
             'catalog_number': p.catalog_number,
             'product_name': p.product_name,
             'description': p.description,
@@ -347,10 +413,13 @@ def search_product(request):
         
         img = Image.objects.filter(union=fp.union).first()
         img_url = img.image.url if img and img.image else None
+        linked_product = Product.objects.filter(catalog_number=fp.catalog_number, hidden=False).first()
         
         combined_results.append({
             'product_id': fp.id,
             'product_sku': fp.catalog_number,
+            'external_id': linked_product.external_id if linked_product else None,
+            'externalId': linked_product.external_id if linked_product else None,
             'product_name': fp.product_name,
             'description': fp.description,
             'unit_price': price,

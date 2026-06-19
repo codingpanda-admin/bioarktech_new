@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from orders.serializers import OrderItemSerializer
@@ -261,6 +261,14 @@ def get_product_sku(request):
 def load_featured_product_page(request, catalog_number):
     product = FeaturedProduct.objects.get(catalog_number=catalog_number)
     serializer = FeaturedProductSerializer(product)
+
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def load_product_by_external_id(request, external_id):
+    product = get_object_or_404(Product, external_id=external_id, hidden=False)
+    serializer = ProductSerializer(product)
 
     return Response(serializer.data)
 

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { apiFetch } from '../utils/api';
 
 const adminLinks = [
   'Overview',
@@ -19,7 +20,59 @@ function AdminPage() {
   const [activeUserTab, setActiveUserTab] = useState('Admin User');
   const [isAddAdminOpen, setIsAddAdminOpen] = useState(true);
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(true);
+  const [adminUsers, setAdminUsers] = useState([]);
+  const [adminUsersLoading, setAdminUsersLoading] = useState(false);
+  const [adminUsersError, setAdminUsersError] = useState('');
+  const [customerUsers, setCustomerUsers] = useState([]);
+  const [customerUsersLoading, setCustomerUsersLoading] = useState(false);
+  const [customerUsersError, setCustomerUsersError] = useState('');
   const homepageSettings = ['Background Images', 'Hero Text', 'CTA Button', 'Metrics'];
+
+  useEffect(() => {
+    if (activeSection !== 'Users' || activeUserTab !== 'Admin User') {
+      return;
+    }
+
+    const loadAdminUsers = async () => {
+      setAdminUsersLoading(true);
+      setAdminUsersError('');
+
+      try {
+        const data = await apiFetch('/api/users/admin-users/');
+        const users = data.users || [];
+        setAdminUsers(users.filter((user) => user.isAdmin === true || user.is_admin === true));
+      } catch (err) {
+        setAdminUsersError(err.message || 'Unable to load administrator users.');
+      } finally {
+        setAdminUsersLoading(false);
+      }
+    };
+
+    loadAdminUsers();
+  }, [activeSection, activeUserTab]);
+
+  useEffect(() => {
+    if (activeSection !== 'Users' || activeUserTab !== 'Customers') {
+      return;
+    }
+
+    const loadCustomerUsers = async () => {
+      setCustomerUsersLoading(true);
+      setCustomerUsersError('');
+
+      try {
+        const data = await apiFetch('/api/users/customer-users/');
+        const users = data.users || [];
+        setCustomerUsers(users.filter((user) => user.isAdmin === false || user.is_admin === false));
+      } catch (err) {
+        setCustomerUsersError(err.message || 'Unable to load customers.');
+      } finally {
+        setCustomerUsersLoading(false);
+      }
+    };
+
+    loadCustomerUsers();
+  }, [activeSection, activeUserTab]);
 
   return (
     <main className="admin-page" aria-label="Admin Console">
@@ -67,13 +120,13 @@ function AdminPage() {
                 Admin User
               </button>
               <button
-                className={activeUserTab === 'Client User' ? 'is-active' : undefined}
+                className={activeUserTab === 'Customers' ? 'is-active' : undefined}
                 type="button"
                 role="tab"
-                aria-selected={activeUserTab === 'Client User'}
-                onClick={() => setActiveUserTab('Client User')}
+                aria-selected={activeUserTab === 'Customers'}
+                onClick={() => setActiveUserTab('Customers')}
               >
-                Client User
+                Customers
               </button>
             </div>
             {activeUserTab === 'Admin User' ? (
@@ -105,6 +158,44 @@ function AdminPage() {
                     <button className="primary-button" type="submit">Add Admin</button>
                   </form>
                 )}
+                <section className="admin-table-section" aria-labelledby="admin-user-list-title">
+                  <h3 id="admin-user-list-title">Administrator Users</h3>
+                  {adminUsersLoading ? (
+                    <div className="admin-empty-table">Loading administrator users...</div>
+                  ) : adminUsersError ? (
+                    <div className="alert-banner error">{adminUsersError}</div>
+                  ) : adminUsers.length === 0 ? (
+                    <div className="admin-empty-table">No administrator users yet.</div>
+                  ) : (
+                    <div className="admin-data-table-wrap">
+                      <table className="admin-data-table">
+                        <thead>
+                          <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Company</th>
+                            <th>Phone</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {adminUsers.map((user) => {
+                            const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Not provided';
+                            const phone = user.mobile || user.telephone || 'Not provided';
+
+                            return (
+                              <tr key={user.id || user.email}>
+                                <td>{fullName}</td>
+                                <td>{user.email}</td>
+                                <td>{user.company || 'Not provided'}</td>
+                                <td>{phone}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </section>
               </section>
             ) : (
               <>
@@ -150,8 +241,42 @@ function AdminPage() {
                   )}
                 </section>
                 <section className="admin-table-section" aria-labelledby="client-user-title">
-                  <h3 id="client-user-title">Client User</h3>
-                  <div className="admin-empty-table">No client users yet.</div>
+                  <h3 id="client-user-title">Customers</h3>
+                  {customerUsersLoading ? (
+                    <div className="admin-empty-table">Loading customers...</div>
+                  ) : customerUsersError ? (
+                    <div className="alert-banner error">{customerUsersError}</div>
+                  ) : customerUsers.length === 0 ? (
+                    <div className="admin-empty-table">No customers yet.</div>
+                  ) : (
+                    <div className="admin-data-table-wrap">
+                      <table className="admin-data-table">
+                        <thead>
+                          <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Company</th>
+                            <th>Phone</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {customerUsers.map((user) => {
+                            const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Not provided';
+                            const phone = user.mobile || user.telephone || 'Not provided';
+
+                            return (
+                              <tr key={user.id || user.email}>
+                                <td>{fullName}</td>
+                                <td>{user.email}</td>
+                                <td>{user.company || 'Not provided'}</td>
+                                <td>{phone}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </section>
               </>
             )}

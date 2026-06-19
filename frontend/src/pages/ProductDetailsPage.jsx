@@ -3,7 +3,6 @@ import { logo, apiFetch, formatAssetUrl } from '../utils/api';
 
 function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
   const [product, setProduct] = useState(null);
-  const [decoded, setDecoded] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -19,43 +18,23 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
       setLoading(true);
       setError('');
       try {
-        // Try fetching as Featured Product first (to handle catalog numbers with hyphens)
-        try {
-          const featuredData = await apiFetch(`/api/products/load-featured-product-page/${encodeURIComponent(skuOrCatalog)}`);
-          setProduct(featuredData);
-          
-          if (featuredData.images && featuredData.images.length > 0) {
-            setMainImage(formatAssetUrl(featuredData.images[0].image));
-          } else {
-            setMainImage(logo);
-          }
-
-          if (featuredData.unit_prices && featuredData.unit_prices.length > 0) {
-            setSelectedUnitSize(featuredData.unit_prices[0]);
-          }
-          setLoading(false);
-          return;
-        } catch (featuredErr) {
-          // Fallback to General Product decoding if featured fails
-        }
-
-        // General SKU decoding
-        const searchRes = await apiFetch(`/api/search/?q=${encodeURIComponent(skuOrCatalog)}`);
-        const productDetail = searchRes.products?.find(p => p.product_sku === skuOrCatalog) || searchRes.products?.[0];
+        const productDetail = await apiFetch(`/api/products/load-product-by-external-id/${encodeURIComponent(skuOrCatalog)}/`);
         
         if (!productDetail) {
-          throw new Error('No se pudo encontrar el producto en la base de datos.');
+          throw new Error('The requested product could not be found.');
         }
-
-        // Get decoded details
-        const decodeData = await apiFetch(`/api/products/get-product-summary/${encodeURIComponent(skuOrCatalog)}/`);
         
         setProduct(productDetail);
-        setDecoded(decodeData);
-        setMainImage(productDetail.image ? formatAssetUrl(productDetail.image) : logo);
+        setMainImage(
+          productDetail.image_url
+            ? formatAssetUrl(productDetail.image_url)
+            : productDetail.images?.[0]
+              ? formatAssetUrl(productDetail.images[0])
+              : logo
+        );
       } catch (err) {
         console.error(err);
-        setError(err.message || 'Error al cargar los detalles del producto.');
+        setError(err.message || 'Unable to load product details.');
       } finally {
         setLoading(false);
       }
@@ -76,24 +55,25 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
   if (error) {
     return (
       <main className="search-results-section">
-        <h2>Detalles del Producto</h2>
+        <h2>Product Details</h2>
         <div className="alert-banner error">{error}</div>
-        <a href="/" className="secondary-link" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Volver al inicio</a>
+        <a href="/" className="secondary-link" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Back to Home</a>
       </main>
     );
   }
 
   if (!product) return null;
 
-  const isFeatured = product && !!product.catalog_number;
-  const name = product.product_name;
-  const sku = product.product_sku || product.catalog_number;
+  const isFeatured = product && Array.isArray(product.unit_prices);
+  const name = product.product_name || product.externalId || product.external_id;
+  const sku = product.catalog_number || product.externalId || product.external_id;
   
   // Calculate price dynamically for featured products based on selected unit size
   const price = isFeatured ? selectedUnitSize?.unit_price : product.unit_price;
   const listPrice = isFeatured ? selectedUnitSize?.list_price : product.list_price;
   const onDiscount = isFeatured ? selectedUnitSize?.on_discount : false;
   const discountPercent = onDiscount && listPrice && price ? Math.round(((listPrice - price) / listPrice) * 100) : 0;
+  const displayPrice = price || product.price_range || product.list_price || 'Contact for Quote';
 
   return (
     <main className="product-page" style={{ width: 'min(1200px, calc(100% - 48px))', margin: '40px auto' }}>
@@ -102,17 +82,20 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
         {/* Gallery Section */}
         <div className="diagram">
           <img src={mainImage} className="main-image" alt={name} style={{ width: '100%', maxHeight: '380px', objectFit: 'contain', borderRadius: '8px', border: '1px solid var(--line)', padding: '20px' }} />
-          {isFeatured && product.images && product.images.length > 1 && (
+          {product.images && product.images.length > 1 && (
             <div className="preview" style={{ display: 'flex', gap: '10px', marginTop: '15px', overflowX: 'auto', paddingBottom: '10px' }}>
-              {product.images.map((imgObj, idx) => (
-                <img 
-                  key={idx}
-                  src={formatAssetUrl(imgObj.image)} 
-                  alt="preview" 
-                  onClick={() => setMainImage(formatAssetUrl(imgObj.image))}
-                  style={{ width: '70px', height: '70px', objectFit: 'contain', border: '1px solid var(--line)', borderRadius: '6px', cursor: 'pointer', padding: '5px', background: '#fff' }}
-                />
-              ))}
+              {product.images.map((imgObj, idx) => {
+                const imageUrl = typeof imgObj === 'string' ? imgObj : imgObj.image;
+                return (
+                  <img
+                    key={idx}
+                    src={formatAssetUrl(imageUrl)}
+                    alt="preview"
+                    onClick={() => setMainImage(formatAssetUrl(imageUrl))}
+                    style={{ width: '70px', height: '70px', objectFit: 'contain', border: '1px solid var(--line)', borderRadius: '6px', cursor: 'pointer', padding: '5px', background: '#fff' }}
+                  />
+                );
+              })}
             </div>
           )}
         </div>
@@ -165,7 +148,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
             </div>
           ) : (
             <p className="price" style={{ fontSize: '28px', fontWeight: 600, color: 'var(--blue)', margin: 0 }}>
-              ${price || '0.00'}
+              {typeof displayPrice === 'number' ? `$${displayPrice}` : displayPrice}
             </p>
           )}
 
@@ -190,7 +173,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
               onClick={handleAddToCart}
               style={{ padding: '12px 28px' }}
             >
-              {cartAdded ? '✓ Added to Cart!' : 'Add to Cart'}
+              {cartAdded ? 'Added to Cart!' : 'Add to Cart'}
             </button>
             <button 
               type="button" 
@@ -275,64 +258,52 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
                   </>
                 ) : (
                   <>
-                    {decoded?.product_category && (
+                    {product.description && (
+                      <tr>
+                        <td>Description</td>
+                        <td>{product.description}</td>
+                      </tr>
+                    )}
+                    {product.category_external_id && (
                       <tr>
                         <td>Category</td>
-                        <td>{decoded.product_category}</td>
+                        <td>{product.category_external_id}</td>
                       </tr>
                     )}
-                    {decoded?.function_type_name && (
+                    {product.product_group && (
                       <tr>
-                        <td>Function Type</td>
-                        <td>{decoded.function_type_name}</td>
+                        <td>Product Group</td>
+                        <td>{product.product_group}</td>
                       </tr>
                     )}
-                    {decoded?.structure_type_name && (
+                    {product.catalog_number && (
                       <tr>
-                        <td>Structure Type</td>
-                        <td>{decoded.structure_type_name}</td>
+                        <td>Catalog Number</td>
+                        <td>{product.catalog_number}</td>
                       </tr>
                     )}
-                    {decoded?.promoter_name && (
+                    {product.key_features && product.key_features.length > 0 && (
                       <tr>
-                        <td>Promoter</td>
-                        <td>{decoded.promoter_name}</td>
+                        <td>Key Features</td>
+                        <td>
+                          <ul>
+                            {product.key_features.map((feature, idx) => (
+                              <li key={idx}>{feature}</li>
+                            ))}
+                          </ul>
+                        </td>
                       </tr>
                     )}
-                    {decoded?.protein_tag_name && (
+                    {product.storage_stability && (
                       <tr>
-                        <td>Protein Tag</td>
-                        <td>{decoded.protein_tag_name}</td>
+                        <td>Storage & Stability</td>
+                        <td>{product.storage_stability}</td>
                       </tr>
                     )}
-                    {decoded?.fluorescene_marker_name && (
+                    {product.performance_data && (
                       <tr>
-                        <td>Fluorescence Marker</td>
-                        <td>{decoded.fluorescene_marker_name}</td>
-                      </tr>
-                    )}
-                    {decoded?.selection_marker_name && (
-                      <tr>
-                        <td>Selection Marker</td>
-                        <td>{decoded.selection_marker_name}</td>
-                      </tr>
-                    )}
-                    {decoded?.bacterial_marker_name && (
-                      <tr>
-                        <td>Bacterial Marker</td>
-                        <td>{decoded.bacterial_marker_name}</td>
-                      </tr>
-                    )}
-                    {decoded?.gene_symbol && (
-                      <tr>
-                        <td>Target Gene</td>
-                        <td>{decoded.gene_symbol} (Seq: {decoded.target_sequence})</td>
-                      </tr>
-                    )}
-                    {decoded?.delivery_format_name && (
-                      <tr>
-                        <td>Delivery Format</td>
-                        <td>{decoded.delivery_format_name}</td>
+                        <td>Performance Data</td>
+                        <td>{product.performance_data}</td>
                       </tr>
                     )}
                   </>
@@ -370,7 +341,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
                       href={formatAssetUrl(man.manual)}
                       style={{ color: 'var(--blue)', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500 }}
                     >
-                      📄 {man.name}
+                      Document: {man.name}
                     </a>
                   </li>
                 ))}

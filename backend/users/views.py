@@ -74,6 +74,22 @@ def view_user_info(request):
 
     return Response(serializer.data)
 
+
+@api_view(['GET'])
+def list_admin_users(request):
+    users = User.objects.filter(is_admin=True).order_by('email')
+    serializer = UserSerializer(users, many=True)
+
+    return Response({"users": serializer.data})
+
+
+@api_view(['GET'])
+def list_customer_users(request):
+    users = User.objects.filter(is_admin=False).order_by('email')
+    serializer = UserSerializer(users, many=True)
+
+    return Response({"users": serializer.data})
+
 @api_view(['POST'])
 def update_user_info(request):
     try:

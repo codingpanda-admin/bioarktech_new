@@ -7,7 +7,7 @@ from django.contrib.sessions.models import Session
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'job_title', 'company', 'mobile', 'telephone',
-                    'address', 'billing_address', 'shipping_address')
+                    'address', 'billing_address', 'shipping_address', 'is_admin')
 
 
 @admin.register(Session)

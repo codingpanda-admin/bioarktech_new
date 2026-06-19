@@ -6,10 +6,12 @@ function AuthModal({ onClose, onLoginSuccess }) {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     firstName: '',
     lastName: ''
   });
   const [error, setError] = useState('');
+  const [messageType, setMessageType] = useState('error');
   const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e) => {
@@ -21,23 +23,33 @@ function AuthModal({ onClose, onLoginSuccess }) {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setMessageType('error');
+
+    if (isRegisterMode && formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match.');
+      setLoading(false);
+      return;
+    }
 
     try {
       const endpoint = isRegisterMode ? '/api/signup/' : '/api/login/';
+      const { confirmPassword, ...payload } = formData;
       const data = await apiFetch(endpoint, {
         method: 'POST',
-        body: formData
+        body: payload
       });
 
       if (isRegisterMode) {
         setIsRegisterMode(false);
-        setError('¡Registro completado con éxito! Por favor inicia sesión.');
+        setMessageType('success');
+        setError('Registration completed successfully. Please sign in.');
       } else {
         onLoginSuccess(formData.email);
         onClose();
       }
     } catch (err) {
-      setError(err.message || 'Error en la autenticación.');
+      setMessageType('error');
+      setError(err.message || 'Authentication failed.');
     } finally {
       setLoading(false);
     }
@@ -47,10 +59,10 @@ function AuthModal({ onClose, onLoginSuccess }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>&times;</button>
-        <h2>{isRegisterMode ? 'Crear Cuenta' : 'Iniciar Sesión'}</h2>
+        <h2>{isRegisterMode ? 'Create Account' : 'Sign In'}</h2>
 
         {error && (
-          <div className={`alert-banner ${error.includes('éxito') ? 'success' : 'error'}`}>
+          <div className={`alert-banner ${messageType}`}>
             {error}
           </div>
         )}
@@ -59,11 +71,11 @@ function AuthModal({ onClose, onLoginSuccess }) {
           {isRegisterMode && (
             <>
               <label>
-                Nombre
+                First Name
                 <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} required />
               </label>
               <label>
-                Apellido
+                Last Name
                 <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} required />
               </label>
             </>
@@ -73,16 +85,22 @@ function AuthModal({ onClose, onLoginSuccess }) {
             <input type="email" name="email" value={formData.email} onChange={handleInputChange} required />
           </label>
           <label>
-            Contraseña
+            Password
             <input type="password" name="password" value={formData.password} onChange={handleInputChange} required />
           </label>
+          {isRegisterMode && (
+            <label>
+              Confirm Password
+              <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleInputChange} required />
+            </label>
+          )}
           
           <div className="modal-actions">
             <button type="submit" className="primary-button" disabled={loading}>
-              {loading ? 'Procesando...' : isRegisterMode ? 'Registrarme' : 'Entrar'}
+              {loading ? 'Processing...' : isRegisterMode ? 'Create Account' : 'Login'}
             </button>
             <div className="auth-toggle-mode" onClick={() => setIsRegisterMode(!isRegisterMode)}>
-              {isRegisterMode ? '¿Ya tienes cuenta? Inicia Sesión' : '¿No tienes cuenta? Regístrate'}
+              {isRegisterMode ? 'Already have an account? Sign in' : 'Need an account? Create one'}
             </div>
           </div>
         </form>

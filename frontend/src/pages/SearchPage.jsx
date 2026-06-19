@@ -536,7 +536,7 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
                   <a 
                     href="#" 
                     className="card-action-btn"
-                    onClick={(e) => { e.preventDefault(); navigate(`/product/${prod.product_sku}`); }}
+                    onClick={(e) => { e.preventDefault(); navigate(`/product/${prod.externalId || prod.external_id || prod.product_sku}`); }}
                   >
                     View Details
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

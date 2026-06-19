@@ -11,6 +11,7 @@ urlpatterns = [
     path('get-product-summary/<str:product_sku>/', views.get_product_summary),
     path('get-product-sku/', views.get_product_sku),
     path('load-featured-product-page/<str:catalog_number>', views.load_featured_product_page),
+    path('load-product-by-external-id/<str:external_id>/', views.load_product_by_external_id),
     path('get-latest-featured-products/', views.get_latest_featured_products),
     path('update-shelf-price/', views.update_shelf_price),
 ]

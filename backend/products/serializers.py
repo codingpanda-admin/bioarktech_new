@@ -34,10 +34,12 @@ class DeliveryFormatTableSerializer(serializers.BaseSerializer):
         }
 
 class ProductSerializer(serializers.ModelSerializer):
+    externalId = serializers.CharField(source='external_id', read_only=True)
+
     class Meta:
         model = Product
         fields = [
-            'product_id', 'external_id', 'product_name', 'description', 'image_url',
+            'product_id', 'external_id', 'externalId', 'product_name', 'description', 'image_url',
             'product_link', 'category_external_id', 'product_group', 'source_type',
             'display_order', 'source_created_at_ms', 'source_created_at',
             'catalog_number', 'availability', 'list_price', 'price_range',
@@ -74,12 +76,13 @@ class FeaturedProductSerializer(serializers.ModelSerializer):
 
 
 class PreviewFeaturedProductSerializer(serializers.ModelSerializer):
+    externalId = serializers.CharField(source='external_id', read_only=True)
     unit_price = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
-        fields = ['product_name', 'catalog_number', 'unit_price', 'image']
+        fields = ['product_name', 'external_id', 'externalId', 'catalog_number', 'unit_price', 'image']
     
     def get_unit_price(self, product):
         return product.list_price or product.price_range

@@ -70,7 +70,7 @@ export const apiFetch = async (endpoint, options = {}) => {
   
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || errorData.message || 'La petición ha fallado.');
+    throw new Error(errorData.detail || errorData.message || 'The request failed.');
   }
 
   return response.json();

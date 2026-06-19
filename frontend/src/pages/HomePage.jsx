@@ -152,7 +152,7 @@ function HomePage({ navigate, searchParams }) {
               const name = prod.product_name;
               const priceStr = prod.unit_price ? `$${prod.unit_price}` : '$29.00 - $129.00';
               const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
-              const productId = prod.catalog_number || prod.product_sku;
+              const productId = prod.externalId || prod.external_id || prod.catalog_number || prod.product_sku;
               const productHref = productId ? `/product/${productId}` : `/search?q=${encodeURIComponent(name)}`;
               
               return (

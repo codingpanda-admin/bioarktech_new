@@ -8,8 +8,10 @@ class AddressSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     shipping_address = AddressSerializer()
+    isAdmin = serializers.BooleanField(source='is_admin', read_only=True)
+
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'company', 'mobile', 'telephone', 'shipping_address']
+        fields = ['id', 'first_name', 'last_name', 'email', 'company', 'mobile', 'telephone', 'shipping_address', 'is_admin', 'isAdmin']
         depth = 1
 
