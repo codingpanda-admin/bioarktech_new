@@ -13,6 +13,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/bioarktech.sql:/docker-entrypoint-initdb.d/init.sql
 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bioone"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   backend:
     build:
       context: ./backend
@@ -28,8 +34,11 @@ services:
     volumes:
       - ./backend:/app
       - ./media:/var/www/django/media
+      - ./db-conversion:/app/db-conversion
+    command: sh -c "python wait_for_db.py && python manage.py migrate --fake-initial && python populate_product.py && python populate_reagents.py && python populate_services.py && python manage.py runserver 0.0.0.0:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   frontend:
     build:

@@ -2,11 +2,35 @@ import React, { useState, useEffect } from 'react';
 import { apiFetch, formatAssetUrl } from '../utils/api';
 import ProductVisual from '../components/ProductVisual';
 
+const PRODUCTS_CATEGORIES = [
+  { id: 'all-products', label: 'All Products & Services' },
+  { id: 'genome-editing', label: 'Genome Editing', subcategories: ['DNA', 'RNA'] },
+  { id: 'vector-clones', label: 'Vector Stock', subcategories: ['Non-Viral', 'Stock'] },
+  { id: 'category-1764975611348', label: 'IVT mRNA' },
+  { id: 'category-1764975769330', label: 'Purified Protein' },
+  { id: 'lentivirus', label: 'Virus Product' },
+  { id: 'stable-cell-lines', label: 'Cell Lines' }
+];
+
+const REAGENTS_CATEGORIES = [
+  { id: 'all-reagents', label: 'All Reagents' },
+  { id: 'category-1765063995229', label: 'DNA Reagents' },
+  { id: 'category-1766675380397', label: 'RNA Reagents' },
+  { id: 'category-1766675365489', label: 'Protein Reagents' },
+  { id: 'category-1765995504911', label: 'Cell Reagents' }
+];
+
+const CONSUMABLES_CATEGORIES = [
+  { id: 'category-1780539818236', label: 'Consumables & Supplies' }
+];
+
 function SearchPage({ navigate, currentQuery, currentCategory }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [sortBy, setSortBy] = useState('name-asc');
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
   useEffect(() => {
     const doSearch = async () => {
@@ -26,6 +50,8 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
   }, [currentQuery, currentCategory]);
 
   const handleTabChange = (categoryVal) => {
+    setSelectedCategory(null);
+    setSelectedSubcategory(null);
     navigate(`/search?q=${encodeURIComponent(currentQuery)}&category=${categoryVal}`);
   };
 
@@ -38,8 +64,28 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
     return 'bottle';
   };
 
-  // Sort products
-  const sortedResults = [...results].sort((a, b) => {
+  // Filter products by selected sidebar category & subcategory
+  const filteredResults = results.filter(prod => {
+    if (!selectedCategory) return true;
+
+    if (selectedCategory === 'all-products') {
+      return prod.category === 'Products & Services';
+    }
+    if (selectedCategory === 'all-reagents') {
+      return prod.category === 'Reagents & Kits';
+    }
+
+    const catMatch = prod.category_external_id === selectedCategory;
+    if (!catMatch) return false;
+
+    if (selectedSubcategory) {
+      return prod.product_group === selectedSubcategory;
+    }
+    return true;
+  });
+
+  // Sort filtered products
+  const sortedResults = [...filteredResults].sort((a, b) => {
     if (sortBy === 'name-asc') {
       return a.product_name.localeCompare(b.product_name);
     }
@@ -61,7 +107,9 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
       ? 'Consumables & Laboratory Supplies' 
       : currentCategory === 'reagents' 
         ? 'Reagents & Kits Catalog' 
-        : 'All Products';
+        : currentCategory === 'products'
+          ? 'Products & Services Catalog'
+          : 'All Products';
 
   return (
     <main className="search-container">
@@ -147,6 +195,120 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
         .search-tab-button.active {
           color: #0064df;
           border-bottom-color: #0064df;
+        }
+
+        /* Sidebar Layout */
+        .search-layout {
+          display: grid;
+          grid-template-columns: 280px 1fr;
+          gap: 40px;
+          align-items: start;
+        }
+
+        @media (max-width: 992px) {
+          .search-layout {
+            grid-template-columns: 1fr;
+            gap: 30px;
+          }
+        }
+
+        .search-sidebar {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          padding: 24px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+          position: sticky;
+          top: 20px;
+        }
+
+        .sidebar-title {
+          font-size: 18px;
+          font-weight: 700;
+          color: #0f172a;
+          margin: 0 0 20px 0;
+          padding-bottom: 10px;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .sidebar-group {
+          margin-bottom: 24px;
+        }
+
+        .sidebar-group-title {
+          font-size: 12px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: #64748b;
+          margin-bottom: 12px;
+        }
+
+        .sidebar-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .sidebar-item-btn {
+          width: 100%;
+          text-align: left;
+          background: transparent;
+          border: none;
+          color: #475569;
+          font-size: 14px;
+          font-weight: 500;
+          padding: 8px 12px;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .sidebar-item-btn:hover {
+          background: #f1f5f9;
+          color: #0f172a;
+        }
+
+        .sidebar-item-btn.active {
+          background: #e0f2fe;
+          color: #0369a1;
+          font-weight: 600;
+        }
+
+        .sidebar-sublist {
+          list-style: none;
+          padding-left: 16px;
+          margin-top: 4px;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .sidebar-subitem-btn {
+          width: 100%;
+          text-align: left;
+          background: transparent;
+          border: none;
+          color: #64748b;
+          font-size: 13px;
+          font-weight: 500;
+          padding: 6px 12px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .sidebar-subitem-btn:hover {
+          background: #f8fafc;
+          color: #0f172a;
+        }
+
+        .sidebar-subitem-btn.active {
+          color: #0284c7;
+          font-weight: 600;
         }
 
         /* Controls row */
@@ -249,6 +411,12 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
           background: #ecfdf5;
           color: #059669;
           border: 1px solid #a7f3d0;
+        }
+
+        .badge-category.product {
+          background: #fef3c7;
+          color: #d97706;
+          border: 1px solid #fde68a;
         }
 
         .badge-shipping {
@@ -419,7 +587,9 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
             ? 'Browse our complete catalog of high-quality laboratory consumables, including cryogenic storage, cell culture flasks, serological pipettes, centrifuge tubes, qPCR plates, and personal protective equipment (PPE).'
             : currentCategory === 'reagents'
               ? 'Discover our state-of-the-art biological reagents, enzymes, protein ladders, DNA markers, transfection reagents, and qPCR master mixes designed for maximum accuracy and reproducibility.'
-              : 'Empowering molecular biology, genomics, and cellular research with high-performance reagents, kits, and laboratory supplies.'}
+              : currentCategory === 'products'
+                ? 'Empowering molecular biology, genomics, and cellular research with high-performance reagents, kits, and laboratory supplies.'
+                : 'Explore BioArk Tech\'s comprehensive selection of genetic tools, high-performance reagents, and premium lab supplies.'}
         </p>
       </div>
 
@@ -429,7 +599,13 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
           className={`search-tab-button ${!currentCategory ? 'active' : ''}`}
           onClick={() => handleTabChange('')}
         >
-          All Products
+          All
+        </button>
+        <button 
+          className={`search-tab-button ${currentCategory === 'products' ? 'active' : ''}`}
+          onClick={() => handleTabChange('products')}
+        >
+          Products & Services
         </button>
         <button 
           className={`search-tab-button ${currentCategory === 'reagents' ? 'active' : ''}`}
@@ -445,111 +621,203 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
         </button>
       </div>
 
-      {/* Stats and Sorting Controls */}
-      <div className="search-controls">
-        <div className="search-stats">
-          {!loading && `Showing ${sortedResults.length} ${sortedResults.length === 1 ? 'product' : 'products'}`}
-        </div>
-        <div className="search-filter-actions">
-          <select 
-            className="search-sort-select" 
-            value={sortBy} 
-            onChange={(e) => setSortBy(e.target.value)}
-            aria-label="Sort products"
-          >
-            <option value="name-asc">Alphabetical (A-Z)</option>
-            <option value="name-desc">Alphabetical (Z-A)</option>
-            <option value="price-asc">Price (Low to High)</option>
-            <option value="price-desc">Price (High to Low)</option>
-          </select>
-        </div>
-      </div>
+      <div className="search-layout">
+        {/* Sidebar Filters */}
+        <aside className="search-sidebar">
+          <h3 className="sidebar-title">Filters</h3>
 
-      {/* Loading state */}
-      {loading && (
-        <div className="spinner-container">
-          <div className="spinner" />
-        </div>
-      )}
+          {/* Products Categories */}
+          {(!currentCategory || currentCategory === 'products') && (
+            <div className="sidebar-group">
+              <h4 className="sidebar-group-title">Products & Services</h4>
+              <ul className="sidebar-list">
+                {PRODUCTS_CATEGORIES.map(cat => (
+                  <li key={cat.id}>
+                    <button
+                      className={`sidebar-item-btn ${selectedCategory === cat.id && !selectedSubcategory ? 'active' : ''}`}
+                      onClick={() => {
+                        setSelectedCategory(selectedCategory === cat.id && !selectedSubcategory ? null : cat.id);
+                        setSelectedSubcategory(null);
+                      }}
+                    >
+                      {cat.label}
+                    </button>
+                    {cat.subcategories && selectedCategory === cat.id && (
+                      <ul className="sidebar-sublist">
+                        {cat.subcategories.map(sub => (
+                          <li key={sub}>
+                            <button
+                              className={`sidebar-subitem-btn ${selectedSubcategory === sub ? 'active' : ''}`}
+                              onClick={() => setSelectedSubcategory(selectedSubcategory === sub ? null : sub)}
+                            >
+                              {sub}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-      {/* Error state */}
-      {error && <div className="alert-banner error" style={{ marginBottom: '30px' }}>{error}</div>}
-      
-      {/* Empty State */}
-      {!loading && !error && sortedResults.length === 0 && (
-        <div className="search-empty">
-          <h3>No products found</h3>
-          <p>We couldn't find any products matching your current search criteria or category filter.</p>
-          {(currentQuery || currentCategory) && (
-            <button className="btn-reset" onClick={() => navigate('/search')}>
-              Clear Filters
-            </button>
+          {/* Reagents Categories */}
+          {(!currentCategory || currentCategory === 'reagents') && (
+            <div className="sidebar-group">
+              <h4 className="sidebar-group-title">Reagents & Kits</h4>
+              <ul className="sidebar-list">
+                {REAGENTS_CATEGORIES.map(cat => (
+                  <li key={cat.id}>
+                    <button
+                      className={`sidebar-item-btn ${selectedCategory === cat.id ? 'active' : ''}`}
+                      onClick={() => {
+                        setSelectedCategory(selectedCategory === cat.id ? null : cat.id);
+                        setSelectedSubcategory(null);
+                      }}
+                    >
+                      {cat.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Consumables Categories */}
+          {(!currentCategory || currentCategory === 'consumables') && (
+            <div className="sidebar-group">
+              <h4 className="sidebar-group-title">Consumables & Supplies</h4>
+              <ul className="sidebar-list">
+                {CONSUMABLES_CATEGORIES.map(cat => (
+                  <li key={cat.id}>
+                    <button
+                      className={`sidebar-item-btn ${selectedCategory === cat.id ? 'active' : ''}`}
+                      onClick={() => {
+                        setSelectedCategory(selectedCategory === cat.id ? null : cat.id);
+                        setSelectedSubcategory(null);
+                      }}
+                    >
+                      {cat.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </aside>
+
+        {/* Results section */}
+        <div className="search-results-main">
+          {/* Stats and Sorting Controls */}
+          <div className="search-controls">
+            <div className="search-stats">
+              {!loading && `Showing ${sortedResults.length} ${sortedResults.length === 1 ? 'product' : 'products'}`}
+            </div>
+            <div className="search-filter-actions">
+              <select 
+                className="search-sort-select" 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value)}
+                aria-label="Sort products"
+              >
+                <option value="name-asc">Alphabetical (A-Z)</option>
+                <option value="name-desc">Alphabetical (Z-A)</option>
+                <option value="price-asc">Price (Low to High)</option>
+                <option value="price-desc">Price (High to Low)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Loading state */}
+          {loading && (
+            <div className="spinner-container">
+              <div className="spinner" />
+            </div>
+          )}
+
+          {/* Error state */}
+          {error && <div className="alert-banner error" style={{ marginBottom: '30px' }}>{error}</div>}
+          
+          {/* Empty State */}
+          {!loading && !error && sortedResults.length === 0 && (
+            <div className="search-empty">
+              <h3>No products found</h3>
+              <p>We couldn't find any products matching your current search criteria or category filter.</p>
+              {(currentQuery || currentCategory || selectedCategory) && (
+                <button className="btn-reset" onClick={() => { handleTabChange(''); setSelectedCategory(null); setSelectedSubcategory(null); }}>
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Products Grid */}
+          {!loading && !error && sortedResults.length > 0 && (
+            <div className="modern-product-grid">
+              {sortedResults.map((prod, idx) => {
+                const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
+                const isConsumable = prod.category === 'Consumables';
+                const shippingCost = prod.shipping_cost || (isConsumable ? 100 : 40);
+
+                return (
+                  <article className="modern-product-card" key={idx}>
+                    {/* Floating Badges */}
+                    <div className="card-badges">
+                      <span className={`badge-category ${isConsumable ? 'consumable' : (prod.category === 'Reagents & Kits' ? 'reagent' : 'product')}`}>
+                        {isConsumable ? 'Consumable' : (prod.category === 'Reagents & Kits' ? 'Reagent / Kit' : 'Product / Service')}
+                      </span>
+                      <span className="badge-shipping">
+                        ${shippingCost} Shipping
+                      </span>
+                    </div>
+
+                    {/* Product Image / Visual fallback */}
+                    <div className="card-image-container">
+                      {imgUrl ? (
+                        <img src={imgUrl} alt={prod.product_name} />
+                      ) : (
+                        <ProductVisual type={getVisualType(prod)} />
+                      )}
+                    </div>
+
+                    {/* Details */}
+                    <div className="card-details">
+                      <span className="card-sku">SKU / Catalog: {prod.product_sku}</span>
+                      <h3 className="card-title" title={prod.product_name}>{prod.product_name}</h3>
+                      
+                      <div className="card-price-row">
+                        <span className="card-price">
+                          {prod.unit_price && Number(prod.unit_price) > 0 
+                            ? `$${Number(prod.unit_price).toFixed(2)}` 
+                            : (prod.list_price || 'Contact for Quote')}
+                        </span>
+                        {prod.list_price && Number(prod.list_price) > Number(prod.unit_price) && Number(prod.unit_price) > 0 && (
+                          <span className="card-list-price">
+                            ${Number(prod.list_price).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+
+                      <a 
+                        href="#" 
+                        className="card-action-btn"
+                        onClick={(e) => { e.preventDefault(); navigate(`/product/${prod.externalId || prod.external_id || prod.product_sku}`); }}
+                      >
+                        View Details
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="5" y1="12" x2="19" y2="12"></line>
+                          <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                      </a>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
           )}
         </div>
-      )}
-
-      {/* Products Grid */}
-      {!loading && !error && sortedResults.length > 0 && (
-        <div className="modern-product-grid">
-          {sortedResults.map((prod, idx) => {
-            const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
-            const isConsumable = prod.category === 'Consumables';
-            const shippingCost = prod.shipping_cost || (isConsumable ? 100 : 40);
-
-            return (
-              <article className="modern-product-card" key={idx}>
-                {/* Floating Badges */}
-                <div className="card-badges">
-                  <span className={`badge-category ${isConsumable ? 'consumable' : 'reagent'}`}>
-                    {isConsumable ? 'Consumable' : 'Reagent / Kit'}
-                  </span>
-                  <span className="badge-shipping">
-                    ${shippingCost} Shipping
-                  </span>
-                </div>
-
-                {/* Product Image / Visual fallback */}
-                <div className="card-image-container">
-                  {imgUrl ? (
-                    <img src={imgUrl} alt={prod.product_name} />
-                  ) : (
-                    <ProductVisual type={getVisualType(prod)} />
-                  )}
-                </div>
-
-                {/* Details */}
-                <div className="card-details">
-                  <span className="card-sku">SKU / Catalog: {prod.product_sku}</span>
-                  <h3 className="card-title" title={prod.product_name}>{prod.product_name}</h3>
-                  
-                  <div className="card-price-row">
-                    <span className="card-price">
-                      ${prod.unit_price ? Number(prod.unit_price).toFixed(2) : '0.00'}
-                    </span>
-                    {prod.list_price && Number(prod.list_price) > Number(prod.unit_price) && (
-                      <span className="card-list-price">
-                        ${Number(prod.list_price).toFixed(2)}
-                      </span>
-                    )}
-                  </div>
-
-                  <a 
-                    href="#" 
-                    className="card-action-btn"
-                    onClick={(e) => { e.preventDefault(); navigate(`/product/${prod.externalId || prod.external_id || prod.product_sku}`); }}
-                  >
-                    View Details
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                      <polyline points="12 5 19 12 12 19"></polyline>
-                    </svg>
-                  </a>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
+      </div>
 
       <div style={{ textAlign: 'center', marginTop: '40px' }}>
         <a href="/" className="secondary-link" onClick={(e) => { e.preventDefault(); navigate('/'); }}>

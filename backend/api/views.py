@@ -306,23 +306,27 @@ def resend_verification(request):
 
     return JsonResponse({'detail': 'A new verification link has been sent to your email.'})
 
-def is_product_consumable(product):
-    name = product.product_name.lower()
-    external_id = product.external_id.lower()
-    catalog_number = (product.catalog_number or "").lower()
-    product_group = (product.product_group or "").lower()
-    desc = (product.description or "").lower()
+def classify_product(category_id, source_type):
+    cat_id = (category_id or '').strip().lower()
+    src_type = (source_type or '').strip().lower()
     
-    # Consumables match keywords: system, device, cell line, cell type, cloning, vector
-    consumable_keywords = ['system', 'device', 'cell line', 'cell type', 'cloning', 'vector']
-    if any(kw in name or kw in external_id or kw in catalog_number or kw in product_group or kw in desc for kw in consumable_keywords):
-        return True
-    return False
+    if cat_id == 'category-1780539818236':
+        return 'consumables'
+    
+    if cat_id in ['category-1765063995229', 'category-1766675380397', 'category-1766675365489', 'category-1765995504911'] or src_type == 'reagent':
+        return 'reagents'
+        
+    return 'products'
+
+def is_product_consumable(product):
+    return product.category_external_id == 'category-1780539818236'
 
 def is_featured_product_consumable(fp):
     # Featured products without wet ice in shipping info are consumables (cryotubes, pipettes, plates, boxes, etc.)
-    ship_info = (fp.ship_info or "").lower()
-    return 'wet ice' not in ship_info
+    linked_product = Product.objects.filter(catalog_number=fp.catalog_number, hidden=False).first()
+    if linked_product:
+        return linked_product.category_external_id == 'category-1780539818236'
+    return 'wet ice' not in (fp.ship_info or "").lower()
 
 @api_view(['GET'])
 def search_product(request):
@@ -337,6 +341,9 @@ def search_product(request):
         query = ''
     elif query.lower() in ['reagents', 'reactivos', 'reagent kit', 'reagents & kits', 'reagents and kits']:
         category_filter = 'reagents'
+        query = ''
+    elif query.lower() in ['products', 'productos', 'custom products']:
+        category_filter = 'products'
         query = ''
 
     list_keywords = query.split()
@@ -372,14 +379,17 @@ def search_product(request):
     
     # 1. Add general products
     for p in products:
-        is_consumable = is_product_consumable(p)
-        prod_cat = 'Consumables' if is_consumable else 'Reagents & Kits'
+        category_type = classify_product(p.category_external_id, p.source_type)
         
         # Apply category filter
-        if category_filter == 'consumables' and not is_consumable:
+        if category_filter == 'consumables' and category_type != 'consumables':
             continue
-        if category_filter == 'reagents' and is_consumable:
+        if category_filter == 'reagents' and category_type != 'reagents':
             continue
+        if category_filter == 'products' and category_type != 'products':
+            continue
+
+        prod_cat = 'Consumables' if category_type == 'consumables' else ('Reagents & Kits' if category_type == 'reagents' else 'Products & Services')
 
         combined_results.append({
             'product_id': p.product_id,
@@ -393,19 +403,29 @@ def search_product(request):
             'list_price': p.list_price or p.price_range or '',
             'image': p.image_url or (p.images[0] if p.images else None),
             'category': prod_cat,
-            'shipping_cost': 100.0 if is_consumable else 40.0
+            'category_external_id': p.category_external_id,
+            'product_group': p.product_group,
+            'shipping_cost': 100.0 if category_type == 'consumables' else 40.0
         })
         
     # 2. Add featured products (including the imported reagents)
     for fp in featured_products:
-        is_consumable = is_featured_product_consumable(fp)
-        prod_cat = 'Consumables' if is_consumable else 'Reagents & Kits'
+        linked_product = Product.objects.filter(catalog_number=fp.catalog_number, hidden=False).first()
+        linked_cat_id = linked_product.category_external_id if linked_product else None
+        linked_src_type = linked_product.source_type if linked_product else 'reagent'
+        linked_group = linked_product.product_group if linked_product else None
+
+        category_type = classify_product(linked_cat_id, linked_src_type)
         
         # Apply category filter
-        if category_filter == 'consumables' and not is_consumable:
+        if category_filter == 'consumables' and category_type != 'consumables':
             continue
-        if category_filter == 'reagents' and is_consumable:
+        if category_filter == 'reagents' and category_type != 'reagents':
             continue
+        if category_filter == 'products' and category_type != 'products':
+            continue
+
+        prod_cat = 'Consumables' if category_type == 'consumables' else ('Reagents & Kits' if category_type == 'reagents' else 'Products & Services')
 
         up = UnitPrice.objects.filter(union=fp.union).first()
         price = float(up.unit_price) if up else 0.0
@@ -413,7 +433,6 @@ def search_product(request):
         
         img = Image.objects.filter(union=fp.union).first()
         img_url = img.image.url if img and img.image else None
-        linked_product = Product.objects.filter(catalog_number=fp.catalog_number, hidden=False).first()
         
         combined_results.append({
             'product_id': fp.id,
@@ -426,7 +445,9 @@ def search_product(request):
             'list_price': list_p,
             'image': img_url,
             'category': prod_cat,
-            'shipping_cost': 100.0 if is_consumable else 40.0
+            'category_external_id': linked_cat_id,
+            'product_group': linked_group,
+            'shipping_cost': 100.0 if category_type == 'consumables' else 40.0
         })
 
     # Sort all results alphabetically by name

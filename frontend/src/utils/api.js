@@ -131,14 +131,46 @@ export const getProductShippingCost = (product) => {
   return 40;
 };
 
-// Formats file URLs safely, avoiding double-protocol prefix issues
+// Formats file URLs safely, avoiding double-protocol prefix issues and relative media directory issues
 export const formatAssetUrl = (url) => {
   if (!url) return null;
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
   }
-  if (url.startsWith('/')) {
-    return `${API_URL}${url}`;
+  
+  let cleanUrl = url;
+  
+  // If it points to the legacy content-api uploads path, map it to media root
+  if (cleanUrl.startsWith('/content-api/uploads/originals/')) {
+    cleanUrl = '/media/' + cleanUrl.substring('/content-api/uploads/originals/'.length);
+  } else if (cleanUrl.startsWith('content-api/uploads/originals/')) {
+    cleanUrl = '/media/' + cleanUrl.substring('content-api/uploads/originals/'.length);
   }
-  return `${API_URL}/${url}`;
+  
+  // If it starts with /images/products/, map it to /media/product_images/
+  if (cleanUrl.startsWith('/images/products/')) {
+    let filename = cleanUrl.substring('/images/products/'.length);
+    filename = filename.replace('-300x300', '');
+    cleanUrl = `/media/product_images/${filename}`;
+  } else if (cleanUrl.startsWith('images/products/')) {
+    let filename = cleanUrl.substring('images/products/'.length);
+    filename = filename.replace('-300x300', '');
+    cleanUrl = `/media/product_images/${filename}`;
+  }
+  
+  // If it's a relative path that doesn't start with media/ or /media/, prepend /media/
+  if (!cleanUrl.startsWith('/') && !cleanUrl.startsWith('media/')) {
+    cleanUrl = `/media/${cleanUrl}`;
+  } else if (cleanUrl.startsWith('/') && !cleanUrl.startsWith('/media/')) {
+    // If it starts with / but not /media/, e.g. /product_images/...
+    cleanUrl = `/media${cleanUrl}`;
+  } else if (cleanUrl.startsWith('media/')) {
+    cleanUrl = `/${cleanUrl}`;
+  }
+
+  // Prepend API_URL
+  if (cleanUrl.startsWith('/')) {
+    return `${API_URL}${cleanUrl}`;
+  }
+  return `${API_URL}/${cleanUrl}`;
 };

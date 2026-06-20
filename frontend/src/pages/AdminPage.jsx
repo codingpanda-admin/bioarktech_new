@@ -1,5 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { apiFetch } from '../utils/api';
+
+// Sub-components
+import AdminDashboard from './admin/AdminDashboard';
+import AdminUsers from './admin/AdminUsers';
+import AdminProducts from './admin/AdminProducts';
+import AdminFeaturedProducts from './admin/AdminFeaturedProducts';
+import AdminServices from './admin/AdminServices';
+import AdminBlogs from './admin/AdminBlogs';
+import AdminQuotes from './admin/AdminQuotes';
+import AdminMedia from './admin/AdminMedia';
 
 const adminLinks = [
   'Overview',
@@ -15,64 +25,104 @@ const adminLinks = [
   'Media',
 ];
 
-function AdminPage() {
+function AdminPage({ currentUser, currentUserProfile, onLoginSuccess, onLogout }) {
   const [activeSection, setActiveSection] = useState('Overview');
-  const [activeUserTab, setActiveUserTab] = useState('Admin User');
-  const [isAddAdminOpen, setIsAddAdminOpen] = useState(true);
-  const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(true);
-  const [adminUsers, setAdminUsers] = useState([]);
-  const [adminUsersLoading, setAdminUsersLoading] = useState(false);
-  const [adminUsersError, setAdminUsersError] = useState('');
-  const [customerUsers, setCustomerUsers] = useState([]);
-  const [customerUsersLoading, setCustomerUsersLoading] = useState(false);
-  const [customerUsersError, setCustomerUsersError] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const homepageSettings = ['Background Images', 'Hero Text', 'CTA Button', 'Metrics'];
 
-  useEffect(() => {
-    if (activeSection !== 'Users' || activeUserTab !== 'Admin User') {
-      return;
-    }
-
-    const loadAdminUsers = async () => {
-      setAdminUsersLoading(true);
-      setAdminUsersError('');
-
-      try {
-        const data = await apiFetch('/api/users/admin-users/');
-        const users = data.users || [];
-        setAdminUsers(users.filter((user) => user.isAdmin === true || user.is_admin === true));
-      } catch (err) {
-        setAdminUsersError(err.message || 'Unable to load administrator users.');
-      } finally {
-        setAdminUsersLoading(false);
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      await apiFetch('/api/login/', {
+        method: 'POST',
+        body: { email, password }
+      });
+      if (onLoginSuccess) {
+        await onLoginSuccess(email);
       }
-    };
-
-    loadAdminUsers();
-  }, [activeSection, activeUserTab]);
-
-  useEffect(() => {
-    if (activeSection !== 'Users' || activeUserTab !== 'Customers') {
-      return;
+    } catch (err) {
+      setError(err.message || 'Login failed. Please verify credentials.');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const loadCustomerUsers = async () => {
-      setCustomerUsersLoading(true);
-      setCustomerUsersError('');
+  // 1. Not logged in -> Show admin login form
+  if (!currentUser) {
+    return (
+      <main className="admin-login-page">
+        <div className="admin-login-card">
+          <div className="admin-login-header">
+            <h2>BioArk Tech</h2>
+            <p>Admin Console Sign In</p>
+          </div>
+          {error && <div className="admin-login-error">{error}</div>}
+          <form onSubmit={handleLoginSubmit}>
+            <div className="form-group">
+              <label>Email Address</label>
+              <input 
+                type="email" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                required 
+                placeholder="admin@bioarktech.com"
+              />
+            </div>
+            <div className="form-group">
+              <label>Password</label>
+              <input 
+                type="password" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                required 
+                placeholder="••••••••"
+              />
+            </div>
+            <button type="submit" className="admin-login-btn" disabled={loading}>
+              {loading ? 'Signing In...' : 'Sign In'}
+            </button>
+          </form>
+        </div>
+      </main>
+    );
+  }
 
-      try {
-        const data = await apiFetch('/api/users/customer-users/');
-        const users = data.users || [];
-        setCustomerUsers(users.filter((user) => user.isAdmin === false || user.is_admin === false));
-      } catch (err) {
-        setCustomerUsersError(err.message || 'Unable to load customers.');
-      } finally {
-        setCustomerUsersLoading(false);
-      }
-    };
+  // 2. Logged in, but profile is still loading
+  if (currentUser && !currentUserProfile) {
+    return (
+      <main className="admin-loading-page">
+        <div className="admin-spinner"></div>
+        <p>Loading administrator profile...</p>
+      </main>
+    );
+  }
 
-    loadCustomerUsers();
-  }, [activeSection, activeUserTab]);
+  // 3. Logged in, profile loaded, but NOT admin/staff
+  const isAdmin = currentUserProfile && (currentUserProfile.is_admin || currentUserProfile.isAdmin || currentUserProfile.is_staff);
+  if (!isAdmin) {
+    return (
+      <main className="admin-login-page">
+        <div className="admin-login-card access-denied">
+          <div className="admin-login-header">
+            <h2>Access Denied</h2>
+            <p>You do not have administrative permissions to view this console.</p>
+          </div>
+          <p className="logged-in-as">Logged in as: <strong>{currentUser}</strong></p>
+          <div className="access-denied-actions">
+            <button onClick={onLogout} className="admin-login-btn secondary">
+              Sign In with different account
+            </button>
+            <a href="/" className="back-to-home">Back to Homepage</a>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="admin-page" aria-label="Admin Console">
@@ -95,7 +145,11 @@ function AdminPage() {
       </aside>
 
       <section className="admin-content" aria-labelledby="admin-content-title">
-        {activeSection === 'Homepage' ? (
+        {activeSection === 'Overview' && (
+          <AdminDashboard onNavigate={(section) => setActiveSection(section)} />
+        )}
+
+        {activeSection === 'Homepage' && (
           <>
             <h2 id="admin-content-title">Homepage Settings</h2>
             <div className="homepage-settings-grid">
@@ -106,182 +160,37 @@ function AdminPage() {
               ))}
             </div>
           </>
-        ) : activeSection === 'Users' ? (
-          <>
-            <h2 id="admin-content-title">Users</h2>
-            <div className="admin-tabs" role="tablist" aria-label="User type">
-              <button
-                className={activeUserTab === 'Admin User' ? 'is-active' : undefined}
-                type="button"
-                role="tab"
-                aria-selected={activeUserTab === 'Admin User'}
-                onClick={() => setActiveUserTab('Admin User')}
-              >
-                Admin User
-              </button>
-              <button
-                className={activeUserTab === 'Customers' ? 'is-active' : undefined}
-                type="button"
-                role="tab"
-                aria-selected={activeUserTab === 'Customers'}
-                onClick={() => setActiveUserTab('Customers')}
-              >
-                Customers
-              </button>
-            </div>
-            {activeUserTab === 'Admin User' ? (
-              <section className="admin-form-section collapsible-section" aria-labelledby="add-admin-title">
-                <button
-                  className="collapsible-header"
-                  type="button"
-                  aria-expanded={isAddAdminOpen}
-                  aria-controls="add-admin-panel"
-                  onClick={() => setIsAddAdminOpen((isOpen) => !isOpen)}
-                >
-                  <span id="add-admin-title">Add Admin</span>
-                  <span aria-hidden="true">{isAddAdminOpen ? '−' : '+'}</span>
-                </button>
-                {isAddAdminOpen && (
-                  <form className="admin-user-form" id="add-admin-panel">
-                    <label>
-                      Email
-                      <input type="email" name="adminEmail" placeholder="admin@bioarktech.com" />
-                    </label>
-                    <label>
-                      Full name (optional)
-                      <input type="text" name="adminFullName" placeholder="Full name" />
-                    </label>
-                    <label>
-                      Password
-                      <input type="password" name="adminPassword" placeholder="Create a password" />
-                    </label>
-                    <button className="primary-button" type="submit">Add Admin</button>
-                  </form>
-                )}
-                <section className="admin-table-section" aria-labelledby="admin-user-list-title">
-                  <h3 id="admin-user-list-title">Administrator Users</h3>
-                  {adminUsersLoading ? (
-                    <div className="admin-empty-table">Loading administrator users...</div>
-                  ) : adminUsersError ? (
-                    <div className="alert-banner error">{adminUsersError}</div>
-                  ) : adminUsers.length === 0 ? (
-                    <div className="admin-empty-table">No administrator users yet.</div>
-                  ) : (
-                    <div className="admin-data-table-wrap">
-                      <table className="admin-data-table">
-                        <thead>
-                          <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Company</th>
-                            <th>Phone</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {adminUsers.map((user) => {
-                            const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Not provided';
-                            const phone = user.mobile || user.telephone || 'Not provided';
+        )}
 
-                            return (
-                              <tr key={user.id || user.email}>
-                                <td>{fullName}</td>
-                                <td>{user.email}</td>
-                                <td>{user.company || 'Not provided'}</td>
-                                <td>{phone}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </section>
-              </section>
-            ) : (
-              <>
-                <section className="admin-form-section collapsible-section" aria-labelledby="add-customer-title">
-                  <button
-                    className="collapsible-header"
-                    type="button"
-                    aria-expanded={isAddCustomerOpen}
-                    aria-controls="add-customer-panel"
-                    onClick={() => setIsAddCustomerOpen((isOpen) => !isOpen)}
-                  >
-                    <span id="add-customer-title">Add Customer</span>
-                    <span aria-hidden="true">{isAddCustomerOpen ? '−' : '+'}</span>
-                  </button>
-                  {isAddCustomerOpen && (
-                    <form className="admin-user-form customer-form" id="add-customer-panel">
-                      <label>
-                        Email
-                        <input type="email" name="customerEmail" placeholder="customer@example.com" />
-                      </label>
-                      <label>
-                        Full name (optional)
-                        <input type="text" name="customerFullName" placeholder="Full name" />
-                      </label>
-                      <label>
-                        Password
-                        <input type="password" name="customerPassword" placeholder="Create a password" />
-                      </label>
-                      <label className="full-span">
-                        Address (optional)
-                        <textarea name="customerAddress" rows="4" placeholder="Street address, city, state, ZIP" />
-                      </label>
-                      <label>
-                        Status
-                        <select name="customerStatus" defaultValue="Active">
-                          <option>Active</option>
-                          <option>Inactive</option>
-                          <option>Suspended</option>
-                        </select>
-                      </label>
-                      <button className="primary-button" type="submit">Add Customer</button>
-                    </form>
-                  )}
-                </section>
-                <section className="admin-table-section" aria-labelledby="client-user-title">
-                  <h3 id="client-user-title">Customers</h3>
-                  {customerUsersLoading ? (
-                    <div className="admin-empty-table">Loading customers...</div>
-                  ) : customerUsersError ? (
-                    <div className="alert-banner error">{customerUsersError}</div>
-                  ) : customerUsers.length === 0 ? (
-                    <div className="admin-empty-table">No customers yet.</div>
-                  ) : (
-                    <div className="admin-data-table-wrap">
-                      <table className="admin-data-table">
-                        <thead>
-                          <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Company</th>
-                            <th>Phone</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {customerUsers.map((user) => {
-                            const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Not provided';
-                            const phone = user.mobile || user.telephone || 'Not provided';
+        {activeSection === 'Users' && (
+          <AdminUsers />
+        )}
 
-                            return (
-                              <tr key={user.id || user.email}>
-                                <td>{fullName}</td>
-                                <td>{user.email}</td>
-                                <td>{user.company || 'Not provided'}</td>
-                                <td>{phone}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </section>
-              </>
-            )}
-          </>
-        ) : activeSection === 'Email (SMTP)' ? (
+        {activeSection === 'Products' && (
+          <AdminProducts categoryFilter="products" />
+        )}
+
+        {activeSection === 'Featured Products' && (
+          <AdminFeaturedProducts />
+        )}
+
+        {activeSection === 'Reagents' && (
+          <AdminProducts categoryFilter="reagents" />
+        )}
+
+        {activeSection === 'Services' && (
+          <AdminServices />
+        )}
+
+        {activeSection === 'Blog' && (
+          <AdminBlogs />
+        )}
+
+        {activeSection === 'Quotes' && (
+          <AdminQuotes />
+        )}
+
+        {activeSection === 'Email (SMTP)' && (
           <>
             <h2 id="admin-content-title">SMTP Configuration</h2>
             <form className="smtp-form">
@@ -371,24 +280,10 @@ function AdminPage() {
               </p>
             </form>
           </>
-        ) : (
-          <>
-            <h2 id="admin-content-title">{activeSection}</h2>
-            <div className="admin-link-list">
-              {adminLinks.map((label) => (
-                <a
-                  href={`#${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-                  key={label}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    setActiveSection(label);
-                  }}
-                >
-                  {label}
-                </a>
-              ))}
-            </div>
-          </>
+        )}
+
+        {activeSection === 'Media' && (
+          <AdminMedia />
         )}
       </section>
     </main>

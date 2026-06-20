@@ -1,8 +1,11 @@
+\unset ON_ERROR_STOP
+\set ON_ERROR_STOP 0
 --
 -- PostgreSQL database dump
 --
 
-\restrict 92Hx1dlesidcRKWT3cH36gl62YeoSP3mxJTCUbiH48nkotJkUPqKQxcv9n8FUR0
+
+\restrict evjGjvLVgYp7bSWEWvYeLDg5LPuvKnpS3FPQluNXwBrvO38eKGbXCEe8AVco0W0
 
 -- Dumped from database version 16.14 (Debian 16.14-1.pgdg13+1)
 -- Dumped by pg_dump version 16.14 (Debian 16.14-1.pgdg13+1)
@@ -18,12 +21,192 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+ALTER TABLE ONLY public.users_user_permissions DROP CONSTRAINT users_user_permissions_user_id_92473840_fk_users_id;
+ALTER TABLE ONLY public.users_user_permissions DROP CONSTRAINT users_user_permissio_permission_id_6d08dcd2_fk_auth_perm;
+ALTER TABLE ONLY public.users DROP CONSTRAINT users_shipping_address_id_008c2dab_fk_users_address_id;
+ALTER TABLE ONLY public.users_groups DROP CONSTRAINT users_groups_user_id_f500bee5_fk_users_id;
+ALTER TABLE ONLY public.users_groups DROP CONSTRAINT users_groups_group_id_2f3517aa_fk_auth_group_id;
+ALTER TABLE ONLY public.users DROP CONSTRAINT users_billing_address_id_53318b60_fk_users_address_id;
+ALTER TABLE ONLY public.users DROP CONSTRAINT users_address_id_96e92564_fk_users_address_id;
+ALTER TABLE ONLY public.unit_prices DROP CONSTRAINT unit_prices_union_id_b76d419e_fk_products_union_id;
+ALTER TABLE ONLY public.quotes DROP CONSTRAINT quotes_user_id_c10fa7c3_fk_users_id;
+ALTER TABLE ONLY public.orders DROP CONSTRAINT orders_user_id_7e2523fb_fk_users_id;
+ALTER TABLE ONLY public.orders DROP CONSTRAINT orders_shipping_address_id_bf7237b0_fk_addresses_id;
+ALTER TABLE ONLY public.orders DROP CONSTRAINT orders_po_address_id_7947b6ed_fk_addresses_id;
+ALTER TABLE ONLY public.orders DROP CONSTRAINT orders_invoice_id_6bfdbcfb_fk_invoices_id;
+ALTER TABLE ONLY public.orders DROP CONSTRAINT orders_billing_address_id_53d8531b_fk_addresses_id;
+ALTER TABLE ONLY public.order_item DROP CONSTRAINT order_item_order_id_0ca9e92e_fk_orders_order_id;
+ALTER TABLE ONLY public.manual_files DROP CONSTRAINT manual_files_union_id_1dc0ed0f_fk_products_union_id;
+ALTER TABLE ONLY public.invoices DROP CONSTRAINT invoices_user_id_ff8879b0_fk_users_id;
+ALTER TABLE ONLY public.invoices DROP CONSTRAINT invoices_shipping_address_id_3f24ad23_fk_addresses_id;
+ALTER TABLE ONLY public.invoices DROP CONSTRAINT invoices_po_address_id_44d38dac_fk_addresses_id;
+ALTER TABLE ONLY public.invoices DROP CONSTRAINT invoices_billing_address_id_c95218be_fk_addresses_id;
+ALTER TABLE ONLY public.images DROP CONSTRAINT images_union_id_cb10732c_fk_products_union_id;
+ALTER TABLE ONLY public.featured_products DROP CONSTRAINT featured_products_union_id_92cfd465_fk_products_union_id;
+ALTER TABLE ONLY public.django_admin_log DROP CONSTRAINT django_admin_log_user_id_c564eba6_fk_users_id;
+ALTER TABLE ONLY public.django_admin_log DROP CONSTRAINT django_admin_log_content_type_id_c4bce8eb_fk_django_co;
+ALTER TABLE ONLY public.auth_permission DROP CONSTRAINT auth_permission_content_type_id_2f476e4b_fk_django_co;
+ALTER TABLE ONLY public.auth_group_permissions DROP CONSTRAINT auth_group_permissions_group_id_b120cbf9_fk_auth_group_id;
+ALTER TABLE ONLY public.auth_group_permissions DROP CONSTRAINT auth_group_permissio_permission_id_84c5c92e_fk_auth_perm;
+ALTER TABLE ONLY public.api_emailverificationtoken DROP CONSTRAINT api_emailverificationtoken_user_id_7e807130_fk_users_id;
+DROP INDEX public.users_user_permissions_user_id_92473840;
+DROP INDEX public.users_user_permissions_permission_id_6d08dcd2;
+DROP INDEX public.users_shipping_address_id_008c2dab;
+DROP INDEX public.users_groups_user_id_f500bee5;
+DROP INDEX public.users_groups_group_id_2f3517aa;
+DROP INDEX public.users_email_0ea73cca_like;
+DROP INDEX public.users_billing_address_id_53318b60;
+DROP INDEX public.users_address_id_96e92564;
+DROP INDEX public.unit_prices_union_id_b76d419e;
+DROP INDEX public.structure_types_structure_type_symbol_463c9c78_like;
+DROP INDEX public.structure_types_structure_type_name_f9195ae9_like;
+DROP INDEX public.quotes_user_id_c10fa7c3;
+DROP INDEX public.product_category_category_name_670b01bc_like;
+DROP INDEX public.orders_user_id_7e2523fb;
+DROP INDEX public.orders_shipping_address_id_bf7237b0;
+DROP INDEX public.orders_po_address_id_7947b6ed;
+DROP INDEX public.orders_billing_address_id_53d8531b;
+DROP INDEX public.order_item_order_id_0ca9e92e;
+DROP INDEX public.manual_files_union_id_1dc0ed0f;
+DROP INDEX public.invoices_user_id_ff8879b0;
+DROP INDEX public.invoices_shipping_address_id_3f24ad23;
+DROP INDEX public.invoices_po_address_id_44d38dac;
+DROP INDEX public.invoices_billing_address_id_c95218be;
+DROP INDEX public.images_union_id_cb10732c;
+DROP INDEX public.idx_product_show_in_featured;
+DROP INDEX public.idx_product_display_order;
+DROP INDEX public.idx_product_category_external_id;
+DROP INDEX public.idx_product_catalog_number;
+DROP INDEX public.function_types_function_type_symbol_914b7cab_like;
+DROP INDEX public.function_types_function_type_name_52e17a37_like;
+DROP INDEX public.featured_products_catalog_number_fbd713bd_like;
+DROP INDEX public.django_session_session_key_c0390e0f_like;
+DROP INDEX public.django_session_expire_date_a5c62663;
+DROP INDEX public.django_admin_log_user_id_c564eba6;
+DROP INDEX public.django_admin_log_content_type_id_c4bce8eb;
+DROP INDEX public.delivery_formats_delivery_format_symbol_84d7991c_like;
+DROP INDEX public.delivery_formats_delivery_format_name_0f26b441_like;
+DROP INDEX public.auth_permission_content_type_id_2f476e4b;
+DROP INDEX public.auth_group_permissions_permission_id_84c5c92e;
+DROP INDEX public.auth_group_permissions_group_id_b120cbf9;
+DROP INDEX public.auth_group_name_a6ea08ec_like;
+DROP INDEX public.api_emailverificationtoken_token_5e55b1bc_like;
+ALTER TABLE ONLY public.work_schedule DROP CONSTRAINT work_schedule_pkey;
+ALTER TABLE ONLY public.users_user_permissions DROP CONSTRAINT users_user_permissions_user_id_permission_id_3b86cbdf_uniq;
+ALTER TABLE ONLY public.users_user_permissions DROP CONSTRAINT users_user_permissions_pkey;
+ALTER TABLE ONLY public.users DROP CONSTRAINT users_pkey;
+ALTER TABLE ONLY public.users_groups DROP CONSTRAINT users_groups_user_id_group_id_fc7788e8_uniq;
+ALTER TABLE ONLY public.users_groups DROP CONSTRAINT users_groups_pkey;
+ALTER TABLE ONLY public.users DROP CONSTRAINT users_email_0ea73cca_uniq;
+ALTER TABLE ONLY public.addresses DROP CONSTRAINT users_address_pkey;
+ALTER TABLE ONLY public.unit_prices DROP CONSTRAINT unit_prices_pkey;
+ALTER TABLE ONLY public.structure_types DROP CONSTRAINT structure_types_structure_type_symbol_key;
+ALTER TABLE ONLY public.structure_types DROP CONSTRAINT structure_types_structure_type_name_key;
+ALTER TABLE ONLY public.structure_types DROP CONSTRAINT structure_types_pkey;
+ALTER TABLE ONLY public.service_mode DROP CONSTRAINT service_mode_pkey;
+ALTER TABLE ONLY public.selection_markers DROP CONSTRAINT selection_markers_pkey;
+ALTER TABLE ONLY public.quotes DROP CONSTRAINT quotes_pkey;
+ALTER TABLE ONLY public.protein_tags DROP CONSTRAINT protein_tags_pkey;
+ALTER TABLE ONLY public.property DROP CONSTRAINT property_pkey;
+ALTER TABLE ONLY public.promoters_special_case DROP CONSTRAINT promoters_special_case_pkey;
+ALTER TABLE ONLY public.promoters DROP CONSTRAINT promoters_pkey;
+ALTER TABLE ONLY public.products_union DROP CONSTRAINT products_union_pkey;
+ALTER TABLE ONLY public.product DROP CONSTRAINT product_pkey;
+ALTER TABLE ONLY public.product_mode DROP CONSTRAINT product_mode_pkey;
+ALTER TABLE ONLY public.product_inventory DROP CONSTRAINT product_inventory_pkey;
+ALTER TABLE ONLY public.product DROP CONSTRAINT product_external_id_key;
+ALTER TABLE ONLY public.product_category DROP CONSTRAINT product_category_pkey;
+ALTER TABLE ONLY public.product_category DROP CONSTRAINT product_category_category_name_key;
+ALTER TABLE ONLY public.orders DROP CONSTRAINT orders_pkey;
+ALTER TABLE ONLY public.orders DROP CONSTRAINT orders_invoice_id_6bfdbcfb_uniq;
+ALTER TABLE ONLY public.orders_cartitem DROP CONSTRAINT orders_cartitem_pkey;
+ALTER TABLE ONLY public.order_item DROP CONSTRAINT order_item_pkey;
+ALTER TABLE ONLY public.manual_files DROP CONSTRAINT manual_files_pkey;
+ALTER TABLE ONLY public.invoices DROP CONSTRAINT invoices_pkey;
+ALTER TABLE ONLY public.images DROP CONSTRAINT images_pkey;
+ALTER TABLE ONLY public.gene_library DROP CONSTRAINT gene_library_pkey;
+ALTER TABLE ONLY public.function_types DROP CONSTRAINT function_types_pkey;
+ALTER TABLE ONLY public.function_types DROP CONSTRAINT function_types_function_type_symbol_key;
+ALTER TABLE ONLY public.function_types DROP CONSTRAINT function_types_function_type_name_key;
+ALTER TABLE ONLY public.fluorescene_markers DROP CONSTRAINT fluorescene_markers_pkey;
+ALTER TABLE ONLY public.featured_products DROP CONSTRAINT featured_products_union_id_key;
+ALTER TABLE ONLY public.featured_products DROP CONSTRAINT featured_products_pkey;
+ALTER TABLE ONLY public.featured_products DROP CONSTRAINT featured_products_catalog_number_fbd713bd_uniq;
+ALTER TABLE ONLY public.django_truncate_model2 DROP CONSTRAINT django_truncate_model2_pkey;
+ALTER TABLE ONLY public.django_truncate_model1 DROP CONSTRAINT django_truncate_model1_pkey;
+ALTER TABLE ONLY public.django_session DROP CONSTRAINT django_session_pkey;
+ALTER TABLE ONLY public.django_migrations DROP CONSTRAINT django_migrations_pkey;
+ALTER TABLE ONLY public.django_content_type DROP CONSTRAINT django_content_type_pkey;
+ALTER TABLE ONLY public.django_content_type DROP CONSTRAINT django_content_type_app_label_model_76bd3d3b_uniq;
+ALTER TABLE ONLY public.django_admin_log DROP CONSTRAINT django_admin_log_pkey;
+ALTER TABLE ONLY public.design_library DROP CONSTRAINT design_library_pkey;
+ALTER TABLE ONLY public.delivery_library DROP CONSTRAINT delivery_library_pkey;
+ALTER TABLE ONLY public.delivery_formats DROP CONSTRAINT delivery_formats_pkey;
+ALTER TABLE ONLY public.delivery_formats DROP CONSTRAINT delivery_formats_delivery_format_symbol_key;
+ALTER TABLE ONLY public.delivery_formats DROP CONSTRAINT delivery_formats_delivery_format_name_key;
+ALTER TABLE ONLY public.blog DROP CONSTRAINT blog_pkey;
+ALTER TABLE ONLY public.bacterial_markers_special_case DROP CONSTRAINT bacterial_markers_special_case_pkey;
+ALTER TABLE ONLY public.bacterial_markers DROP CONSTRAINT bacterial_markers_pkey;
+ALTER TABLE ONLY public.auth_permission DROP CONSTRAINT auth_permission_pkey;
+ALTER TABLE ONLY public.auth_permission DROP CONSTRAINT auth_permission_content_type_id_codename_01ab375a_uniq;
+ALTER TABLE ONLY public.auth_group DROP CONSTRAINT auth_group_pkey;
+ALTER TABLE ONLY public.auth_group_permissions DROP CONSTRAINT auth_group_permissions_pkey;
+ALTER TABLE ONLY public.auth_group_permissions DROP CONSTRAINT auth_group_permissions_group_id_permission_id_0cd325b0_uniq;
+ALTER TABLE ONLY public.auth_group DROP CONSTRAINT auth_group_name_key;
+ALTER TABLE ONLY public.api_emailverificationtoken DROP CONSTRAINT api_emailverificationtoken_user_id_key;
+ALTER TABLE ONLY public.api_emailverificationtoken DROP CONSTRAINT api_emailverificationtoken_token_key;
+ALTER TABLE ONLY public.api_emailverificationtoken DROP CONSTRAINT api_emailverificationtoken_pkey;
+DROP TABLE public.work_schedule;
+DROP TABLE public.users_user_permissions;
+DROP TABLE public.users_groups;
+DROP TABLE public.users;
+DROP TABLE public.unit_prices;
+DROP TABLE public.structure_types;
+DROP TABLE public.service_mode;
+DROP TABLE public.selection_markers;
+DROP TABLE public.quotes;
+DROP TABLE public.protein_tags;
+DROP TABLE public.property;
+DROP TABLE public.promoters_special_case;
+DROP TABLE public.promoters;
+DROP TABLE public.products_union;
+DROP TABLE public.product_mode;
+DROP TABLE public.product_inventory;
+DROP TABLE public.product_category;
+DROP TABLE public.product;
+DROP TABLE public.orders_cartitem;
+DROP TABLE public.orders;
+DROP TABLE public.order_item;
+DROP TABLE public.manual_files;
+DROP TABLE public.invoices;
+DROP TABLE public.images;
+DROP TABLE public.gene_library;
+DROP TABLE public.function_types;
+DROP TABLE public.fluorescene_markers;
+DROP TABLE public.featured_products;
+DROP TABLE public.django_truncate_model2;
+DROP TABLE public.django_truncate_model1;
+DROP TABLE public.django_session;
+DROP TABLE public.django_migrations;
+DROP TABLE public.django_content_type;
+DROP TABLE public.django_admin_log;
+DROP TABLE public.design_library;
+DROP TABLE public.delivery_library;
+DROP TABLE public.delivery_formats;
+DROP TABLE public.blog;
+DROP TABLE public.bacterial_markers_special_case;
+DROP TABLE public.bacterial_markers;
+DROP TABLE public.auth_permission;
+DROP TABLE public.auth_group_permissions;
+DROP TABLE public.auth_group;
+DROP TABLE public.api_emailverificationtoken;
+DROP TABLE public.addresses;
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: addresses; Type: TABLE; Schema: public; Owner: postgres
+-- Name: addresses; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.addresses (
@@ -38,10 +221,8 @@ CREATE TABLE public.addresses (
 );
 
 
-ALTER TABLE public.addresses OWNER TO postgres;
-
 --
--- Name: api_emailverificationtoken; Type: TABLE; Schema: public; Owner: postgres
+-- Name: api_emailverificationtoken; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.api_emailverificationtoken (
@@ -52,10 +233,8 @@ CREATE TABLE public.api_emailverificationtoken (
 );
 
 
-ALTER TABLE public.api_emailverificationtoken OWNER TO postgres;
-
 --
--- Name: api_emailverificationtoken_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: api_emailverificationtoken_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.api_emailverificationtoken ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -69,7 +248,7 @@ ALTER TABLE public.api_emailverificationtoken ALTER COLUMN id ADD GENERATED BY D
 
 
 --
--- Name: auth_group; Type: TABLE; Schema: public; Owner: postgres
+-- Name: auth_group; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.auth_group (
@@ -78,10 +257,8 @@ CREATE TABLE public.auth_group (
 );
 
 
-ALTER TABLE public.auth_group OWNER TO postgres;
-
 --
--- Name: auth_group_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: auth_group_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.auth_group ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -95,7 +272,7 @@ ALTER TABLE public.auth_group ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTI
 
 
 --
--- Name: auth_group_permissions; Type: TABLE; Schema: public; Owner: postgres
+-- Name: auth_group_permissions; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.auth_group_permissions (
@@ -105,10 +282,8 @@ CREATE TABLE public.auth_group_permissions (
 );
 
 
-ALTER TABLE public.auth_group_permissions OWNER TO postgres;
-
 --
--- Name: auth_group_permissions_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: auth_group_permissions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.auth_group_permissions ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -122,7 +297,7 @@ ALTER TABLE public.auth_group_permissions ALTER COLUMN id ADD GENERATED BY DEFAU
 
 
 --
--- Name: auth_permission; Type: TABLE; Schema: public; Owner: postgres
+-- Name: auth_permission; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.auth_permission (
@@ -133,10 +308,8 @@ CREATE TABLE public.auth_permission (
 );
 
 
-ALTER TABLE public.auth_permission OWNER TO postgres;
-
 --
--- Name: auth_permission_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: auth_permission_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.auth_permission ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -150,7 +323,7 @@ ALTER TABLE public.auth_permission ALTER COLUMN id ADD GENERATED BY DEFAULT AS I
 
 
 --
--- Name: bacterial_markers; Type: TABLE; Schema: public; Owner: postgres
+-- Name: bacterial_markers; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.bacterial_markers (
@@ -163,10 +336,8 @@ CREATE TABLE public.bacterial_markers (
 );
 
 
-ALTER TABLE public.bacterial_markers OWNER TO postgres;
-
 --
--- Name: bacterial_markers_bacterial_marker_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: bacterial_markers_bacterial_marker_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.bacterial_markers ALTER COLUMN bacterial_marker_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -180,7 +351,7 @@ ALTER TABLE public.bacterial_markers ALTER COLUMN bacterial_marker_id ADD GENERA
 
 
 --
--- Name: bacterial_markers_special_case; Type: TABLE; Schema: public; Owner: postgres
+-- Name: bacterial_markers_special_case; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.bacterial_markers_special_case (
@@ -194,10 +365,8 @@ CREATE TABLE public.bacterial_markers_special_case (
 );
 
 
-ALTER TABLE public.bacterial_markers_special_case OWNER TO postgres;
-
 --
--- Name: bacterial_markers_special_case_bacterial_marker_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: bacterial_markers_special_case_bacterial_marker_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.bacterial_markers_special_case ALTER COLUMN bacterial_marker_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -211,7 +380,7 @@ ALTER TABLE public.bacterial_markers_special_case ALTER COLUMN bacterial_marker_
 
 
 --
--- Name: blog; Type: TABLE; Schema: public; Owner: postgres
+-- Name: blog; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.blog (
@@ -226,10 +395,8 @@ CREATE TABLE public.blog (
 );
 
 
-ALTER TABLE public.blog OWNER TO postgres;
-
 --
--- Name: blog_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: blog_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.blog ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -243,7 +410,7 @@ ALTER TABLE public.blog ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
 
 
 --
--- Name: delivery_formats; Type: TABLE; Schema: public; Owner: postgres
+-- Name: delivery_formats; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.delivery_formats (
@@ -255,10 +422,8 @@ CREATE TABLE public.delivery_formats (
 );
 
 
-ALTER TABLE public.delivery_formats OWNER TO postgres;
-
 --
--- Name: delivery_formats_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: delivery_formats_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.delivery_formats ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -272,7 +437,7 @@ ALTER TABLE public.delivery_formats ALTER COLUMN id ADD GENERATED BY DEFAULT AS 
 
 
 --
--- Name: delivery_library; Type: TABLE; Schema: public; Owner: postgres
+-- Name: delivery_library; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.delivery_library (
@@ -283,10 +448,8 @@ CREATE TABLE public.delivery_library (
 );
 
 
-ALTER TABLE public.delivery_library OWNER TO postgres;
-
 --
--- Name: delivery_library_delivery_library_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: delivery_library_delivery_library_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.delivery_library ALTER COLUMN delivery_library_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -300,7 +463,7 @@ ALTER TABLE public.delivery_library ALTER COLUMN delivery_library_id ADD GENERAT
 
 
 --
--- Name: design_library; Type: TABLE; Schema: public; Owner: postgres
+-- Name: design_library; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.design_library (
@@ -319,10 +482,8 @@ CREATE TABLE public.design_library (
 );
 
 
-ALTER TABLE public.design_library OWNER TO postgres;
-
 --
--- Name: design_library_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: design_library_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.design_library ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -336,7 +497,7 @@ ALTER TABLE public.design_library ALTER COLUMN id ADD GENERATED BY DEFAULT AS ID
 
 
 --
--- Name: django_admin_log; Type: TABLE; Schema: public; Owner: postgres
+-- Name: django_admin_log; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.django_admin_log (
@@ -352,10 +513,8 @@ CREATE TABLE public.django_admin_log (
 );
 
 
-ALTER TABLE public.django_admin_log OWNER TO postgres;
-
 --
--- Name: django_admin_log_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: django_admin_log_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.django_admin_log ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -369,7 +528,7 @@ ALTER TABLE public.django_admin_log ALTER COLUMN id ADD GENERATED BY DEFAULT AS 
 
 
 --
--- Name: django_content_type; Type: TABLE; Schema: public; Owner: postgres
+-- Name: django_content_type; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.django_content_type (
@@ -379,10 +538,8 @@ CREATE TABLE public.django_content_type (
 );
 
 
-ALTER TABLE public.django_content_type OWNER TO postgres;
-
 --
--- Name: django_content_type_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: django_content_type_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.django_content_type ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -396,7 +553,7 @@ ALTER TABLE public.django_content_type ALTER COLUMN id ADD GENERATED BY DEFAULT 
 
 
 --
--- Name: django_migrations; Type: TABLE; Schema: public; Owner: postgres
+-- Name: django_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.django_migrations (
@@ -407,10 +564,8 @@ CREATE TABLE public.django_migrations (
 );
 
 
-ALTER TABLE public.django_migrations OWNER TO postgres;
-
 --
--- Name: django_migrations_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: django_migrations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.django_migrations ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -424,7 +579,7 @@ ALTER TABLE public.django_migrations ALTER COLUMN id ADD GENERATED BY DEFAULT AS
 
 
 --
--- Name: django_session; Type: TABLE; Schema: public; Owner: postgres
+-- Name: django_session; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.django_session (
@@ -434,10 +589,8 @@ CREATE TABLE public.django_session (
 );
 
 
-ALTER TABLE public.django_session OWNER TO postgres;
-
 --
--- Name: django_truncate_model1; Type: TABLE; Schema: public; Owner: postgres
+-- Name: django_truncate_model1; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.django_truncate_model1 (
@@ -447,10 +600,8 @@ CREATE TABLE public.django_truncate_model1 (
 );
 
 
-ALTER TABLE public.django_truncate_model1 OWNER TO postgres;
-
 --
--- Name: django_truncate_model1_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: django_truncate_model1_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.django_truncate_model1 ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -464,7 +615,7 @@ ALTER TABLE public.django_truncate_model1 ALTER COLUMN id ADD GENERATED BY DEFAU
 
 
 --
--- Name: django_truncate_model2; Type: TABLE; Schema: public; Owner: postgres
+-- Name: django_truncate_model2; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.django_truncate_model2 (
@@ -474,10 +625,8 @@ CREATE TABLE public.django_truncate_model2 (
 );
 
 
-ALTER TABLE public.django_truncate_model2 OWNER TO postgres;
-
 --
--- Name: django_truncate_model2_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: django_truncate_model2_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.django_truncate_model2 ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -491,7 +640,7 @@ ALTER TABLE public.django_truncate_model2 ALTER COLUMN id ADD GENERATED BY DEFAU
 
 
 --
--- Name: featured_products; Type: TABLE; Schema: public; Owner: postgres
+-- Name: featured_products; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.featured_products (
@@ -513,10 +662,8 @@ CREATE TABLE public.featured_products (
 );
 
 
-ALTER TABLE public.featured_products OWNER TO postgres;
-
 --
--- Name: featured_products_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: featured_products_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.featured_products ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -530,7 +677,7 @@ ALTER TABLE public.featured_products ALTER COLUMN id ADD GENERATED BY DEFAULT AS
 
 
 --
--- Name: fluorescene_markers; Type: TABLE; Schema: public; Owner: postgres
+-- Name: fluorescene_markers; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.fluorescene_markers (
@@ -543,10 +690,8 @@ CREATE TABLE public.fluorescene_markers (
 );
 
 
-ALTER TABLE public.fluorescene_markers OWNER TO postgres;
-
 --
--- Name: fluorescene_markers_fluorescene_marker_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: fluorescene_markers_fluorescene_marker_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.fluorescene_markers ALTER COLUMN fluorescene_marker_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -560,7 +705,7 @@ ALTER TABLE public.fluorescene_markers ALTER COLUMN fluorescene_marker_id ADD GE
 
 
 --
--- Name: function_types; Type: TABLE; Schema: public; Owner: postgres
+-- Name: function_types; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.function_types (
@@ -575,10 +720,8 @@ CREATE TABLE public.function_types (
 );
 
 
-ALTER TABLE public.function_types OWNER TO postgres;
-
 --
--- Name: function_types_function_type_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: function_types_function_type_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.function_types ALTER COLUMN function_type_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -592,7 +735,7 @@ ALTER TABLE public.function_types ALTER COLUMN function_type_id ADD GENERATED BY
 
 
 --
--- Name: gene_library; Type: TABLE; Schema: public; Owner: postgres
+-- Name: gene_library; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.gene_library (
@@ -608,10 +751,8 @@ CREATE TABLE public.gene_library (
 );
 
 
-ALTER TABLE public.gene_library OWNER TO postgres;
-
 --
--- Name: gene_library_gene_library_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: gene_library_gene_library_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.gene_library ALTER COLUMN gene_library_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -625,7 +766,7 @@ ALTER TABLE public.gene_library ALTER COLUMN gene_library_id ADD GENERATED BY DE
 
 
 --
--- Name: images; Type: TABLE; Schema: public; Owner: postgres
+-- Name: images; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.images (
@@ -636,10 +777,8 @@ CREATE TABLE public.images (
 );
 
 
-ALTER TABLE public.images OWNER TO postgres;
-
 --
--- Name: images_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: images_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.images ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -653,7 +792,7 @@ ALTER TABLE public.images ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
 
 
 --
--- Name: invoices; Type: TABLE; Schema: public; Owner: postgres
+-- Name: invoices; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.invoices (
@@ -681,10 +820,8 @@ CREATE TABLE public.invoices (
 );
 
 
-ALTER TABLE public.invoices OWNER TO postgres;
-
 --
--- Name: invoices_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: invoices_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.invoices ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -698,7 +835,7 @@ ALTER TABLE public.invoices ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY
 
 
 --
--- Name: manual_files; Type: TABLE; Schema: public; Owner: postgres
+-- Name: manual_files; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.manual_files (
@@ -709,10 +846,8 @@ CREATE TABLE public.manual_files (
 );
 
 
-ALTER TABLE public.manual_files OWNER TO postgres;
-
 --
--- Name: manual_files_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: manual_files_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.manual_files ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -726,7 +861,7 @@ ALTER TABLE public.manual_files ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDEN
 
 
 --
--- Name: order_item; Type: TABLE; Schema: public; Owner: postgres
+-- Name: order_item; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.order_item (
@@ -767,10 +902,8 @@ CREATE TABLE public.order_item (
 );
 
 
-ALTER TABLE public.order_item OWNER TO postgres;
-
 --
--- Name: order_item_order_item_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: order_item_order_item_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.order_item ALTER COLUMN order_item_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -784,7 +917,7 @@ ALTER TABLE public.order_item ALTER COLUMN order_item_id ADD GENERATED BY DEFAUL
 
 
 --
--- Name: orders; Type: TABLE; Schema: public; Owner: postgres
+-- Name: orders; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.orders (
@@ -822,10 +955,8 @@ CREATE TABLE public.orders (
 );
 
 
-ALTER TABLE public.orders OWNER TO postgres;
-
 --
--- Name: orders_cartitem; Type: TABLE; Schema: public; Owner: postgres
+-- Name: orders_cartitem; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.orders_cartitem (
@@ -852,10 +983,8 @@ CREATE TABLE public.orders_cartitem (
 );
 
 
-ALTER TABLE public.orders_cartitem OWNER TO postgres;
-
 --
--- Name: orders_cartitem_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: orders_cartitem_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.orders_cartitem ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -869,7 +998,7 @@ ALTER TABLE public.orders_cartitem ALTER COLUMN id ADD GENERATED BY DEFAULT AS I
 
 
 --
--- Name: orders_order_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: orders_order_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.orders ALTER COLUMN order_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -883,21 +1012,66 @@ ALTER TABLE public.orders ALTER COLUMN order_id ADD GENERATED BY DEFAULT AS IDEN
 
 
 --
--- Name: product_category; Type: TABLE; Schema: public; Owner: postgres
+-- Name: product; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.product (
+    product_id bigint NOT NULL,
+    external_id character varying(100) NOT NULL,
+    product_name character varying(255) NOT NULL,
+    description text,
+    image_url text,
+    product_link text,
+    category_external_id character varying(100),
+    product_group character varying(100),
+    source_type character varying(50),
+    display_order integer,
+    source_created_at_ms bigint,
+    source_created_at timestamp with time zone,
+    catalog_number character varying(100),
+    availability character varying(100),
+    list_price character varying(100),
+    price_range character varying(100),
+    quote_only boolean DEFAULT false NOT NULL,
+    is_featured boolean DEFAULT false NOT NULL,
+    show_in_featured boolean DEFAULT false NOT NULL,
+    show_in_gene_editing boolean DEFAULT false NOT NULL,
+    key_features text[] DEFAULT ARRAY[]::text[] NOT NULL,
+    options text[] DEFAULT ARRAY[]::text[] NOT NULL,
+    option_prices jsonb DEFAULT '{}'::jsonb NOT NULL,
+    storage_stability text,
+    performance_data text,
+    data_description text,
+    manuals text[] DEFAULT ARRAY[]::text[] NOT NULL,
+    manual_urls text[] DEFAULT ARRAY[]::text[] NOT NULL,
+    images text[] DEFAULT ARRAY[]::text[] NOT NULL,
+    store_link text,
+    content_text text,
+    hidden boolean DEFAULT false NOT NULL,
+    raw_product jsonb,
+    raw_override jsonb,
+    raw_detail jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: product_category; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.product_category (
     category_id integer NOT NULL,
     category_name character varying NOT NULL,
     description character varying,
-    priority integer NOT NULL
+    priority integer NOT NULL,
+    external_id character varying,
+    product_type character varying
 );
 
 
-ALTER TABLE public.product_category OWNER TO postgres;
-
 --
--- Name: product_category_category_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: product_category_category_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.product_category ALTER COLUMN category_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -911,7 +1085,7 @@ ALTER TABLE public.product_category ALTER COLUMN category_id ADD GENERATED BY DE
 
 
 --
--- Name: product_inventory; Type: TABLE; Schema: public; Owner: postgres
+-- Name: product_inventory; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.product_inventory (
@@ -924,10 +1098,8 @@ CREATE TABLE public.product_inventory (
 );
 
 
-ALTER TABLE public.product_inventory OWNER TO postgres;
-
 --
--- Name: product_inventory_inventory_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: product_inventory_inventory_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.product_inventory ALTER COLUMN inventory_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -941,7 +1113,7 @@ ALTER TABLE public.product_inventory ALTER COLUMN inventory_id ADD GENERATED BY 
 
 
 --
--- Name: product_mode; Type: TABLE; Schema: public; Owner: postgres
+-- Name: product_mode; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.product_mode (
@@ -953,10 +1125,8 @@ CREATE TABLE public.product_mode (
 );
 
 
-ALTER TABLE public.product_mode OWNER TO postgres;
-
 --
--- Name: product_mode_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: product_mode_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.product_mode ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -970,45 +1140,11 @@ ALTER TABLE public.product_mode ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDEN
 
 
 --
--- Name: products; Type: TABLE; Schema: public; Owner: postgres
+-- Name: product_product_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.products (
-    product_id integer NOT NULL,
-    product_sku character varying NOT NULL,
-    product_name character varying NOT NULL,
-    description character varying,
-    function_type_code character varying NOT NULL,
-    structure_type_code character varying NOT NULL,
-    promoter_code character varying NOT NULL,
-    property_code character varying NOT NULL,
-    protein_tag_code character varying NOT NULL,
-    fluorescene_marker_code character varying NOT NULL,
-    selection_marker_code character varying NOT NULL,
-    bacterial_marker_code character varying NOT NULL,
-    delivery_format_code character varying NOT NULL,
-    list_price numeric(8,2) NOT NULL,
-    unit_price numeric(8,2) NOT NULL,
-    unit_size character varying NOT NULL,
-    discount_code character varying,
-    ready_status character varying,
-    union_id bigint,
-    ship_condition character varying NOT NULL,
-    target_sequence character varying(6) NOT NULL,
-    units character varying NOT NULL,
-    units_in_stock integer NOT NULL,
-    on_discount boolean NOT NULL
-);
-
-
-ALTER TABLE public.products OWNER TO postgres;
-
---
--- Name: products_product_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-ALTER TABLE public.products ALTER COLUMN product_id ADD GENERATED BY DEFAULT AS IDENTITY (
-    SEQUENCE NAME public.products_product_id_seq
+ALTER TABLE public.product ALTER COLUMN product_id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.product_product_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1018,7 +1154,7 @@ ALTER TABLE public.products ALTER COLUMN product_id ADD GENERATED BY DEFAULT AS 
 
 
 --
--- Name: products_union; Type: TABLE; Schema: public; Owner: postgres
+-- Name: products_union; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.products_union (
@@ -1028,10 +1164,8 @@ CREATE TABLE public.products_union (
 );
 
 
-ALTER TABLE public.products_union OWNER TO postgres;
-
 --
--- Name: products_union_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: products_union_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.products_union ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -1045,7 +1179,7 @@ ALTER TABLE public.products_union ALTER COLUMN id ADD GENERATED BY DEFAULT AS ID
 
 
 --
--- Name: promoters; Type: TABLE; Schema: public; Owner: postgres
+-- Name: promoters; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.promoters (
@@ -1058,10 +1192,8 @@ CREATE TABLE public.promoters (
 );
 
 
-ALTER TABLE public.promoters OWNER TO postgres;
-
 --
--- Name: promoters_promoter_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: promoters_promoter_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.promoters ALTER COLUMN promoter_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -1075,7 +1207,7 @@ ALTER TABLE public.promoters ALTER COLUMN promoter_id ADD GENERATED BY DEFAULT A
 
 
 --
--- Name: promoters_special_case; Type: TABLE; Schema: public; Owner: postgres
+-- Name: promoters_special_case; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.promoters_special_case (
@@ -1089,10 +1221,8 @@ CREATE TABLE public.promoters_special_case (
 );
 
 
-ALTER TABLE public.promoters_special_case OWNER TO postgres;
-
 --
--- Name: promoters_special_case_promoter_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: promoters_special_case_promoter_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.promoters_special_case ALTER COLUMN promoter_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -1106,7 +1236,7 @@ ALTER TABLE public.promoters_special_case ALTER COLUMN promoter_id ADD GENERATED
 
 
 --
--- Name: property; Type: TABLE; Schema: public; Owner: postgres
+-- Name: property; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.property (
@@ -1119,10 +1249,8 @@ CREATE TABLE public.property (
 );
 
 
-ALTER TABLE public.property OWNER TO postgres;
-
 --
--- Name: property_property_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: property_property_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.property ALTER COLUMN property_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -1136,7 +1264,7 @@ ALTER TABLE public.property ALTER COLUMN property_id ADD GENERATED BY DEFAULT AS
 
 
 --
--- Name: protein_tags; Type: TABLE; Schema: public; Owner: postgres
+-- Name: protein_tags; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.protein_tags (
@@ -1149,10 +1277,8 @@ CREATE TABLE public.protein_tags (
 );
 
 
-ALTER TABLE public.protein_tags OWNER TO postgres;
-
 --
--- Name: protein_tags_protein_tag_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: protein_tags_protein_tag_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.protein_tags ALTER COLUMN protein_tag_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -1166,7 +1292,7 @@ ALTER TABLE public.protein_tags ALTER COLUMN protein_tag_id ADD GENERATED BY DEF
 
 
 --
--- Name: quotes; Type: TABLE; Schema: public; Owner: postgres
+-- Name: quotes; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.quotes (
@@ -1188,10 +1314,8 @@ CREATE TABLE public.quotes (
 );
 
 
-ALTER TABLE public.quotes OWNER TO postgres;
-
 --
--- Name: quotes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: quotes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.quotes ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -1205,7 +1329,7 @@ ALTER TABLE public.quotes ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
 
 
 --
--- Name: selection_markers; Type: TABLE; Schema: public; Owner: postgres
+-- Name: selection_markers; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.selection_markers (
@@ -1218,10 +1342,8 @@ CREATE TABLE public.selection_markers (
 );
 
 
-ALTER TABLE public.selection_markers OWNER TO postgres;
-
 --
--- Name: selection_markers_selection_marker_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: selection_markers_selection_marker_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.selection_markers ALTER COLUMN selection_marker_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -1235,7 +1357,7 @@ ALTER TABLE public.selection_markers ALTER COLUMN selection_marker_id ADD GENERA
 
 
 --
--- Name: service_mode; Type: TABLE; Schema: public; Owner: postgres
+-- Name: service_mode; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.service_mode (
@@ -1243,14 +1365,13 @@ CREATE TABLE public.service_mode (
     url character varying NOT NULL,
     title character varying(60) NOT NULL,
     content text NOT NULL,
-    image character varying(100)
+    image character varying(100),
+    category character varying(100)
 );
 
 
-ALTER TABLE public.service_mode OWNER TO postgres;
-
 --
--- Name: service_mode_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: service_mode_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.service_mode ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -1264,7 +1385,7 @@ ALTER TABLE public.service_mode ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDEN
 
 
 --
--- Name: structure_types; Type: TABLE; Schema: public; Owner: postgres
+-- Name: structure_types; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.structure_types (
@@ -1277,10 +1398,8 @@ CREATE TABLE public.structure_types (
 );
 
 
-ALTER TABLE public.structure_types OWNER TO postgres;
-
 --
--- Name: structure_types_structure_type_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: structure_types_structure_type_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.structure_types ALTER COLUMN structure_type_id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -1294,7 +1413,7 @@ ALTER TABLE public.structure_types ALTER COLUMN structure_type_id ADD GENERATED 
 
 
 --
--- Name: unit_prices; Type: TABLE; Schema: public; Owner: postgres
+-- Name: unit_prices; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.unit_prices (
@@ -1307,10 +1426,8 @@ CREATE TABLE public.unit_prices (
 );
 
 
-ALTER TABLE public.unit_prices OWNER TO postgres;
-
 --
--- Name: unit_prices_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: unit_prices_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.unit_prices ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -1324,7 +1441,7 @@ ALTER TABLE public.unit_prices ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENT
 
 
 --
--- Name: users; Type: TABLE; Schema: public; Owner: postgres
+-- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.users (
@@ -1346,14 +1463,13 @@ CREATE TABLE public.users (
     address_id bigint,
     billing_address_id bigint,
     shipping_address_id bigint,
-    has_set_password boolean NOT NULL
+    has_set_password boolean NOT NULL,
+    is_admin boolean NOT NULL
 );
 
 
-ALTER TABLE public.users OWNER TO postgres;
-
 --
--- Name: users_address_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: users_address_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.addresses ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -1367,7 +1483,7 @@ ALTER TABLE public.addresses ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTIT
 
 
 --
--- Name: users_groups; Type: TABLE; Schema: public; Owner: postgres
+-- Name: users_groups; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.users_groups (
@@ -1377,10 +1493,8 @@ CREATE TABLE public.users_groups (
 );
 
 
-ALTER TABLE public.users_groups OWNER TO postgres;
-
 --
--- Name: users_groups_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: users_groups_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.users_groups ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -1394,7 +1508,7 @@ ALTER TABLE public.users_groups ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDEN
 
 
 --
--- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.users ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -1408,7 +1522,7 @@ ALTER TABLE public.users ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
 
 
 --
--- Name: users_user_permissions; Type: TABLE; Schema: public; Owner: postgres
+-- Name: users_user_permissions; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.users_user_permissions (
@@ -1418,10 +1532,8 @@ CREATE TABLE public.users_user_permissions (
 );
 
 
-ALTER TABLE public.users_user_permissions OWNER TO postgres;
-
 --
--- Name: users_user_permissions_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: users_user_permissions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.users_user_permissions ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -1435,7 +1547,7 @@ ALTER TABLE public.users_user_permissions ALTER COLUMN id ADD GENERATED BY DEFAU
 
 
 --
--- Name: work_schedule; Type: TABLE; Schema: public; Owner: postgres
+-- Name: work_schedule; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.work_schedule (
@@ -1451,10 +1563,8 @@ CREATE TABLE public.work_schedule (
 );
 
 
-ALTER TABLE public.work_schedule OWNER TO postgres;
-
 --
--- Name: work_schedule_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: work_schedule_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 ALTER TABLE public.work_schedule ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -1468,7 +1578,7 @@ ALTER TABLE public.work_schedule ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDE
 
 
 --
--- Data for Name: addresses; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: addresses; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.addresses (id, address_line_1, address_line_2, city, state, country, zipcode, apt_suite) FROM stdin;
@@ -1483,7 +1593,7 @@ COPY public.addresses (id, address_line_1, address_line_2, city, state, country,
 
 
 --
--- Data for Name: api_emailverificationtoken; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: api_emailverificationtoken; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.api_emailverificationtoken (id, token, created_at, user_id) FROM stdin;
@@ -1491,7 +1601,7 @@ COPY public.api_emailverificationtoken (id, token, created_at, user_id) FROM std
 
 
 --
--- Data for Name: auth_group; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: auth_group; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.auth_group (id, name) FROM stdin;
@@ -1500,7 +1610,7 @@ COPY public.auth_group (id, name) FROM stdin;
 
 
 --
--- Data for Name: auth_group_permissions; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: auth_group_permissions; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.auth_group_permissions (id, group_id, permission_id) FROM stdin;
@@ -1556,7 +1666,7 @@ COPY public.auth_group_permissions (id, group_id, permission_id) FROM stdin;
 
 
 --
--- Data for Name: auth_permission; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: auth_permission; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.auth_permission (id, name, content_type_id, codename) FROM stdin;
@@ -1772,11 +1882,15 @@ COPY public.auth_permission (id, name, content_type_id, codename) FROM stdin;
 210	Can change Tracking In Progress RNAi Order	53	change_rnaiinprogressorderitem
 211	Can delete Tracking In Progress RNAi Order	53	delete_rnaiinprogressorderitem
 212	Can view Tracking In Progress RNAi Order	53	view_rnaiinprogressorderitem
+213	Can add quote	54	add_quote
+214	Can change quote	54	change_quote
+215	Can delete quote	54	delete_quote
+216	Can view quote	54	view_quote
 \.
 
 
 --
--- Data for Name: bacterial_markers; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: bacterial_markers; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.bacterial_markers (bacterial_marker_id, bacterial_marker_name, bacterial_marker_code, priority, enabled, description) FROM stdin;
@@ -1785,7 +1899,7 @@ COPY public.bacterial_markers (bacterial_marker_id, bacterial_marker_name, bacte
 
 
 --
--- Data for Name: bacterial_markers_special_case; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: bacterial_markers_special_case; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.bacterial_markers_special_case (bacterial_marker_id, bacterial_marker_name, bacterial_marker_code, structure_type_symbol, priority, enabled, description) FROM stdin;
@@ -1804,7 +1918,7 @@ COPY public.bacterial_markers_special_case (bacterial_marker_id, bacterial_marke
 
 
 --
--- Data for Name: blog; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: blog; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.blog (id, title, author, image, date_posted, date_modified, content, description) FROM stdin;
@@ -1814,7 +1928,7 @@ COPY public.blog (id, title, author, image, date_posted, date_modified, content,
 
 
 --
--- Data for Name: delivery_formats; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: delivery_formats; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.delivery_formats (id, delivery_format_symbol, delivery_format_name, description, priority) FROM stdin;
@@ -1825,7 +1939,7 @@ COPY public.delivery_formats (id, delivery_format_symbol, delivery_format_name, 
 
 
 --
--- Data for Name: delivery_library; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: delivery_library; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.delivery_library (delivery_library_id, structure_type_symbol, delivery_format_symbol, function_type_symbol) FROM stdin;
@@ -1956,7 +2070,7 @@ COPY public.delivery_library (delivery_library_id, structure_type_symbol, delive
 
 
 --
--- Data for Name: design_library; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: design_library; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.design_library (id, structure_type_code, delivery_format_code, kit_amount, discount_code, function_type_code, list_price, shelf_status, target_sequence, unit, unit_price, on_discount) FROM stdin;
@@ -2032,7 +2146,7 @@ COPY public.design_library (id, structure_type_code, delivery_format_code, kit_a
 
 
 --
--- Data for Name: django_admin_log; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: django_admin_log; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.django_admin_log (id, action_time, object_id, object_repr, action_flag, change_message, content_type_id, user_id) FROM stdin;
@@ -2125,7 +2239,7 @@ COPY public.django_admin_log (id, action_time, object_id, object_repr, action_fl
 
 
 --
--- Data for Name: django_content_type; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: django_content_type; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.django_content_type (id, app_label, model) FROM stdin;
@@ -2182,11 +2296,12 @@ COPY public.django_content_type (id, app_label, model) FROM stdin;
 51	orders	overexpressioninprogressorderitem
 52	orders	reagentinprogressorderitem
 53	orders	rnaiinprogressorderitem
+54	api	quote
 \.
 
 
 --
--- Data for Name: django_migrations; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: django_migrations; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.django_migrations (id, app, name, applied) FROM stdin;
@@ -2293,11 +2408,16 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 102	products	0032_bacterialmarker_description_and_more	2025-05-11 00:39:24.706635+00
 103	orders	0026_delete_inprogressorderitem_crisprinprogressorderitem_and_more	2025-05-25 15:03:30.401288+00
 104	users	0010_alter_address_address_line_2_alter_address_apt_suite_and_more	2025-05-29 02:11:55.134321+00
+105	api	0006_quote	2026-06-19 21:09:07.750057+00
+106	interface	0006_servicemode_category	2026-06-19 21:09:07.782549+00
+107	products	0033_productcategory_external_id_and_product_type	2026-06-19 21:09:07.826771+00
+108	products	0034_product_model_public_product_state	2026-06-19 21:09:07.841757+00
+109	users	0011_user_is_admin	2026-06-19 21:09:07.908667+00
 \.
 
 
 --
--- Data for Name: django_session; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: django_session; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.django_session (session_key, session_data, expire_date) FROM stdin;
@@ -3025,7 +3145,7 @@ jiapmbd9watfz1g6wyworfma2yfbu1dv	.eJxVjDsOwjAQRO_iGln-ZLM2JT1nsNY_HEC2FCcV4u5gKQ
 
 
 --
--- Data for Name: django_truncate_model1; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: django_truncate_model1; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.django_truncate_model1 (id, name, age) FROM stdin;
@@ -3033,7 +3153,7 @@ COPY public.django_truncate_model1 (id, name, age) FROM stdin;
 
 
 --
--- Data for Name: django_truncate_model2; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: django_truncate_model2; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.django_truncate_model2 (id, name, value) FROM stdin;
@@ -3041,7 +3161,7 @@ COPY public.django_truncate_model2 (id, name, value) FROM stdin;
 
 
 --
--- Data for Name: featured_products; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: featured_products; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.featured_products (id, catalog_number, product_name, description, key_features, performance_data, storage_info, shelf_status, units_in_stock, units, ship_info, union_id, on_display, on_discount, priority) FROM stdin;
@@ -3096,7 +3216,7 @@ COPY public.featured_products (id, catalog_number, product_name, description, ke
 
 
 --
--- Data for Name: fluorescene_markers; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: fluorescene_markers; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.fluorescene_markers (fluorescene_marker_id, fluorescene_marker_name, fluorescene_marker_code, priority, enabled, description) FROM stdin;
@@ -3109,7 +3229,7 @@ COPY public.fluorescene_markers (fluorescene_marker_id, fluorescene_marker_name,
 
 
 --
--- Data for Name: function_types; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: function_types; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.function_types (function_type_id, function_type_symbol, function_type_name, description, load_status, category, abbreviation, priority) FROM stdin;
@@ -3126,7 +3246,7 @@ COPY public.function_types (function_type_id, function_type_symbol, function_typ
 
 
 --
--- Data for Name: gene_library; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: gene_library; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.gene_library (gene_library_id, target_sequence, gene_name, abbreviation, symbol, locus_id, species, description, reference_link) FROM stdin;
@@ -42063,7 +42183,7 @@ COPY public.gene_library (gene_library_id, target_sequence, gene_name, abbreviat
 
 
 --
--- Data for Name: images; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: images; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.images (id, image, union_id, main_display) FROM stdin;
@@ -42250,7 +42370,7 @@ COPY public.images (id, image, union_id, main_display) FROM stdin;
 
 
 --
--- Data for Name: invoices; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: invoices; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.invoices (id, order_placed_date, order_number, order_status, service_finished, invoice_sent, delivery_date, billing_date, invoice_number, invoice_due, po_file, po_number, is_paid, receipt_number, invoice_payment, billing_address_id, po_address_id, shipping_address_id, user_id, payment_date, payment_token) FROM stdin;
@@ -42259,7 +42379,7 @@ COPY public.invoices (id, order_placed_date, order_number, order_status, service
 
 
 --
--- Data for Name: manual_files; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: manual_files; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.manual_files (id, manual, union_id, name) FROM stdin;
@@ -42290,7 +42410,7 @@ COPY public.manual_files (id, manual, union_id, name) FROM stdin;
 
 
 --
--- Data for Name: order_item; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: order_item; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.order_item (order_item_id, shipping_date, delivery_date, billing_date, transaction_status, ready_status, fulfilled, refunded, paid, product_sku, product_name, unit_price, total_price, adjusted_price, unit_size, quantity, discount_code, order_id, order_class, est_delivery_date, bacterial_marker_name, delivery_format_name, fluorescene_marker_name, function_type_name, promoter_name, protein_tag_name, selection_marker_name, structure_type_name, target_sequence, order_placed_date, order_process_date, status, work_period, url) FROM stdin;
@@ -42303,7 +42423,7 @@ COPY public.order_item (order_item_id, shipping_date, delivery_date, billing_dat
 
 
 --
--- Data for Name: orders; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: orders; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.orders (order_id, payment_token, total_price, quantity, discount_code, order_placed_date, order_process_date, delivery_date, billing_date, transaction_status, fulfilled, refunded, paid, notes, shipping_address_id, user_id, billing_address_id, last_digits, payment_source, shipping_amount, subtotal, tax_amount, invoice_amount, invoice_maximum_amount, invoice_number, minimum_payment, po_address_id, po_number, receipt_number, total_paid, invoice_id) FROM stdin;
@@ -42317,7 +42437,7 @@ COPY public.orders (order_id, payment_token, total_price, quantity, discount_cod
 
 
 --
--- Data for Name: orders_cartitem; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: orders_cartitem; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.orders_cartitem (id, session_key, product_sku, product_name, price, adjusted_price, unit_size, quantity, discount_code, ready_status, bacterial_marker_name, delivery_format_name, fluorescene_marker_name, function_type_name, promoter_name, protein_tag_name, selection_marker_name, structure_type_name, target_sequence, url) FROM stdin;
@@ -42351,19 +42471,135 @@ COPY public.orders_cartitem (id, session_key, product_sku, product_name, price, 
 
 
 --
--- Data for Name: product_category; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: product; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.product_category (category_id, category_name, description, priority) FROM stdin;
-1	CRISPR-Cas9	CRISPR is a powerful gene-editing technology that can precisely modify DNA sequences within living organisms.	1
-2	RNAi	RNA interference (RNAi) regulates gene expression by silencing specific mRNA molecules, thereby preventing the production of certain proteins.	1
-3	Mammalian Cloning	The custom gene is regulated and expressed under a mammalian-type promoter and transcriptional components.	1
-4	Prokaryotic Cloning	The custom gene is regulated and expressed under a prokaryotic-type promoter and transcriptional components.	1
+COPY public.product (product_id, external_id, product_name, description, image_url, product_link, category_external_id, product_group, source_type, display_order, source_created_at_ms, source_created_at, catalog_number, availability, list_price, price_range, quote_only, is_featured, show_in_featured, show_in_gene_editing, key_features, options, option_prices, storage_stability, performance_data, data_description, manuals, manual_urls, images, store_link, content_text, hidden, raw_product, raw_override, raw_detail, created_at, updated_at) FROM stdin;
+1	custom-1757608878053	custom-1757608878053	\N	/images/products/1-BSY3320_2__SYBR_Green_qPCR_Master_Mix-300x300.jpg	\N	\N	\N	\N	\N	\N	\N		In Stock		\N	f	f	f	f	{}	{}	{}			\N	{}	{}	{/images/products/1-BSY3320_2__SYBR_Green_qPCR_Master_Mix-300x300.jpg}			f	{"id": "custom-1757608878053"}	\N	{"images": ["/images/products/1-BSY3320_2__SYBR_Green_qPCR_Master_Mix-300x300.jpg"], "manuals": [], "options": [], "listPrice": "", "quoteOnly": false, "storeLink": "", "manualUrls": [], "contentText": "", "keyFeatures": [], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "", "performanceData": "", "storageStability": ""}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+2	custom-1757609198384	custom-1757609198384	\N	/images/products/1-BSY3323_2__Fast_SYBR_Green_qPCR_Master_Mix-300x300.jpg	\N	\N	\N	\N	\N	\N	\N		In Stock		\N	t	f	f	f	{}	{}	{}			\N	{}	{}	{/images/products/1-BSY3323_2__Fast_SYBR_Green_qPCR_Master_Mix-300x300.jpg}	https://store.bioarktech.com/cart		f	{"id": "custom-1757609198384"}	\N	{"images": ["/images/products/1-BSY3323_2__Fast_SYBR_Green_qPCR_Master_Mix-300x300.jpg"], "manuals": [], "options": [], "listPrice": "", "quoteOnly": true, "storeLink": "https://store.bioarktech.com/cart", "manualUrls": [], "contentText": "", "keyFeatures": [], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "", "performanceData": "", "storageStability": ""}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+3	custom-1757746922797	custom-1757746922797	\N	\N	\N	\N	\N	\N	\N	\N	\N		In Stock		\N	f	f	f	f	{}	{}	{}			\N	{}	{}	{}	https://store.bioarktech.com/cart		f	{"id": "custom-1757746922797"}	\N	{"images": [], "manuals": [], "options": [], "listPrice": "", "quoteOnly": false, "storeLink": "https://store.bioarktech.com/cart", "manualUrls": [], "contentText": "", "keyFeatures": [], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "", "performanceData": "", "storageStability": ""}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+4	custom-1757747120684	custom-1757747120684	\N	\N	\N	\N	\N	\N	\N	\N	\N		In Stock		\N	f	f	f	f	{}	{}	{}			\N	{}	{}	{}	https://store.bioarktech.com/cart		f	{"id": "custom-1757747120684"}	\N	{"images": [], "manuals": [], "options": [], "listPrice": "", "quoteOnly": false, "storeLink": "https://store.bioarktech.com/cart", "manualUrls": [], "contentText": "", "keyFeatures": [], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "", "performanceData": "", "storageStability": ""}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+5	custom-1757747406537	custom-1757747406537	\N	\N	\N	\N	\N	\N	\N	\N	\N		In Stock		\N	f	f	f	f	{}	{}	{}			\N	{}	{}	{}	https://store.bioarktech.com/cart		f	{"id": "custom-1757747406537"}	\N	{"images": [], "manuals": [], "options": [], "listPrice": "", "quoteOnly": false, "storeLink": "https://store.bioarktech.com/cart", "manualUrls": [], "contentText": "", "keyFeatures": [], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "", "performanceData": "", "storageStability": ""}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+6	custom-1757747796374	custom-1757747796374	\N	\N	\N	\N	\N	\N	\N	\N	\N		In Stock		\N	f	f	f	f	{}	{}	{}			\N	{}	{}	{}	https://store.bioarktech.com/cart		f	{"id": "custom-1757747796374"}	\N	{"images": [], "manuals": [], "options": [], "listPrice": "", "quoteOnly": false, "storeLink": "https://store.bioarktech.com/cart", "manualUrls": [], "contentText": "", "keyFeatures": [], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "", "performanceData": "", "storageStability": ""}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+7	custom-1757748063327	custom-1757748063327	\N	\N	\N	\N	\N	\N	\N	\N	\N		In Stock	$75.00	\N	f	f	f	f	{}	{}	{}			\N	{}	{}	{}	https://store.bioarktech.com/cart		f	{"id": "custom-1757748063327"}	\N	{"images": [], "manuals": [], "options": [], "listPrice": "$75.00", "quoteOnly": false, "storeLink": "https://store.bioarktech.com/cart", "manualUrls": [], "contentText": "", "keyFeatures": [], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "", "performanceData": "", "storageStability": ""}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+8	custom-1762801437711	custom-1762801437711	\N	\N	\N	\N	3	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "custom-1762801437711"}	\N	\N	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+9	custom-1762801582044	custom-1762801582044	\N	\N	\N	\N	2	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "custom-1762801582044"}	\N	\N	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+10	custom-1762801601793	custom-1762801601793	\N	\N	\N	\N	2	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "custom-1762801601793"}	\N	\N	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+11	custom-1762801947809	custom-1762801947809	\N	\N	\N	\N	3	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "custom-1762801947809"}	\N	\N	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+12	custom-1762803603192	custom-1762803603192	\N	\N	\N	\N	zyy	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "custom-1762803603192"}	\N	\N	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+13	custom-1764990947079	custom-1764990947079	\N	\N	\N	\N	DNA	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "custom-1764990947079"}	\N	\N	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+14	fp-badm3362	fp-badm3362	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	t	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "fp-badm3362"}	\N	{"isFeatured": true}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+15	fp-badm3363	fp-badm3363	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	t	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "fp-badm3363"}	\N	{"isFeatured": true}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+16	fp-badm3364	fp-badm3364	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "fp-badm3364"}	\N	{"isFeatured": false}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+17	fp-bal100468	fp-bal100468	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	t	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "fp-bal100468"}	\N	{"isFeatured": true}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+18	fp-bapm2083	fp-bapm2083	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	t	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "fp-bapm2083"}	\N	{"isFeatured": true}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+19	fp-bsy3320	fp-bsy3320	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "fp-bsy3320"}	\N	{"isFeatured": false}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+20	fp-bsy3323	fp-bsy3323	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "fp-bsy3323"}	\N	{"isFeatured": false}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+46	hot-start-ttx-dna-polymerase	Hot Start TTx DNA Polymerase	Antibody-mediated hot start DNA polymerase for highly specific PCR.	/media/reagent_images/dna_polymerase_enzyme.png	\N	category-1765063995229	PCR Enzymes	reagent	\N	\N	\N	TTX-101	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.935893+00	2026-06-19 21:10:54.33511+00
+21	gep-05	KnockIn Kit at Safe Harbor Sites	Precise integration to drive robust gene overexpression at safe-harbor or locus-specific sites.	/content-api/uploads/originals/fc52e6f9-7ac7-4885-9af4-a371e8b37a37.png	/products/overexpression-targeted-knock-in	genome-editing	DNA	quote	0	\N	\N	GEX-003	In Stock		$1199+syn.	t	f	f	t	{"High-purity components for robust genome editing","Complete systems for high-titer virus production","Scalable solutions for manufacturing","Custom-designed for targeted gene editing"}	{"Standard Kit","Pro Kit"}	{}	Store components at specified temperatures. See manual for details.	Consistently high efficiency and low off-target effects reported in publications.		{"Protocol Guide (PDF)","Troubleshooting (PDF)"}	{}	{/content-api/uploads/originals/fc52e6f9-7ac7-4885-9af4-a371e8b37a37.png,/content-api/uploads/originals/10dab363-fd33-419a-9002-6be439265a5d.jpg,/content-api/uploads/originals/85dd272f-4a6c-40fa-b9ff-b59b48e972ab.jpg}	https://store.bioarktech.com/cart	# Safe Harbor Site Gene Integration\n\nThis technique enables the precise integration of target genes or regulatory cassettes into safe harbor sites—genomic regions where foreign DNA can be inserted without disrupting essential endogenous gene functions or causing adverse cellular effects. These sites are widely used in genome engineering for stable gene insertion, ensuring long-term and predictable transgene expression.\n\nCommonly used safe harbor sites include human AAVS1 and CCR5, as well as the mouse ROSA26 locus. Our standard kit utilizes the AAVS1 site as the default insertion locus. For alternative loci or custom services, please contact us at support@bioarktech.com.\n\n## Technical Background\n\nCRISPR-Cas9-mediated targeted knock-in at safe harbor sites involves:\n\n- **Cas9**: An endonuclease that creates a double-strand break (DSB) at the target site.\n- **Guide RNA (gRNA)**: Directs Cas9 to the specific safe harbor locus, such as AAVS1 or the mouse ROSA26 locus.\n- **Donor DNA template**: A construct containing the desired transgene flanked by homology arms complementary to sequences adjacent to the AAVS1 site, facilitating targeted insertion via homology-directed repair (HDR).\n\n## Key Features of Our Products\n\n### Streamlined CRISPR and Donor Vectors\nDesigned for efficient target gene integration, outperforming commercially available alternatives.\n\n### Targeted vs. Random Integration\nMany conventional approaches rely on non-targeting lentiviruses, leading to random gene integration, which can pose safety risks and unpredictable outcomes, particularly in gene therapy and clinical research.\n\nOur vector and virus kits enable precise, targeted integration at safe harbor sites, significantly reducing these risks.\n\n### User-Friendly Plasmid Kits for Broad Accessibility\nUnlike many market solutions that require electroporation—necessitating specialized equipment and techniques—our plasmid-based kits are optimized for ease of use, making them ideal for adherent cancer cell lines.\n\n## Product Catalog\n\n10 entries per page  \nSearch:  \nEdit\n\n| Major Vector | Donor Vector | Scramble Control Vector |\n|--------------|--------------|-------------------------|\n| **Class** | **Product Name** | **SKU** | **Information** | **Donor Name** | **SKU** | **Information** | **Scramble Name** | **SKU** | **Information** |\n| Non-Viral CDS-P011k | CRISPR KN AIO Kit-Gene AAVS1, Vector type | COT-FXD00A-AAVS1gk | The CRISPR tool specifically designed to target and cut human AAVS1 safe harbor site. | AAVS1 Dnr Std Kit | CDS-FX00PA-XXXXXXk | Insert Customer Gene into human AAVS1 site, please specify your genes by clicking the button | GFP Donor Control AAVS1 Dnr Std Ctrl Kit, vector type | CDS-FX0GPA-000000k | Insert GFP into human AAVS1 site as control |\n| Non-Viral CDS-P011k | CRISPR KN AIO Kit-Gene ROSA26, Vector type | COT-FXD00A-ROSA26gk | The CRISPR tool specifically designed to target and cut mouse ROSA26 safe harbor site. | Dnr Std Kit-ROSA26 Site | TBD | Insert Customer Gene into mouse ROSA26 site, please specify your custom gene by clicking the button | GFP Donor Control Dnr Std Kit-ROSA26 Site, vector type | TBD | Insert GFP into mouse ROSA26 site as control |\n\nShowing 1 to 3 of 3 entries\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n	f	{"id": "gep-05"}	{"link": "/products/overexpression-targeted-knock-in", "name": "KnockIn Kit at Safe Harbor Sites", "order": 0, "__type": "quote", "category": "genome-editing", "description": "Precise integration to drive robust gene overexpression at safe-harbor or locus-specific sites."}	{"images": ["/content-api/uploads/originals/fc52e6f9-7ac7-4885-9af4-a371e8b37a37.png", "/content-api/uploads/originals/10dab363-fd33-419a-9002-6be439265a5d.jpg", "/content-api/uploads/originals/85dd272f-4a6c-40fa-b9ff-b59b48e972ab.jpg"], "manuals": ["Protocol Guide (PDF)", "Troubleshooting (PDF)"], "options": ["Standard Kit", "Pro Kit"], "listPrice": "", "quoteOnly": true, "storeLink": "https://store.bioarktech.com/cart", "isFeatured": false, "manualUrls": [], "priceRange": "$1199+syn.", "contentText": "# Safe Harbor Site Gene Integration\\n\\nThis technique enables the precise integration of target genes or regulatory cassettes into safe harbor sites—genomic regions where foreign DNA can be inserted without disrupting essential endogenous gene functions or causing adverse cellular effects. These sites are widely used in genome engineering for stable gene insertion, ensuring long-term and predictable transgene expression.\\n\\nCommonly used safe harbor sites include human AAVS1 and CCR5, as well as the mouse ROSA26 locus. Our standard kit utilizes the AAVS1 site as the default insertion locus. For alternative loci or custom services, please contact us at support@bioarktech.com.\\n\\n## Technical Background\\n\\nCRISPR-Cas9-mediated targeted knock-in at safe harbor sites involves:\\n\\n- **Cas9**: An endonuclease that creates a double-strand break (DSB) at the target site.\\n- **Guide RNA (gRNA)**: Directs Cas9 to the specific safe harbor locus, such as AAVS1 or the mouse ROSA26 locus.\\n- **Donor DNA template**: A construct containing the desired transgene flanked by homology arms complementary to sequences adjacent to the AAVS1 site, facilitating targeted insertion via homology-directed repair (HDR).\\n\\n## Key Features of Our Products\\n\\n### Streamlined CRISPR and Donor Vectors\\nDesigned for efficient target gene integration, outperforming commercially available alternatives.\\n\\n### Targeted vs. Random Integration\\nMany conventional approaches rely on non-targeting lentiviruses, leading to random gene integration, which can pose safety risks and unpredictable outcomes, particularly in gene therapy and clinical research.\\n\\nOur vector and virus kits enable precise, targeted integration at safe harbor sites, significantly reducing these risks.\\n\\n### User-Friendly Plasmid Kits for Broad Accessibility\\nUnlike many market solutions that require electroporation—necessitating specialized equipment and techniques—our plasmid-based kits are optimized for ease of use, making them ideal for adherent cancer cell lines.\\n\\n## Product Catalog\\n\\n10 entries per page  \\nSearch:  \\nEdit\\n\\n| Major Vector | Donor Vector | Scramble Control Vector |\\n|--------------|--------------|-------------------------|\\n| **Class** | **Product Name** | **SKU** | **Information** | **Donor Name** | **SKU** | **Information** | **Scramble Name** | **SKU** | **Information** |\\n| Non-Viral CDS-P011k | CRISPR KN AIO Kit-Gene AAVS1, Vector type | COT-FXD00A-AAVS1gk | The CRISPR tool specifically designed to target and cut human AAVS1 safe harbor site. | AAVS1 Dnr Std Kit | CDS-FX00PA-XXXXXXk | Insert Customer Gene into human AAVS1 site, please specify your genes by clicking the button | GFP Donor Control AAVS1 Dnr Std Ctrl Kit, vector type | CDS-FX0GPA-000000k | Insert GFP into human AAVS1 site as control |\\n| Non-Viral CDS-P011k | CRISPR KN AIO Kit-Gene ROSA26, Vector type | COT-FXD00A-ROSA26gk | The CRISPR tool specifically designed to target and cut mouse ROSA26 safe harbor site. | Dnr Std Kit-ROSA26 Site | TBD | Insert Customer Gene into mouse ROSA26 site, please specify your custom gene by clicking the button | GFP Donor Control Dnr Std Kit-ROSA26 Site, vector type | TBD | Insert GFP into mouse ROSA26 site as control |\\n\\nShowing 1 to 3 of 3 entries\\n\\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\\n", "keyFeatures": ["High-purity components for robust genome editing", "Complete systems for high-titer virus production", "Scalable solutions for manufacturing", "Custom-designed for targeted gene editing"], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "GEX-003", "showInFeatured": false, "dataDescription": "", "performanceData": "Consistently high efficiency and low off-target effects reported in publications.", "storageStability": "Store components at specified temperatures. See manual for details.", "showInGeneEditing": true}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+22	vc-01	cDNA Vector Stock	Ready-to-use cDNA vector stocks for cloning and expression workflows.	/content-api/uploads/originals/30248855-528e-46b1-9487-e748b7bbe964.png	/products/cdna-vector-stock	vector-clones	Stock	quote	0	\N	\N	VC-001	In Stock	Contact for Quote		t	t	f	f	{"High-quality backbone","Multiple cloning sites",Sequence-verified}	{}	{}	Store at -20°C. See manual for details.	Validated for standard cloning workflows.		{"Vector Handbook (PDF)"}	{}	{/content-api/uploads/originals/30248855-528e-46b1-9487-e748b7bbe964.png}		This technique enables the precise integration of target genes or regulatory cassettes into safe harbor sites—genomic regions where foreign DNA can be inserted without disrupting essential endogenous gene functions or causing adverse cellular effects. These sites are widely used in genome engineering for stable gene insertion, ensuring long-term and predictable transgene expression.\n\nCommonly used safe harbor sites include human AAVS1 and CCR5, as well as the mouse ROSA26 locus. Our standard kit utilizes the AAVS1 site as the default insertion locus. For alternative loci or custom services, please contact us at [support@bioarktech.com](mailto:support@bioarktech.com).\n\n---\n\n| Main Plasmid | Features | | | | | | Scramble Plasmid | Order |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n| **Class** | **Product Name** | **SKU** | **Accessory** | **Promoter** | **Protein Tag** | **Fluorescence Marker** | **Selection Marker** | **Target Gene** | **Control Sample** | **SKU** |\n| Viral | OverExp Lenti Kit | EML-CXD0PC-LARGETk | None | PCMV | MycDDK | None | Puro | LargeT | GFP control | EML-CXDGPC-000000k |\n| Viral | OverExp Lenti Kit | EML-CXD0BC-LARGETk | None | PCMV | MycDDK | None | BSD | LargeT | GFP control | EML-CXDGBC-000000k |\n\n*Showing 1 to 3 of 3 entries*\n\n---\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n```	f	{"id": "vc-01"}	{"link": "/products/cdna-vector-stock", "name": "cDNA Vector Stock", "order": 1, "__type": "quote", "category": "vector-clones", "description": "Ready-to-use cDNA vector stocks for cloning and expression workflows."}	{"order": 0, "images": ["/content-api/uploads/originals/30248855-528e-46b1-9487-e748b7bbe964.png"], "manuals": ["Vector Handbook (PDF)"], "options": [], "listPrice": "Contact for Quote", "quoteOnly": true, "storeLink": "", "isFeatured": true, "manualUrls": [], "priceRange": "", "contentText": "This technique enables the precise integration of target genes or regulatory cassettes into safe harbor sites—genomic regions where foreign DNA can be inserted without disrupting essential endogenous gene functions or causing adverse cellular effects. These sites are widely used in genome engineering for stable gene insertion, ensuring long-term and predictable transgene expression.\\n\\nCommonly used safe harbor sites include human AAVS1 and CCR5, as well as the mouse ROSA26 locus. Our standard kit utilizes the AAVS1 site as the default insertion locus. For alternative loci or custom services, please contact us at [support@bioarktech.com](mailto:support@bioarktech.com).\\n\\n---\\n\\n| Main Plasmid | Features | | | | | | Scramble Plasmid | Order |\\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\\n| **Class** | **Product Name** | **SKU** | **Accessory** | **Promoter** | **Protein Tag** | **Fluorescence Marker** | **Selection Marker** | **Target Gene** | **Control Sample** | **SKU** |\\n| Viral | OverExp Lenti Kit | EML-CXD0PC-LARGETk | None | PCMV | MycDDK | None | Puro | LargeT | GFP control | EML-CXDGPC-000000k |\\n| Viral | OverExp Lenti Kit | EML-CXD0BC-LARGETk | None | PCMV | MycDDK | None | BSD | LargeT | GFP control | EML-CXDGBC-000000k |\\n\\n*Showing 1 to 3 of 3 entries*\\n\\n---\\n\\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\\n```", "keyFeatures": ["High-quality backbone", "Multiple cloning sites", "Sequence-verified"], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "VC-001", "showInFeatured": false, "dataDescription": "", "performanceData": "Validated for standard cloning workflows.", "storageStability": "Store at -20°C. See manual for details.", "showInGeneEditing": false}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+23	vc-02	Template Vectors Stock	Templates for building functional vector kits with modular components.	/placeholder.svg	/products/functional-vectors-kits-template	vector-clones	Stock	quote	0	\N	\N	VC-002	In Stock	Contact for Quote		t	f	f	f	{"Modular design","Customizable elements","Comprehensive documentation"}	{}	{}	Store at -20°C. See manual for details.	Suitable for rapid kit assembly and iteration.		{"Template Guide (PDF)"}	{}	{/placeholder.svg}		# BioArk Technologies\n\nBioArk Technologies offers an extensive inventory of vectors, optimized for automated cloning design and construction. Our pre-assembled templates can be quickly adapted and customized into different kits, tailored for various applications. You can utilize these established systems for your project or design your own system based on your specific preferences.\n\nBelow is a list of our current established function kits. Simply click the SKU number to add your preferred gene information or just select the control or scramble vectors.\n\n---\n\n| Major Vector | Features | | | | | Scramble Vector |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n| **Class** | **Product Name** | **SKU** | **Accessory Vector** | **Promoter** | **Tag** | **Fluorescence Marker** | **Selection Marker** | **Control Sample** | **SKU** |\n| Non-Viral All-in-One | CRISPRa AIO Kit | CAT-FXD00A-XXXXXXk | None | EF1core | MycDDK | None | None | Scramble Control | CAT-FXD00A-000000k |\n| Viral All-in-one | CRISPRa AIO Kit | CAM-FXD0PC-XXXXXXk | None | EF1core | MycDDK | None | Puro | Scramble Control | CAM-FXD0PC-000000k |\n\n*Showing 1 to 3 of 3 entries*\n\n---\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n```	f	{"id": "vc-02"}	{"link": "/products/functional-vectors-kits-template", "name": "Template Vectors Stock", "order": 0, "__type": "quote", "category": "vector-clones", "description": "Templates for building functional vector kits with modular components."}	{"images": ["/placeholder.svg"], "manuals": ["Template Guide (PDF)"], "options": [], "listPrice": "Contact for Quote", "quoteOnly": true, "storeLink": "", "isFeatured": false, "manualUrls": [], "priceRange": "", "contentText": "# BioArk Technologies\\n\\nBioArk Technologies offers an extensive inventory of vectors, optimized for automated cloning design and construction. Our pre-assembled templates can be quickly adapted and customized into different kits, tailored for various applications. You can utilize these established systems for your project or design your own system based on your specific preferences.\\n\\nBelow is a list of our current established function kits. Simply click the SKU number to add your preferred gene information or just select the control or scramble vectors.\\n\\n---\\n\\n| Major Vector | Features | | | | | Scramble Vector |\\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\\n| **Class** | **Product Name** | **SKU** | **Accessory Vector** | **Promoter** | **Tag** | **Fluorescence Marker** | **Selection Marker** | **Control Sample** | **SKU** |\\n| Non-Viral All-in-One | CRISPRa AIO Kit | CAT-FXD00A-XXXXXXk | None | EF1core | MycDDK | None | None | Scramble Control | CAT-FXD00A-000000k |\\n| Viral All-in-one | CRISPRa AIO Kit | CAM-FXD0PC-XXXXXXk | None | EF1core | MycDDK | None | Puro | Scramble Control | CAM-FXD0PC-000000k |\\n\\n*Showing 1 to 3 of 3 entries*\\n\\n---\\n\\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\\n```", "keyFeatures": ["Modular design", "Customizable elements", "Comprehensive documentation"], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "VC-002", "showInFeatured": false, "dataDescription": "", "performanceData": "Suitable for rapid kit assembly and iteration.", "storageStability": "Store at -20°C. See manual for details.", "showInGeneEditing": false}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+24	fp-bal100688	fp-bal100688	\N	\N	\N	\N	\N	\N	1	\N	\N	\N	\N	\N	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "fp-bal100688"}	\N	{"order": 1, "isFeatured": false}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+25	gep-01	Gene Tagging Kit	Precision services for endogenous gene tagging and reporter knock-in.	/content-api/uploads/originals/3b93f03a-4932-4a55-a0be-0acfc63a9b42.png	/products/gene-knock-in	genome-editing	DNA	quote	1	\N	\N	GEX-004	In Stock	$640.37	$1199+syn.	t	f	f	t	{"High-purity components for robust genome editing","Complete systems for high-titer virus production","Scalable solutions for manufacturing","Custom-designed for targeted gene editing"}	{"Standard Kit","Pro Kit"}	{}	Store components at specified temperatures. See manual for details.	Consistently high efficiency and low off-target effects reported in publications.		{"Protocol Guide (PDF)","Troubleshooting (PDF)"}	{}	{/content-api/uploads/originals/3b93f03a-4932-4a55-a0be-0acfc63a9b42.png}	https://store.bioarktech.com/cart	This technique provides versatile options for attaching selected tags to the 3′ or 5′ ends of customer-specified target genes, enabling precise tracking and functional analysis. Gene knock-in tagging can be applied across a broad range of research areas, including investigating protein localization, studying protein-protein interactions, analyzing gene function and regulation, creating transgenic models, and facilitating drug discovery efforts.\n\n## Technical Background\n\nThe CRISPR-Cas9 system is the core technology behind gene knock-in tagging. It utilizes a guide RNA (gRNA) to direct the Cas9 endonuclease to a specific genomic site, where it generates a double-strand break (DSB). This break is then repaired by either non-homologous end joining (NHEJ) or homology-directed repair (HDR). For knock-in tagging, HDR is the preferred method, where a donor template containing the desired tag, flanked by homology arms, facilitates the precise insertion of the tag at the target locus.\n\n## Key Components\n\n- **Cas9 protein**: Creates a DSB at the target site.\n- **Guide RNA (gRNA)**: Directs Cas9 to the desired genomic locus.\n- **Donor template**: Contains the tag (e.g., GFP, HA tag) along with homology arms to facilitate HDR-mediated knock-in.\n\n## Features of Our Products\n\n- **AI-Assisted Design**: Our CRISPR and donor vectors are AI-assisted, designed to streamline and optimize the process for efficient target gene integration.\n- **User-Friendly Techniques**: Our plasmid kits utilize lab-friendly methods that avoid the need for electroporation, making them easy to use in most labs. They are particularly well-suited for adherent cancer cell lines.\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.	f	{"id": "gep-01"}	{"link": "/products/gene-knock-in", "name": "Gene Tagging Kit", "order": 1, "__type": "quote", "category": "genome-editing", "description": "Precision services for endogenous gene tagging and reporter knock-in."}	{"images": ["/content-api/uploads/originals/3b93f03a-4932-4a55-a0be-0acfc63a9b42.png"], "manuals": ["Protocol Guide (PDF)", "Troubleshooting (PDF)"], "options": ["Standard Kit", "Pro Kit"], "listPrice": "$640.37", "quoteOnly": true, "storeLink": "https://store.bioarktech.com/cart", "manualUrls": [], "priceRange": "$1199+syn.", "contentText": "This technique provides versatile options for attaching selected tags to the 3′ or 5′ ends of customer-specified target genes, enabling precise tracking and functional analysis. Gene knock-in tagging can be applied across a broad range of research areas, including investigating protein localization, studying protein-protein interactions, analyzing gene function and regulation, creating transgenic models, and facilitating drug discovery efforts.\\n\\n## Technical Background\\n\\nThe CRISPR-Cas9 system is the core technology behind gene knock-in tagging. It utilizes a guide RNA (gRNA) to direct the Cas9 endonuclease to a specific genomic site, where it generates a double-strand break (DSB). This break is then repaired by either non-homologous end joining (NHEJ) or homology-directed repair (HDR). For knock-in tagging, HDR is the preferred method, where a donor template containing the desired tag, flanked by homology arms, facilitates the precise insertion of the tag at the target locus.\\n\\n## Key Components\\n\\n- **Cas9 protein**: Creates a DSB at the target site.\\n- **Guide RNA (gRNA)**: Directs Cas9 to the desired genomic locus.\\n- **Donor template**: Contains the tag (e.g., GFP, HA tag) along with homology arms to facilitate HDR-mediated knock-in.\\n\\n## Features of Our Products\\n\\n- **AI-Assisted Design**: Our CRISPR and donor vectors are AI-assisted, designed to streamline and optimize the process for efficient target gene integration.\\n- **User-Friendly Techniques**: Our plasmid kits utilize lab-friendly methods that avoid the need for electroporation, making them easy to use in most labs. They are particularly well-suited for adherent cancer cell lines.\\n\\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.", "keyFeatures": ["High-purity components for robust genome editing", "Complete systems for high-titer virus production", "Scalable solutions for manufacturing", "Custom-designed for targeted gene editing"], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "GEX-004", "showInFeatured": false, "dataDescription": "", "performanceData": "Consistently high efficiency and low off-target effects reported in publications.", "storageStability": "Store components at specified temperatures. See manual for details.", "showInGeneEditing": true}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+26	fp-bapm2086	fp-bapm2086	\N	\N	\N	\N	\N	\N	2	\N	\N	\N	\N	\N	\N	f	t	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "fp-bapm2086"}	\N	{"order": 2, "isFeatured": true}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+27	gep-03	Gene Deletion Kit	Expertly remove large genomic regions to study gene function.	/content-api/uploads/originals/d650e3bb-1045-4bef-abcd-d9baf2e92493.png	/products/gene-deletion	genome-editing	DNA	quote	2	\N	\N	GEX-002	In Stock	$320.67	$1499	t	f	f	t	{"High-purity components for robust genome editing","Complete systems for high-titer virus production","Scalable solutions for manufacturing","Custom-designed for targeted gene editing"}	{"Standard Kit","Pro Kit"}	{}	Store components at specified temperatures. See manual for details.	Consistently high efficiency and low off-target effects reported in publications.		{"Protocol Guide (PDF)","Troubleshooting (PDF)"}	{}	{/content-api/uploads/originals/d650e3bb-1045-4bef-abcd-d9baf2e92493.png}	https://store.bioarktech.com/cart	CRISPR Genome Knockout Deletion provides an efficient method for deleting genomic fragments of various sizes, ranging from short deletions to large deletions exceeding 10 kb. It is a valuable tool for studying the functions of non-coding regions of the genome, creating disease models such as Huntington’s disease, exploring gene cluster complexities, investigating chromatin architecture, and examining the role of pathogenic copy number variations (CNVs).\n\n \nTechnical Background\nKey Components:\n\nCas9 Protein: A nuclease that creates double-strand breaks (DSBs) at specified genomic locations, guided by a complementary RNA sequence.\nGuide RNA (gRNA): A synthetic RNA molecule designed to bind to a specific target sequence in the genome, directing the Cas9 protein to the desired site.\nDNA Repair Mechanisms: After the DSB is introduced by Cas9, the cell’s natural repair mechanisms take over. The primary repair pathways involved are:\nNon-Homologous End Joining (NHEJ): The predominant pathway for gene knockout, NHEJ can lead to insertions or deletions (indels) at the break site, causing frameshifts or premature stop codons that result in gene knockout.\nHomology-Directed Repair (HDR): Although not commonly used for knockout deletions, HDR can be applied for precise gene editing when a donor template is provided.\n \nFeatures of Our Products\nFlexible Cloning Options: We offer three different cloning methods for the CRISPR deletion kit:\nCas9 vector with a separate gRNA vector.\nTwo distinct Cas9 + gRNA All-in-one vectors. Each vector carries one gRNA.\nA specialized vector designed for the simultaneous delivery of two gRNAs, allowing for the efficient removal of target genomic fragments.\nUser-Friendly Techniques: Our plasmid kits are designed to be lab-friendly, eliminating the need for electroporation and making them easy to use in most lab settings. These kits are particularly well-suited for adherent cancer cell lines.\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.	f	{"id": "gep-03"}	{"link": "/products/gene-deletion", "name": "Gene Deletion Kit", "order": 2, "__type": "quote", "category": "genome-editing", "description": "Expertly remove large genomic regions to study gene function."}	{"images": ["/content-api/uploads/originals/d650e3bb-1045-4bef-abcd-d9baf2e92493.png"], "manuals": ["Protocol Guide (PDF)", "Troubleshooting (PDF)"], "options": ["Standard Kit", "Pro Kit"], "listPrice": "$320.67", "quoteOnly": true, "storeLink": "https://store.bioarktech.com/cart", "manualUrls": [], "priceRange": "$1499", "contentText": "CRISPR Genome Knockout Deletion provides an efficient method for deleting genomic fragments of various sizes, ranging from short deletions to large deletions exceeding 10 kb. It is a valuable tool for studying the functions of non-coding regions of the genome, creating disease models such as Huntington’s disease, exploring gene cluster complexities, investigating chromatin architecture, and examining the role of pathogenic copy number variations (CNVs).\\n\\n \\nTechnical Background\\nKey Components:\\n\\nCas9 Protein: A nuclease that creates double-strand breaks (DSBs) at specified genomic locations, guided by a complementary RNA sequence.\\nGuide RNA (gRNA): A synthetic RNA molecule designed to bind to a specific target sequence in the genome, directing the Cas9 protein to the desired site.\\nDNA Repair Mechanisms: After the DSB is introduced by Cas9, the cell’s natural repair mechanisms take over. The primary repair pathways involved are:\\nNon-Homologous End Joining (NHEJ): The predominant pathway for gene knockout, NHEJ can lead to insertions or deletions (indels) at the break site, causing frameshifts or premature stop codons that result in gene knockout.\\nHomology-Directed Repair (HDR): Although not commonly used for knockout deletions, HDR can be applied for precise gene editing when a donor template is provided.\\n \\nFeatures of Our Products\\nFlexible Cloning Options: We offer three different cloning methods for the CRISPR deletion kit:\\nCas9 vector with a separate gRNA vector.\\nTwo distinct Cas9 + gRNA All-in-one vectors. Each vector carries one gRNA.\\nA specialized vector designed for the simultaneous delivery of two gRNAs, allowing for the efficient removal of target genomic fragments.\\nUser-Friendly Techniques: Our plasmid kits are designed to be lab-friendly, eliminating the need for electroporation and making them easy to use in most lab settings. These kits are particularly well-suited for adherent cancer cell lines.\\n\\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.", "keyFeatures": ["High-purity components for robust genome editing", "Complete systems for high-titer virus production", "Scalable solutions for manufacturing", "Custom-designed for targeted gene editing"], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "GEX-002", "showInFeatured": false, "dataDescription": "", "performanceData": "Consistently high efficiency and low off-target effects reported in publications.", "storageStability": "Store components at specified temperatures. See manual for details.", "showInGeneEditing": true}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+28	fp-bal100668	fp-bal100668	\N	\N	\N	\N	\N	\N	3	\N	\N	\N	\N	\N	\N	f	t	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	{"id": "fp-bal100668"}	\N	{"order": 3, "isFeatured": true}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+29	gep-04	CRISPR Knockdown Kit	Modulate gene expression with our reliable RNA interference services.	/content-api/uploads/originals/aba9a3b2-8f86-40bb-8668-30a1686f4b13.png	/products/crispr-knock-down	genome-editing	RNA	quote	3	\N	\N	GEX-007	In Stock	$384.90	$799	t	f	t	f	{"High-purity components for robust genome editing","Complete systems for high-titer virus production","Scalable solutions for manufacturing","Custom-designed for targeted gene editing"}	{"Standard Kit","Pro Kit"}	{}	Store components at specified temperatures. See manual for details.	Consistently high efficiency and low off-target effects reported in publications.		{"Protocol Guide (PDF)","Troubleshooting (PDF)"}	{}	{/content-api/uploads/originals/aba9a3b2-8f86-40bb-8668-30a1686f4b13.png}	https://store.bioarktech.com/cart	# CRISPR RNA Knockdown (KD) Technique\n\nThis technique offers a more specific and efficient alternative to traditional RNAi methods for knocking down RNA expression levels. CRISPR RNA knockdown using Cas13 provides a powerful and precise approach to regulate gene expression at the RNA level. Its ability to selectively degrade mRNA transcripts makes it a versatile tool for studying gene function and developing therapeutic strategies across diverse fields, including basic research, applied biotechnology, and medicine.\n\nCRISPR RNA knockdown (KD) is particularly useful for studying gene roles by reducing RNA transcript levels. It can be applied in:\n- Disease models\n- Therapeutic development\n- RNA regulatory mechanisms\n- Customized RNA therapies\n- Antiviral applications\n- High-throughput genetic screening\n\n## Technical Background\n\n### Key Components:\n\n- **RfxCas13d (CasRx) Protein**: A member of the CRISPR family that specifically targets RNA rather than DNA. RfxCas13d is derived from the bacterium *Rhodococcus fascians*.\n- **Guide RNA (gRNA)**: A synthetic RNA molecule designed to bind to the target mRNA. It contains a sequence complementary to the target RNA, guiding Cas13 to the specific mRNA for cleavage.\n\n## Features of Our Products\n\n- **Reduced Off-Target Effects**: Compared to traditional RNA interference (RNAi), this method significantly minimizes off-target activity in cultured cells, offering greater specificity.\n- **Customizable Kits**: We provide two distinct kits—vector kits designed for use with cancer cell lines and virus kits tailored for hard-to-transfect cells.\n\n---\n\n## Product Catalog\n\n10 entries per page  \nSearch:  \nEdit\n\n| Major Vector | Scramble Control Vector |  |  |  |\n| :--- | :--- | :--- | :--- | :--- |\n| **Class** | **Product Name** | **SKU** | **Information** | **Scramble Name** | **SKU** | **Information** |\n| Non-Viral All-In-one | COT-P031k | CRISPR KN AIO Kit | COT-FXD0PA-XXXXXXk | The non-viral CRISPR kit includes three AI-designed gRNA sites tailored to target the customer-specified genes. Please click button to design the target genes. | Scramble Control CRISPR KN AIO Ctrl Kit, Vector type | COT-FXD0PA-000000k | The scramble sequence are used as non-specific cutting control |\n| Viral All-in-one | COM-P032k | CRISPR KN Lenti-AIO Kit | COM-FXD0PA-XXXXXXl | The CRISPR lentivirus kit packages three AI-designed gRNA sites into a single mixture tube for precise targeting and cutting of customer-specified genes. Please click button to design the target genes. | Scramble Control CRISPR KN Lenti-AIO Ctrl Kit, lentivirus type | COM-FXD0PA-000000l | The scramble sequence are used as non-specific cutting control |\n\nShowing 1 to 3 of 3 entries\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n	f	{"id": "gep-04"}	{"link": "/products/crispr-knock-down", "name": "CRISPR Knockdown Kit", "order": 3, "__type": "quote", "category": "genome-editing", "description": "Modulate gene expression with our reliable RNA interference services."}	{"images": ["/content-api/uploads/originals/aba9a3b2-8f86-40bb-8668-30a1686f4b13.png"], "manuals": ["Protocol Guide (PDF)", "Troubleshooting (PDF)"], "options": ["Standard Kit", "Pro Kit"], "listPrice": "$384.90", "quoteOnly": true, "storeLink": "https://store.bioarktech.com/cart", "manualUrls": [], "priceRange": "$799", "contentText": "# CRISPR RNA Knockdown (KD) Technique\\n\\nThis technique offers a more specific and efficient alternative to traditional RNAi methods for knocking down RNA expression levels. CRISPR RNA knockdown using Cas13 provides a powerful and precise approach to regulate gene expression at the RNA level. Its ability to selectively degrade mRNA transcripts makes it a versatile tool for studying gene function and developing therapeutic strategies across diverse fields, including basic research, applied biotechnology, and medicine.\\n\\nCRISPR RNA knockdown (KD) is particularly useful for studying gene roles by reducing RNA transcript levels. It can be applied in:\\n- Disease models\\n- Therapeutic development\\n- RNA regulatory mechanisms\\n- Customized RNA therapies\\n- Antiviral applications\\n- High-throughput genetic screening\\n\\n## Technical Background\\n\\n### Key Components:\\n\\n- **RfxCas13d (CasRx) Protein**: A member of the CRISPR family that specifically targets RNA rather than DNA. RfxCas13d is derived from the bacterium *Rhodococcus fascians*.\\n- **Guide RNA (gRNA)**: A synthetic RNA molecule designed to bind to the target mRNA. It contains a sequence complementary to the target RNA, guiding Cas13 to the specific mRNA for cleavage.\\n\\n## Features of Our Products\\n\\n- **Reduced Off-Target Effects**: Compared to traditional RNA interference (RNAi), this method significantly minimizes off-target activity in cultured cells, offering greater specificity.\\n- **Customizable Kits**: We provide two distinct kits—vector kits designed for use with cancer cell lines and virus kits tailored for hard-to-transfect cells.\\n\\n---\\n\\n## Product Catalog\\n\\n10 entries per page  \\nSearch:  \\nEdit\\n\\n| Major Vector | Scramble Control Vector |  |  |  |\\n| :--- | :--- | :--- | :--- | :--- |\\n| **Class** | **Product Name** | **SKU** | **Information** | **Scramble Name** | **SKU** | **Information** |\\n| Non-Viral All-In-one | COT-P031k | CRISPR KN AIO Kit | COT-FXD0PA-XXXXXXk | The non-viral CRISPR kit includes three AI-designed gRNA sites tailored to target the customer-specified genes. Please click button to design the target genes. | Scramble Control CRISPR KN AIO Ctrl Kit, Vector type | COT-FXD0PA-000000k | The scramble sequence are used as non-specific cutting control |\\n| Viral All-in-one | COM-P032k | CRISPR KN Lenti-AIO Kit | COM-FXD0PA-XXXXXXl | The CRISPR lentivirus kit packages three AI-designed gRNA sites into a single mixture tube for precise targeting and cutting of customer-specified genes. Please click button to design the target genes. | Scramble Control CRISPR KN Lenti-AIO Ctrl Kit, lentivirus type | COM-FXD0PA-000000l | The scramble sequence are used as non-specific cutting control |\\n\\nShowing 1 to 3 of 3 entries\\n\\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\\n", "keyFeatures": ["High-purity components for robust genome editing", "Complete systems for high-titer virus production", "Scalable solutions for manufacturing", "Custom-designed for targeted gene editing"], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "GEX-007", "showInFeatured": true, "dataDescription": "", "performanceData": "Consistently high efficiency and low off-target effects reported in publications.", "storageStability": "Store components at specified temperatures. See manual for details.", "showInGeneEditing": false}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+30	gep-02	CRISPR KnockOut Kit	Generate complete loss-of-function models using CRISPR-Cas9 technology.	/content-api/uploads/originals/ddbc6621-4c4f-470c-8730-6ccdcd6c1c1a.png	/products/gene-knock-out	genome-editing	DNA	quote	4	\N	\N	GEX-001	In Stock	$546.36	$799	t	f	f	t	{"High-purity components for robust genome editing","Complete systems for high-titer virus production","Scalable solutions for manufacturing","Custom-designed for targeted gene editing"}	{"Standard Kit","Pro Kit"}	{}	Store components at specified temperatures. See manual for details.	Consistently high efficiency and low off-target effects reported in publications.		{"Protocol Guide (PDF)","Troubleshooting (PDF)"}	{}	{/content-api/uploads/originals/ddbc6621-4c4f-470c-8730-6ccdcd6c1c1a.png,/content-api/uploads/originals/e517607f-dde5-4e77-96ba-ad123c4b3ea8.png}	https://store.bioarktech.com/cart	# CRISPR Knockout (KO) Technique\n\nCRISPR knockout (KO) is a revolutionary gene-editing technique that allows researchers to disrupt or "knock out" specific genes within an organism’s genome. The CRISPR-Cas9 system is the most widely used tool for this purpose, harnessing a natural bacterial defense mechanism against viral infections. Our technique provides a rapid and efficient approach to disrupt gene expression for both research and therapeutic applications.\n\n## Technical Background\n\n### Description:\n\n- **spCas9 Protein**: An endonuclease that induces double-strand breaks (DSBs) in DNA at specific genomic loci.\n- **Guide RNA (gRNA)**: A short RNA sequence that guides the Cas9 protein to the target gene through complementary base pairing.\n- **Repair Pathways**: Following the creation of a DSB, the cell’s repair machinery is activated. The primary repair pathways are:\n  - **Non-Homologous End Joining (NHEJ)**: This repair mechanism often results in insertions or deletions (indels) at the break site, leading to frameshift mutations that can disrupt gene function.\n  - **Homology-Directed Repair (HDR)**: Typically used for precise edits, HDR can also be employed when a donor template is provided. Although HDR is less common for knockout purposes, it can be leveraged to integrate exogenous DNA into the genome, facilitating quick screening for knockout stable cell lines.\n\nBy utilizing the NHEJ repair pathway, researchers can efficiently create gene knockouts, resulting in the loss of gene function. On the other hand, using HDR allows for precise integration of exogenous DNA fragments into the genome.\n\n## Features of Our Products\n\n- **Dual Repair Pathways**: Our CRISPR knockout (KN) tool supports both NHEJ and HDR, offering flexibility depending on customer preferences and project requirements.\n- **Two Delivery Options**: We provide two versions of our CRISPR KN tool: lentivirus and regular plasmid, allowing customers to choose the most suitable option for their needs.\n- **Superior Knockout Efficiency**: Our tools deliver enhanced knockout efficiency, leveraging the latest advancements in CRISPR technology, including optimized gRNA scaffold structures and improved gRNA sequence selection.\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n\n---\n\n## Product Catalog\n\n10 entries per page  \nSearch:  \nEdit\n\n| Major Vector | Scramble Control Vector |  |  |  |\n| :--- | :--- | :--- | :--- | :--- |\n| **Class** | **Product Name** | **SKU** | **Information** | **Scramble Name** | **SKU** | **Information** |\n| Non-Viral All-In-one | COT-P031k | CRISPR KN AIO Kit | COT-FXD0PA-XXXXXXk | The non-viral CRISPR kit includes three AI-designed gRNA sites tailored to target the customer-specified genes. Please click button to design the target genes. | Scramble Control CRISPR KN AIO Ctrl Kit, Vector type | COT-FXD0PA-000000k | The scramble sequence are used as non-specific cutting control |\n| Viral All-in-one | COM-P032k | CRISPR KN Lenti-AIO Kit | COM-FXD0PA-XXXXXXl | The CRISPR lentivirus kit packages three AI-designed gRNA sites into a single mixture tube for precise targeting and cutting of customer-specified genes. Please click button to design the target genes. | Scramble Control CRISPR KN Lenti-AIO Ctrl Kit, lentivirus type | COM-FXD0PA-000000l | The scramble sequence are used as non-specific cutting control |\n	f	{"id": "gep-02"}	{"link": "/products/gene-knock-out", "name": "CRISPR KnockOut Kit", "order": 4, "__type": "quote", "category": "genome-editing", "description": "Generate complete loss-of-function models using CRISPR-Cas9 technology."}	{"images": ["/content-api/uploads/originals/ddbc6621-4c4f-470c-8730-6ccdcd6c1c1a.png", "/content-api/uploads/originals/e517607f-dde5-4e77-96ba-ad123c4b3ea8.png"], "manuals": ["Protocol Guide (PDF)", "Troubleshooting (PDF)"], "options": ["Standard Kit", "Pro Kit"], "listPrice": "$546.36", "quoteOnly": true, "storeLink": "https://store.bioarktech.com/cart", "manualUrls": [], "priceRange": "$799", "contentText": "# CRISPR Knockout (KO) Technique\\n\\nCRISPR knockout (KO) is a revolutionary gene-editing technique that allows researchers to disrupt or \\"knock out\\" specific genes within an organism’s genome. The CRISPR-Cas9 system is the most widely used tool for this purpose, harnessing a natural bacterial defense mechanism against viral infections. Our technique provides a rapid and efficient approach to disrupt gene expression for both research and therapeutic applications.\\n\\n## Technical Background\\n\\n### Description:\\n\\n- **spCas9 Protein**: An endonuclease that induces double-strand breaks (DSBs) in DNA at specific genomic loci.\\n- **Guide RNA (gRNA)**: A short RNA sequence that guides the Cas9 protein to the target gene through complementary base pairing.\\n- **Repair Pathways**: Following the creation of a DSB, the cell’s repair machinery is activated. The primary repair pathways are:\\n  - **Non-Homologous End Joining (NHEJ)**: This repair mechanism often results in insertions or deletions (indels) at the break site, leading to frameshift mutations that can disrupt gene function.\\n  - **Homology-Directed Repair (HDR)**: Typically used for precise edits, HDR can also be employed when a donor template is provided. Although HDR is less common for knockout purposes, it can be leveraged to integrate exogenous DNA into the genome, facilitating quick screening for knockout stable cell lines.\\n\\nBy utilizing the NHEJ repair pathway, researchers can efficiently create gene knockouts, resulting in the loss of gene function. On the other hand, using HDR allows for precise integration of exogenous DNA fragments into the genome.\\n\\n## Features of Our Products\\n\\n- **Dual Repair Pathways**: Our CRISPR knockout (KN) tool supports both NHEJ and HDR, offering flexibility depending on customer preferences and project requirements.\\n- **Two Delivery Options**: We provide two versions of our CRISPR KN tool: lentivirus and regular plasmid, allowing customers to choose the most suitable option for their needs.\\n- **Superior Knockout Efficiency**: Our tools deliver enhanced knockout efficiency, leveraging the latest advancements in CRISPR technology, including optimized gRNA scaffold structures and improved gRNA sequence selection.\\n\\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\\n\\n---\\n\\n## Product Catalog\\n\\n10 entries per page  \\nSearch:  \\nEdit\\n\\n| Major Vector | Scramble Control Vector |  |  |  |\\n| :--- | :--- | :--- | :--- | :--- |\\n| **Class** | **Product Name** | **SKU** | **Information** | **Scramble Name** | **SKU** | **Information** |\\n| Non-Viral All-In-one | COT-P031k | CRISPR KN AIO Kit | COT-FXD0PA-XXXXXXk | The non-viral CRISPR kit includes three AI-designed gRNA sites tailored to target the customer-specified genes. Please click button to design the target genes. | Scramble Control CRISPR KN AIO Ctrl Kit, Vector type | COT-FXD0PA-000000k | The scramble sequence are used as non-specific cutting control |\\n| Viral All-in-one | COM-P032k | CRISPR KN Lenti-AIO Kit | COM-FXD0PA-XXXXXXl | The CRISPR lentivirus kit packages three AI-designed gRNA sites into a single mixture tube for precise targeting and cutting of customer-specified genes. Please click button to design the target genes. | Scramble Control CRISPR KN Lenti-AIO Ctrl Kit, lentivirus type | COM-FXD0PA-000000l | The scramble sequence are used as non-specific cutting control |\\n", "keyFeatures": ["High-purity components for robust genome editing", "Complete systems for high-titer virus production", "Scalable solutions for manufacturing", "Custom-designed for targeted gene editing"], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "GEX-001", "showInFeatured": false, "dataDescription": "", "performanceData": "Consistently high efficiency and low off-target effects reported in publications.", "storageStability": "Store components at specified temperatures. See manual for details.", "showInGeneEditing": true}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+31	custom-1759624148236	CRISPR Activation Kit	Our CRISPR activation (CRISPRa) kits enable precise, reversible upregulation of endogenous genes without altering DNA sequences. Powered by nuclease-deactivated Cas9 (dCas9) fused to potent transcriptional activators, the platform offers a robust solution for functional genomics, pathway analysis, and therapeutic research. Each kit includes three target-specific gRNA vectors (all-in-one or standalone format) and one scramble control.	/content-api/uploads/originals/aa6a0b48-05c6-47d2-8764-87d73b4c7824.png	/products/crispr-activation	genome-editing	DNA	quote	5	1759624148236	2025-10-05 00:29:08.236+00	GEX-006	In Stock		$799	t	f	f	f	{}	{}	{}				{}	{}	{/content-api/uploads/originals/aa6a0b48-05c6-47d2-8764-87d73b4c7824.png}	https://store.bioarktech.com/cart	\n**CRISPR activation (CRISPRa)** is an advanced gene-regulation technology that enables researchers to **upregulate or activate the expression** of target genes **without altering the underlying DNA sequence**.  \n\nUnlike CRISPR knockout, which disrupts gene function, CRISPRa employs a **nuclease-deactivated Cas9 (dCas9)** fused to **transcriptional activators**, allowing **precise control of gene expression**.  \n\nOur system provides a **rapid, efficient, and reversible** approach to enhance gene expression—ideal for **functional genomics**, **pathway analysis**, and **therapeutic research**.\n\nEach kit includes **three target-specific gRNA vectors** (available in **all-in-one** or **standalone** format) and **one scramble control vector**, offering flexibility for both experimental validation and control design.\n\n---\n\n## Technical Background\n\n1. **dCas9 Protein**  \n   A catalytically inactive Cas9 variant that binds to specific genomic loci guided by gRNA, without inducing double-strand breaks.  \n\n2. **Guide RNA (gRNA)**  \n   A short RNA sequence that directs dCas9 to the promoter or enhancer region of a target gene, enabling site-specific activation.  \n\n3. **Transcriptional Activators**  \n   - **VP64, p65, Rta, or VPR fusions**: Potent activator domains that recruit the cell’s transcriptional machinery to drive robust gene expression.  \n   - **MS2 or SAM system (optional)**: Enhanced multi-component activation systems that further amplify transcriptional output.  \n\nBy precisely positioning **dCas9-activator complexes** near promoter regions, researchers can **turn on endogenous gene expression**, enabling **fine-tuned control** for mechanistic studies or phenotype screening.\n\n---\n\n## Features of Our Products\n\n1. **High Activation Efficiency**  \n   Our CRISPRa platform integrates optimized gRNA design and advanced activator domains to achieve **strong and consistent gene upregulation**.\n\n2. **Multiple Delivery Options**  \n   Available in both **lentiviral** and **plasmid** formats, allowing **flexible delivery** to a wide range of cell types, including difficult-to-transfect cells.\n\n3. **All-in-One or Standalone Configurations**  \n   Choose between **all-in-one** and **standalone** formats to suit your experimental needs:  \n   - **All-in-One**: Cas9 activator and gRNA cassettes are integrated into a single vector for streamlined transfection and stable expression.  \n   - **Standalone**: Cas9 activator and gRNA are provided on separate plasmids, offering greater modularity and experimental control.\n\n4. **Comprehensive Kit Design**  \n   Each kit contains **three gRNA vectors** targeting the gene of interest and **one scramble control**, ensuring reliable results with appropriate experimental controls.\n	f	{"id": "custom-1759624148236", "link": "/products/crispr-activation", "name": "CRISPR Activation Kit", "order": 5, "__type": "quote", "category": "genome-editing", "imageUrl": "", "createdAt": 1759624148236, "description": "Our CRISPR activation (CRISPRa) kits enable precise, reversible upregulation of endogenous genes without altering DNA sequences. Powered by nuclease-deactivated Cas9 (dCas9) fused to potent transcriptional activators, the platform offers a robust solution for functional genomics, pathway analysis, and therapeutic research. Each kit includes three target-specific gRNA vectors (all-in-one or standalone format) and one scramble control."}	\N	{"images": ["/content-api/uploads/originals/aa6a0b48-05c6-47d2-8764-87d73b4c7824.png"], "manuals": [], "options": [], "createdAt": 1759624148236, "listPrice": "", "quoteOnly": true, "storeLink": "https://store.bioarktech.com/cart", "manualUrls": [], "priceRange": "$799", "contentText": "\\n**CRISPR activation (CRISPRa)** is an advanced gene-regulation technology that enables researchers to **upregulate or activate the expression** of target genes **without altering the underlying DNA sequence**.  \\n\\nUnlike CRISPR knockout, which disrupts gene function, CRISPRa employs a **nuclease-deactivated Cas9 (dCas9)** fused to **transcriptional activators**, allowing **precise control of gene expression**.  \\n\\nOur system provides a **rapid, efficient, and reversible** approach to enhance gene expression—ideal for **functional genomics**, **pathway analysis**, and **therapeutic research**.\\n\\nEach kit includes **three target-specific gRNA vectors** (available in **all-in-one** or **standalone** format) and **one scramble control vector**, offering flexibility for both experimental validation and control design.\\n\\n---\\n\\n## Technical Background\\n\\n1. **dCas9 Protein**  \\n   A catalytically inactive Cas9 variant that binds to specific genomic loci guided by gRNA, without inducing double-strand breaks.  \\n\\n2. **Guide RNA (gRNA)**  \\n   A short RNA sequence that directs dCas9 to the promoter or enhancer region of a target gene, enabling site-specific activation.  \\n\\n3. **Transcriptional Activators**  \\n   - **VP64, p65, Rta, or VPR fusions**: Potent activator domains that recruit the cell’s transcriptional machinery to drive robust gene expression.  \\n   - **MS2 or SAM system (optional)**: Enhanced multi-component activation systems that further amplify transcriptional output.  \\n\\nBy precisely positioning **dCas9-activator complexes** near promoter regions, researchers can **turn on endogenous gene expression**, enabling **fine-tuned control** for mechanistic studies or phenotype screening.\\n\\n---\\n\\n## Features of Our Products\\n\\n1. **High Activation Efficiency**  \\n   Our CRISPRa platform integrates optimized gRNA design and advanced activator domains to achieve **strong and consistent gene upregulation**.\\n\\n2. **Multiple Delivery Options**  \\n   Available in both **lentiviral** and **plasmid** formats, allowing **flexible delivery** to a wide range of cell types, including difficult-to-transfect cells.\\n\\n3. **All-in-One or Standalone Configurations**  \\n   Choose between **all-in-one** and **standalone** formats to suit your experimental needs:  \\n   - **All-in-One**: Cas9 activator and gRNA cassettes are integrated into a single vector for streamlined transfection and stable expression.  \\n   - **Standalone**: Cas9 activator and gRNA are provided on separate plasmids, offering greater modularity and experimental control.\\n\\n4. **Comprehensive Kit Design**  \\n   Each kit contains **three gRNA vectors** targeting the gene of interest and **one scramble control**, ensuring reliable results with appropriate experimental controls.\\n", "keyFeatures": [], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "GEX-006", "showInFeatured": false, "dataDescription": "", "performanceData": "", "storageStability": "", "showInGeneEditing": false}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+32	custom-1759625091045	CRISPR Inhibition Kit	The CRISPR Inhibition (CRISPRi) Kit enables precise, reversible downregulation of target gene expression without altering DNA sequences. Utilizing a nuclease-deactivated Cas9 (dCas9) fused with potent transcriptional repressors, this system offers a robust tool for functional genomics, pathway analysis, and loss-of-function studies. Each kit includes three target-specific gRNA vectors and one scramble control, available in all-in-one or standalone formats for flexible experimental design.	/content-api/uploads/originals/d93c6340-fa2f-4545-b855-e1d8744cf268.png	/products/crispr-inhibition	genome-editing	DNA	quote	6	1759625091045	2025-10-05 00:44:51.045+00	GEX-005	In Stock		$799	t	f	f	t	{}	{}	{}				{}	{}	{/content-api/uploads/originals/d93c6340-fa2f-4545-b855-e1d8744cf268.png}	https://store.bioarktech.com/cart	\n**CRISPR inhibition (CRISPRi)** is an advanced gene-regulation technology that enables researchers to **downregulate or silence the expression** of target genes **without altering the underlying DNA sequence**.  \n\nUnlike CRISPR knockout, which introduces double-strand breaks to disrupt gene function, CRISPRi employs a **nuclease-deactivated Cas9 (dCas9)** fused to **transcriptional repressors**, allowing **precise and reversible suppression of gene expression**.  \n\nOur system provides a **rapid, efficient, and reversible** approach to inhibit gene expression—ideal for **functional genomics**, **pathway analysis**, and **loss-of-function studies** in therapeutic research.\n\n---\n\n## Technical Background\n\n1. **dCas9 Protein**  \n   A catalytically inactive Cas9 variant that binds to specific genomic loci guided by gRNA, without inducing double-strand breaks.  \n\n2. **Guide RNA (gRNA)**  \n   A short RNA sequence that directs dCas9 to the **promoter or regulatory region** of a target gene, enabling **site-specific transcriptional repression**.  \n\n3. **Transcriptional Repressors**  \n   - **KRAB or SID domains**: Potent repressor domains that recruit chromatin-modifying complexes to inhibit transcriptional initiation.  \n   - **Combinatorial systems (optional)**: Enhanced multi-component repression systems (e.g., **dCas9-KRAB-MeCP2**) for stronger gene silencing.  \n\nBy precisely positioning **dCas9-repressor complexes** near promoter regions, researchers can **block transcription initiation or elongation**, enabling **fine-tuned control** of endogenous gene suppression for mechanistic studies or phenotype screening.\n\n---\n\n## Features of Our Products\n\n1. **High Repression Efficiency**  \n   Our CRISPRi platform integrates optimized gRNA design and advanced repressor domains to achieve **strong and consistent gene downregulation**.  \n\n2. **Multiple Delivery Options**  \n   Available in both **lentiviral** and **plasmid** formats, allowing **flexible delivery** to a wide range of cell types, including difficult-to-transfect cells.  \n\n3. **All-in-One or Standalone Configurations**  \n   Choose between **all-in-one** and **standalone** formats to suit your experimental needs:  \n   - **All-in-One**: Cas9 repressor and gRNA cassettes are integrated into a single vector for streamlined transfection and stable expression.  \n   - **Standalone**: Cas9 repressor and gRNA are provided on separate plasmids, offering greater modularity and experimental control.  \n\n4. **Comprehensive Kit Design**  \n   Each kit contains **three gRNA vectors** targeting the gene of interest and **one scramble control**, ensuring **reliable results** with appropriate experimental controls.\n	f	{"id": "custom-1759625091045", "link": "/products/crispr-inhibition", "name": "CRISPR Inhibition Kit", "order": 6, "__type": "quote", "category": "genome-editing", "imageUrl": "", "createdAt": 1759625091045, "description": "The CRISPR Inhibition (CRISPRi) Kit enables precise, reversible downregulation of target gene expression without altering DNA sequences. Utilizing a nuclease-deactivated Cas9 (dCas9) fused with potent transcriptional repressors, this system offers a robust tool for functional genomics, pathway analysis, and loss-of-function studies. Each kit includes three target-specific gRNA vectors and one scramble control, available in all-in-one or standalone formats for flexible experimental design."}	\N	{"images": ["/content-api/uploads/originals/d93c6340-fa2f-4545-b855-e1d8744cf268.png"], "manuals": [], "options": [], "createdAt": 1759625091045, "listPrice": "", "quoteOnly": true, "storeLink": "https://store.bioarktech.com/cart", "manualUrls": [], "priceRange": "$799", "contentText": "\\n**CRISPR inhibition (CRISPRi)** is an advanced gene-regulation technology that enables researchers to **downregulate or silence the expression** of target genes **without altering the underlying DNA sequence**.  \\n\\nUnlike CRISPR knockout, which introduces double-strand breaks to disrupt gene function, CRISPRi employs a **nuclease-deactivated Cas9 (dCas9)** fused to **transcriptional repressors**, allowing **precise and reversible suppression of gene expression**.  \\n\\nOur system provides a **rapid, efficient, and reversible** approach to inhibit gene expression—ideal for **functional genomics**, **pathway analysis**, and **loss-of-function studies** in therapeutic research.\\n\\n---\\n\\n## Technical Background\\n\\n1. **dCas9 Protein**  \\n   A catalytically inactive Cas9 variant that binds to specific genomic loci guided by gRNA, without inducing double-strand breaks.  \\n\\n2. **Guide RNA (gRNA)**  \\n   A short RNA sequence that directs dCas9 to the **promoter or regulatory region** of a target gene, enabling **site-specific transcriptional repression**.  \\n\\n3. **Transcriptional Repressors**  \\n   - **KRAB or SID domains**: Potent repressor domains that recruit chromatin-modifying complexes to inhibit transcriptional initiation.  \\n   - **Combinatorial systems (optional)**: Enhanced multi-component repression systems (e.g., **dCas9-KRAB-MeCP2**) for stronger gene silencing.  \\n\\nBy precisely positioning **dCas9-repressor complexes** near promoter regions, researchers can **block transcription initiation or elongation**, enabling **fine-tuned control** of endogenous gene suppression for mechanistic studies or phenotype screening.\\n\\n---\\n\\n## Features of Our Products\\n\\n1. **High Repression Efficiency**  \\n   Our CRISPRi platform integrates optimized gRNA design and advanced repressor domains to achieve **strong and consistent gene downregulation**.  \\n\\n2. **Multiple Delivery Options**  \\n   Available in both **lentiviral** and **plasmid** formats, allowing **flexible delivery** to a wide range of cell types, including difficult-to-transfect cells.  \\n\\n3. **All-in-One or Standalone Configurations**  \\n   Choose between **all-in-one** and **standalone** formats to suit your experimental needs:  \\n   - **All-in-One**: Cas9 repressor and gRNA cassettes are integrated into a single vector for streamlined transfection and stable expression.  \\n   - **Standalone**: Cas9 repressor and gRNA are provided on separate plasmids, offering greater modularity and experimental control.  \\n\\n4. **Comprehensive Kit Design**  \\n   Each kit contains **three gRNA vectors** targeting the gene of interest and **one scramble control**, ensuring **reliable results** with appropriate experimental controls.\\n", "keyFeatures": [], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "GEX-005", "showInFeatured": false, "dataDescription": "", "performanceData": "", "storageStability": "", "showInGeneEditing": true}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+33	lv-01	Lentivirus ORF Stock	cDNA-expressing lentiviral stocks for gene delivery.	/placeholder.svg	/products/cdna-lentivirus-stock	lentivirus	LentiVirus	quote	7	\N	\N	LV-001	In Stock	Contact for Quote		t	f	f	f	{"High titer","Sterile filtered","QC validated"}	{}	{}	Store at -80°C. Avoid repeated freeze-thaw cycles.	Infectivity verified in standard cell lines.		{"Lentivirus User Guide (PDF)"}	{}	{/placeholder.svg}		# BioArk Technologies\n\nBioArk Technologies is continuously expanding its collection of cDNA lentivirus stocks, offering an ever-growing selection of specific genes and targets. Our mission is to provide high-quality, pre-packaged lentiviruses at an affordable price while promoting scientific collaboration and resource sharing.\n\nExplore our expanding list of cost-effective, pre-constructed lentiviruses here.\n\n---\n\n| Major Vector | | | Donor Vector | | | Scramble Control Vector | | |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n| **Class** | **Product Name** | **SKU** | **Information** | **Donor Name** | **SKU** | **Information** | **Scramble Name** | **SKU** | **Information** |\n| Non-Viral CDS-P011k | CRISPR KN AIO Kit-Gene AAVS1, Vector type | COT-FXD00A-AAVS1gk | The CRISPR tool specifically designed to target and cut human AAVS1 safe harbor site. | AAVS1 Dnr Std Kit | CDS-FX00PA-XXXXXXk | Insert Customer Gene into human AAVS1 site, please specify your genes by clicking the button | GFP Donor Control AAVS1 Dnr Std Ctrl Kit, vector type | CDS-FX0GPA-000000k | Insert GFP into human AAVS1 site as control |\n| Non-Viral CDS-P011k | CRISPR KN AIO Kit-Gene ROSA26, Vector type | COT-FXD00A-ROSA26gk | The CRISPR tool specifically designed to target and cut mouse ROSA26 safe harbor site. | Dnr Std Kit-ROSA26 Site | TBD | Insert Customer Gene into mouse ROSA26 site, please specify your custom gene by clicking the button | GFP Donor Control Dnr Std Kit-ROSA26 Site, vector type | TBD | Insert GFP into mouse ROSA26 site as control |\n\n*Showing 1 to 3 of 3 entries*\n\n---\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n```	f	{"id": "lv-01"}	{"link": "/products/cdna-lentivirus-stock", "name": "Lentivirus ORF Stock", "order": 7, "__type": "quote", "category": "lentivirus", "description": "cDNA-expressing lentiviral stocks for gene delivery."}	{"images": ["/placeholder.svg"], "manuals": ["Lentivirus User Guide (PDF)"], "options": [], "listPrice": "Contact for Quote", "quoteOnly": true, "storeLink": "", "manualUrls": [], "priceRange": "", "contentText": "# BioArk Technologies\\n\\nBioArk Technologies is continuously expanding its collection of cDNA lentivirus stocks, offering an ever-growing selection of specific genes and targets. Our mission is to provide high-quality, pre-packaged lentiviruses at an affordable price while promoting scientific collaboration and resource sharing.\\n\\nExplore our expanding list of cost-effective, pre-constructed lentiviruses here.\\n\\n---\\n\\n| Major Vector | | | Donor Vector | | | Scramble Control Vector | | |\\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\\n| **Class** | **Product Name** | **SKU** | **Information** | **Donor Name** | **SKU** | **Information** | **Scramble Name** | **SKU** | **Information** |\\n| Non-Viral CDS-P011k | CRISPR KN AIO Kit-Gene AAVS1, Vector type | COT-FXD00A-AAVS1gk | The CRISPR tool specifically designed to target and cut human AAVS1 safe harbor site. | AAVS1 Dnr Std Kit | CDS-FX00PA-XXXXXXk | Insert Customer Gene into human AAVS1 site, please specify your genes by clicking the button | GFP Donor Control AAVS1 Dnr Std Ctrl Kit, vector type | CDS-FX0GPA-000000k | Insert GFP into human AAVS1 site as control |\\n| Non-Viral CDS-P011k | CRISPR KN AIO Kit-Gene ROSA26, Vector type | COT-FXD00A-ROSA26gk | The CRISPR tool specifically designed to target and cut mouse ROSA26 safe harbor site. | Dnr Std Kit-ROSA26 Site | TBD | Insert Customer Gene into mouse ROSA26 site, please specify your custom gene by clicking the button | GFP Donor Control Dnr Std Kit-ROSA26 Site, vector type | TBD | Insert GFP into mouse ROSA26 site as control |\\n\\n*Showing 1 to 3 of 3 entries*\\n\\n---\\n\\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\\n```", "keyFeatures": ["High titer", "Sterile filtered", "QC validated"], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "LV-001", "showInFeatured": false, "dataDescription": "", "performanceData": "Infectivity verified in standard cell lines.", "storageStability": "Store at -80°C. Avoid repeated freeze-thaw cycles.", "showInGeneEditing": false}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+34	sc-01	Stable Cell Line Stock	Ready-to-use stable cell line stocks for research applications.	/placeholder.svg	/products/stable-cell-line-stock	stable-cell-lines	\N	quote	8	\N	\N	SC-001	In Stock	Contact for Quote	\N	t	f	f	f	{Authenticated,Mycoplasma-tested,Application-ready}	{}	{}	Store in liquid nitrogen or as specified.	QC documentation available upon request.	\N	{"Cell Line Handling Guide (PDF)"}	{}	{/placeholder.svg}		# BioArk Technologies\n\nBioArk Technologies is continuously expanding its stable cell line stock, offering an ever-growing selection of gene-specific modifications. Our mission is to provide high-quality, pre-validated stable cell lines at an affordable price while fostering scientific collaboration and resource sharing.\n\nExplore our expanding list of cost-effective, pre-constructed stable cell lines here.\n\n---\n\n| Stable Cell Line | | | Gene Editing Feature | | | | |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n| **Product Name** | **SKU** | **Description** | **Promoter** | **Protein Tag** | **Fluorescence Marker** | **Selection Marker** | **Target Gene** | **Cell Background** |\n| OverExp Lenti Kit | EML-CXD0PC-LARGETc | The large T antigen is integrated by lentivirus | PCMV | MycDDK | None | Puro | LargeT | Fibroblast Cells |\n\n*Showing 1 to 2 of 2 entries*\n\n---\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n\nIf you have any further inquiries regarding your project, please click the button to contact us. We are fully equipped to accommodate a wide range of your requirements.\n```	f	{"id": "sc-01"}	{"link": "/products/stable-cell-line-stock", "name": "Stable Cell Line Stock", "order": 8, "__type": "quote", "category": "stable-cell-lines", "description": "Ready-to-use stable cell line stocks for research applications."}	{"images": ["/placeholder.svg"], "manuals": ["Cell Line Handling Guide (PDF)"], "options": [], "listPrice": "Contact for Quote", "quoteOnly": true, "storeLink": "", "manualUrls": [], "contentText": "# BioArk Technologies\\n\\nBioArk Technologies is continuously expanding its stable cell line stock, offering an ever-growing selection of gene-specific modifications. Our mission is to provide high-quality, pre-validated stable cell lines at an affordable price while fostering scientific collaboration and resource sharing.\\n\\nExplore our expanding list of cost-effective, pre-constructed stable cell lines here.\\n\\n---\\n\\n| Stable Cell Line | | | Gene Editing Feature | | | | |\\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\\n| **Product Name** | **SKU** | **Description** | **Promoter** | **Protein Tag** | **Fluorescence Marker** | **Selection Marker** | **Target Gene** | **Cell Background** |\\n| OverExp Lenti Kit | EML-CXD0PC-LARGETc | The large T antigen is integrated by lentivirus | PCMV | MycDDK | None | Puro | LargeT | Fibroblast Cells |\\n\\n*Showing 1 to 2 of 2 entries*\\n\\n---\\n\\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\\n\\nIf you have any further inquiries regarding your project, please click the button to contact us. We are fully equipped to accommodate a wide range of your requirements.\\n```", "keyFeatures": ["Authenticated", "Mycoplasma-tested", "Application-ready"], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "SC-001", "performanceData": "QC documentation available upon request.", "storageStability": "Store in liquid nitrogen or as specified."}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+35	custom-1759879837546	Non-Viral RNAi Vector	A high-efficiency, non-viral RNAi plasmid designed for customizable, stable, or transient gene silencing in mammalian cells.	/content-api/uploads/originals/c5ac4a80-c1b8-4a65-bfd6-2cff30793e96.png	/products/nonviral-rnai-template	vector-clones	Non-Viral	quote	9	1759879837546	2025-10-07 23:30:37.546+00	SHS-UX00PA	Ready To Order		$299	t	f	f	f	{}	{}	{}			Support Documents	{}	{}	{/content-api/uploads/originals/c5ac4a80-c1b8-4a65-bfd6-2cff30793e96.png,/content-api/uploads/originals/5a8011d4-06aa-45d6-ab93-9ae692c8f9d6.png,/content-api/uploads/originals/ae36de5d-e9fe-4dbb-837d-cb8198b45646.png,/content-api/uploads/originals/9c956c8c-5f7c-45e2-a3e5-87807324aea3.png,/content-api/uploads/originals/0c525c15-a111-4c49-9d2c-c80046c7cf79.png,/content-api/uploads/originals/dbd48ede-551b-491d-99ea-aa75f96d11c8.png,/content-api/uploads/originals/eb9cef4a-5e19-4224-a6fc-adcc03ad13a1.png,/content-api/uploads/originals/f3740117-de84-456d-bce5-c2e8191c5d6e.png}	https://store.bioarktech.com/cart	# Product Description\n\nOur **Non-Viral RNAi Plasmid** provides a **flexible and efficient solution** for **stable or transient gene silencing** in mammalian cells.  \nDesigned for **high-efficiency RNA interference (RNAi)**, this plasmid enables researchers to easily **clone**, **express**, and **evaluate shRNA or miRNA constructs** targeting genes of interest—**without the use of viral vectors**.  \n\nThe system supports a wide range of **functional genomics** and **molecular biology** applications, including **loss-of-function studies**, **pathway analysis**, and **phenotypic screening**.  \n\n---\n\n# Key Features\n\n- 🔹 **High-Efficiency Gene Silencing**  \n  Optimized expression of **shRNA or miRNA sequences** under strong **U6** or **H1 promoters** ensures robust and consistent knockdown of target genes.  \n\n- 🔹 **Customizable Promoter Options**  \n  Combine **RNA Pol III promoters (U6/H1)** with **constitutive Pol II promoters** (e.g., **CMV**, **EF1α**, **CAG**) for **dual-expression systems** or **regulated knockdown**.  \n\n- 🔹 **Selectable Markers**  \n  Available with **Puromycin**, **Neomycin (G418)**, **Blasticidin**, or **Hygromycin** resistance cassettes for **stable cell selection** in various cell types.  \n\n- 🔹 **Fluorescent Reporter Integration**  \n  Optional **GFP**, **RFP**, **BFP**, or **mCherry** reporters allow easy monitoring of **transfection efficiency** and **cell selection**.  \n\n- 🔹 **Cloning Flexibility**  \n  Supports **multiple cloning sites (MCS)** and is compatible with **Gateway®** or **Gibson Assembly®**, streamlining the insertion of **custom RNAi sequences**.  \n\n- 🔹 **Non-Viral and Safe**  \n  Completely **non-viral**, avoiding biosafety concerns, and ideal for **in vitro** and **preclinical research applications**.  \n\n---\n\n# Applications\n\n- **Gene knockdown** and **loss-of-function** studies  \n- **Functional genomics** and **pathway dissection**  \n- **Target validation** and **drug screening**  \n- **Phenotypic screening** for gene function analysis  \n- **Reporter-based assays** for silencing efficiency evaluation\n	f	{"id": "custom-1759879837546", "link": "/products/nonviral-rnai-template", "name": "Non-Viral RNAi Vector", "order": 9, "__type": "quote", "category": "vector-clones", "imageUrl": "", "createdAt": 1759879837546, "description": "A high-efficiency, non-viral RNAi plasmid designed for customizable, stable, or transient gene silencing in mammalian cells."}	\N	{"images": ["/content-api/uploads/originals/c5ac4a80-c1b8-4a65-bfd6-2cff30793e96.png", "/content-api/uploads/originals/5a8011d4-06aa-45d6-ab93-9ae692c8f9d6.png", "/content-api/uploads/originals/ae36de5d-e9fe-4dbb-837d-cb8198b45646.png", "/content-api/uploads/originals/9c956c8c-5f7c-45e2-a3e5-87807324aea3.png", "/content-api/uploads/originals/0c525c15-a111-4c49-9d2c-c80046c7cf79.png", "/content-api/uploads/originals/dbd48ede-551b-491d-99ea-aa75f96d11c8.png", "/content-api/uploads/originals/eb9cef4a-5e19-4224-a6fc-adcc03ad13a1.png", "/content-api/uploads/originals/f3740117-de84-456d-bce5-c2e8191c5d6e.png"], "manuals": [], "options": [], "createdAt": 1759879837546, "listPrice": "", "quoteOnly": true, "storeLink": "https://store.bioarktech.com/cart", "manualUrls": [], "priceRange": "$299", "contentText": "# Product Description\\n\\nOur **Non-Viral RNAi Plasmid** provides a **flexible and efficient solution** for **stable or transient gene silencing** in mammalian cells.  \\nDesigned for **high-efficiency RNA interference (RNAi)**, this plasmid enables researchers to easily **clone**, **express**, and **evaluate shRNA or miRNA constructs** targeting genes of interest—**without the use of viral vectors**.  \\n\\nThe system supports a wide range of **functional genomics** and **molecular biology** applications, including **loss-of-function studies**, **pathway analysis**, and **phenotypic screening**.  \\n\\n---\\n\\n# Key Features\\n\\n- 🔹 **High-Efficiency Gene Silencing**  \\n  Optimized expression of **shRNA or miRNA sequences** under strong **U6** or **H1 promoters** ensures robust and consistent knockdown of target genes.  \\n\\n- 🔹 **Customizable Promoter Options**  \\n  Combine **RNA Pol III promoters (U6/H1)** with **constitutive Pol II promoters** (e.g., **CMV**, **EF1α**, **CAG**) for **dual-expression systems** or **regulated knockdown**.  \\n\\n- 🔹 **Selectable Markers**  \\n  Available with **Puromycin**, **Neomycin (G418)**, **Blasticidin**, or **Hygromycin** resistance cassettes for **stable cell selection** in various cell types.  \\n\\n- 🔹 **Fluorescent Reporter Integration**  \\n  Optional **GFP**, **RFP**, **BFP**, or **mCherry** reporters allow easy monitoring of **transfection efficiency** and **cell selection**.  \\n\\n- 🔹 **Cloning Flexibility**  \\n  Supports **multiple cloning sites (MCS)** and is compatible with **Gateway®** or **Gibson Assembly®**, streamlining the insertion of **custom RNAi sequences**.  \\n\\n- 🔹 **Non-Viral and Safe**  \\n  Completely **non-viral**, avoiding biosafety concerns, and ideal for **in vitro** and **preclinical research applications**.  \\n\\n---\\n\\n# Applications\\n\\n- **Gene knockdown** and **loss-of-function** studies  \\n- **Functional genomics** and **pathway dissection**  \\n- **Target validation** and **drug screening**  \\n- **Phenotypic screening** for gene function analysis  \\n- **Reporter-based assays** for silencing efficiency evaluation\\n", "keyFeatures": [], "availability": "Ready To Order", "optionPrices": {}, "catalogNumber": "SHS-UX00PA", "showInFeatured": false, "dataDescription": "Support Documents", "performanceData": "", "storageStability": "", "showInGeneEditing": false}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+36	custom-1759628557002	Non-Viral CDS Vector	he Non-Viral Overexpression Plasmid System enables efficient, customizable expression of target genes in mammalian cells without the use of viral vectors. Designed for flexibility, the plasmids support multiple promoters (CMV, EF1α, CAG), selection markers (Puromycin, Neomycin, Blasticidin, Hygromycin), fluorescent reporters (GFP, RFP, mCherry), and epitope tags (FLAG, HA, Myc, His), providing a versatile solution for gene function studies, protein production, and pathway analysis.	/content-api/uploads/originals/25856f6f-df8b-42cb-8790-08f8091b19eb.png	/products/non-viral-gene-overexpression-plasmid-template	vector-clones	Non-Viral	quote	10	1759628557002	2025-10-05 01:42:37.002+00	EMS-FXD0PA	Ready To Order	$299+syn.	$299	t	f	f	f	{}	{}	{}			Support Documents	{}	{}	{/content-api/uploads/originals/25856f6f-df8b-42cb-8790-08f8091b19eb.png,/content-api/uploads/originals/9d798728-5315-48cf-bed6-83c1de4feddc.png,/content-api/uploads/originals/caa1b243-6768-417c-9131-8c7e8f967f3a.png,/content-api/uploads/originals/795dcbd2-9c3b-491c-9118-e2d7525948f5.png,/content-api/uploads/originals/70d782c7-d888-44ba-94f4-40416e698028.png,/content-api/uploads/originals/6891d83d-8628-40f2-bcec-67adc4a2e61d.png,/content-api/uploads/originals/cd084f52-788c-46df-b93e-9e884cbbbedd.png,/content-api/uploads/originals/319edd09-18f2-4299-961d-fc1deca74c6d.png}	https://store.bioarktech.com/cart	# Non-Viral Overexpression Plasmid\n\nOur **Non-Viral Overexpression Plasmid** provides a **flexible and efficient solution** for **stable or transient expression** of genes of interest in mammalian cells.  \nDesigned for **high-level, customizable gene expression**, this plasmid enables researchers to easily **clone, express, and analyze** target genes **without the use of viral vectors**.  \n\nThe system supports a wide range of **molecular biology** and **functional genomics applications**, including **protein production**, **pathway studies**, **phenotypic screening**, and **functional validation**.\n\n---\n\n## Key Features\n\n- 🔹 **Versatile Expression Control**  \n  Choose from **strong constitutive promoters** (e.g., CMV, EF1α, CAG, or PGK) for customized regulation of target gene expression.  \n\n- 🔹 **Customizable Selection Markers**  \n  Available with a variety of **antibiotic resistance genes**, including **Puromycin**, **Neomycin (G418)**, **Blasticidin**, or **Hygromycin**, for flexible selection across cell types.  \n\n- 🔹 **Fluorescent Reporter Options**  \n  Integrated **fluorescent markers** (e.g., GFP, miniGFP, RFP, BFP, mCherry) facilitate **real-time tracking** of transfection efficiency and expression.  \n\n- 🔹 **Tag Integration**  \n  Support for **epitope tags** such as **FLAG**, **HA**, **Myc**, or **His**, enabling downstream **detection**, **purification**, or **localization** studies.  \n\n- 🔹 **Multiple Cloning and Compatibility**  \n  Engineered with **multiple cloning sites (MCS)** and optional **Gateway®** or **Gibson Assembly®** compatibility for efficient gene insertion.  \n\n- 🔹 **Non-Viral and Safe**  \n  Eliminates **biosafety concerns** associated with viral delivery, suitable for both **in vitro** and **preclinical** research applications.  \n\n---\n\n## Applications\n\n- Gene and protein overexpression studies  \n- Functional genomics and pathway analysis  \n- Recombinant protein production  \n- Drug screening and target validation  \n- Fluorescence-based cell tracking\n\n\n	f	{"id": "custom-1759628557002", "link": "/products/non-viral-gene-overexpression-plasmid-template", "name": "Non-Viral CDS Vector", "order": 10, "__type": "quote", "category": "vector-clones", "imageUrl": "", "createdAt": 1759628557002, "description": "he Non-Viral Overexpression Plasmid System enables efficient, customizable expression of target genes in mammalian cells without the use of viral vectors. Designed for flexibility, the plasmids support multiple promoters (CMV, EF1α, CAG), selection markers (Puromycin, Neomycin, Blasticidin, Hygromycin), fluorescent reporters (GFP, RFP, mCherry), and epitope tags (FLAG, HA, Myc, His), providing a versatile solution for gene function studies, protein production, and pathway analysis."}	\N	{"images": ["/content-api/uploads/originals/25856f6f-df8b-42cb-8790-08f8091b19eb.png", "/content-api/uploads/originals/9d798728-5315-48cf-bed6-83c1de4feddc.png", "/content-api/uploads/originals/caa1b243-6768-417c-9131-8c7e8f967f3a.png", "/content-api/uploads/originals/795dcbd2-9c3b-491c-9118-e2d7525948f5.png", "/content-api/uploads/originals/70d782c7-d888-44ba-94f4-40416e698028.png", "/content-api/uploads/originals/6891d83d-8628-40f2-bcec-67adc4a2e61d.png", "/content-api/uploads/originals/cd084f52-788c-46df-b93e-9e884cbbbedd.png", "/content-api/uploads/originals/319edd09-18f2-4299-961d-fc1deca74c6d.png"], "manuals": [], "options": [], "createdAt": 1759628557002, "listPrice": "$299+syn.", "quoteOnly": true, "storeLink": "https://store.bioarktech.com/cart", "manualUrls": [], "priceRange": "$299", "contentText": "# Non-Viral Overexpression Plasmid\\n\\nOur **Non-Viral Overexpression Plasmid** provides a **flexible and efficient solution** for **stable or transient expression** of genes of interest in mammalian cells.  \\nDesigned for **high-level, customizable gene expression**, this plasmid enables researchers to easily **clone, express, and analyze** target genes **without the use of viral vectors**.  \\n\\nThe system supports a wide range of **molecular biology** and **functional genomics applications**, including **protein production**, **pathway studies**, **phenotypic screening**, and **functional validation**.\\n\\n---\\n\\n## Key Features\\n\\n- 🔹 **Versatile Expression Control**  \\n  Choose from **strong constitutive promoters** (e.g., CMV, EF1α, CAG, or PGK) for customized regulation of target gene expression.  \\n\\n- 🔹 **Customizable Selection Markers**  \\n  Available with a variety of **antibiotic resistance genes**, including **Puromycin**, **Neomycin (G418)**, **Blasticidin**, or **Hygromycin**, for flexible selection across cell types.  \\n\\n- 🔹 **Fluorescent Reporter Options**  \\n  Integrated **fluorescent markers** (e.g., GFP, miniGFP, RFP, BFP, mCherry) facilitate **real-time tracking** of transfection efficiency and expression.  \\n\\n- 🔹 **Tag Integration**  \\n  Support for **epitope tags** such as **FLAG**, **HA**, **Myc**, or **His**, enabling downstream **detection**, **purification**, or **localization** studies.  \\n\\n- 🔹 **Multiple Cloning and Compatibility**  \\n  Engineered with **multiple cloning sites (MCS)** and optional **Gateway®** or **Gibson Assembly®** compatibility for efficient gene insertion.  \\n\\n- 🔹 **Non-Viral and Safe**  \\n  Eliminates **biosafety concerns** associated with viral delivery, suitable for both **in vitro** and **preclinical** research applications.  \\n\\n---\\n\\n## Applications\\n\\n- Gene and protein overexpression studies  \\n- Functional genomics and pathway analysis  \\n- Recombinant protein production  \\n- Drug screening and target validation  \\n- Fluorescence-based cell tracking\\n\\n\\n", "keyFeatures": [], "availability": "Ready To Order", "optionPrices": {}, "catalogNumber": "EMS-FXD0PA", "showInFeatured": false, "dataDescription": "Support Documents", "performanceData": "", "storageStability": "", "showInGeneEditing": false}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+37	lv-02	Lentivirus Control Stock	Control lentiviral stocks for assay validation and benchmarking.	/placeholder.svg	/products/lentivirus-control-stock	lentivirus	LentiVirus	quote	12	\N	\N	LV-002	In Stock	Contact for Quote		t	f	f	f	{"Positive/negative controls","Consistent titers",Ready-to-use}	{}	{}	Store at -80°C. Avoid repeated freeze-thaw cycles.	Validated for use across common cell lines.		{"Control Stock Guide (PDF)"}	{}	{/placeholder.svg}		# BioArk Technologies\n\nBioArk Technologies is continuously expanding its collection of cDNA lentivirus stocks, offering a growing selection of control lentiviruses for various research applications. Our mission is to provide high-quality, pre-packaged lentiviruses at an affordable price while fostering scientific collaboration and resource sharing.\n\nExplore our expanding list of cost-effective, pre-constructed lentivirus controls [here](#).\n\n---\n\n## Lentivirus Controls Catalog\n\n| Category        | Class               | Product Name                              | SKU                     | Accessory Virus | Promoter   | Protein Tag | Fluorescence Marker | Selection Marker |\n|-----------------|---------------------|-------------------------------------------|-------------------------|-----------------|------------|-------------|---------------------|------------------|\n| Overexpression  | Viral All-in-one    | OverExp Lenti Ctrl Kit, lentivirus type   | EML-CXDG0C-000000l      | None            | PCMV       | MycDDK      | GFP                 | None             |\n| Inducible       | Viral All-in-one    | Inducible Lenti-AIO Ctrl Kit, lentivirus type | IMM-DXDGPC-000000l  | None            | Inducible  | MycDDK      | GFP                 | Puro             |\n\n*Showing 1 to 3 of 3 entries*  \n*10 entries per page*  \n*Search functionality available*\n\n---\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n```	f	{"id": "lv-02"}	{"link": "/products/lentivirus-control-stock", "name": "Lentivirus Control Stock", "order": 12, "__type": "quote", "category": "lentivirus", "description": "Control lentiviral stocks for assay validation and benchmarking."}	{"images": ["/placeholder.svg"], "manuals": ["Control Stock Guide (PDF)"], "options": [], "listPrice": "Contact for Quote", "quoteOnly": true, "storeLink": "", "manualUrls": [], "priceRange": "", "contentText": "# BioArk Technologies\\n\\nBioArk Technologies is continuously expanding its collection of cDNA lentivirus stocks, offering a growing selection of control lentiviruses for various research applications. Our mission is to provide high-quality, pre-packaged lentiviruses at an affordable price while fostering scientific collaboration and resource sharing.\\n\\nExplore our expanding list of cost-effective, pre-constructed lentivirus controls [here](#).\\n\\n---\\n\\n## Lentivirus Controls Catalog\\n\\n| Category        | Class               | Product Name                              | SKU                     | Accessory Virus | Promoter   | Protein Tag | Fluorescence Marker | Selection Marker |\\n|-----------------|---------------------|-------------------------------------------|-------------------------|-----------------|------------|-------------|---------------------|------------------|\\n| Overexpression  | Viral All-in-one    | OverExp Lenti Ctrl Kit, lentivirus type   | EML-CXDG0C-000000l      | None            | PCMV       | MycDDK      | GFP                 | None             |\\n| Inducible       | Viral All-in-one    | Inducible Lenti-AIO Ctrl Kit, lentivirus type | IMM-DXDGPC-000000l  | None            | Inducible  | MycDDK      | GFP                 | Puro             |\\n\\n*Showing 1 to 3 of 3 entries*  \\n*10 entries per page*  \\n*Search functionality available*\\n\\n---\\n\\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\\n```", "keyFeatures": ["Positive/negative controls", "Consistent titers", "Ready-to-use"], "availability": "In Stock", "optionPrices": {}, "catalogNumber": "LV-002", "showInFeatured": false, "dataDescription": "", "performanceData": "Validated for use across common cell lines.", "storageStability": "Store at -80°C. Avoid repeated freeze-thaw cycles.", "showInGeneEditing": false}	2026-06-19 21:09:11.034346+00	2026-06-19 21:09:11.034346+00
+39	thunderbird-next-probe-qpcr-mix	THUNDERBIRD Next Probe qPCR Mix	Next-generation qPCR master mix featuring enhanced resistance to PCR inhibitors and higher sensitivity.	/media/reagent_images/sybr_green_qpcr_master_mix.jpg	\N	category-1765063995229	qPCR Reagents	reagent	\N	\N	\N	QPX-101	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.886091+00	2026-06-19 21:10:54.345593+00
+40	thunderbird-sybr-qpcr-mix	THUNDERBIRD SYBR qPCR Mix	High-performance 2x master mix for real-time PCR using SYBR Green I detection.	/media/reagent_images/sybr_green_qpcr_master_mix.jpg	\N	category-1765063995229	qPCR Reagents	reagent	\N	\N	\N	QPS-201	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.892796+00	2026-06-19 21:10:54.349054+00
+42	taq-dna-polymerase	Taq DNA Polymerase	Recombinant Taq DNA Polymerase for standard PCR applications.	/media/reagent_images/dna_polymerase_enzyme.png	\N	category-1765063995229	PCR Enzymes	reagent	\N	\N	\N	TAP-201	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.904897+00	2026-06-19 21:10:54.355549+00
+43	rtaq-dna-polymerase	rTaq DNA Polymerase	Highly purified recombinant Taq DNA Polymerase for high-yield PCR.	/media/reagent_images/dna_polymerase_enzyme.png	\N	category-1765063995229	PCR Enzymes	reagent	\N	\N	\N	TAP-202	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.91+00	2026-06-19 21:10:54.359211+00
+44	rtth-dna-polymerase	rTth DNA Polymerase	Thermostable DNA polymerase with reverse transcriptase activity in the presence of manganese ions.	/media/reagent_images/dna_polymerase_enzyme.png	\N	category-1765063995229	PCR Enzymes	reagent	\N	\N	\N	TAP-301	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.915373+00	2026-06-19 21:10:54.363589+00
+65	stem-cells-fbs-lonsera	Stem cells fetal bovine serum (FBS), Lonsera	Specialty FBS tested and certified for stem cell culture applications.	/media/reagent_images/fetal_bovine_serum_lonsera.jpg	\N	category-1765995504911	Fetal Bovine Serum (FBS)	reagent	\N	\N	\N	LNS-FBS-003	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.061754+00	2026-06-19 21:11:03.848791+00
+48	kod-plus-mutagenesis-kit	KOD -Plus- Mutagenesis Kit	High-efficiency site-directed mutagenesis kit utilizing high-fidelity KOD -Plus- DNA polymerase.	/media/reagent_images/dna_polymerase_enzyme.png	\N	category-1765063995229	Mutagenesis Kits	reagent	\N	\N	\N	KOD-201	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.947086+00	2026-06-19 21:10:54.367625+00
+49	kod-one-pcr-master-mix-blue	KOD One PCR Master Mix -Blue-	KOD One PCR Master Mix pre-mixed with loading dye for direct gel loading.	/media/reagent_images/dna_polymerase_enzyme.png	\N	category-1765063995229	PCR Master Mixes	reagent	\N	\N	\N	KOD-302	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.952526+00	2026-06-19 21:10:54.373988+00
+51	revertra-ace-qpcr-rt-master-mix	ReverTra Ace qPCR RT Master Mix	Ready-to-use reverse transcription master mix for quick and simple cDNA synthesis.	/media/reagent_images/sybr_green_qpcr_master_mix.jpg	\N	category-1766675380397	Reverse Transcription	reagent	\N	\N	\N	TRT-201	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.966099+00	2026-06-19 21:10:54.384595+00
+52	revertra-ace-qpcr-rt-master-mix-gdna-remover	ReverTra Ace qPCR RT Master Mix gDNA Remover	cDNA synthesis master mix combined with genomic DNA removal reagents to ensure RNA-specific amplification.	/media/reagent_images/sybr_green_qpcr_master_mix.jpg	\N	category-1766675380397	Reverse Transcription	reagent	\N	\N	\N	TRT-202	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.972516+00	2026-06-19 21:10:54.388361+00
+53	superprep-ii-cell-lysis-rt-kit	SuperPrep II Cell Lysis & RT Kit for qPCR, high throughput	High-throughput cell lysis and reverse transcription kit to prepare cDNA directly from cultured cells without RNA purification.	/media/reagent_images/sybr_green_qpcr_master_mix.jpg	\N	category-1766675380397	Reverse Transcription	reagent	\N	\N	\N	SCX-101	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.978397+00	2026-06-19 21:10:54.39233+00
+54	thunderbird-probe-one-step-qrt-pcr-kit	THUNDERBIRD Probe One-step qRT-PCR Kit	High-efficiency one-step real-time RT-PCR kit using TaqMan probe detection.	/media/reagent_images/sybr_green_qpcr_master_mix.jpg	\N	category-1766675380397	One-step qRT-PCR	reagent	\N	\N	\N	QRH-101	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.995813+00	2026-06-19 21:10:54.395719+00
+55	thunderbird-next-probe-one-step-qrt-pcr-4x-mix	THUNDERBIRD Next Probe One-step qRT-PCR 4x Mix	Concentrated 4x master mix for highly sensitive one-step real-time RT-PCR using probes.	/media/reagent_images/sybr_green_qpcr_master_mix.jpg	\N	category-1766675380397	One-step qRT-PCR	reagent	\N	\N	\N	QRX-101	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.001617+00	2026-06-19 21:10:54.399472+00
+56	thermo-t7-rna-polymerase	Thermo T7 RNA polymerase	T7 RNA Polymerase for in vitro transcription of RNA from DNA templates containing the T7 promoter.	/media/reagent_images/dna_polymerase_enzyme.png	\N	category-1766675380397	RNA Transcription	reagent	\N	\N	\N	TRN-101	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.006996+00	2026-06-19 21:10:54.403465+00
+57	rnase-inhibitor	RNase Inhibitor	Recombinant RNase inhibitor protecting RNA from degradation by pancreatic-type RNases.	/media/reagent_images/dna_polymerase_enzyme.png	\N	category-1766675380397	RNA Protection	reagent	\N	\N	\N	RIN-101	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.012202+00	2026-06-19 21:10:54.407235+00
+58	futurepage-4-12-precast-mini-protein-gel	FuturePAGE™ 4-12% Precast Mini Protein Gel, Bis-Tris, 10Pcs/box	High-resolution Bis-Tris precast mini protein gels (4-12% gradient) for SDS-PAGE.	/media/reagent_images/precast_mini_protein_gel.jpg	\N	category-1766675365489	Precast Protein Gels	reagent	\N	\N	\N	FPG-412	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.017726+00	2026-06-19 21:10:54.41107+00
+59	futurepage-4-20-precast-mini-protein-gel	FuturePAGE™ 4-20% Precast Mini Protein Gel, Tris-bis, 10Pcs/Box	High-resolution precast mini protein gels (4-20% gradient) for SDS-PAGE.	/media/reagent_images/precast_mini_protein_gel.jpg	\N	category-1766675365489	Precast Protein Gels	reagent	\N	\N	\N	FPG-420	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.024373+00	2026-06-19 21:10:54.414753+00
+61	futurepage-10-precast-mini-protein-gel	FuturePAGE™ 10% Precast Mini Protein Gel, Tris-bis, 10Pcs/Box	High-resolution precast mini protein gels (10% fixed) for SDS-PAGE.	/media/reagent_images/precast_mini_protein_gel.jpg	\N	category-1766675365489	Precast Protein Gels	reagent	\N	\N	\N	FPG-010	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.037166+00	2026-06-19 21:10:54.42221+00
+62	futurepage-12-precast-mini-protein-gel	FuturePAGE™ 12% Precast Mini Protein Gel, Tris-bis, 10Pcs/Box	High-resolution precast mini protein gels (12% fixed) for SDS-PAGE.	/media/reagent_images/precast_mini_protein_gel.jpg	\N	category-1766675365489	Precast Protein Gels	reagent	\N	\N	\N	FPG-012	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.042637+00	2026-06-19 21:10:54.425735+00
+63	premium-usda-origin-fbs-lonsera	Premium USDA-Origin Fetal Bovine Serum (FBS), Lonsera	Premium USDA-Origin Fetal Bovine Serum (FBS) for sensitive cell culture applications.	/media/reagent_images/fetal_bovine_serum_lonsera.jpg	\N	category-1765995504911	Fetal Bovine Serum (FBS)	reagent	\N	\N	\N	LNS-FBS-001	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.047782+00	2026-06-19 21:10:54.430291+00
+64	standard-grade-fbs-lonsera	Standard-Grade Fetal Bovine Serum (FBS), Lonsera	Standard-grade Fetal Bovine Serum (FBS) for routine cell culture maintenance.	/media/reagent_images/fetal_bovine_serum_lonsera.jpg	\N	category-1765995504911	Fetal Bovine Serum (FBS)	reagent	\N	\N	\N	LNS-FBS-002	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.053213+00	2026-06-19 21:10:54.435326+00
+67	5-ml-round-bottom-culture-tube-sterile	5 mL Round-Bottom Culture Tube, Sterile	5 mL Sterile polystyrene round-bottom culture tubes with dual-position snap caps.	/media/reagent_images/round_bottom_culture_tube.jpg	\N	category-1780539818236	Culture Tubes	reagent	\N	\N	\N	CT-05R	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.077393+00	2026-06-19 21:10:54.439909+00
+50	revertra-ace-qpcr-rt-kit	ReverTra Ace qPCR RT Kit	High-efficiency cDNA synthesis kit for qPCR applications using ReverTra Ace reverse transcriptase.	/media/reagent_images/sybr_green_qpcr_master_mix.jpg	\N	category-1766675380397	Reverse Transcription	reagent	\N	\N	\N	TRT-101	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.958606+00	2026-06-19 21:10:54.38047+00
+73	custom-1781002287057	100-Well Cryogenic Box	The 10 × 10 Cryobox is designed for efficient cryogenic sample organization, storage, and retrieval, providing capacity for up to 100 cryovials in a compact and space-saving format. Compatible with most 1.0 mL to 2.0 mL internal-thread cryogenic vials, the box offers a versatile solution for biobanking, cell culture, clinical, and research laboratory applications.\n\nFeaturing a close-bottom design, the cryobox securely holds tubes in place to prevent shifting during storage and transport. The contrasting green base enhances sample visibility, making tube identification and inventory management faster and more efficient. A transparent lid allows immediate sample verification without opening the box, helping to minimize temperature fluctuations and maintain sample integrity during handling.\n\nManufactured from durable polycarbonate (PC), the cryobox is engineered to withstand extreme temperature conditions ranging from −196°C to 121°C. Suitable for liquid nitrogen vapor-phase storage, ultra-low temperature freezers, and autoclave sterilization, it delivers long-term durability and dependable performance for demanding laboratory environments	/media/reagent_images/100_well_cryogenic_box.webp	\N	category-1780539818236	Cryogenic Storage	reagent	\N	\N	\N	BA422013	In Stock	$340	\N	f	f	f	f	{"• 10 × 10 Grid Configuration – Accommodates up to 100 cryogenic vials in a compact, space-efficient format for organized sample storage.","• High-Contrast Green Base – Enhances sample visibility and facilitates quick tube identification during inventory management and retrieval.","• Transparent Lid Design – Allows immediate visual inspection of samples without opening the box, helping maintain temperature stability in cold storage environments.","• Broad Tube Compatibility – Compatible with most 1.0 mL to 2.0 mL internal-thread cryogenic vials for flexible laboratory use.","• Secure Close-Bottom Construction – Provides stable tube positioning and minimizes movement during storage, transport, and handling.","• Wide Temperature Resistance – Suitable for temperatures ranging from −196°C to 121°C, supporting cryogenic storage, ultra-low freezers, and autoclave sterilization.","• Durable Polycarbonate (PC) Material – Manufactured from high-strength polycarbonate for excellent durability, impact resistance, and long service life.","• Resistant to Repeated Thermal Cycling – Maintains structural integrity through multiple freeze-thaw and sterilization cycles.","• Optimized for Biobanking and Sample Management – Supports efficient sample organization, traceability, and long-term storage workflows.","• Bulk Packaging Available – Supplied in case quantities suitable for high-throughput laboratories, biobanks, and large-scale research facilities."}	{50Boxes/Case}	{}		• Biobanking and Sample Archiving – Provides organized storage and long-term preservation of valuable biological samples, cell stocks, and research materials.\n\n• Cryogenic Storage Workflows – Suitable for use in liquid nitrogen vapor-phase storage systems and ultra-low temperature freezers.\n\n• Laboratory Sample Organization – Facilitates efficient sample tracking, inventory management, and rapid retrieval of cryogenic vials.\n\n• Molecular Biology and Cell Culture Research – Supports the storage of DNA, RNA, proteins, cell lines, and other biological specimens.\n\n• Clinical and Diagnostic Laboratories – Ideal for managing clinical samples, reference materials, and diagnostic specimens.\n\n• Sample Transport and Handling – Ensures secure vial positioning during sample transfer between storage, processing, and analysis locations.\n\n• Research and Pharmaceutical Applications – Suitable for routine sample storage in biotechnology, pharmaceutical, academic, and life science research laboratories.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.539649+00	2026-06-19 21:10:54.473629+00
+107	custom-1772336105290	DNA 1kb Ladder	BioArk DNA 1kb Ladder (300-10000bp) consists of 10 linear double-stranded DNA (100 bp, 250 bp, 500 bp, 750 bp, 1000 bp, 1500 bp, 2000 bp, 3000 bp, 5000 bp, 8000 bp) bands mixed with 1×DNA Loading Buffer containing blue indicator dye, and is suitable for the analysis of DNA bands in agarose gel electrophoresis. This product is ready-to-use, according to the experimental needs, directly take 5-10 μL for electrophoresis, easy to use, clear electrophoresis bands, easy to accurately determine the content of the target product DNA. The 500 bp band in the DNA Marker has a DNA concentration of 100 ng/5 μL and shows a bright band; the remaining bands have a DNA concentration of 50 ng/5 μL.	/media/reagent_images/dna_1kb_ladder.jpg	\N	category-1765063995229	\N	reagent	\N	\N	\N	BADM3363	In Stock		\N	f	f	f	f	{"10 linear double-stranded DNA (100 bp, 250 bp, 500 bp, 750 bp, 1000 bp, 1500 bp, 2000 bp, 3000 bp, 5000 bp, 8000 bp)"}	{}	{}	Ship with wet ice; Store at -20℃; valid for 24 months.		\N	{"BADM3363 Manual","BADM3367 Manual"}	{/content-api/uploads/originals/209f520c-0127-4573-b6f5-fac3761b3e24.pdf}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.787215+00	2026-06-19 21:10:54.583083+00
+60	futurepage-8-precast-mini-protein-gel	FuturePAGE™ 8% Precast Mini Protein Gel, Tris-bis, 10Pcs/Box	High-resolution precast mini protein gels (8% fixed) for SDS-PAGE.	/media/reagent_images/precast_mini_protein_gel.jpg	\N	category-1766675365489	Precast Protein Gels	reagent	\N	\N	\N	FPG-008	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.03035+00	2026-06-19 21:10:54.418099+00
+68	sterile-cell-spreaders-individually-packaged	Sterile Cell Spreaders (Individually Packaged)	L-shaped sterile cell spreaders, individually wrapped.	/media/reagent_images/sterile_cell_spreaders.webp	\N	category-1780539818236	Bacterial Culture plate	reagent	\N	\N	\N	CS-01I	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.083572+00	2026-06-19 21:10:54.453721+00
+69	sterile-cell-spreaders-bulk-packaged	Sterile Cell Spreaders (Bulk Packaged)	L-shaped sterile cell spreaders, bulk packaged in resealable bags.	/media/reagent_images/sterile_cell_spreaders.webp	\N	category-1780539818236	Bacterial Culture plate	reagent	\N	\N	\N	CS-01B	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.088726+00	2026-06-19 21:10:54.458061+00
+70	2-0-ml-sterile-cryogenic-vial-liquid-nitrogen	2.0 mL Sterile Cryogenic Vial (Liquid Nitrogen, -196°C)	2.0 mL Sterile cryogenic vials designed for liquid nitrogen vapor-phase storage down to -196°C.	/media/reagent_images/20_ml_sterile_cryogenic_vial_liquid_nitrogen_196c.webp	\N	category-1780539818236	Cryogenic Storage	reagent	\N	\N	\N	CV-20LN	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.094257+00	2026-06-19 21:10:54.461892+00
+71	2-0-ml-sterile-cryogenic-vial-standard	2.0 mL Sterile Cryogenic Vial (-86℃ to 121℃)	2.0 mL Sterile cryogenic vials for ultra-low temperature freezers (-86°C) up to autoclaving (121°C).	/media/reagent_images/20_ml_sterile_cryogenic_vial_liquid_nitrogen_196c.webp	\N	category-1780539818236	Cryogenic Storage	reagent	\N	\N	\N	CV-20ST	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.101779+00	2026-06-19 21:10:54.465499+00
+72	custom-1781002412382	Pre-filled 1.5 mL Sterile CryoTubes, Triple-Code, Red Flat Cap	BioArk 1.5 mL External Thread Cryogenic Vials are designed for secure sample storage, reliable cryopreservation, and efficient laboratory handling. Manufactured from high-quality medical-grade polypropylene (PP), these sterile cryovials provide dependable performance for the storage and transport of biological samples, cell suspensions, nucleic acids, proteins, and other temperature-sensitive materials.\n\nEach vial features a red flat external screw cap that provides a secure seal while minimizing the risk of contamination within the sealing area. The integrated white writing panel allows clear and permanent sample identification, improving traceability and reducing reliance on adhesive labels that may deteriorate under cryogenic conditions. A self-standing base enhances stability during sample preparation, aliquoting, and routine laboratory workflows.\n\nEngineered to withstand repeated freeze-thaw cycles and demanding cryogenic storage conditions, BioArk cryogenic vials maintain their integrity throughout long-term storage and transportation. Combining secure sealing, convenient labeling, and durable construction, these vials are an ideal solution for biobanking, cell culture, molecular biology, clinical diagnostics, and life science research applications.	/media/reagent_images/pre_filled_15_ml_sterile_cryotubes_triple_code_red_flat_cap.webp	\N	category-1780539818236	Cryogenic Storage	reagent	\N	\N	\N	BA423132	In Stock	$1,200	\N	f	f	f	f	{"• Integrated White Writing Area – Large marking panel enables clear handwritten labeling and improves sample traceability during storage and processing.","• External Thread Design – Keeps the sealing surface separate from the sample area, helping reduce contamination risks and maintain sample integrity.","• High-Visibility Red Screw Cap – Color-coded flat cap allows rapid sample identification and efficient organization in high-throughput laboratory environments.","• Self-Standing Base – Freestanding design provides enhanced stability during filling, labeling, aliquoting, and routine laboratory handling.","• Optimized for Cryogenic Storage – Suitable for ultra-low temperature storage and repeated freeze-thaw cycles in biobanking and research applications.","• Sterile and Contaminant-Free – Gamma irradiated and certified RNase-free, DNase-free, with endotoxin levels ≤ 0.005 EU/mL for sensitive biological applications.","• Durable Medical-Grade Polypropylene – High-strength polypropylene construction delivers excellent chemical resistance and maintains integrity under cryogenic conditions.","• Leak-Resistant Secure Closure – Precision external-thread cap design provides dependable sealing during storage, transport, and sample handling.","• Ideal for Molecular Biology and Clinical Research – Suitable for the storage of cells, DNA, RNA, proteins, and other valuable biological specimens.","• Bulk Packaging for Laboratory Efficiency – Supplied in convenient packaging configurations to support high-throughput sample management and inventory control."}	{"10×10 Cryotubes/Box; 30 Boxes/Case (3000 Tubes/Case)"}	{}		• Cryogenic Storage of Biological Samples – Ideal for the preservation of DNA, RNA, proteins, cell pellets, microbial cultures, and other temperature-sensitive specimens.\n\n• Biobanking and Sample Archiving – Supports long-term storage, organization, and traceability of valuable research and clinical samples.\n\n• Molecular Biology and Cell Culture Research – Suitable for the storage and handling of nucleic acids, cell stocks, enzymes, and biological reagents.\n\n• Clinical and Diagnostic Laboratories – Provides secure storage and management of clinical specimens, reference materials, and diagnostic samples.\n\n• Sample Labeling and Inventory Management – Integrated writing area facilitates clear sample identification and efficient freezer organization.\n\n• Ultra-Low Temperature Storage and Transport – Designed for reliable sample protection during storage in ultra-low freezers and transportation on dry ice.\n\n• Research, Biotechnology, and Pharmaceutical Applications – Supports routine cryogenic workflows in academic, biotechnology, pharmaceutical, and life science laboratories.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.533376+00	2026-06-19 21:10:54.469632+00
+78	custom-1780980717391	150 mm Tissue Culture-Treated Cell Culture Dish, Sterile	BioArk 150 mm Cell Culture Dishes are manufactured from high-quality polystyrene and feature a tissue culture (TC)-treated surface to support optimal cell attachment, growth, and proliferation. Designed for routine cell culture applications, these dishes provide a reliable environment for cultivating a wide range of adherent cell types in research, biotechnology, and pharmaceutical laboratories.\n\nThe precision-engineered flat-bottom design creates a uniform growth surface, promoting even cell distribution and reducing variability caused by surface irregularities. This helps improve culture consistency, experimental reproducibility, and the accuracy of downstream analyses. The crystal-clear construction also allows excellent visibility for routine microscopic observation and cell monitoring.\n\nProduced under strict quality standards, BioArk cell culture dishes provide dependable performance for cell maintenance, expansion, transfection studies, and other cell-based research applications.	/media/reagent_images/150_mm_tissue_culture_treated_cell_culture_dish_sterile.jpg	\N	category-1780539818236	Cell Culture Dishes	reagent	\N	\N	\N	BA803150	In Stock	$141	\N	f	f	f	f	{"• Enhanced Handling and Ergonomic Design","• Secure and Stable Stacking for Easy Storage and Transport","• TC-Treated Surface for Improved Cell Attachment and Growth","• Suitable for Both Adherent and Suspension Cell Culture","• Uniform Growth Surface for Consistent Cell Distribution","• Excellent Optical Clarity for Microscopic Observation","• Ideal for Cell-Based Assays and Biological Research","• Reliable Performance for Routine Cell Culture Applications","• Durable Polystyrene Construction","• Sterile and Ready-to-Use"}	{"8 Packs/Case(80 Pcs/Case)"}	{}		• Supports the culture, expansion, and maintenance of adherent cells for routine research and laboratory applications.\n\n• Provides a suitable environment for the growth and handling of suspension cells in biological and biomedical studies.\n\n• Enables cell-based assays, including cell viability, proliferation, migration, and cytotoxicity studies.\n\n• Facilitates microscopic observation, cell imaging, and morphological analysis through its optically clear design.\n\n• Supports studies of cell signaling pathways, cellular responses, and cell-to-cell communication.\n\n• Ideal for stem cell and primary cell culture applications requiring reliable cell attachment and growth conditions.\n\n• Widely used in drug discovery, compound screening, and toxicity testing workflows.\n\n• Serves as a versatile platform for biotechnology, pharmaceutical, and life science research applications.\n\n• Promotes consistent and reproducible cell growth for downstream molecular and cellular analyses.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.580094+00	2026-06-19 21:10:54.481148+00
+77	custom-1780980854757	25 mL Sterile Disposable Reagent Reservoir / PS solution Basin	BioArk Sterile Disposable Reagent Reservoirs are designed to provide convenient and contamination-free reagent handling for laboratory liquid transfer applications. Manufactured from high-quality polystyrene (PS), these single-channel reservoirs offer excellent chemical compatibility and stability for routine use with manual and multichannel pipettes.\n\nThe reservoir features a precision-molded V-shaped bottom that maximizes reagent recovery by directing liquid toward the center of the basin, helping reduce dead volume and minimize reagent waste. This design is particularly beneficial when working with valuable samples, enzymes, antibodies, and other laboratory reagents.\n\nEach reservoir is individually wrapped and sterile, ensuring aseptic handling and reducing the risk of contamination in sensitive workflows. The disposable, single-use design eliminates the need for cleaning and supports efficient laboratory operations. Ideal for molecular biology, diagnostics, cell culture, ELISA, PCR setup, and general liquid handling applications, BioArk reagent reservoirs provide a reliable and cost-effective solution for everyday laboratory use.	/media/reagent_images/25_ml_sterile_disposable_reagent_reservoir_ps_solution_basin.webp	\N	category-1780539818236	Cell Culture Accessories	reagent	\N	\N	\N	BA251025	In Stock	$83	\N	f	f	f	f	{"• Manufactured from High-Quality Polystyrene (PS)","• 25 mL Capacity for Routine Reagent Handling Applications","• V-Shaped Bottom Design for Maximum Reagent Recovery","• Minimizes Dead Volume and Reduces Reagent Waste","• Single-Channel Reservoir Compatible with Manual and Multichannel Pipettes","• Individually Wrapped and Sterile for Contamination-Free Use","• Disposable Design Eliminates Cleaning and Cross-Contamination Risks","• White Reservoir Color Enhances Liquid Visibility","• Suitable for Sensitive Molecular Biology and Diagnostic Workflows","• Ready-to-Use for Improved Laboratory Efficiency"}	{"1Piece/Pack; 100Packs/Case"}	{}		• Supports reagent dispensing and liquid transfer in routine laboratory workflows.\n\n• Facilitates sample preparation, dilution, and mixing procedures for molecular biology and diagnostic applications.\n\n• Ideal for PCR, qPCR, and nucleic acid extraction workflows requiring contamination-free reagent handling.\n\n• Enables efficient use of multichannel pipettes in high-throughput screening and assay preparation.\n\n• Suitable for ELISA, immunoassays, and other plate-based analytical procedures.\n\n• Provides convenient handling of enzymes, antibodies, buffers, media, and other laboratory reagents.\n\n• Supports cell culture, microbiology, and biotechnology research applications.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.573839+00	2026-06-19 21:10:54.477378+00
+79	custom-1780980601797	100 mm Tissue Culture-Treated Cell Culture Dish, Sterile	BioArk 100 mm Cell Culture Dishes are manufactured from high-quality polystyrene and feature a tissue culture (TC)-treated surface to support optimal cell attachment, growth, and proliferation. Designed for routine cell culture applications, these dishes provide a reliable environment for cultivating a wide range of adherent cell types in research, biotechnology, and pharmaceutical laboratories.\n\nThe precision-engineered flat-bottom design creates a uniform growth surface, promoting even cell distribution and reducing variability caused by surface irregularities. This helps improve culture consistency, experimental reproducibility, and the accuracy of downstream analyses. The crystal-clear construction also allows excellent visibility for routine microscopic observation and cell monitoring.\n\nProduced under strict quality standards, BioArk cell culture dishes provide dependable performance for cell maintenance, expansion, transfection studies, and other cell-based research applications.	/media/reagent_images/100_mm_tissue_culture_treated_cell_culture_dish_sterile.jpg	\N	category-1780539818236	Cell Culture Dishes	reagent	\N	\N	\N	BA803100	In Stock	$180	\N	f	f	f	f	{"• Enhanced Handling and Ergonomic Design","• Secure and Stable Stacking for Easy Storage and Transport","• TC-Treated Surface for Improved Cell Attachment and Growth","• Suitable for Both Adherent and Suspension Cell Culture","• Uniform Growth Surface for Consistent Cell Distribution","• Excellent Optical Clarity for Microscopic Observation","• Ideal for Cell-Based Assays and Biological Research","• Reliable Performance for Routine Cell Culture Applications","• Durable Polystyrene Construction","• Sterile and Ready-to-Use"}	{"30 Packs/Case(300 Pcs/Case)"}	{}		• Supports the culture, expansion, and maintenance of adherent cells for routine research and laboratory applications.\n\n• Provides a suitable environment for the growth and handling of suspension cells in biological and biomedical studies.\n\n• Enables cell-based assays, including cell viability, proliferation, migration, and cytotoxicity studies.\n\n• Facilitates microscopic observation, cell imaging, and morphological analysis through its optically clear design.\n\n• Supports studies of cell signaling pathways, cellular responses, and cell-to-cell communication.\n\n• Ideal for stem cell and primary cell culture applications requiring reliable cell attachment and growth conditions.\n\n• Widely used in drug discovery, compound screening, and toxicity testing workflows.\n\n• Serves as a versatile platform for biotechnology, pharmaceutical, and life science research applications.\n\n• Promotes consistent and reproducible cell growth for downstream molecular and cellular analyses.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.586109+00	2026-06-19 21:10:54.48517+00
+82	custom-1780980230161	T75 Tissue Culture Flask, Treated Surface, Sterile	BioArk Cell Culture Flasks are designed to provide a reliable and efficient environment for the cultivation, expansion, and maintenance of adherent cells. Manufactured from high-quality polystyrene with a tissue culture-treated surface, these flasks offer excellent cell attachment and growth while maximizing available culture area through their optimized flat growth surface.\n\nThe ergonomic angled neck design provides easy access for pipettes and cell scrapers, simplifying media exchange and cell handling procedures. Vented caps equipped with a 0.2 μm hydrophobic filter promote efficient gas exchange while helping to protect cultures from microbial contamination, ensuring optimal conditions for cell growth. Large writing areas on each flask allow convenient sample identification and experimental tracking.\n\nProduced under stringent quality standards, BioArk Cell Culture Flasks deliver consistent performance and dependable results for routine cell culture applications. Available in T25, T75, and T175 growth areas, these flasks accommodate a wide range of research, biotechnology, pharmaceutical, and clinical laboratory workflows.	/media/reagent_images/t75_tissue_culture_flask_treated_surface_sterile.jpg	\N	category-1780539818236	Cell Culture Flasks	reagent	\N	\N	\N	BA803075	In Stock	$174	\N	f	f	f	f	{"• TC-Treated Surface for Enhanced Cell Attachment and Growth","• Vented Cap with 0.2 μm Filter for Efficient Gas Exchange and Contamination Protection","• Ergonomic Angled Neck for Easy Access with Pipettes and Cell Scrapers","• Dual-Sided Graduations and Writing Areas for Convenient Volume Monitoring and Sample Identification","• Individually Packaged in Sterile, Self-Sealing Bags to Maintain Product Integrity","• Stackable Design for Efficient Storage and Handling","• Gamma Sterilized and Ready-to-Use","• Certified DNase-Free and RNase-Free for Sensitive Cell Culture Applications","• High-Clarity Polystyrene Construction for Easy Visual Inspection of Cell Cultures","• Available in Multiple Growth Areas to Support Diverse Cell Culture Requirements"}	{"18 Bags/Case (90Pcs/Case)"}	{}		• Supports the culture and expansion of adherent cell lines by providing a tissue culture-treated surface that promotes strong and consistent cell attachment.\n\n• Ideal for long-term cell maintenance and routine cell propagation in research, biotechnology, and pharmaceutical laboratories.\n\n• Enables efficient large-scale cell expansion for downstream applications such as protein expression, cell banking, and assay development.\n\n• Suitable for a wide range of mammalian cell culture workflows, including transfection, gene expression studies, and cell-based assays.\n\n• Provides a reliable platform for drug discovery, toxicity testing, and other cell biology research applications requiring reproducible cell growth.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.6048+00	2026-06-19 21:10:54.494481+00
+83	custom-1780980100413	T25 Tissue Culture Flask, Treated Surface, Sterile	BioArk Cell Culture Flasks are designed to provide a reliable and efficient environment for the cultivation, expansion, and maintenance of adherent cells. Manufactured from high-quality polystyrene with a tissue culture-treated surface, these flasks offer excellent cell attachment and growth while maximizing available culture area through their optimized flat growth surface.\n\nThe ergonomic angled neck design provides easy access for pipettes and cell scrapers, simplifying media exchange and cell handling procedures. Vented caps equipped with a 0.2 μm hydrophobic filter promote efficient gas exchange while helping to protect cultures from microbial contamination, ensuring optimal conditions for cell growth. Large writing areas on each flask allow convenient sample identification and experimental tracking.\n\nProduced under stringent quality standards, BioArk Cell Culture Flasks deliver consistent performance and dependable results for routine cell culture applications. Available in T25, T75, and T175 growth areas, these flasks accommodate a wide range of research, biotechnology, pharmaceutical, and clinical laboratory workflows.	/media/reagent_images/t25_tissue_culture_flask_treated_surface_sterile.png	\N	category-1780539818236	Cell Culture Flasks	reagent	\N	\N	\N	BA803025	In Stock	$228	\N	f	f	f	f	{"• TC-Treated Surface for Enhanced Cell Attachment and Growth","• Vented Cap with 0.2 μm Filter for Efficient Gas Exchange and Contamination Protection","• Ergonomic Angled Neck for Easy Access with Pipettes and Cell Scrapers","• Dual-Sided Graduations and Writing Areas for Convenient Volume Monitoring and Sample Identification","• Individually Packaged in Sterile, Self-Sealing Bags to Maintain Product Integrity","• Stackable Design for Efficient Storage and Handling","• Gamma Sterilized and Ready-to-Use","• Certified DNase-Free and RNase-Free for Sensitive Cell Culture Applications","• High-Clarity Polystyrene Construction for Easy Visual Inspection of Cell Cultures","• Available in Multiple Growth Areas to Support Diverse Cell Culture Requirements"}	{"25 Packs/Case(300Pcs/Case)"}	{}		• Supports the culture and expansion of adherent cell lines by providing a tissue culture-treated surface that promotes strong and consistent cell attachment.\n\n• Ideal for long-term cell maintenance and routine cell propagation in research, biotechnology, and pharmaceutical laboratories.\n\n• Enables efficient large-scale cell expansion for downstream applications such as protein expression, cell banking, and assay development.\n\n• Suitable for a wide range of mammalian cell culture workflows, including transfection, gene expression studies, and cell-based assays.\n\n• Provides a reliable platform for drug discovery, toxicity testing, and other cell biology research applications requiring reproducible cell growth.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.610697+00	2026-06-19 21:10:54.49809+00
+81	custom-1780980348079	T175 Tissue Culture Flask, Treated Surface, Sterile	BioArk Cell Culture Flasks are designed to provide a reliable and efficient environment for the cultivation, expansion, and maintenance of adherent cells. Manufactured from high-quality polystyrene with a tissue culture-treated surface, these flasks offer excellent cell attachment and growth while maximizing available culture area through their optimized flat growth surface.\n\nThe ergonomic angled neck design provides easy access for pipettes and cell scrapers, simplifying media exchange and cell handling procedures. Vented caps equipped with a 0.2 μm hydrophobic filter promote efficient gas exchange while helping to protect cultures from microbial contamination, ensuring optimal conditions for cell growth. Large writing areas on each flask allow convenient sample identification and experimental tracking.\n\nProduced under stringent quality standards, BioArk Cell Culture Flasks deliver consistent performance and dependable results for routine cell culture applications. Available in T25, T75, and T175 growth areas, these flasks accommodate a wide range of research, biotechnology, pharmaceutical, and clinical laboratory workflows.	/media/reagent_images/t175_tissue_culture_flask_treated_surface_sterile.jpg	\N	category-1780539818236	Cell Culture Flasks	reagent	\N	\N	\N	BA803175	In Stock	$165	\N	f	f	f	f	{"• TC-Treated Surface for Enhanced Cell Attachment and Growth","• Vented Cap with 0.2 μm Filter for Efficient Gas Exchange and Contamination Protection","• Ergonomic Angled Neck for Easy Access with Pipettes and Cell Scrapers","• Dual-Sided Graduations and Writing Areas for Convenient Volume Monitoring and Sample Identification","• Individually Packaged in Sterile, Self-Sealing Bags to Maintain Product Integrity","• Stackable Design for Efficient Storage and Handling","• Gamma Sterilized and Ready-to-Use","• Certified DNase-Free and RNase-Free for Sensitive Cell Culture Applications","• High-Clarity Polystyrene Construction for Easy Visual Inspection of Cell Cultures","• Available in Multiple Growth Areas to Support Diverse Cell Culture Requirements"}	{"10 Packs/Case(50Pcs/Case)"}	{}		• Supports the culture and expansion of adherent cell lines by providing a tissue culture-treated surface that promotes strong and consistent cell attachment.\n\n• Ideal for long-term cell maintenance and routine cell propagation in research, biotechnology, and pharmaceutical laboratories.\n\n• Enables efficient large-scale cell expansion for downstream applications such as protein expression, cell banking, and assay development.\n\n• Suitable for a wide range of mammalian cell culture workflows, including transfection, gene expression studies, and cell-based assays.\n\n• Provides a reliable platform for drug discovery, toxicity testing, and other cell biology research applications requiring reproducible cell growth.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.598737+00	2026-06-19 21:10:54.489917+00
+89	custom-1780979224342	90 × 15 mm Sterile Petri Dish	BioArk 90 × 15 mm Sterile Petri Dishes are manufactured from high-quality virgin polystyrene (PS) and designed for reliable microbial culture, isolation, and observation in research, clinical, industrial, and educational laboratories. The crystal-clear construction provides excellent visibility for monitoring colony growth, morphology, and contamination, making these dishes ideal for a wide range of microbiological applications.\n\nThe precision-molded 90 mm diameter and 15 mm height design offers a standardized culture surface suitable for bacterial, fungal, and yeast cultivation. The flat growth surface promotes even distribution of culture media and samples, while the secure-fitting lid helps reduce contamination and moisture loss during incubation.\n\nSterilized by gamma irradiation and produced under strict quality control standards, BioArk Petri Dishes are ready for immediate use and provide dependable performance for routine laboratory workflows. Their disposable design eliminates the need for cleaning and re-sterilization, improving efficiency and minimizing cross-contamination risks. These dishes are widely used for microbiological testing, environmental monitoring, quality control, food safety analysis, and life science research.	/media/reagent_images/90_15_mm_sterile_petri_dish.jpg	\N	category-1780539818236	Bacterial Culture plate	reagent	\N	\N	\N	BAAB1001	In Stock	$129	\N	f	f	f	f	{"BioArk 90 × 15 mm Sterile Petri Dishes are manufactured from high-quality virgin polystyrene (PS) and designed for reliable microbial culture, isolation, and observation in research, clinical, industrial, and educational laboratories. The crystal-clear construction provides excellent visibility for monitoring colony growth, morphology, and contamination, making these dishes ideal for a wide range of microbiological applications.","The precision-molded 90 mm diameter and 15 mm height design offers a standardized culture surface suitable for bacterial, fungal, and yeast cultivation. The flat growth surface promotes even distribution of culture media and samples, while the secure-fitting lid helps reduce contamination and moisture loss during incubation.","Sterilized by gamma irradiation and produced under strict quality control standards, BioArk Petri Dishes are ready for immediate use and provide dependable performance for routine laboratory workflows. Their disposable design eliminates the need for cleaning and re-sterilization, improving efficiency and minimizing cross-contamination risks. These dishes are widely used for microbiological testing, environmental monitoring, quality control, food safety analysis, and life science research."}	{"500 Pcs/Case"}	{}		• Manufactured from High-Quality Virgin Polystyrene (PS)\n\n• Standard 90 × 15 mm Format for Routine Microbiological Applications\n\n• Crystal-Clear Construction for Easy Colony Observation and Analysis\n\n• Flat, Uniform Surface for Consistent Culture Growth\n\n• Secure-Fitting Lid Helps Minimize Contamination and Moisture Loss\n\n• Excellent Optical Clarity for Colony Identification and Monitoring\n\n• Gamma Irradiated and Sterile for Immediate Use\n\n• Disposable Design Eliminates Cleaning and Re-Sterilization Requirements\n\n• Lightweight, Durable, and Easy to Handle	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.65555+00	2026-06-19 21:10:54.517616+00
+84	custom-1780979981743	96-Well Tissue Culture-Treated Cell Culture Plate, Sterile	BioArk Multiwell Cell Culture Plates are manufactured from premium virgin polystyrene (PS) and feature a tissue culture (TC)-treated surface to promote consistent cell attachment, growth, and proliferation. Designed with flat-bottom wells and supplied with a matching lid, these plates provide an ideal environment for routine cell culture, drug screening, cell-based assays, and other life science research applications.\n\nThe precision-engineered plate design helps minimize the impact of external environmental factors while maintaining optimal culture conditions. Thin-walled well bottoms improve thermal consistency across the plate, reducing edge effects and supporting more uniform experimental results. The optically clear flat-bottom wells provide excellent visibility for microscopic observation, imaging, and sample analysis.\n\nEach plate is gamma irradiated and certified non-pyrogenic, DNase-free, RNase-free, and human DNA-free to ensure the highest level of purity for sensitive cell culture and biological research workflows. Manufactured under strict quality standards, BioArk Multiwell Culture Plates offer reliable performance, excellent optical clarity, and consistent results for academic, biotechnology, pharmaceutical, and clinical research laboratories.	/media/reagent_images/96_well_tissue_culture_treated_cell_culture_plate_sterile.jpg	\N	category-1780539818236	Cell Culture Plate	reagent	\N	\N	\N	BA076096	In Stock	$170	\N	f	f	f	f	{"• TC-Treated Surface","• Premium Virgin Polystyrene Construction","• Flat-Bottom Well Design","• Thin-Walled Wells for Enhanced Thermal Consistency","• Protective Lid Included","• Excellent Optical Clarity","• Gamma Irradiated Sterility","• Non-Pyrogenic, DNase-Free, RNase-Free, and Human DNA-Free","• Individually Packaged for Sterility and Convenience","• Suitable for Cell Culture and Cell-Based Assays"}	{100Pcs/Package}	{}		• Adherent Cell Culture\n\n• Cell-Based Assays\n\n• Drug Discovery and Compound Screening\n\n• Microscopy and Cell Imaging\n\n• Gene Expression Studies\n\n• Stem Cell and Primary Cell Culture\n\n• Biotechnology and Pharmaceutical Research\n\n• High-Throughput Screening	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.617056+00	2026-06-19 21:10:54.503514+00
+85	custom-1780979893063	24-Well Tissue Culture-Treated Cell Culture Plate, Sterile	"BioArk Multiwell Cell Culture Plates are manufactured from premium virgin polystyrene (PS) and feature a tissue culture (TC)-treated surface to promote consistent cell attachment, growth, and proliferation. Designed with flat-bottom wells and supplied with a matching lid, these plates provide an ideal environment for routine cell culture, drug screening, cell-based assays, and other life science research applications.\n\nThe precision-engineered plate design helps minimize the impact of external environmental factors while maintaining optimal culture conditions. Thin-walled well bottoms improve thermal consistency across the plate, reducing edge effects and supporting more uniform experimental results. The optically clear flat-bottom wells provide excellent visibility for microscopic observation, imaging, and sample analysis.\n\nEach plate is gamma irradiated and certified non-pyrogenic, DNase-free, RNase-free, and human DNA-free to ensure the highest level of purity for sensitive cell culture and biological research workflows. Manufactured under strict quality standards, BioArk Multiwell Culture Plates offer reliable performance, excellent optical clarity, and consistent results for academic, biotechnology, pharmaceutical, and clinical research laboratories."\n	/media/reagent_images/24_well_tissue_culture_treated_cell_culture_plate_sterile.png	\N	category-1780539818236	Cell Culture Plate	reagent	\N	\N	\N	BA076096	In Stock	$170	\N	f	f	f	f	{"• TC-Treated Surface","• Premium Virgin Polystyrene Construction","• Flat-Bottom Well Design","• Thin-Walled Wells for Enhanced Thermal Consistency","• Protective Lid Included","• Excellent Optical Clarity","• Gamma Irradiated Sterility","• Non-Pyrogenic, DNase-Free, RNase-Free, and Human DNA-Free","• Individually Packaged for Sterility and Convenience","• Suitable for Cell Culture and Cell-Based Assays"}	{100Pcs/Package}	{}			\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.624024+00	2026-06-19 21:10:54.508476+00
+87	custom-1780979637860	6-Well Tissue Culture-Treated Cell Culture Plate, Sterile	BioArk Multiwell Cell Culture Plates are manufactured from premium virgin polystyrene (PS) and feature a tissue culture (TC)-treated surface to promote consistent cell attachment, growth, and proliferation. Designed with flat-bottom wells and supplied with a matching lid, these plates provide an ideal environment for routine cell culture, drug screening, cell-based assays, and other life science research applications.\n\nThe precision-engineered plate design helps minimize the impact of external environmental factors while maintaining optimal culture conditions. Thin-walled well bottoms improve thermal consistency across the plate, reducing edge effects and supporting more uniform experimental results. The optically clear flat-bottom wells provide excellent visibility for microscopic observation, imaging, and sample analysis.\n\nEach plate is gamma irradiated and certified non-pyrogenic, DNase-free, RNase-free, and human DNA-free to ensure the highest level of purity for sensitive cell culture and biological research workflows. Manufactured under strict quality standards, BioArk Multiwell Culture Plates offer reliable performance, excellent optical clarity, and consistent results for academic, biotechnology, pharmaceutical, and clinical research laboratories.	/media/reagent_images/6_well_tissue_culture_treated_cell_culture_plate_sterile.jpg	\N	category-1780539818236	Cell Culture Plate	reagent	\N	\N	\N	BA076006	In Stock	$170	\N	f	f	f	f	{"• TC-Treated Surface","• Premium Virgin Polystyrene Construction","• Flat-Bottom Well Design","• Thin-Walled Wells for Enhanced Thermal Consistency","• Protective Lid Included","• Excellent Optical Clarity","• Gamma Irradiated Sterility","• Non-Pyrogenic, DNase-Free, RNase-Free, and Human DNA-Free","• Individually Packaged for Sterility and Convenience","• Suitable for Cell Culture and Cell-Based Assays"}	{100Pcs/Package}	{}		• Adherent Cell Culture\n\n• Cell-Based Assays\n\n• Drug Discovery and Compound Screening\n\n• Microscopy and Cell Imaging\n\n• Gene Expression Studies\n\n• Stem Cell and Primary Cell Culture\n\n• Biotechnology and Pharmaceutical Research\n\n• High-Throughput Screening	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.644447+00	2026-06-19 21:10:54.513128+00
+93	custom-1780978598488	15 mL Sterile Conical Centrifuge Tube, Rack Packed	BioArk Conical Sterile Centrifuge Tubes are manufactured from high-purity polypropylene (PP) resin and designed for reliable sample handling, storage, and centrifugation in molecular biology, clinical diagnostics, biotechnology, and biochemical research laboratories. The transparent construction provides excellent sample visibility, while the durable polypropylene material offers a safer and more practical alternative to glass tubes.\n\nProduced using advanced molding technology, these centrifuge tubes deliver consistent performance, excellent chemical resistance, and dependable durability for routine laboratory workflows. Clear black graduations and a large white writing area enable accurate volume measurement and convenient sample identification, improving laboratory efficiency and traceability.\n\nAvailable with either advanced screw caps or original plug-seal caps, BioArk centrifuge tubes provide secure sample containment during storage, transport, and centrifugation. Their high-quality construction and user-friendly design make them ideal for a wide range of research, clinical, and industrial laboratory applications.	/media/reagent_images/15_ml_sterile_conical_centrifuge_tube_rack_packed.webp	\N	category-1780539818236	centrifuge Tubes	reagent	\N	\N	\N	BA801152	In Stock	$102	\N	f	f	f	f	{"• Clear Volume Graduations – High-contrast printed graduations provide accurate volume measurement and easy sample monitoring.","• Large Writing Area – Expanded white marking panel allows convenient sample labeling, identification, and traceability.","• High Centrifugation Performance – Designed to withstand centrifugal forces up to 12,000 × g for reliable sample processing.","• Sterile and Contaminant-Free – Certified sterile, non-pyrogenic, DNase-free, and RNase-free for sensitive biological and molecular applications.","• Secure Sample Storage – Ideal for the storage and handling of larger-volume samples, reagents, buffers, and biological solutions.","• Suitable for Cell Culture Workflows – Provides safe and reliable handling of culture media, cell suspensions, and related reagents.","• Optimized for Molecular Biology and Microbiology – Supports sample preparation, centrifugation, and routine laboratory processing.","• Convenient Reagent Preparation – Well suited for preparing master mixes, buffers, dilution series, and other laboratory solutions.","• Durable Polypropylene Construction – Manufactured from high-purity polypropylene for excellent chemical resistance, transparency, and durability."}	{"500 Pcs/Case"}	{}		• Sample Centrifugation and Processing – Ideal for high-speed centrifugation procedures used to separate, concentrate, and collect biological and chemical samples.\n\n• Sample Storage and Preservation – Suitable for the short- and long-term storage of cells, biological specimens, reagents, buffers, and laboratory solutions.\n\n• Sample Transport and Handling – Provides secure containment for the safe transport of samples between laboratories, workstations, and storage facilities.\n\n• Cellular and Particle Separation – Supports the isolation and separation of cells, organelles, precipitates, proteins, nucleic acids, and other particulate materials.\n\n• Molecular Biology Workflows – Commonly used for DNA/RNA extraction, nucleic acid purification, PCR sample preparation, and other molecular biology applications.\n\n• Protein and Biochemistry Research – Suitable for protein precipitation, purification, sample preparation, and biochemical analysis procedures.\n\n• Cell Culture and Microbiology Applications – Ideal for handling cell suspensions, culture media, microbial samples, and related laboratory workflows.\n\n• Reagent Preparation and Mixing – Convenient for preparing, mixing, diluting, and storing laboratory reagents, buffers, and master mixes.\n\n• Research, Clinical, and Industrial Laboratories – Widely used in life science research, biotechnology, pharmaceutical development, diagnostics, and quality control environments.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.678814+00	2026-06-19 21:10:54.538494+00
+94	custom-1780978422114	2.0 mL DNase/RNase-Free Microcentrifuge Tube	SnapLock MicroCentrifuge Tubes are designed for secure sample storage, processing, and centrifugation in molecular biology, cell biology, clinical, and research laboratories. Manufactured from high-quality polypropylene, these tubes provide excellent durability, chemical resistance, and reliable performance for a wide range of laboratory applications. The snap-lock cap design creates a secure seal to help prevent sample leakage, evaporation, and contamination during handling, storage, and centrifugation.\n\nFor convenient sample identification, each tube features a frosted cap surface and a large frosted writing panel on the side, allowing clear labeling and traceability. The cap incorporates a thin central membrane that enables easy sample access using a syringe needle without opening the tube, helping maintain sample integrity and reduce contamination risk.\n\nEngineered to withstand centrifugation forces up to 14,000 × g, SnapLock Micro Centrifuge Tubes are suitable for routine sample preparation, storage, and separation workflows. Certified RNase-free, DNase-free, and non-pyrogenic, these tubes provide the purity and reliability required for sensitive molecular biology and life science applications.	/media/reagent_images/20_ml_dnasernase_free_microcentrifuge_tube.webp	\N	category-1780539818236	centrifuge Tubes	reagent	\N	\N	\N	BA801182	In Stock	$351	\N	f	f	f	f	{"• Secure Snap-Lock Cap – Provides a reliable seal to minimize sample leakage, evaporation, and contamination.","• High Centrifugation Performance – Withstands forces up to 14,000 × g for routine laboratory applications.","• Easy Sample Identification – Frosted cap and side writing panel allow convenient labeling and tracking.","• Needle-Accessible Cap – Thin membrane in the cap enables sample access by syringe without opening the tube.","• High-Quality Polypropylene – Durable, chemically resistant, and suitable for a wide range of laboratory procedures.","• RNase-/DNase-Free – Ideal for sensitive DNA, RNA, and molecular biology applications.","• Non-Pyrogenic – Manufactured to support sample integrity and reduce contamination risks.","• Single-Piece Design – Integrated tube and cap for convenient handling and secure sample storage."}	{}	{}		• Sample Centrifugation and Separation – Ideal for the separation, sedimentation, and collection of cells, nucleic acids, proteins, and other biological materials during centrifugation procedures.\n\n• PCR and Molecular Biology Workflows – Suitable for PCR, qPCR, DNA/RNA extraction, enzymatic reactions, and other molecular biology applications.\n\n• Sample Storage and Preservation – Used for the short- and long-term storage of biological samples, reagents, enzymes, and nucleic acids.\n\n• Chemical and Reagent Preparation – Convenient for mixing, diluting, and storing small volumes of laboratory reagents and chemical solutions.\n\n• Protein Research Applications – Supports protein precipitation, purification, separation, and sample preparation workflows.\n\n• High-Speed Centrifugation Procedures – Designed for applications requiring high centrifugal forces, including organelle isolation and macromolecule separation.\n\n• Cell Biology and Microbiology Studies – Suitable for handling cell suspensions, microbial cultures, and other biological samples.\n\n• Routine Laboratory Operations – Ideal for sample collection, aliquoting, transport, mixing, and general laboratory processing tasks.\n\n• Clinical, Academic, and Research Laboratories – Widely used in life science research, biotechnology, diagnostics, pharmaceutical development, and quality control laboratories.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.684266+00	2026-06-19 21:10:54.543398+00
+95	custom-1780978262370	1.5 mL DNase/RNase-Free Microcentrifuge Tube	SnapLock MicroCentrifuge Tubes are designed for secure sample storage, processing, and centrifugation in molecular biology, cell biology, clinical, and research laboratories. Manufactured from high-quality polypropylene, these tubes provide excellent durability, chemical resistance, and reliable performance for a wide range of laboratory applications. The snap-lock cap design creates a secure seal to help prevent sample leakage, evaporation, and contamination during handling, storage, and centrifugation.\n\nFor convenient sample identification, each tube features a frosted cap surface and a large frosted writing panel on the side, allowing clear labeling and traceability. The cap incorporates a thin central membrane that enables easy sample access using a syringe needle without opening the tube, helping maintain sample integrity and reduce contamination risk.\n\nEngineered to withstand centrifugation forces up to 14,000 × g, SnapLock Micro Centrifuge Tubes are suitable for routine sample preparation, storage, and separation workflows. Certified RNase-free, DNase-free, and non-pyrogenic, these tubes provide the purity and reliability required for sensitive molecular biology and life science applications.	/media/reagent_images/15_ml_dnasernase_free_microcentrifuge_tube.webp	\N	category-1780539818236	centrifuge Tubes	reagent	\N	\N	\N	BA801164	In Stock	$340	\N	f	f	f	f	{"• Secure Snap-Lock Cap – Provides a reliable seal to minimize sample leakage, evaporation, and contamination.","• High Centrifugation Performance – Withstands forces up to 14,000 × g for routine laboratory applications.","• Easy Sample Identification – Frosted cap and side writing panel allow convenient labeling and tracking.","• Needle-Accessible Cap – Thin membrane in the cap enables sample access by syringe without opening the tube.","• High-Quality Polypropylene – Durable, chemically resistant, and suitable for a wide range of laboratory procedures.","• RNase-/DNase-Free – Ideal for sensitive DNA, RNA, and molecular biology applications.","• Non-Pyrogenic – Manufactured to support sample integrity and reduce contamination risks.","• Single-Piece Design – Integrated tube and cap for convenient handling and secure sample storage."}	{"10 Packs/Case(5000 Pcs/Case)"}	{}		• Sample Centrifugation and Separation – Ideal for the separation, sedimentation, and collection of cells, nucleic acids, proteins, and other biological materials during centrifugation procedures.\n\n• PCR and Molecular Biology Workflows – Suitable for PCR, qPCR, DNA/RNA extraction, enzymatic reactions, and other molecular biology applications.\n\n• Sample Storage and Preservation – Used for the short- and long-term storage of biological samples, reagents, enzymes, and nucleic acids.\n\n• Chemical and Reagent Preparation – Convenient for mixing, diluting, and storing small volumes of laboratory reagents and chemical solutions.\n\n• Protein Research Applications – Supports protein precipitation, purification, separation, and sample preparation workflows.\n\n• High-Speed Centrifugation Procedures – Designed for applications requiring high centrifugal forces, including organelle isolation and macromolecule separation.\n\n• Cell Biology and Microbiology Studies – Suitable for handling cell suspensions, microbial cultures, and other biological samples.\n\n• Routine Laboratory Operations – Ideal for sample collection, aliquoting, transport, mixing, and general laboratory processing tasks.\n\n• Clinical, Academic, and Research Laboratories – Widely used in life science research, biotechnology, diagnostics, pharmaceutical development, and quality control laboratories.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.689482+00	2026-06-19 21:10:54.548111+00
+96	custom-1780977963735	50 mL Individually Wrapped Serological Pipette, Filtered	BioArk 50 mL Polystyrene Sterile Serological Pipettes are designed to provide accurate liquid measurement and transfer for a wide range of laboratory applications. Manufactured from high-clarity polystyrene, these disposable pipettes offer excellent visibility for precise volume reading and reliable performance in cell culture, molecular biology, microbiology, clinical diagnostics, and pharmaceutical research. Their precision-molded construction ensures consistent liquid handling and dependable results across routine laboratory workflows.\n\nEach pipette is individually wrapped and sterilized by gamma irradiation or E-beam processing to maintain sterility and support aseptic techniques. Certified RNase-free, DNase-free, and non-pyrogenic, these pipettes help minimize the risk of sample contamination, making them suitable for sensitive biological and diagnostic applications. Clear, bidirectional graduations and highly visible color-coded markings enable fast volume identification and accurate dispensing, improving workflow efficiency and user convenience.\n\nDesigned for seamless compatibility with most standard pipette controllers and pipette aids, Biofargo serological pipettes provide a convenient, cost-effective solution for daily laboratory liquid handling. Their combination of accuracy, sterility, and ease of use makes them an ideal choice for research, clinical, and industrial laboratory environments.	/media/reagent_images/50_ml_individually_wrapped_serological_pipette_filtered.webp	\N	category-1780539818236	Serological Pipettes	reagent	\N	\N	\N	BA804050	In Stock	$240	\N	f	f	f	f	{"• Sterile and Ready for Immediate Use – Individually packaged and sterilized by E-beam or gamma irradiation to ensure aseptic handling and minimize contamination risk.","• Precise Liquid Measurement and Transfer – Calibrated 2 mL capacity with clear, bidirectional graduations for accurate aspiration and dispensing.","• Premium Virgin Polystyrene Construction – Manufactured from high-clarity polystyrene for excellent transparency, reliable performance, and enhanced chemical resistance.","• Certified Free of Biological Contaminants – RNase-free, DNase-free, non-pyrogenic, and non-cytotoxic, making the pipettes suitable for sensitive research and diagnostic applications.","• Easy Volume Identification – Distinctive color-coded markings enable rapid size recognition and improve laboratory workflow efficiency.","• Broad Instrument Compatibility – Designed to fit most standard pipette controllers and pipette aids commonly used in research, clinical, and industrial laboratories.","• Single-Use Disposable Design – Eliminates cleaning requirements and helps reduce sample carryover, cross-contamination, and experimental variability.","• Optimized for Laboratory Workflows – Ideal for cell culture, microbiology, molecular biology, clinical diagnostics, and general liquid handling applications."}	{"5 Packs/Case(400 Pcs/Case)"}	{}		• Cell Culture and Tissue Culture Workflows – Accurate transfer of culture media, buffers, reagents, and cell suspensions in routine cell-based applications.\n\n• Clinical and Diagnostic Testing – Reliable liquid handling for sample preparation, assay setup, and laboratory diagnostic procedures.\n\n• Biotechnology and Pharmaceutical Research – Suitable for drug discovery, bioprocess development, formulation studies, and other research applications.\n\n• Microbiology and Bacteriology Studies – Precise measurement and transfer of microbial cultures, growth media, and laboratory reagents.\n\n• Sample Preparation and Reagent Mixing – Efficient handling, dilution, mixing, and dispensing of biological and chemical solutions.\n\n• Molecular Biology and Life Science Research – Ideal for routine laboratory workflows involving nucleic acids, proteins, enzymes, and other biological samples.\n\n• Quality Control and Analytical Laboratories – Consistent liquid transfer for testing, validation, and quality assurance procedures across research and manufacturing environments.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.697037+00	2026-06-19 21:10:54.552043+00
+92	custom-1780978728947	50 mL Sterile Conical Centrifuge Tube, Rack Packed	BioArk Conical Sterile Centrifuge Tubes are manufactured from high-purity polypropylene (PP) resin and designed for reliable sample handling, storage, and centrifugation in molecular biology, clinical diagnostics, biotechnology, and biochemical research laboratories. The transparent construction provides excellent sample visibility, while the durable polypropylene material offers a safer and more practical alternative to glass tubes.\n\nProduced using advanced molding technology, these centrifuge tubes deliver consistent performance, excellent chemical resistance, and dependable durability for routine laboratory workflows. Clear black graduations and a large white writing area enable accurate volume measurement and convenient sample identification, improving laboratory efficiency and traceability.\n\nAvailable with either advanced screw caps or original plug-seal caps, BioArk centrifuge tubes provide secure sample containment during storage, transport, and centrifugation. Their high-quality construction and user-friendly design make them ideal for a wide range of research, clinical, and industrial laboratory applications.	/media/reagent_images/50_ml_sterile_conical_centrifuge_tube_rack_packed.webp	\N	category-1780539818236	centrifuge Tubes	reagent	\N	\N	\N	BA801502	In Stock	$145	\N	f	f	f	f	{"• Clear Volume Graduations – High-contrast printed graduations provide accurate volume measurement and easy sample monitoring.","• Large Writing Area – Expanded white marking panel allows convenient sample labeling, identification, and traceability.","• High Centrifugation Performance – Designed to withstand centrifugal forces up to 12,000 × g for reliable sample processing.","• Sterile and Contaminant-Free – Certified sterile, non-pyrogenic, DNase-free, and RNase-free for sensitive biological and molecular applications.","• Secure Sample Storage – Ideal for the storage and handling of larger-volume samples, reagents, buffers, and biological solutions.","• Suitable for Cell Culture Workflows – Provides safe and reliable handling of culture media, cell suspensions, and related reagents.","• Optimized for Molecular Biology and Microbiology – Supports sample preparation, centrifugation, and routine laboratory processing.","• Convenient Reagent Preparation – Well suited for preparing master mixes, buffers, dilution series, and other laboratory solutions.","• Durable Polypropylene Construction – Manufactured from high-purity polypropylene for excellent chemical resistance, transparency, and durability."}	{"500 Pcs/Case"}	{}		"• Sample Centrifugation and Processing – Ideal for high-speed centrifugation procedures used to separate, concentrate, and collect biological and chemical samples.\n\n• Sample Storage and Preservation – Suitable for the short- and long-term storage of cells, biological specimens, reagents, buffers, and laboratory solutions.\n\n• Sample Transport and Handling – Provides secure containment for the safe transport of samples between laboratories, workstations, and storage facilities.\n\n• Cellular and Particle Separation – Supports the isolation and separation of cells, organelles, precipitates, proteins, nucleic acids, and other particulate materials.\n\n• Molecular Biology Workflows – Commonly used for DNA/RNA extraction, nucleic acid purification, PCR sample preparation, and other molecular biology applications.\n\n• Protein and Biochemistry Research – Suitable for protein precipitation, purification, sample preparation, and biochemical analysis procedures.\n\n• Cell Culture and Microbiology Applications – Ideal for handling cell suspensions, culture media, microbial samples, and related laboratory workflows.\n\n• Reagent Preparation and Mixing – Convenient for preparing, mixing, diluting, and storing laboratory reagents, buffers, and master mixes.\n\n• Research, Clinical, and Industrial Laboratories – Widely used in life science research, biotechnology, pharmaceutical development, diagnostics, and quality control environments."\n	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.673664+00	2026-06-19 21:10:54.532624+00
+99	custom-1780977475221	5 mL Individually Wrapped Serological Pipette, Filtered	BioArk 5 mL Polystyrene Sterile Serological Pipettes are designed to provide accurate liquid measurement and transfer for a wide range of laboratory applications. Manufactured from high-clarity polystyrene, these disposable pipettes offer excellent visibility for precise volume reading and reliable performance in cell culture, molecular biology, microbiology, clinical diagnostics, and pharmaceutical research. Their precision-molded construction ensures consistent liquid handling and dependable results across routine laboratory workflows.\n\nEach pipette is individually wrapped and sterilized by gamma irradiation or E-beam processing to maintain sterility and support aseptic techniques. Certified RNase-free, DNase-free, and non-pyrogenic, these pipettes help minimize the risk of sample contamination, making them suitable for sensitive biological and diagnostic applications. Clear, bidirectional graduations and highly visible color-coded markings enable fast volume identification and accurate dispensing, improving workflow efficiency and user convenience.\n\nDesigned for seamless compatibility with most standard pipette controllers and pipette aids, Biofargo serological pipettes provide a convenient, cost-effective solution for daily laboratory liquid handling. Their combination of accuracy, sterility, and ease of use makes them an ideal choice for research, clinical, and industrial laboratory environments.	/media/reagent_images/5_ml_individually_wrapped_serological_pipette_filtered.webp	\N	category-1780539818236	Serological Pipettes	reagent	\N	\N	\N	C804005	In Stock	$285	\N	f	f	f	f	{"• Sterile and Ready for Immediate Use – Individually packaged and sterilized by E-beam or gamma irradiation to ensure aseptic handling and minimize contamination risk.","• Precise Liquid Measurement and Transfer – Calibrated 2 mL capacity with clear, bidirectional graduations for accurate aspiration and dispensing.","• Premium Virgin Polystyrene Construction – Manufactured from high-clarity polystyrene for excellent transparency, reliable performance, and enhanced chemical resistance.","• Certified Free of Biological Contaminants – RNase-free, DNase-free, non-pyrogenic, and non-cytotoxic, making the pipettes suitable for sensitive research and diagnostic applications.","• Easy Volume Identification – Distinctive color-coded markings enable rapid size recognition and improve laboratory workflow efficiency.","• Broad Instrument Compatibility – Designed to fit most standard pipette controllers and pipette aids commonly used in research, clinical, and industrial laboratories.","• Single-Use Disposable Design – Eliminates cleaning requirements and helps reduce sample carryover, cross-contamination, and experimental variability.","• Optimized for Laboratory Workflows – Ideal for cell culture, microbiology, molecular biology, clinical diagnostics, and general liquid handling applications."}	{"6 Packs/Case(1200 Pcs/Case)"}	{}		• Cell Culture and Tissue Culture Workflows – Accurate transfer of culture media, buffers, reagents, and cell suspensions in routine cell-based applications.\n\n• Clinical and Diagnostic Testing – Reliable liquid handling for sample preparation, assay setup, and laboratory diagnostic procedures.\n\n• Biotechnology and Pharmaceutical Research – Suitable for drug discovery, bioprocess development, formulation studies, and other research applications.\n\n• Microbiology and Bacteriology Studies – Precise measurement and transfer of microbial cultures, growth media, and laboratory reagents.\n\n• Sample Preparation and Reagent Mixing – Efficient handling, dilution, mixing, and dispensing of biological and chemical solutions.\n\n• Molecular Biology and Life Science Research – Ideal for routine laboratory workflows involving nucleic acids, proteins, enzymes, and other biological samples.\n\n• Quality Control and Analytical Laboratories – Consistent liquid transfer for testing, validation, and quality assurance procedures across research and manufacturing environments.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.723593+00	2026-06-19 21:10:54.561366+00
+102	custom-1780975995260	1000 μL Universal Pipette Tips – Filtered – Low Retention	Filtered Low-Retention Universal Pipette Tips\n\nOur Filtered Low-Retention Universal Pipette Tips are manufactured from high-quality polypropylene (PP) to provide reliable performance, precision liquid handling, and enhanced sample protection for a wide range of laboratory workflows. Designed for both single-channel and multi-channel pipettes, these tips offer broad compatibility with most major pipette brands, including Eppendorf, Gilson, Thermo Fisher, Sartorius, Biohit, Oxford, DLAB, and other standard pipette systems.\n\nFeaturing an integrated aerosol barrier filter and low-retention surface technology, these tips help minimize the risk of cross-contamination, liquid backflow, and pipette contamination while maximizing sample recovery. The low-retention design reduces liquid adhesion, improving pipetting accuracy and consistency, particularly when working with valuable or low-volume samples.\n\nAs one of the most widely used pipette tip formats in research, clinical, and diagnostic laboratories, these universal filtered tips provide a cost-effective solution for routine liquid handling applications while maintaining high standards of quality and performance. Please note that Rainin pipettes require specially designed tips and are not compatible with standard universal pipette tips. Users of less common pipette brands are encouraged to verify compatibility prior to purchase.	/media/reagent_images/1000_μl_universal_pipette_tips_filtered_low_retention.webp	\N	category-1780539818236	Pipette Tips	reagent	\N	\N	\N	800509-S	In Stock	$280	\N	f	f	f	f	{"• Low-Retention Surface for Enhanced Sample Recovery and Pipetting Accuracy","• Integrated Aerosol Barrier Filter Helps Prevent Cross-Contamination and Liquid Backflow","• Universal Compatibility with Most Major Single- and Multi-Channel Pipettes","• Manufactured in a Class 100,000 Cleanroom Environment","• Certified DNase-Free, RNase-Free, and Non-Pyrogenic","• Sterile and Ready-to-Use for Sensitive Laboratory Applications","• CE Marked and ISO 13485:2016 Certified","• Compliant with IVDD 98/79/EC Requirements","• Consistent Quality and Reliable Performance for Routine and Precision Liquid Handling","• Ideal for PCR, qPCR, Molecular Biology, Cell Culture, and Diagnostic Workflows"}	{"10 Racks/Box; 5 Boxes/Case"}	{}		• Accurate Liquid Transfer and Precision Pipetting\n\n• Reagent, Buffer, and Sample Preparation\n\n• PCR, qPCR, and Nucleic Acid Workflows\n\n• Sample Dispensing into Microplates, PCR Plates, and Reaction Tubes\n\n• Cell Culture and Microbiology Applications\n\n• Electrophoresis Gel Loading\n\n• ELISA and Diagnostic Assays\n\n• Supernatant Transfer and Phase Separation Procedures\n\n• High-Throughput Screening and Automated Liquid Handling\n\n• Routine Research, Clinical, and Analytical Laboratory Operations	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.745789+00	2026-06-19 21:10:54.570209+00
+98	custom-1780977616154	10 mL Individually Wrapped Serological Pipette, Filtered	BioArk 10 mL Polystyrene Sterile Serological Pipettes are designed to provide accurate liquid measurement and transfer for a wide range of laboratory applications. Manufactured from high-clarity polystyrene, these disposable pipettes offer excellent visibility for precise volume reading and reliable performance in cell culture, molecular biology, microbiology, clinical diagnostics, and pharmaceutical research. Their precision-molded construction ensures consistent liquid handling and dependable results across routine laboratory workflows.\n\nEach pipette is individually wrapped and sterilized by gamma irradiation or E-beam processing to maintain sterility and support aseptic techniques. Certified RNase-free, DNase-free, and non-pyrogenic, these pipettes help minimize the risk of sample contamination, making them suitable for sensitive biological and diagnostic applications. Clear, bidirectional graduations and highly visible color-coded markings enable fast volume identification and accurate dispensing, improving workflow efficiency and user convenience.\n\nDesigned for seamless compatibility with most standard pipette controllers and pipette aids, Biofargo serological pipettes provide a convenient, cost-effective solution for daily laboratory liquid handling. Their combination of accuracy, sterility, and ease of use makes them an ideal choice for research, clinical, and industrial laboratory environments.	/media/reagent_images/10_ml_individually_wrapped_serological_pipette_filtered.webp	\N	category-1780539818236	Serological Pipettes	reagent	\N	\N	\N	BA804010	In Stock	$350	\N	f	f	f	f	{"• Sterile and Ready for Immediate Use – Individually packaged and sterilized by E-beam or gamma irradiation to ensure aseptic handling and minimize contamination risk.","• Precise Liquid Measurement and Transfer – Calibrated 2 mL capacity with clear, bidirectional graduations for accurate aspiration and dispensing.","• Premium Virgin Polystyrene Construction – Manufactured from high-clarity polystyrene for excellent transparency, reliable performance, and enhanced chemical resistance.","• Certified Free of Biological Contaminants – RNase-free, DNase-free, non-pyrogenic, and non-cytotoxic, making the pipettes suitable for sensitive research and diagnostic applications.","• Easy Volume Identification – Distinctive color-coded markings enable rapid size recognition and improve laboratory workflow efficiency.","• Broad Instrument Compatibility – Designed to fit most standard pipette controllers and pipette aids commonly used in research, clinical, and industrial laboratories.","• Single-Use Disposable Design – Eliminates cleaning requirements and helps reduce sample carryover, cross-contamination, and experimental variability.","• Optimized for Laboratory Workflows – Ideal for cell culture, microbiology, molecular biology, clinical diagnostics, and general liquid handling applications."}	{"6 Packs/Case(1200 Pcs/Case)"}	{}		• Cell Culture and Tissue Culture Workflows – Accurate transfer of culture media, buffers, reagents, and cell suspensions in routine cell-based applications.\n\n• Clinical and Diagnostic Testing – Reliable liquid handling for sample preparation, assay setup, and laboratory diagnostic procedures.\n\n• Biotechnology and Pharmaceutical Research – Suitable for drug discovery, bioprocess development, formulation studies, and other research applications.\n\n• Microbiology and Bacteriology Studies – Precise measurement and transfer of microbial cultures, growth media, and laboratory reagents.\n\n• Sample Preparation and Reagent Mixing – Efficient handling, dilution, mixing, and dispensing of biological and chemical solutions.\n\n• Molecular Biology and Life Science Research – Ideal for routine laboratory workflows involving nucleic acids, proteins, enzymes, and other biological samples.\n\n• Quality Control and Analytical Laboratories – Consistent liquid transfer for testing, validation, and quality assurance procedures across research and manufacturing environments.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.716368+00	2026-06-19 21:10:54.556613+00
+100	custom-1780977136532	2 mL Individually Wrapped Serological Pipette, Filtered	BioArk 2 mL Polystyrene Sterile Serological Pipettes are designed to provide accurate liquid measurement and transfer for a wide range of laboratory applications. Manufactured from high-clarity polystyrene, these disposable pipettes offer excellent visibility for precise volume reading and reliable performance in cell culture, molecular biology, microbiology, clinical diagnostics, and pharmaceutical research. Their precision-molded construction ensures consistent liquid handling and dependable results across routine laboratory workflows.\n\nEach pipette is individually wrapped and sterilized by gamma irradiation or E-beam processing to maintain sterility and support aseptic techniques. Certified RNase-free, DNase-free, and non-pyrogenic, these pipettes help minimize the risk of sample contamination, making them suitable for sensitive biological and diagnostic applications. Clear, bidirectional graduations and highly visible color-coded markings enable fast volume identification and accurate dispensing, improving workflow efficiency and user convenience.\n\nDesigned for seamless compatibility with most standard pipette controllers and pipette aids, Biofargo serological pipettes provide a convenient, cost-effective solution for daily laboratory liquid handling. Their combination of accuracy, sterility, and ease of use makes them an ideal choice for research, clinical, and industrial laboratory environments.	/media/reagent_images/2_ml_individually_wrapped_serological_pipette_filtered.jpg	\N	category-1780539818236	Serological Pipettes	reagent	\N	\N	\N	BA804002	In Stock	$220	\N	f	f	f	f	{"• Sterile and Ready for Immediate Use – Individually packaged and sterilized by E-beam or gamma irradiation to ensure aseptic handling and minimize contamination risk.","• Precise Liquid Measurement and Transfer – Calibrated 2 mL capacity with clear, bidirectional graduations for accurate aspiration and dispensing.","• Premium Virgin Polystyrene Construction – Manufactured from high-clarity polystyrene for excellent transparency, reliable performance, and enhanced chemical resistance.","• Certified Free of Biological Contaminants – RNase-free, DNase-free, non-pyrogenic, and non-cytotoxic, making the pipettes suitable for sensitive research and diagnostic applications.","• Easy Volume Identification – Distinctive color-coded markings enable rapid size recognition and improve laboratory workflow efficiency.","• Broad Instrument Compatibility – Designed to fit most standard pipette controllers and pipette aids commonly used in research, clinical, and industrial laboratories.","• Single-Use Disposable Design – Eliminates cleaning requirements and helps reduce sample carryover, cross-contamination, and experimental variability.","• Optimized for Laboratory Workflows – Ideal for cell culture, microbiology, molecular biology, clinical diagnostics, and general liquid handling applications."}	{20Packs/Case(1000Pcs/Case)}	{}		• Cell Culture and Tissue Culture Workflows – Accurate transfer of culture media, buffers, reagents, and cell suspensions in routine cell-based applications.\n\n• Clinical and Diagnostic Testing – Reliable liquid handling for sample preparation, assay setup, and laboratory diagnostic procedures.\n\n• Biotechnology and Pharmaceutical Research – Suitable for drug discovery, bioprocess development, formulation studies, and other research applications.\n\n• Microbiology and Bacteriology Studies – Precise measurement and transfer of microbial cultures, growth media, and laboratory reagents.\n\n• Sample Preparation and Reagent Mixing – Efficient handling, dilution, mixing, and dispensing of biological and chemical solutions.\n\n• Molecular Biology and Life Science Research – Ideal for routine laboratory workflows involving nucleic acids, proteins, enzymes, and other biological samples.\n\n• Quality Control and Analytical Laboratories – Consistent liquid transfer for testing, validation, and quality assurance procedures across research and manufacturing environments.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.7303+00	2026-06-19 21:10:54.565372+00
+106	custom-1780712799171	Medium Nitrile Examination Gloves, Powder-Free	Zircon Touch® Exam Gloves are engineered to deliver exceptional protection, comfort, and tactile sensitivity for a wide range of professional applications. Designed for laboratory research, healthcare environments, food handling, and general-purpose use, these high-quality gloves provide a reliable barrier against contaminants while maintaining the dexterity required for precision tasks.\n\nManufactured to rigorous quality standards, Zircon Touch® Exam Gloves offer a comfortable fit, excellent flexibility, and dependable performance throughout extended use. Their durable construction helps reduce the risk of tears and punctures, while the textured surface enhances grip and control when handling instruments, samples, or equipment.\n\nCombining protection, comfort, and precision, Zircon Touch® Exam Gloves are an ideal choice for professionals who require reliable hand protection without compromising sensitivity or performance.	/media/reagent_images/medium_nitrile_examination_gloves_powder_free.webp	\N	category-1780539818236	Personal Protective Equipment (PPE)	reagent	\N	\N	\N	GN007-2-C	In Stock	65	\N	f	f	f	f	{"• Exceptional Durability – Designed to withstand demanding laboratory, healthcare, and industrial applications while maintaining reliable protection.","• Micro-Textured Surface – Enhances grip and control when handling instruments, samples, and equipment, even in wet conditions.","• Strong and Flexible Construction – Combines excellent tensile strength with superior flexibility for enhanced comfort, dexterity, and tactile sensitivity.","• Precision Touch Sensitivity – Allows accurate handling of delicate tasks without compromising hand protection.","• Color-Coded Size Identification – Packaging is color coded by glove size for quick recognition, simplified inventory management, and improved workflow efficiency.","• Comfortable Fit for Extended Wear – Ergonomically designed to reduce hand fatigue during prolonged use."}	{"1000 Pcs/Case"}	{"1000 Pcs/Case": "$65"}		• Laboratory Research and Testing – Provides reliable hand protection and excellent tactile sensitivity for routine laboratory procedures and sample handling.\n\n• Healthcare and Clinical Environments – Suitable for examinations, patient care, and other applications requiring hygiene, comfort, and protection.\n\n• Food Processing and Food Handling – Helps maintain cleanliness and product safety while allowing precise handling of food products.\n\n• Pharmaceutical and Biotechnology Workflows – Ideal for manufacturing, quality control, and research applications where contamination control is essential.\n\n• Precision Handling Tasks – Excellent for applications requiring enhanced dexterity, tactile sensitivity, and accurate manipulation of small instruments or components.\n\n• General Industrial and Workplace Use – Offers a cost-effective solution for a wide range of protective applications requiring both durability and comfort.\n	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.780566+00	2026-06-19 21:10:54.578477+00
+104	custom-1780975650193	20 μL Universal Pipette Tips – Filtered – Low Retention	Filtered Low-Retention Universal Pipette Tips\n\nOur Filtered Low-Retention Universal Pipette Tips are manufactured from high-quality polypropylene (PP) to provide reliable performance, precision liquid handling, and enhanced sample protection for a wide range of laboratory workflows. Designed for both single-channel and multi-channel pipettes, these tips offer broad compatibility with most major pipette brands, including Eppendorf, Gilson, Thermo Fisher, Sartorius, Biohit, Oxford, DLAB, and other standard pipette systems.\n\nFeaturing an integrated aerosol barrier filter and low-retention surface technology, these tips help minimize the risk of cross-contamination, liquid backflow, and pipette contamination while maximizing sample recovery. The low-retention design reduces liquid adhesion, improving pipetting accuracy and consistency, particularly when working with valuable or low-volume samples.\n\nAs one of the most widely used pipette tip formats in research, clinical, and diagnostic laboratories, these universal filtered tips provide a cost-effective solution for routine liquid handling applications while maintaining high standards of quality and performance. Please note that Rainin pipettes require specially designed tips and are not compatible with standard universal pipette tips. Users of less common pipette brands are encouraged to verify compatibility prior to purchase.	/media/reagent_images/20_μl_universal_pipette_tips_filtered_low_retention.webp	\N	category-1780539818236	Pipette Tips	reagent	\N	\N	\N	BA800708	In Stock	215	\N	f	f	f	f	{"• Low-Retention Surface for Enhanced Sample Recovery and Pipetting Accuracy","• Integrated Aerosol Barrier Filter Helps Prevent Cross-Contamination and Liquid Backflow","• Universal Compatibility with Most Major Single- and Multi-Channel Pipettes","• Manufactured in a Class 100,000 Cleanroom Environment","• Certified DNase-Free, RNase-Free, and Non-Pyrogenic","• Sterile and Ready-to-Use for Sensitive Laboratory Applications","• CE Marked and ISO 13485:2016 Certified","• Compliant with IVDD 98/79/EC Requirements","• Consistent Quality and Reliable Performance for Routine and Precision Liquid Handling","• Ideal for PCR, qPCR, Molecular Biology, Cell Culture, and Diagnostic Workflows"}	{"10 Racks/Box; 5 Boxes/Case (4800Tips/Case)"}	{"10 Racks/Box; 5 Boxes/Case (4800Tips/Case)": "$215"}		• Accurate Liquid Transfer and Precision Pipetting\n\n• Reagent, Buffer, and Sample Preparation\n\n• PCR, qPCR, and Nucleic Acid Workflows\n\n• Sample Dispensing into Microplates, PCR Plates, and Reaction Tubes\n\n• Cell Culture and Microbiology Applications\n\n• Electrophoresis Gel Loading\n\n• ELISA and Diagnostic Assays\n\n• Supernatant Transfer and Phase Separation Procedures\n\n• High-Throughput Screening and Automated Liquid Handling\n\n• Routine Research, Clinical, and Analytical Laboratory Operations	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.759892+00	2026-06-19 21:10:54.574786+00
+108	custom-1772243282870	Prestained Protein Marker 250KD (10-250KD)	•\tThe Prestained Protein Marker 250 kDa is formulated with high-purity recombinant proteins and distinct multi-color reference bands, covering a broad molecular weight range of 10–250 kDa. A green 10 kDa band and orange-red bands at 25 kDa and 70 kDa, with remaining bands in blue, provide clear orientation and accurate molecular weight estimation. This ladder requires no heating, reducing agents, or sample buffer, minimizing hands-on time and improving experimental consistency. \n•\tPerformance is equivalent to Thermo Scientific PageRuler™ Plus Prestained Protein Ladder (Cat. 26619), while offering comparable quality at less than half the cost, delivering exceptional value for both routine and high-throughput workflows.	/media/reagent_images/prestained_protein_marker_250kd_10_250kd.jpg	\N	category-1766675365489	\N	reagent	\N	\N	\N	BAPM1126	In Stock	$60	\N	f	f	f	f	{"(~10, ~15, ~25, ~35, ~55, ~70, ~100, ~130, ~250)kDa","with orange-red band at 25Kda and 70 kDa, green band at 10 kD"}	{500μL,"2 X 500μL","5 X 500μL"}	{"500μL": "$60", "2 X 500μL": "$110", "5 X 500μL": "$250"}	Ship with wet ice; Store at -20°C; Valid for 12 months		\N	{"BAPM1126 Manual","BAPM1125 Manual"}	{/content-api/uploads/originals/f4771a52-a6ed-4c0b-a961-296a41bc73a6.pdf}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.792878+00	2026-06-19 21:10:54.586722+00
+109	custom-1772227271829	Prestained Protein Marker 180KD (10-180KD)	• The Prestained Protein Marker 180 kDa contains 10 highly pure, pre-stained recombinant proteins spanning 10–180 kDa, providing a reliable molecular weight standard for SDS-PAGE and Western blotting. The ladder features distinct multi-color bands—a green 10 kDa band and a pink 70 kDa reference band, with remaining bands in blue—allowing easy band identification, real-time electrophoresis tracking, and efficient transfer assessment. <br>\n• It offers performance equivalent to Thermo Scientific PageRuler™ Prestained Protein Ladder (Cat. 26617) at less than half the price, making it a cost-effective alternative for routine and high-throughput applications.	/media/reagent_images/prestained_protein_marker_180kd_10_180kd.jpg	\N	category-1766675365489	\N	reagent	\N	\N	\N	BAPM1125	In Stock	$60	\N	f	f	f	f	{"(~10, ~15, ~25, ~35, ~40, ~55, ~70, ~100, ~130, ~180 kDa),"}	{500μL,"2 X 500μL","5 X 500μL"}	{"500μL": "$60", "2 X 500μL": "$110", "5 X 500μL": "$250"}	Ship with wet ice; Store at -20℃, valid for 12 months.		\N	{"BAPM1125 Manual"}	{/content-api/uploads/originals/d398a177-34e1-429f-9db2-bb234d5e5823.pdf}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.798396+00	2026-06-19 21:10:54.590602+00
+110	custom-1765069552410	DNA 100bp Ladder	BioArk DNA 100 bp Ladder (100–1000 bp) consists of 10 linear double-stranded DNA fragments (100, 200, 300, 400, 500, 600, 700, 800, 900, and 1000 bp) premixed with 1× DNA Loading Buffer containing a blue tracking dye. It is designed for accurate size determination and analysis of DNA fragments during agarose gel electrophoresis.\nThis ready-to-use product requires no additional preparation. Simply load 5–10 μL per well according to experimental needs. It provides sharp, well-resolved bands for reliable fragment sizing and approximate quantification of target DNA samples.\nThe 500 bp band contains 100 ng DNA per 5 μL and appears as an enhanced reference band for easy identification. All other bands contain 50 ng DNA per 5 μL.	/media/reagent_images/dna_100bp_ladder.jpg	\N	category-1765063995229	\N	reagent	\N	\N	\N	BADM3367	In Stock	$39	\N	f	f	f	f	{"10 linear double-stranded DNA (100 bp, 200 bp, 300 bp, 400 bp, 500 bp, 600 bp, 700 bp, 800 bp, 900 bp, 1000 bp) bands"}	{500ul,"2 X 500ul","5 X 500ul"}	{"500ul": "$39", "2 X 500ul": "$75", "5 X 500ul": "$175"}	Ship with wet ice; Store at -20℃; valid for 24 months		\N	{"BADM3367 Manual","BADM3362 GN8K DNA Marker"}	{/content-api/uploads/originals/dac58c13-5b72-475c-8ecd-bc9b01b6b462.pdf}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.803833+00	2026-06-19 21:10:54.595645+00
+66	15-ml-round-bottom-culture-tube-sterile	15 mL Round-Bottom Culture Tube, Sterile	15 mL Sterile polystyrene round-bottom culture tubes with dual-position snap caps.	/media/reagent_images/round_bottom_culture_tube.jpg	\N	category-1780539818236	Culture Tubes	reagent	\N	\N	\N	CT-15R	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:26.070919+00	2026-06-19 21:10:54.600295+00
+80	custom-1780980465967	35 mm Tissue Culture-Treated Cell Culture Dish, Sterile	BioArk 35 mm Cell Culture Dishes are manufactured from high-quality polystyrene and feature a tissue culture (TC)-treated surface to support optimal cell attachment, growth, and proliferation. Designed for routine cell culture applications, these dishes provide a reliable environment for cultivating a wide range of adherent cell types in research, biotechnology, and pharmaceutical laboratories.\n\nThe precision-engineered flat-bottom design creates a uniform growth surface, promoting even cell distribution and reducing variability caused by surface irregularities. This helps improve culture consistency, experimental reproducibility, and the accuracy of downstream analyses. The crystal-clear construction also allows excellent visibility for routine microscopic observation and cell monitoring.\n\nProduced under strict quality standards, BioArk cell culture dishes provide dependable performance for cell maintenance, expansion, transfection studies, and other cell-based research applications.	/media/reagent_images/35_mm_tissue_culture_treated_cell_culture_dish_sterile.png	\N	category-1780539818236	Cell Culture Dishes	reagent	\N	\N	\N	BA803035	In Stock	$123	\N	f	f	f	f	{"• Enhanced Handling and Ergonomic Design","• Secure and Stable Stacking for Easy Storage and Transport","• TC-Treated Surface for Improved Cell Attachment and Growth","• Suitable for Both Adherent and Suspension Cell Culture","• Uniform Growth Surface for Consistent Cell Distribution","• Excellent Optical Clarity for Microscopic Observation","• Ideal for Cell-Based Assays and Biological Research","• Reliable Performance for Routine Cell Culture Applications","• Durable Polystyrene Construction","• Sterile and Ready-to-Use"}	{"25 Packs/Case(500 Pcs/Case)"}	{}		• Supports the culture, expansion, and maintenance of adherent cells for routine research and laboratory applications.\n\n• Provides a suitable environment for the growth and handling of suspension cells in biological and biomedical studies.\n\n• Enables cell-based assays, including cell viability, proliferation, migration, and cytotoxicity studies.\n\n• Facilitates microscopic observation, cell imaging, and morphological analysis through its optically clear design.\n\n• Supports studies of cell signaling pathways, cellular responses, and cell-to-cell communication.\n\n• Ideal for stem cell and primary cell culture applications requiring reliable cell attachment and growth conditions.\n\n• Widely used in drug discovery, compound screening, and toxicity testing workflows.\n\n• Serves as a versatile platform for biotechnology, pharmaceutical, and life science research applications.\n\n• Promotes consistent and reproducible cell growth for downstream molecular and cellular analyses.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.592425+00	2026-06-19 21:10:54.619685+00
+86	custom-1780979765772	12-Well Tissue Culture-Treated Cell Culture Plate, Sterile	BioArk Multiwell Cell Culture Plates are manufactured from premium virgin polystyrene (PS) and feature a tissue culture (TC)-treated surface to promote consistent cell attachment, growth, and proliferation. Designed with flat-bottom wells and supplied with a matching lid, these plates provide an ideal environment for routine cell culture, drug screening, cell-based assays, and other life science research applications.\n\nThe precision-engineered plate design helps minimize the impact of external environmental factors while maintaining optimal culture conditions. Thin-walled well bottoms improve thermal consistency across the plate, reducing edge effects and supporting more uniform experimental results. The optically clear flat-bottom wells provide excellent visibility for microscopic observation, imaging, and sample analysis.\n\nEach plate is gamma irradiated and certified non-pyrogenic, DNase-free, RNase-free, and human DNA-free to ensure the highest level of purity for sensitive cell culture and biological research workflows. Manufactured under strict quality standards, BioArk Multiwell Culture Plates offer reliable performance, excellent optical clarity, and consistent results for academic, biotechnology, pharmaceutical, and clinical research laboratories.	/media/reagent_images/12_well_tissue_culture_treated_cell_culture_plate_sterile.png	\N	category-1780539818236	Cell Culture Plate	reagent	\N	\N	\N	BA076012	In Stock	$170	\N	f	f	f	f	{"• TC-Treated Surface","• Premium Virgin Polystyrene Construction","• Flat-Bottom Well Design","• Thin-Walled Wells for Enhanced Thermal Consistency","• Protective Lid Included","• Excellent Optical Clarity","• Gamma Irradiated Sterility","• Non-Pyrogenic, DNase-Free, RNase-Free, and Human DNA-Free","• Individually Packaged for Sterility and Convenience","• Suitable for Cell Culture and Cell-Based Assays"}	{100Pcs/Package}	{}		• Adherent Cell Culture\n\n• Cell-Based Assays\n\n• Drug Discovery and Compound Screening\n\n• Microscopy and Cell Imaging\n\n• Gene Expression Studies\n\n• Stem Cell and Primary Cell Culture\n\n• Biotechnology and Pharmaceutical Research\n\n• High-Throughput Screening	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.638431+00	2026-06-19 21:10:54.624273+00
+90	custom-1780979031207	96-Well qPCR Plate, Semi-skirted, 0.2 mL	BioArk 96-Well qPCR Plates, Semi-Skirted, 0.2 mL are designed for reliable performance in real-time PCR, PCR amplification, and high-throughput molecular biology workflows. Manufactured from premium medical-grade polypropylene, these plates provide excellent thermal conductivity and uniform heat transfer across all wells, helping to ensure accurate, reproducible amplification results and consistent assay performance.\n\nThe semi-skirted design offers an ideal balance of rigidity and compatibility, providing improved plate handling, labeling convenience, and compatibility with a wide range of thermal cyclers and automated laboratory systems. Precision-molded wells with uniform wall thickness support efficient thermal cycling and reliable sample processing, while secure sealing with adhesive films or cap strips helps minimize sample evaporation and cross-contamination.\n\nProduced under stringent quality control standards, BioArk 96-well qPCR plates are suitable for gene expression analysis, genotyping, molecular diagnostics, pathogen detection, next-generation sequencing workflows, and other life science research applications. Their robust construction, excellent thermal performance, and broad instrument compatibility make them a dependable choice for research, clinical, and biotechnology laboratories.	/media/reagent_images/96_well_qpcr_plate_semi_skirted_02_ml.jpg	\N	category-1780539818236	PCR Consumables	reagent	\N	\N	\N	BA802016	In Stock	$178	\N	f	f	f	f	{"• Premium Medical-Grade Polypropylene – Manufactured from high-quality imported polypropylene (PP) to ensure excellent purity, durability, and thermal performance.","• Precision-Molded Construction – Produced using advanced injection molding technology and proprietary mold designs for consistent quality and dimensional accuracy.","• Uniform Thin-Wall Design – Optimized wall thickness promotes rapid, even heat transfer, supporting efficient thermal cycling and reproducible PCR/qPCR results.","• High Manufacturing Standards – Produced in an ISO Class 8 cleanroom environment to minimize particulate contamination and ensure product consistency.","• Certified Contaminant-Free – Tested and certified DNA-free, DNase-free, RNase-free, and Pyrogen/Endotoxin-free for sensitive molecular biology and diagnostic applications.","• Reliable Assay Performance – Designed to support accurate amplification, fluorescence detection, and high-throughput laboratory workflows.","• Broad Instrument Compatibility – Compatible with most standard PCR and real-time qPCR thermal cyclers."}	{"5 Packs/Case (100 Plates)"}	{}		• PCR and qPCR Workflows – Designed for reliable DNA amplification, quantitative PCR (qPCR), and real-time PCR applications.\n\n• Gene Expression Analysis – Ideal for gene expression profiling, transcript quantification, and biomarker research.\n\n• Genotyping and Genetic Studies – Supports SNP analysis, mutation detection, genotyping, and other genetic research applications.\n\n• Molecular Diagnostics – Suitable for pathogen detection, clinical testing, and diagnostic assay development.\n\n• High-Throughput Screening – Optimized for large-scale sample processing, screening studies, and automated laboratory workflows.\n\n• Next-Generation Sequencing (NGS) Preparation – Supports library preparation, sample amplification, and other pre-sequencing procedures.\n\n• Biotechnology and Pharmaceutical Research – Widely used in drug discovery, assay development, and life science research.\n\n• Academic and Research Laboratories – Ideal for routine molecular biology, genomics, and biotechnology applications requiring consistent and reproducible results.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.661475+00	2026-06-19 21:10:54.628276+00
+91	custom-1780978900701	8-Tube PCR Strip, 0.2 mL	BioArk 0.2 mL Low-Profile 8-Strip PCR Tubes are specifically designed for high-performance PCR and real-time qPCR applications, providing reliable thermal transfer and consistent amplification results. The low-profile design reduces reaction dead space and enhances thermal efficiency, making these tubes ideal for fast-cycling protocols and modern thermal cyclers.\n\nManufactured from premium medical-grade polypropylene, each tube features ultra-thin, uniform walls that enable rapid and consistent heat transfer across all wells. The included optically clear flat caps provide a secure seal to minimize sample evaporation while allowing excellent fluorescence signal transmission for real-time PCR detection.\n\nProduced in an ISO Class 8 cleanroom environment, BioArk PCR tube strips are certified free of DNase, RNase, human DNA, and PCR inhibitors, and are tested non-pyrogenic to ensure optimal purity and performance. Compatible with most standard thermal cyclers and qPCR instruments, these PCR strips provide a dependable solution for molecular biology, diagnostics, genomics, and research laboratories.	/media/reagent_images/8_tube_pcr_strip_02_ml.webp	\N	category-1780539818236	PCR Consumables	reagent	\N	\N	\N	BA802002	In Stock	$218	\N	f	f	f	f	{"• Low-Profile Thin-Wall Design – 0.2 mL capacity with ultra-thin 0.2 mm walls enables rapid, uniform heat transfer for efficient thermal cycling and reproducible PCR results.","• Optically Clear Flat Caps – Separate transparent caps provide excellent optical clarity for real-time PCR fluorescence detection and feature writable surfaces for easy sample identification.","• High-Purity, Contamination-Free Manufacturing – Certified free of DNase, RNase, human DNA, PCR inhibitors, and detectable DNA contamination; tested non-pyrogenic for sensitive molecular biology applications.","• Secure Sealing Performance – Tight-fitting caps help minimize evaporation and reduce the risk of sample cross-contamination during PCR and qPCR workflows.","• Flexible Strip Configuration – Robust inter-strip connections ensure stability during handling, while allowing easy separation into customized tube configurations as needed.","• Consistent Amplification Performance – Precision-molded tubes provide uniform wall thickness and reliable thermal conductivity across all wells.","• Broad Instrument Compatibility – Compatible with most standard PCR and real-time qPCR thermal cyclers commonly used in research, diagnostic, and clinical laboratories.","• Cleanroom Manufactured – Produced in an ISO Class 8 cleanroom environment to ensure exceptional product quality and batch-to-batch consistency."}	{"10 Packs/Case (1250 Strips)"}	{}		• PCR and Real-Time qPCR Analysis – Ideal for DNA amplification, quantitative gene expression studies, and pathogen detection assays.\n\n• Genomics and Genetic Research – Suitable for gene expression profiling, genotyping, SNP analysis, and other genomics applications.\n\n• Mutation Detection and Molecular Diagnostics – Supports mutation screening, genetic testing, and clinical diagnostic workflows requiring high sensitivity and reproducibility.\n\n• Molecular Biology and Cloning Procedures – Commonly used in cloning, plasmid analysis, DNA/RNA processing, and routine molecular biology experiments.\n\n• Next-Generation Sequencing (NGS) Sample Preparation – Ideal for nucleic acid preparation, library construction, amplification, and other pre-sequencing workflows.\n\n• Academic, Clinical, and Biotechnology Research – Widely used in research laboratories, diagnostic facilities, pharmaceutical development, and biotechnology applications.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.667066+00	2026-06-19 21:10:54.632853+00
+45	kod-multi-epi-dna-polymerase	KOD Multi & Epi DNA polymerase	High-fidelity DNA polymerase designed for amplification from challenging templates, including epigenetically modified DNA.	/media/reagent_images/dna_polymerase_enzyme.png	\N	category-1765063995229	PCR Enzymes	reagent	\N	\N	\N	KOD-401	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.930085+00	2026-06-19 21:10:54.330616+00
+47	kod-one-pcr-master-mix	KOD One PCR Master Mix	Ready-to-use 2x PCR master mix containing KOD One DNA polymerase for ultra-fast PCR.	/media/reagent_images/dna_polymerase_enzyme.png	\N	category-1765063995229	PCR Master Mixes	reagent	\N	\N	\N	KOD-301	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.941155+00	2026-06-19 21:10:54.338383+00
+38	thunderbird-probe-qpcr-mix	THUNDERBIRD Probe qPCR Mix	High-performance 2x master mix designed for real-time PCR using TaqMan probes.	/media/reagent_images/sybr_green_qpcr_master_mix.jpg	\N	category-1765063995229	qPCR Reagents	reagent	\N	\N	\N	QPS-101	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.878533+00	2026-06-19 21:10:54.34243+00
+41	thunderbird-next-sybr-qpcr-mix	THUNDERBIRD Next SYBR qPCR Mix	Next-generation SYBR Green real-time PCR mix with fast cycling capabilities and high specificity.	/media/reagent_images/sybr_green_qpcr_master_mix.jpg	\N	category-1765063995229	qPCR Reagents	reagent	\N	\N	\N	QPX-201	In Stock	Contact for Quote	\N	f	f	f	f	{}	{}	{}	\N	\N	\N	{}	{}	{}	\N	\N	f	\N	\N	\N	2026-06-19 21:09:25.898697+00	2026-06-19 21:10:54.352525+00
+103	custom-1780975837520	200 μL Universal Pipette Tips – Filtered – Low Retention	Filtered Low-Retention Universal Pipette Tips\n\nOur Filtered Low-Retention Universal Pipette Tips are manufactured from high-quality polypropylene (PP) to provide reliable performance, precision liquid handling, and enhanced sample protection for a wide range of laboratory workflows. Designed for both single-channel and multi-channel pipettes, these tips offer broad compatibility with most major pipette brands, including Eppendorf, Gilson, Thermo Fisher, Sartorius, Biohit, Oxford, DLAB, and other standard pipette systems.\n\nFeaturing an integrated aerosol barrier filter and low-retention surface technology, these tips help minimize the risk of cross-contamination, liquid backflow, and pipette contamination while maximizing sample recovery. The low-retention design reduces liquid adhesion, improving pipetting accuracy and consistency, particularly when working with valuable or low-volume samples.\n\nAs one of the most widely used pipette tip formats in research, clinical, and diagnostic laboratories, these universal filtered tips provide a cost-effective solution for routine liquid handling applications while maintaining high standards of quality and performance. Please note that Rainin pipettes require specially designed tips and are not compatible with standard universal pipette tips. Users of less common pipette brands are encouraged to verify compatibility prior to purchase.	/media/reagent_images/200_μl_universal_pipette_tips_filtered_low_retention.webp	\N	category-1780539818236	Pipette Tips	reagent	\N	\N	\N	BA800609	In Stock	$250	\N	f	f	f	f	{"• Low-Retention Surface for Enhanced Sample Recovery and Pipetting Accuracy","• Integrated Aerosol Barrier Filter Helps Prevent Cross-Contamination and Liquid Backflow","• Universal Compatibility with Most Major Single- and Multi-Channel Pipettes","• Manufactured in a Class 100,000 Cleanroom Environment","• Certified DNase-Free, RNase-Free, and Non-Pyrogenic","• Sterile and Ready-to-Use for Sensitive Laboratory Applications","• CE Marked and ISO 13485:2016 Certified","• Compliant with IVDD 98/79/EC Requirements","• Consistent Quality and Reliable Performance for Routine and Precision Liquid Handling","• Ideal for PCR, qPCR, Molecular Biology, Cell Culture, and Diagnostic Workflows"}	{"10 Racks/Box; 5 Boxes/Case (4800Tips/Case)"}	{}		• Accurate Liquid Transfer and Precision Pipetting\n\n• Reagent, Buffer, and Sample Preparation\n\n• PCR, qPCR, and Nucleic Acid Workflows\n\n• Sample Dispensing into Microplates, PCR Plates, and Reaction Tubes\n\n• Cell Culture and Microbiology Applications\n\n• Electrophoresis Gel Loading\n\n• ELISA and Diagnostic Assays\n\n• Supernatant Transfer and Phase Separation Procedures\n\n• High-Throughput Screening and Automated Liquid Handling\n\n• Routine Research, Clinical, and Analytical Laboratory Operations	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.753828+00	2026-06-19 21:10:54.645764+00
+75	custom-1781002018606	100ml Sterile Disposable Reagent Reservoir / PS solution bin	BioArk Sterile Disposable Reagent Reservoirs are designed to provide convenient and contamination-free reagent handling for laboratory liquid transfer applications. Manufactured from high-quality polystyrene (PS), these single-channel reservoirs offer excellent chemical compatibility and stability for routine use with manual and multichannel pipettes.\n\nThe reservoir features a precision-molded V-shaped bottom that maximizes reagent recovery by directing liquid toward the center of the basin, helping reduce dead volume and minimize reagent waste. This design is particularly beneficial when working with valuable samples, enzymes, antibodies, and other laboratory reagents.\n\nEach reservoir is individually wrapped and sterile, ensuring aseptic handling and reducing the risk of contamination in sensitive workflows. The disposable, single-use design eliminates the need for cleaning and supports efficient laboratory operations. Ideal for molecular biology, diagnostics, cell culture, ELISA, PCR setup, and general liquid handling applications, BioArk reagent reservoirs provide a reliable and cost-effective solution for everyday laboratory use.	/media/reagent_images/100ml_sterile_disposable_reagent_reservoir_ps_solution_bin.webp	\N	category-1780539818236	Cell Culture Accessories	reagent	\N	\N	\N	BA251100	In Stock	$50	\N	f	f	f	f	{"• Manufactured from High-Quality Polystyrene (PS)","• Minimizes Dead Volume and Reduces Reagent Waste","• Single-Channel Reservoir Compatible with Manual and Multichannel Pipettes","• Individually Wrapped and Sterile for Contamination-Free Use","• Disposable Design Eliminates Cleaning and Cross-Contamination Risks","• White Reservoir Color Enhances Liquid Visibility","• Suitable for Sensitive Molecular Biology and Diagnostic Workflows","• Ready-to-Use for Improved Laboratory Efficiency"}	{"1Piece/Pack; 50 Packs/Case"}	{}		• Supports reagent dispensing and liquid transfer in routine laboratory workflows.\n\n• Facilitates sample preparation, dilution, and mixing procedures for molecular biology and diagnostic applications.\n\n• Ideal for PCR, qPCR, and nucleic acid extraction workflows requiring contamination-free reagent handling.\n\n• Enables efficient use of multichannel pipettes in high-throughput screening and assay preparation.\n\n• Suitable for ELISA, immunoassays, and other plate-based analytical procedures.\n\n• Provides convenient handling of enzymes, antibodies, buffers, media, and other laboratory reagents.\n\n• Supports cell culture, microbiology, and biotechnology research applications.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.552303+00	2026-06-19 21:10:54.605153+00
+76	custom-1781001839625	55 mL Sterile Disposable Reagent Reservoir / PS solution Bin	BioArk Sterile Disposable Reagent Reservoirs are designed to provide convenient and contamination-free reagent handling for laboratory liquid transfer applications. Manufactured from high-quality polystyrene (PS), these single-channel reservoirs offer excellent chemical compatibility and stability for routine use with manual and multichannel pipettes.\n\nThe reservoir features a precision-molded V-shaped bottom that maximizes reagent recovery by directing liquid toward the center of the basin, helping reduce dead volume and minimize reagent waste. This design is particularly beneficial when working with valuable samples, enzymes, antibodies, and other laboratory reagents.\n\nEach reservoir is individually wrapped and sterile, ensuring aseptic handling and reducing the risk of contamination in sensitive workflows. The disposable, single-use design eliminates the need for cleaning and supports efficient laboratory operations. Ideal for molecular biology, diagnostics, cell culture, ELISA, PCR setup, and general liquid handling applications, BioArk reagent reservoirs provide a reliable and cost-effective solution for everyday laboratory use.	/media/reagent_images/55_ml_sterile_disposable_reagent_reservoir_ps_solution_bin.jpg	\N	category-1780539818236	Cell Culture Accessories	reagent	\N	\N	\N	BA250051	In Stock	$79	\N	f	f	f	f	{"• Manufactured from High-Quality Polystyrene (PS)","• 55 mL Capacity for Routine Reagent Handling Applications","• V-Shaped Bottom Design for Maximum Reagent Recovery","• Minimizes Dead Volume and Reduces Reagent Waste","• Single-Channel Reservoir Compatible with Manual and Multichannel Pipettes","• Individually Wrapped and Sterile for Contamination-Free Use","• Disposable Design Eliminates Cleaning and Cross-Contamination Risks","• White Reservoir Color Enhances Liquid Visibility","• Suitable for Sensitive Molecular Biology and Diagnostic Workflows","• Ready-to-Use for Improved Laboratory Efficiency"}	{"1Piece/Pack; 100Packs/Case"}	{}		• Supports reagent dispensing and liquid transfer in routine laboratory workflows.\n\n• Facilitates sample preparation, dilution, and mixing procedures for molecular biology and diagnostic applications.\n\n• Ideal for PCR, qPCR, and nucleic acid extraction workflows requiring contamination-free reagent handling.\n\n• Enables efficient use of multichannel pipettes in high-throughput screening and assay preparation.\n\n• Suitable for ELISA, immunoassays, and other plate-based analytical procedures.\n\n• Provides convenient handling of enzymes, antibodies, buffers, media, and other laboratory reagents.\n\n• Supports cell culture, microbiology, and biotechnology research applications.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.558475+00	2026-06-19 21:10:54.615198+00
+97	custom-1780977833573	25 mL Individually Wrapped Serological Pipette, Filtered	BioArk 25 mL Polystyrene Sterile Serological Pipettes are designed to provide accurate liquid measurement and transfer for a wide range of laboratory applications. Manufactured from high-clarity polystyrene, these disposable pipettes offer excellent visibility for precise volume reading and reliable performance in cell culture, molecular biology, microbiology, clinical diagnostics, and pharmaceutical research. Their precision-molded construction ensures consistent liquid handling and dependable results across routine laboratory workflows.\n\nEach pipette is individually wrapped and sterilized by gamma irradiation or E-beam processing to maintain sterility and support aseptic techniques. Certified RNase-free, DNase-free, and non-pyrogenic, these pipettes help minimize the risk of sample contamination, making them suitable for sensitive biological and diagnostic applications. Clear, bidirectional graduations and highly visible color-coded markings enable fast volume identification and accurate dispensing, improving workflow efficiency and user convenience.\n\nDesigned for seamless compatibility with most standard pipette controllers and pipette aids, Biofargo serological pipettes provide a convenient, cost-effective solution for daily laboratory liquid handling. Their combination of accuracy, sterility, and ease of use makes them an ideal choice for research, clinical, and industrial laboratory environments.	/media/reagent_images/25_ml_individually_wrapped_serological_pipette_filtered.webp	\N	category-1780539818236	Serological Pipettes	reagent	\N	\N	\N	BA804025	In Stock	$385	\N	f	f	f	f	{"• Sterile and Ready for Immediate Use – Individually packaged and sterilized by E-beam or gamma irradiation to ensure aseptic handling and minimize contamination risk.","• Precise Liquid Measurement and Transfer – Calibrated 2 mL capacity with clear, bidirectional graduations for accurate aspiration and dispensing.","• Premium Virgin Polystyrene Construction – Manufactured from high-clarity polystyrene for excellent transparency, reliable performance, and enhanced chemical resistance.","• Certified Free of Biological Contaminants – RNase-free, DNase-free, non-pyrogenic, and non-cytotoxic, making the pipettes suitable for sensitive research and diagnostic applications.","• Easy Volume Identification – Distinctive color-coded markings enable rapid size recognition and improve laboratory workflow efficiency.","• Broad Instrument Compatibility – Designed to fit most standard pipette controllers and pipette aids commonly used in research, clinical, and industrial laboratories.","• Single-Use Disposable Design – Eliminates cleaning requirements and helps reduce sample carryover, cross-contamination, and experimental variability.","• Optimized for Laboratory Workflows – Ideal for cell culture, microbiology, molecular biology, clinical diagnostics, and general liquid handling applications."}	{"6 Packs/Case(600 Pcs/Case)"}	{}		• Cell Culture and Tissue Culture Workflows – Accurate transfer of culture media, buffers, reagents, and cell suspensions in routine cell-based applications.\n\n• Clinical and Diagnostic Testing – Reliable liquid handling for sample preparation, assay setup, and laboratory diagnostic procedures.\n\n• Biotechnology and Pharmaceutical Research – Suitable for drug discovery, bioprocess development, formulation studies, and other research applications.\n\n• Microbiology and Bacteriology Studies – Precise measurement and transfer of microbial cultures, growth media, and laboratory reagents.\n\n• Sample Preparation and Reagent Mixing – Efficient handling, dilution, mixing, and dispensing of biological and chemical solutions.\n\n• Molecular Biology and Life Science Research – Ideal for routine laboratory workflows involving nucleic acids, proteins, enzymes, and other biological samples.\n\n• Quality Control and Analytical Laboratories – Consistent liquid transfer for testing, validation, and quality assurance procedures across research and manufacturing environments.	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.708807+00	2026-06-19 21:10:54.637144+00
+101	custom-1780976114258	1000 μL Universal Pipette Tips –Non-Filtered	1000 μL Universal Pipette Tips – Non-Filtered\n\nOur 1000 μL Universal Pipette Tips are manufactured from high-quality polypropylene (PP) to provide reliable performance, precision liquid handling, and consistent results for a wide range of laboratory workflows. Designed for both single-channel and multi-channel pipettes, these tips offer broad compatibility with most major pipette brands, including Eppendorf, Gilson, Thermo Fisher, Sartorius, Biohit, Oxford, DLAB, and other standard pipette systems.\n\nFeaturing low-retention surface technology, these tips help minimize sample loss by reducing liquid adhesion to the tip surface, resulting in improved sample recovery and enhanced pipetting accuracy. The high-quality manufacturing process ensures a secure pipette fit, consistent dispensing performance, and dependable operation for routine laboratory applications.\n\nAs one of the most commonly used pipette tip formats in research, academic, clinical, and industrial laboratories, these universal non-filtered tips provide a cost-effective solution for everyday liquid handling tasks while maintaining high standards of quality and performance. Please note that Rainin pipettes require specially designed tips and are not compatible with standard universal pipette tips. Users of less common pipette brands are encouraged to verify compatibility prior to purchase.	/media/reagent_images/1000_μl_universal_pipette_tips_non_filtered.jpg	\N	category-1780539818236	Pipette Tips	reagent	\N	\N	\N	BA860040	In Stock	$286	\N	f	f	f	f	{"• Low-Retention Surface for Enhanced Sample Recovery and Pipetting Accuracy","• Integrated Aerosol Barrier Filter Helps Prevent Cross-Contamination and Liquid Backflow","• Universal Compatibility with Most Major Single- and Multi-Channel Pipettes","• Manufactured in a Class 100,000 Cleanroom Environment","• Certified DNase-Free, RNase-Free, and Non-Pyrogenic","• Sterile and Ready-to-Use for Sensitive Laboratory Applications","• CE Marked and ISO 13485:2016 Certified","• Compliant with IVDD 98/79/EC Requirements","• Consistent Quality and Reliable Performance for Routine and Precision Liquid Handling","• Ideal for PCR, qPCR, Molecular Biology, Cell Culture, and Diagnostic Workflows"}	{"10 Racks/Box; 5 Boxes/Case"}	{}		• Accurate Liquid Transfer and Precision Pipetting\n\n• Reagent, Buffer, and Sample Preparation\n\n• PCR, qPCR, and Nucleic Acid Workflows\n\n• Sample Dispensing into Microplates, PCR Plates, and Reaction Tubes\n\n• Cell Culture and Microbiology Applications\n\n• Electrophoresis Gel Loading\n\n• ELISA and Diagnostic Assays\n\n• Supernatant Transfer and Phase Separation Procedures\n\n• High-Throughput Screening and Automated Liquid Handling\n\n• Routine Research, Clinical, and Analytical Laboratory Operations	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.73784+00	2026-06-19 21:10:54.641745+00
+105	custom-1780975196257	10 μL Universal Pipette Tips – Filtered – Low Retention	Filtered Low-Retention Universal Pipette Tips\n\nOur Filtered Low-Retention Universal Pipette Tips are manufactured from high-quality polypropylene (PP) to provide reliable performance, precision liquid handling, and enhanced sample protection for a wide range of laboratory workflows. Designed for both single-channel and multi-channel pipettes, these tips offer broad compatibility with most major pipette brands, including Eppendorf, Gilson, Thermo Fisher, Sartorius, Biohit, Oxford, DLAB, and other standard pipette systems.\n\nFeaturing an integrated aerosol barrier filter and low-retention surface technology, these tips help minimize the risk of cross-contamination, liquid backflow, and pipette contamination while maximizing sample recovery. The low-retention design reduces liquid adhesion, improving pipetting accuracy and consistency, particularly when working with valuable or low-volume samples.\n\nAs one of the most widely used pipette tip formats in research, clinical, and diagnostic laboratories, these universal filtered tips provide a cost-effective solution for routine liquid handling applications while maintaining high standards of quality and performance. Please note that Rainin pipettes require specially designed tips and are not compatible with standard universal pipette tips. Users of less common pipette brands are encouraged to verify compatibility prior to purchase.	/media/reagent_images/10_μl_universal_pipette_tips_filtered_low_retention.jpg	\N	category-1780539818236	Pipette Tips	reagent	\N	\N	\N	BA800109	In Stock	$215	\N	f	f	f	f	{"• Low-Retention Surface for Enhanced Sample Recovery and Pipetting Accuracy","• Integrated Aerosol Barrier Filter Helps Prevent Cross-Contamination and Liquid Backflow","• Universal Compatibility with Most Major Single- and Multi-Channel Pipettes","• Manufactured in a Class 100,000 Cleanroom Environment","• Certified DNase-Free, RNase-Free, and Non-Pyrogenic","• Sterile and Ready-to-Use for Sensitive Laboratory Applications","• CE Marked and ISO 13485:2016 Certified","• Compliant with IVDD 98/79/EC Requirements","• Consistent Quality and Reliable Performance for Routine and Precision Liquid Handling","• Ideal for PCR, qPCR, Molecular Biology, Cell Culture, and Diagnostic Workflows"}	{"10 Racks/Box; 5 Boxes/Case (4800Tips/Case)"}	{"10 Racks/Box; 5 Boxes/Case (4800Tips/Case)": "$215"}		• Accurate Liquid Transfer and Precision Pipetting\n\n• Reagent, Buffer, and Sample Preparation\n\n• PCR, qPCR, and Nucleic Acid Workflows\n\n• Sample Dispensing into Microplates, PCR Plates, and Reaction Tubes\n\n• Cell Culture and Microbiology Applications\n\n• Electrophoresis Gel Loading\n\n• ELISA and Diagnostic Assays\n\n• Supernatant Transfer and Phase Separation Procedures\n\n• High-Throughput Screening and Automated Liquid Handling\n\n• Routine Research, Clinical, and Analytical Laboratory Operations	\N	{}	{}	{}	https://store.bioarktech.com/cart	\N	f	\N	\N	\N	2026-06-19 21:10:40.766499+00	2026-06-19 21:10:54.649983+00
 \.
 
 
 --
--- Data for Name: product_inventory; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: product_category; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.product_category (category_id, category_name, description, priority, external_id, product_type) FROM stdin;
+1	CRISPR-Cas9	CRISPR is a powerful gene-editing technology that can precisely modify DNA sequences within living organisms.	1	\N	\N
+2	RNAi	RNA interference (RNAi) regulates gene expression by silencing specific mRNA molecules, thereby preventing the production of certain proteins.	1	\N	\N
+3	Mammalian Cloning	The custom gene is regulated and expressed under a mammalian-type promoter and transcriptional components.	1	\N	\N
+4	Prokaryotic Cloning	The custom gene is regulated and expressed under a prokaryotic-type promoter and transcriptional components.	1	\N	\N
+\.
+
+
+--
+-- Data for Name: product_inventory; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.product_inventory (inventory_id, units_in_stock, units_on_order, loaded, currency, manufacturer) FROM stdin;
@@ -42372,7 +42608,7 @@ COPY public.product_inventory (inventory_id, units_in_stock, units_on_order, loa
 
 
 --
--- Data for Name: product_mode; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: product_mode; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.product_mode (id, url, title, content, image) FROM stdin;
@@ -42390,39 +42626,7 @@ COPY public.product_mode (id, url, title, content, image) FROM stdin;
 
 
 --
--- Data for Name: products; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.products (product_id, product_sku, product_name, description, function_type_code, structure_type_code, promoter_code, property_code, protein_tag_code, fluorescene_marker_code, selection_marker_code, bacterial_marker_code, delivery_format_code, list_price, unit_price, unit_size, discount_code, ready_status, union_id, ship_condition, target_sequence, units, units_in_stock, on_discount) FROM stdin;
-1	CAT-FXD00A-XXXXXXk	CRISPRa AIO Kit		CA	T	F	X	D	0	0	A	k	249.00	124.00	5ug		Yes	113	Room Temp	XXXXXX	Kits	20	t
-2	CAM-FXD0PC-XXXXXXk	CRISPRa Lenti-AIO Kit		CA	M	F	X	D	0	P	C	k	249.00	124.00	5ug		Yes	114	Room Temp	XXXXXX	Kits	20	t
-3	CIT-FXD0PA-XXXXXXk	CRISPRi AIO Kit		CI	T	F	X	D	0	P	A	k	249.00	124.00	5ug		Yes	115	Room Temp	XXXXXX	Kits	20	t
-4	CIL-FXD0BC-XXXXXXk	CRISPRi Lenti Kit		CI	L	F	X	D	0	B	C	k	249.00	124.00	5ug		Yes	116	Room Temp	XXXXXX	Kits	20	t
-5	CIM-FXD0BC-XXXXXXk	CRISPRi Lenti-AIO Kit		CI	M	F	X	D	0	B	C	k	249.00	124.00	5ug		Yes	117	Room Temp	XXXXXX	Kits	20	t
-6	COM-FXD0PC-XXXXXXk	CRISPR KN Lenti-AIO Kit	\N	CO	M	F	X	D	0	P	C	k	249.00	124.00	5ug	\N	Yes	118	Room Temp	XXXXXX	Kits	20	t
-7	CRT-FXD0PA-XXXXXXk	CRISPR KD AIO Kit		CR	T	F	X	D	0	P	A	k	249.00	124.00	5ug		Yes	119	Room Temp	XXXXXX	Kits	20	t
-8	CRM-FXD0PC-XXXXXXk	CRISPR KD Lenti-AIO Kit		CR	M	F	X	D	0	P	C	k	249.00	124.00	5ug		Yes	120	Room Temp	XXXXXX	Kits	20	t
-9	SHL-UX00PC-XXXXXXk	RNAi Lenti Kit		SH	L	U	X	0	0	P	C	k	249.00	124.00	5ug		Yes	121	Room Temp	XXXXXX	Kits	20	t
-10	EMS-CXDGNA-XXXXXXk	OverExp Std Kit	\N	EM	S	C	X	D	G	0	A	k	249.00	124.00	5ug	\N	Yes	164	Room Temp	XXXXXX	Kits	20	t
-11	EML-CXD00C-XXXXXXk	OverExp Lenti Kit	\N	EM	L	C	X	D	0	0	C	k	249.00	124.00	5ug	\N	Yes	173	Room Temp	XXXXXX	Kits	20	t
-12	IMT-DX0GNA-XXXXXXk	Inducible AIO Kit		IM	T	D	X	0	G	N	A	k	249.00	124.00	5ug		Yes	124	Room Temp	XXXXXX	Kits	20	t
-13	IMM-DXD0PC-XXXXXXk	Inducible Lenti-AIO Kit		IM	M	D	X	D	0	P	C	k	249.00	124.00	5ug		Yes	125	Room Temp	XXXXXX	Kits	20	t
-14	EMS-CXDGNA-000000k	OverExp Std Ctrl Kit, vector type	\N	EM	S	C	X	D	G	0	A	k	249.00	124.00	5ug	\N	Yes	172	Room Temp	000000	Kits	20	t
-15	IMT-DX0GNA-000000k	Inducible AIO Ctrl Kit, vector type		IM	T	D	X	0	G	N	A	k	249.00	124.00	5ug		Yes	127	Room Temp	000000	Kits	20	t
-16	EML-CXDG0C-000000k	OverExp Lenti Ctrl Kit, vector type	\N	EM	L	C	X	D	G	0	A	k	249.00	124.00	5ug	\N	Yes	171	Room Temp	000000	Kits	20	t
-17	IMM-DXDGPC-000000k	Inducible Lenti-AIO Ctrl Kit, vector type		IM	M	D	X	0	G	N	A	k	249.00	124.00	5ug		Yes	129	Room Temp	000000	Kits	20	t
-18	EML-CXD0PC-LARGETk	OverExp Lenti Kit--Gene LargeT, vector type	\N	EM	L	C	X	D	0	P	C	k	599.00	299.00	5ug	\N	Yes	170	Room Temp	LARGET	Kits	20	t
-19	EML-CXD0BC-LARGETk	OverExp Lenti Kit--Gene LargeT, vector type	\N	EM	L	C	X	D	0	B	C	k	599.00	299.00	5ug	\N	Yes	169	Room Temp	LARGET	Kits	20	t
-20	EML-CXDG0C-000000l	OverExp Lenti Ctrl Kit, lentivirus type	\N	EM	L	C	X	D	G	0	C	l	180.00	180.00	1 x 10^7 IU/ml	\N	Yes	168	Ship with Dry ice	000000	Kits	20	t
-21	IMM-DXDGPC-000000l	Inducible Lenti-AIO Ctrl Kit, lentivirus type	\N	IM	M	P	X	D	G	P	C	l	180.00	180.00	1 x 10^7 IU/ml	\N	Yes	148	Ship with Dry ice	000000	Kits	20	t
-22	EML-CXD0PC-LARGETl	OverExp Lenti Kit--Gene LargeT, lentivirus type	\N	EM	L	C	X	D	0	P	C	l	280.00	280.00	1 x 10^7 IU/ml	\N	Yes	167	Ship with Dry ice	LARGET	Kits	20	t
-23	EML-CXD0BC-LARGETl	OverExp Lenti Kit--Gene LargeT, lentivirus type	\N	EM	L	C	X	D	0	B	C	l	280.00	280.00	1 x 10^7 IU/ml	\N	Yes	166	Ship with Dry ice	LARGET	Kits	20	t
-24	EML-CXD0PC-LARGETc	OverExp Lenti Kit--Gene LargeT, cell type	\N	EM	L	C	X	D	0	P	C	c	545.00	545.00	1 x 10^6 mL	\N	Yes	165	Dry ice	LARGET	Tubes	10	t
-\.
-
-
---
--- Data for Name: products_union; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: products_union; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.products_union (id, created_at, product_id) FROM stdin;
@@ -42547,7 +42751,7 @@ COPY public.products_union (id, created_at, product_id) FROM stdin;
 
 
 --
--- Data for Name: promoters; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: promoters; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.promoters (promoter_id, promoter_name, promoter_code, priority, enabled, description) FROM stdin;
@@ -42558,7 +42762,7 @@ COPY public.promoters (promoter_id, promoter_name, promoter_code, priority, enab
 
 
 --
--- Data for Name: promoters_special_case; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: promoters_special_case; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.promoters_special_case (promoter_id, promoter_name, promoter_code, function_type_symbol, priority, enabled, description) FROM stdin;
@@ -42575,7 +42779,7 @@ COPY public.promoters_special_case (promoter_id, promoter_name, promoter_code, f
 
 
 --
--- Data for Name: property; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: property; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.property (property_id, property_name, property_code, priority, enabled, description) FROM stdin;
@@ -42584,7 +42788,7 @@ COPY public.property (property_id, property_name, property_code, priority, enabl
 
 
 --
--- Data for Name: protein_tags; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: protein_tags; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.protein_tags (protein_tag_id, protein_tag_name, protein_tag_code, priority, enabled, description) FROM stdin;
@@ -42596,7 +42800,7 @@ COPY public.protein_tags (protein_tag_id, protein_tag_name, protein_tag_code, pr
 
 
 --
--- Data for Name: quotes; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: quotes; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.quotes (id, request_date, quote_number, quote_file, description, shelf_status, quantity, unit_size, price, total_price, work_period_days, user_id, product_name, product_sku, url) FROM stdin;
@@ -42612,7 +42816,7 @@ COPY public.quotes (id, request_date, quote_number, quote_file, description, she
 
 
 --
--- Data for Name: selection_markers; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: selection_markers; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.selection_markers (selection_marker_id, selection_marker_name, selection_marker_code, priority, enabled, description) FROM stdin;
@@ -42624,21 +42828,24 @@ COPY public.selection_markers (selection_marker_id, selection_marker_name, selec
 
 
 --
--- Data for Name: service_mode; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: service_mode; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.service_mode (id, url, title, content, image) FROM stdin;
-1	custom-cloning	Custom Cloning Services	<p dir="ltr">At BioArk Technologies, we offer comprehensive plasmid construction services designed to meet the diverse needs of researchers in molecular biology, genetics, and related fields. Our service is enhanced by an intuitive web platform that allows you to actively participate in the plasmid design process, ensuring your vectors are precisely tailored to your specifications.</p>\r\n<p dir="ltr">🔬 Why Choose Our Vector Cloning Service?<br>✔ Custom Plasmid Design &ndash; Tailored to your specific research needs<br>✔ Advanced Technologies &ndash; Leveraging technical expertise and innovative solutions<br>✔ Efficient Process &ndash; Streamlined for fast and reliable results<br>✔ Customer Collaboration &ndash; A web-based platform for seamless design involvement</p>\r\n<p dir="ltr">Whether you're conducting gene expression studies, genetic modifications, or other molecular biology applications, BioArk Technologies provides the precision and flexibility your research demands.</p>\r\n<p dir="ltr">📩 Contact us today at Support@bioarktech.com to learn more and start your project!</p>\r\n<p dir="ltr">Service Offerings:</p>\r\n<ol>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Comprehensive Project Support:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="2">\r\n<p dir="ltr" role="presentation">Assist in designing custom vectors tailored to your project&rsquo;s requirements, including vector structure, promoter selection, gene insertion sites, and tag additions.</p>\r\n</li>\r\n</ul>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Subcloning Service:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="2">\r\n<p dir="ltr" role="presentation">Adapt your vector to fit our specific viral systems, including lentivirus vectors, dual promoter vectors, inducible systems, and CRISPR platforms.</p>\r\n</li>\r\n</ul>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Fragment Synthesis and Cloning:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="2">\r\n<p dir="ltr" role="presentation">Offer high-quality fragment synthesis at competitive prices and help you clone your fragment into custom vectors or our vector library.</p>\r\n</li>\r\n</ul>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Plasmid Delivery and Expression:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Provide downstream services for plasmid construction, including lentivirus packaging and stable cell line development.</p>\r\n</li>\r\n</ul>\r\n</li>\r\n</ol>	Service-1-Image.png
-2	lentivirus-package	Lentivirus Package Services	<h1 dir="ltr">Overview</h1>\r\n<p dir="ltr">Lentivirus packaging services provide researchers with high-efficiency lentiviral vectors for gene delivery into a wide range of target cells, including both dividing and non-dividing cells. Lentiviral vectors, derived from the Human Immunodeficiency Virus (HIV), are widely utilized in gene therapy, functional genomics, stable cell line development, and various research fields, including high-throughput gene function screening and transgenic animal model development.</p>\r\n<p dir="ltr">At BioArk Technologies, we specialize in high-titer, ready-to-use lentiviral packaging designed for gene expression, knockdown, and CRISPR genome editing. Our service ensures:<br>✅ High transduction efficiency<br>✅ Low cytotoxicity<br>✅ Batch-to-batch consistency</p>\r\n<h1 dir="ltr">Technology Background</h1>\r\n<p dir="ltr">1. Three-Plasmid System (2nd Generation)</p>\r\n<p dir="ltr">The most common method for lentivirus production, this system consists of:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Transfer Plasmid</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Packaging Plasmid (Gag, Pol, and Rev integrated into a single vector)</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Envelope Plasmid</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">🔹 If you require 2nd-generation lentivirus packaging, please contact us at <a href="mailto:support@bioarktech.com">support@bioarktech.com</a>.</p>\r\n<p dir="ltr">2. Four-Plasmid System (3rd Generation)</p>\r\n<p dir="ltr">This system consists of:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Transfer Plasmid</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Two Packaging Plasmids (one encoding Gag/Pol and another encoding Rev)</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Envelope Plasmid</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">While the 3rd-generation system enhances safety compared to the 2nd generation, it generally produces lower viral titers. By default, we use the 3rd-generation system, unless otherwise requested by the customer.</p>\r\n<h1 dir="ltr">Service Offerings</h1>\r\n<p dir="ltr">1. Project Support</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Assistance in virus system selection and design</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Customization of lentiviral constructs to include specific genes, regulatory elements, or tags</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">2. Lentivirus Subcloning</p>\r\n<p dir="ltr">To enhance functional detection, we offer gene subcloning into the following constructs:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Lenti-mini GFP construct (~330bp): A compact mini-GFP tag used for rapid expression analysis post-transduction.</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Lenti-Selection Marker Constructs: Includes Puromycin, Blasticidin (BSD), Neomycin, etc., for stable cell line screening.</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">3. Lentivirus Packaging</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Production of high-titer lentiviral stocks using optimized protocols for maximum yield and purity</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Comprehensive quality control for titer, purity, and functionality</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">4. Functional Testing</p>\r\n<p dir="ltr">Available assays based on construct type and project requirements, including:<br>✅ qPCR titer quantification<br>✅ Fluorescence detection<br>✅ Immunofluorescence analysis<br>✅ Western blot validation</p>\r\n<p dir="ltr">5. Advanced Endotoxin Removal</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Our plasmids are endotoxin-free, significantly reducing endotoxin levels in viral preparations</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">For industrial-scale production, we offer endotoxin removal using Endotoxin Removal Column Kits</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">📩 For inquiries or custom requests, contact us at support@bioarktech.com.</p>	Service-2-Image.png
-3	stable-cell-line	Stable Cell Line Services	<p dir="ltr">At BioArk Technologies, we specialize in constructing stable cell lines tailored to meet your specific research needs. Whether you&rsquo;re working with cancer cell lines or adherent cell lines, we offer a range of services including gene overexpression, knockout, knock-in, and deletion.</p>\r\n<p dir="ltr">Our affordable, reliable, and high-quality solutions will accelerate your research and deliver the results you need. Partner with us to drive innovation in your projects today!</p>\r\n<h1 dir="ltr">Service Content</h1>\r\n<p dir="ltr">1. Vector Construction<br>We offer comprehensive design and construction of plasmid vectors tailored to your genetic modification needs, with selectable markers for efficient screening. Our vector construction services include:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Gene Overexpression</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Targeted Gene Overexpression at AAVS1 or other safe harbor sites</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Inducible Gene Overexpression</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Gene Knockout via CRISPR</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Gene Deletion using double CRISPR cut sites</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Gene Tagging Services</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">2. Cell Line Transfection<br>We provide various transfection methods to suit different cell types and experimental requirements, including:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Lipofection: Ideal for adherent cells.</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Electroporation: For difficult-to-transfect cell types.</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Viral Transduction: Leveraging lentiviruses or AAVs to efficiently deliver genetic material into target cells.</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">3. Cell Line Pool<br>Our services include the development of stable cell lines, customized to meet the unique needs of your project. We work with a wide variety of cell types, ensuring functional characteristics that align with your research goals.</p>\r\n<p dir="ltr">4. Selection and Expansion<br>We apply selective pressure, such as antibiotic selection, to isolate successfully transfected cells. We then expand the selected clones in controlled environments to ensure consistency and stability.</p>\r\n<p dir="ltr">5. Validation of Stable Cell Lines<br>We provide thorough characterization of generated cell lines, including:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Genomic Analysis: Verification of gene integration through PCR or sequencing.</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Expression Analysis: Evaluation of target gene expression using techniques such as qPCR, Western blotting, or flow cytometry.</p>\r\n</li>\r\n</ul>	
-9	genome-editing-services	Genome Editing Services	<p dir="ltr">At BioArk Technologies, we offer cutting-edge CRISPR-based solutions tailored to your specific research needs. Our services include:</p>\r\n<ol>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation"><strong>Targeted Overexpression with CRISPR</strong><br>Our targeted overexpression service allows for the precise and controlled expression of your gene of interest at specific genomic loci, including safe harbor sites like AAVS1. Compared with Lentivirus induced overexpression, targeted overexpression can provide more precision regulation and more safety and controllable knock-in effects. This service is ideal for:</p>\r\n</li>\r\n</ol>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Inducible or constitutive overexpression of target genes</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Ensuring high-level, stable expression in your cell line</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Requiring more accurate regulations, including inducible promoters.</p>\r\n</li>\r\n</ul>\r\n<ol start="2">\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation"><strong>CRISPR KnockOut</strong><br>We employ an optimized CRISPR-Cas9 system along with precisely designed guide RNAs (gRNAs) to achieve high knockout efficiency in both adherent and cancer cell lines. Our tailored knockout strategies are customized to meet your specific experimental requirements, ensuring reliable and reproducible results. Our services target a broad range of genomic loci, from exonic regions to safe harbor sites, minimizing off-target effects. We also provide thorough validation of knockout efficiency through genomic and expression analyses, including PCR, sequencing, and Western blotting.</p>\r\n</li>\r\n</ol>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Available in two formats: lentivirus and standard plasmids</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Custom-designed guide RNAs (gRNAs) for maximum knockout efficiency</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Ideal for functional genomics and pathway analysis</p>\r\n</li>\r\n</ul>\r\n<ol start="3">\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation"><strong>CRISPR RNA Knockdown</strong><br>We offer CRISPR-based RNA knockdown services that specifically target and degrade RNA transcripts, effectively reducing the expression of your gene of interest at the transcriptional level. Compared to traditional RNA interference (RNAi), CRISPR RNA technologies generally provide more efficient knockdown and greater target specificity.</p>\r\n</li>\r\n</ol>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Efficient RNA degradation using CRISPR/Cas13 technology</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Ideal for high-throughput screening and gene function analysis</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Offers a more dynamic and precise approach to gene silencing than conventional methods</p>\r\n</li>\r\n</ul>\r\n<ol start="4">\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation"><strong>Why Choose Us?</strong></p>\r\n</li>\r\n</ol>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Tailored CRISPR solutions designed to align with your specific research objectives&nbsp;</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Affordable, high-quality services with fast turnaround times&nbsp;</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Comprehensive CRISPR platform compatible with a wide range of cell lines</p>\r\n</li>\r\n</ul>\r\n<div dir="ltr" align="left">&nbsp;</div>	Service-0-Image.png
-10	experiment-services	Experiment Services	<p>&nbsp;</p>\r\n<p>&nbsp;</p>	Service-4-Image.png
-11	lab-supplies	Lab Supplies	<p dir="ltr">At BioArk Technologies, we provide high-quality reagents and kits designed to support your research in molecular cloning, virus packaging, and stable cell line development. Backed by a highly skilled technical team, our products meet strict quality standards, ensuring reliable, consistent, and reproducible results.</p>\r\n<p dir="ltr">Whether you're working on gene editing, protein expression, or advanced cell culture, our reagents are optimized to enhance efficiency and precision in your experiments.</p>\r\n<p dir="ltr">🔬 Why Choose BioArk Technologies?<br>✔ High-quality reagents for superior performance<br>✔ Competitive pricing without compromising excellence<br>✔ Expert support from experienced scientists</p>\r\n<p dir="ltr">Partner with BioArk Technologies and accelerate your research with confidence!</p>\r\n<p dir="ltr">📩 Contact us today at Marketing@bioarktech.com to learn more.</p>	
+COPY public.service_mode (id, url, title, content, image, category) FROM stdin;
+1	custom-cloning	Custom Cloning Services	<p dir="ltr">At BioArk Technologies, we offer comprehensive plasmid construction services designed to meet the diverse needs of researchers in molecular biology, genetics, and related fields. Our service is enhanced by an intuitive web platform that allows you to actively participate in the plasmid design process, ensuring your vectors are precisely tailored to your specifications.</p>\r\n<p dir="ltr">🔬 Why Choose Our Vector Cloning Service?<br>✔ Custom Plasmid Design &ndash; Tailored to your specific research needs<br>✔ Advanced Technologies &ndash; Leveraging technical expertise and innovative solutions<br>✔ Efficient Process &ndash; Streamlined for fast and reliable results<br>✔ Customer Collaboration &ndash; A web-based platform for seamless design involvement</p>\r\n<p dir="ltr">Whether you're conducting gene expression studies, genetic modifications, or other molecular biology applications, BioArk Technologies provides the precision and flexibility your research demands.</p>\r\n<p dir="ltr">📩 Contact us today at Support@bioarktech.com to learn more and start your project!</p>\r\n<p dir="ltr">Service Offerings:</p>\r\n<ol>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Comprehensive Project Support:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="2">\r\n<p dir="ltr" role="presentation">Assist in designing custom vectors tailored to your project&rsquo;s requirements, including vector structure, promoter selection, gene insertion sites, and tag additions.</p>\r\n</li>\r\n</ul>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Subcloning Service:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="2">\r\n<p dir="ltr" role="presentation">Adapt your vector to fit our specific viral systems, including lentivirus vectors, dual promoter vectors, inducible systems, and CRISPR platforms.</p>\r\n</li>\r\n</ul>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Fragment Synthesis and Cloning:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="2">\r\n<p dir="ltr" role="presentation">Offer high-quality fragment synthesis at competitive prices and help you clone your fragment into custom vectors or our vector library.</p>\r\n</li>\r\n</ul>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Plasmid Delivery and Expression:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Provide downstream services for plasmid construction, including lentivirus packaging and stable cell line development.</p>\r\n</li>\r\n</ul>\r\n</li>\r\n</ol>	Service-1-Image.png	\N
+9	genome-editing-services	Genome Editing Services	<p dir="ltr">At BioArk Technologies, we offer cutting-edge CRISPR-based solutions tailored to your specific research needs. Our services include:</p>\r\n<ol>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation"><strong>Targeted Overexpression with CRISPR</strong><br>Our targeted overexpression service allows for the precise and controlled expression of your gene of interest at specific genomic loci, including safe harbor sites like AAVS1. Compared with Lentivirus induced overexpression, targeted overexpression can provide more precision regulation and more safety and controllable knock-in effects. This service is ideal for:</p>\r\n</li>\r\n</ol>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Inducible or constitutive overexpression of target genes</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Ensuring high-level, stable expression in your cell line</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Requiring more accurate regulations, including inducible promoters.</p>\r\n</li>\r\n</ul>\r\n<ol start="2">\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation"><strong>CRISPR KnockOut</strong><br>We employ an optimized CRISPR-Cas9 system along with precisely designed guide RNAs (gRNAs) to achieve high knockout efficiency in both adherent and cancer cell lines. Our tailored knockout strategies are customized to meet your specific experimental requirements, ensuring reliable and reproducible results. Our services target a broad range of genomic loci, from exonic regions to safe harbor sites, minimizing off-target effects. We also provide thorough validation of knockout efficiency through genomic and expression analyses, including PCR, sequencing, and Western blotting.</p>\r\n</li>\r\n</ol>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Available in two formats: lentivirus and standard plasmids</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Custom-designed guide RNAs (gRNAs) for maximum knockout efficiency</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Ideal for functional genomics and pathway analysis</p>\r\n</li>\r\n</ul>\r\n<ol start="3">\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation"><strong>CRISPR RNA Knockdown</strong><br>We offer CRISPR-based RNA knockdown services that specifically target and degrade RNA transcripts, effectively reducing the expression of your gene of interest at the transcriptional level. Compared to traditional RNA interference (RNAi), CRISPR RNA technologies generally provide more efficient knockdown and greater target specificity.</p>\r\n</li>\r\n</ol>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Efficient RNA degradation using CRISPR/Cas13 technology</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Ideal for high-throughput screening and gene function analysis</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Offers a more dynamic and precise approach to gene silencing than conventional methods</p>\r\n</li>\r\n</ul>\r\n<ol start="4">\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation"><strong>Why Choose Us?</strong></p>\r\n</li>\r\n</ol>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Tailored CRISPR solutions designed to align with your specific research objectives&nbsp;</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Affordable, high-quality services with fast turnaround times&nbsp;</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Comprehensive CRISPR platform compatible with a wide range of cell lines</p>\r\n</li>\r\n</ul>\r\n<div dir="ltr" align="left">&nbsp;</div>	Service-0-Image.png	genome-editing
+2	lentivirus-package	Lentivirus Package Services	<h1 dir="ltr">Overview</h1>\r\n<p dir="ltr">Lentivirus packaging services provide researchers with high-efficiency lentiviral vectors for gene delivery into a wide range of target cells, including both dividing and non-dividing cells. Lentiviral vectors, derived from the Human Immunodeficiency Virus (HIV), are widely utilized in gene therapy, functional genomics, stable cell line development, and various research fields, including high-throughput gene function screening and transgenic animal model development.</p>\r\n<p dir="ltr">At BioArk Technologies, we specialize in high-titer, ready-to-use lentiviral packaging designed for gene expression, knockdown, and CRISPR genome editing. Our service ensures:<br>✅ High transduction efficiency<br>✅ Low cytotoxicity<br>✅ Batch-to-batch consistency</p>\r\n<h1 dir="ltr">Technology Background</h1>\r\n<p dir="ltr">1. Three-Plasmid System (2nd Generation)</p>\r\n<p dir="ltr">The most common method for lentivirus production, this system consists of:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Transfer Plasmid</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Packaging Plasmid (Gag, Pol, and Rev integrated into a single vector)</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Envelope Plasmid</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">🔹 If you require 2nd-generation lentivirus packaging, please contact us at <a href="mailto:support@bioarktech.com">support@bioarktech.com</a>.</p>\r\n<p dir="ltr">2. Four-Plasmid System (3rd Generation)</p>\r\n<p dir="ltr">This system consists of:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Transfer Plasmid</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Two Packaging Plasmids (one encoding Gag/Pol and another encoding Rev)</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Envelope Plasmid</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">While the 3rd-generation system enhances safety compared to the 2nd generation, it generally produces lower viral titers. By default, we use the 3rd-generation system, unless otherwise requested by the customer.</p>\r\n<h1 dir="ltr">Service Offerings</h1>\r\n<p dir="ltr">1. Project Support</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Assistance in virus system selection and design</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Customization of lentiviral constructs to include specific genes, regulatory elements, or tags</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">2. Lentivirus Subcloning</p>\r\n<p dir="ltr">To enhance functional detection, we offer gene subcloning into the following constructs:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Lenti-mini GFP construct (~330bp): A compact mini-GFP tag used for rapid expression analysis post-transduction.</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Lenti-Selection Marker Constructs: Includes Puromycin, Blasticidin (BSD), Neomycin, etc., for stable cell line screening.</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">3. Lentivirus Packaging</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Production of high-titer lentiviral stocks using optimized protocols for maximum yield and purity</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Comprehensive quality control for titer, purity, and functionality</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">4. Functional Testing</p>\r\n<p dir="ltr">Available assays based on construct type and project requirements, including:<br>✅ qPCR titer quantification<br>✅ Fluorescence detection<br>✅ Immunofluorescence analysis<br>✅ Western blot validation</p>\r\n<p dir="ltr">5. Advanced Endotoxin Removal</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Our plasmids are endotoxin-free, significantly reducing endotoxin levels in viral preparations</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">For industrial-scale production, we offer endotoxin removal using Endotoxin Removal Column Kits</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">📩 For inquiries or custom requests, contact us at support@bioarktech.com.</p>	Service-2-Image.png	virus-packaging
+3	stable-cell-line	Stable Cell Line Services	<p dir="ltr">At BioArk Technologies, we specialize in constructing stable cell lines tailored to meet your specific research needs. Whether you&rsquo;re working with cancer cell lines or adherent cell lines, we offer a range of services including gene overexpression, knockout, knock-in, and deletion.</p>\r\n<p dir="ltr">Our affordable, reliable, and high-quality solutions will accelerate your research and deliver the results you need. Partner with us to drive innovation in your projects today!</p>\r\n<h1 dir="ltr">Service Content</h1>\r\n<p dir="ltr">1. Vector Construction<br>We offer comprehensive design and construction of plasmid vectors tailored to your genetic modification needs, with selectable markers for efficient screening. Our vector construction services include:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Gene Overexpression</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Targeted Gene Overexpression at AAVS1 or other safe harbor sites</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Inducible Gene Overexpression</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Gene Knockout via CRISPR</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Gene Deletion using double CRISPR cut sites</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Gene Tagging Services</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">2. Cell Line Transfection<br>We provide various transfection methods to suit different cell types and experimental requirements, including:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Lipofection: Ideal for adherent cells.</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Electroporation: For difficult-to-transfect cell types.</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Viral Transduction: Leveraging lentiviruses or AAVs to efficiently deliver genetic material into target cells.</p>\r\n</li>\r\n</ul>\r\n<p dir="ltr">3. Cell Line Pool<br>Our services include the development of stable cell lines, customized to meet the unique needs of your project. We work with a wide variety of cell types, ensuring functional characteristics that align with your research goals.</p>\r\n<p dir="ltr">4. Selection and Expansion<br>We apply selective pressure, such as antibiotic selection, to isolate successfully transfected cells. We then expand the selected clones in controlled environments to ensure consistency and stability.</p>\r\n<p dir="ltr">5. Validation of Stable Cell Lines<br>We provide thorough characterization of generated cell lines, including:</p>\r\n<ul>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Genomic Analysis: Verification of gene integration through PCR or sequencing.</p>\r\n</li>\r\n<li dir="ltr" aria-level="1">\r\n<p dir="ltr" role="presentation">Expression Analysis: Evaluation of target gene expression using techniques such as qPCR, Western blotting, or flow cytometry.</p>\r\n</li>\r\n</ul>		cell-line-services
+11	lab-supplies	Lab Supplies	<p dir="ltr">At BioArk Technologies, we provide high-quality reagents and kits designed to support your research in molecular cloning, virus packaging, and stable cell line development. Backed by a highly skilled technical team, our products meet strict quality standards, ensuring reliable, consistent, and reproducible results.</p>\r\n<p dir="ltr">Whether you're working on gene editing, protein expression, or advanced cell culture, our reagents are optimized to enhance efficiency and precision in your experiments.</p>\r\n<p dir="ltr">🔬 Why Choose BioArk Technologies?<br>✔ High-quality reagents for superior performance<br>✔ Competitive pricing without compromising excellence<br>✔ Expert support from experienced scientists</p>\r\n<p dir="ltr">Partner with BioArk Technologies and accelerate your research with confidence!</p>\r\n<p dir="ltr">📩 Contact us today at Marketing@bioarktech.com to learn more.</p>		uncategorized
+10	experiment-services	Experiment Services	<p>&nbsp;</p>\r\n<p>&nbsp;</p>	Service-4-Image.png	uncategorized
+12	gene-tagging-service	Gene Tagging Service	<h3>Gene Tagging Service</h3><p>Advanced CRISPR-based endogenous gene tagging services to visualize and track proteins inside cells.</p>		genome-editing
+13	gene-knockout-service	Gene Knockout Service	<h3>Gene Knockout Service</h3><p>High-efficiency CRISPR knockouts in a variety of cell lines for functional gene analysis.</p>		genome-editing
+14	mrna-lnp-packaging-service	mRNA LNP packaging Service	<h3>mRNA LNP packaging Service</h3><p>Custom IVT mRNA synthesis and Lipid Nanoparticle (LNP) encapsulation for robust in vitro and in vivo transfection.</p>		ivt-mrna-services
 \.
 
 
 --
--- Data for Name: structure_types; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: structure_types; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.structure_types (structure_type_id, structure_type_symbol, structure_type_name, description, priority, abbreviation) FROM stdin;
@@ -42650,7 +42857,7 @@ COPY public.structure_types (structure_type_id, structure_type_symbol, structure
 
 
 --
--- Data for Name: unit_prices; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: unit_prices; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.unit_prices (id, unit_size, unit_price, union_id, list_price, on_discount) FROM stdin;
@@ -42732,27 +42939,28 @@ COPY public.unit_prices (id, unit_size, unit_price, union_id, list_price, on_dis
 
 
 --
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.users (id, password, last_login, is_superuser, first_name, last_name, email, is_staff, is_active, date_joined, title, mobile, telephone, company, job_title, address_id, billing_address_id, shipping_address_id, has_set_password) FROM stdin;
-17	pbkdf2_sha256$720000$TpYRwXVGBAybWP7GzxsJ2V$hseee7Ji99oJAnM0VQZWaTJ9e4UirEfBIFB1YXYR1os=	\N	f	Charles	Thompson	thompsonc4@nih.gov	f	t	2025-08-28 16:39:16.84276+00	\N	\N	\N	\N	\N	\N	\N	\N	f
-2	pbkdf2_sha256$720000$LVX0RcezwAqYsfA1w2iY7u$zlmACaN6oykhIhV68Uzij3K3vyk9kPE7baCidMaXhQ8=	2025-08-28 16:43:26.113122+00	f	Lipeng	Wu	lipengwu@bioarktech.com	t	t	2025-04-06 01:30:35+00	Mr	734-604-2386	734-604-2386	BioArk Technologies	Founder	2	2	3	f
-12	pbkdf2_sha256$720000$8nBhV1lxbThhF4pklOqw73$FCOwp7bB0MQc44zJHueE8yIDoyKF4lfescD11gTMcu8=	2025-05-31 19:35:43+00	f			b@gmail.com	t	t	2025-05-31 19:35:29+00	\N	\N	\N	\N	\N	\N	\N	\N	f
-18	pbkdf2_sha256$720000$UhDI69e7ZVR6XnAu0vCziL$MZD6Kq693diqvOQ9A5JFngM+NxL4GEbmJALHs9Fv6jU=	\N	f	Tijuana	Leftwich	silverst@nih.gov	f	t	2025-08-29 21:05:25.422905+00	\N	\N	\N	\N	\N	\N	\N	\N	f
-13	pbkdf2_sha256$720000$x83pbyBDbmyAmRNQOxx8d2$2TUIqa9vozK/gk4BEQnZsd2V+O0s6ux6HdV0UGkdlUM=	2025-05-31 19:38:26.543265+00	f			brandon@gmail.com	f	t	2025-05-31 19:38:11.546649+00	\N	\N	\N	\N	\N	\N	\N	\N	f
-14	pbkdf2_sha256$720000$uQHw7DGXlu8XA3csYjYiq4$Cu11XFd+vai7AjmXLNiGnlSVjbeaz8BHBKakx5gZy8U=	\N	f	Marisa	Sears	marisa_sears@unc.edu	f	t	2025-08-08 15:19:32.316754+00	\N	\N	\N	\N	\N	\N	\N	\N	f
-1	pbkdf2_sha256$720000$UEJEFTpcbe9kTLaXRgiyQ2$983779Rr2U1oyhY0s7XdetwWH7clkd3ccss8CE0hxfE=	2025-12-18 19:21:10.874196+00	t	Brandon	Zhu	brandonzhu123@gmail.com	t	t	2025-03-31 20:18:12.931694+00						\N	\N	1	f
-11	pbkdf2_sha256$720000$DRahONfhJ4efaVYAYr1Ybh$iG14hPs4MC3h2d5Esu+T7SpzBf71upzx60IIuviQpw4=	\N	f	min	Li	lmin@niddk.nih.gov	f	t	2025-05-28 22:50:17.34638+00	\N	\N	\N	\N	\N	\N	\N	\N	f
-9	pbkdf2_sha256$720000$rgSUwlhBfHWuYrZaMwQ0bz$MkGZP/4lSKiGrya4kl2LBWT9u/iCtdC/e0bJ9Jnfflc=	2025-04-17 13:23:17.89429+00	f			yangs@nhlbi.nih.gov	f	t	2025-04-17 00:13:16.655552+00	\N	\N	\N	\N	\N	\N	\N	\N	f
-15	pbkdf2_sha256$720000$2i0Mm3G8MplEfwZlhCCeWy$+mi0bUxOxMpj9V09n7CG71Q0C7kBjRa1sSKhVHD6ot8=	\N	f	Yukun	Guan	cmaire@mail.nih.gov	f	t	2025-08-12 15:00:46.148048+00	\N	\N	\N	\N	\N	\N	\N	\N	f
-16	pbkdf2_sha256$720000$UII9T9fOyISOsHfVvuURJM$AOcTJduJrMEDuijruYQfq7u0+GeR56D+cC+N3NBMrtQ=	\N	f	Jason	Piotrowski	jason.piotrowski@nih.gov	f	t	2025-08-13 14:31:28.759721+00	\N	\N	\N	\N	\N	\N	\N	\N	f
-19	pbkdf2_sha256$720000$PBhqxpQ44iih6KKmI2cVF8$dZFLaHlNrRjjHsTQuTYjiFdMikFgQ2lMjJx7Z4fmIfc=	2026-06-17 01:27:51.678987+00	f	Coding	Panda	conding.panda@gmail.com	f	t	2026-06-17 01:27:49.28712+00	\N	\N	\N	\N	\N	\N	\N	\N	f
+COPY public.users (id, password, last_login, is_superuser, first_name, last_name, email, is_staff, is_active, date_joined, title, mobile, telephone, company, job_title, address_id, billing_address_id, shipping_address_id, has_set_password, is_admin) FROM stdin;
+17	pbkdf2_sha256$720000$TpYRwXVGBAybWP7GzxsJ2V$hseee7Ji99oJAnM0VQZWaTJ9e4UirEfBIFB1YXYR1os=	\N	f	Charles	Thompson	thompsonc4@nih.gov	f	t	2025-08-28 16:39:16.84276+00	\N	\N	\N	\N	\N	\N	\N	\N	f	f
+2	pbkdf2_sha256$720000$LVX0RcezwAqYsfA1w2iY7u$zlmACaN6oykhIhV68Uzij3K3vyk9kPE7baCidMaXhQ8=	2025-08-28 16:43:26.113122+00	f	Lipeng	Wu	lipengwu@bioarktech.com	t	t	2025-04-06 01:30:35+00	Mr	734-604-2386	734-604-2386	BioArk Technologies	Founder	2	2	3	f	f
+12	pbkdf2_sha256$720000$8nBhV1lxbThhF4pklOqw73$FCOwp7bB0MQc44zJHueE8yIDoyKF4lfescD11gTMcu8=	2025-05-31 19:35:43+00	f			b@gmail.com	t	t	2025-05-31 19:35:29+00	\N	\N	\N	\N	\N	\N	\N	\N	f	f
+18	pbkdf2_sha256$720000$UhDI69e7ZVR6XnAu0vCziL$MZD6Kq693diqvOQ9A5JFngM+NxL4GEbmJALHs9Fv6jU=	\N	f	Tijuana	Leftwich	silverst@nih.gov	f	t	2025-08-29 21:05:25.422905+00	\N	\N	\N	\N	\N	\N	\N	\N	f	f
+13	pbkdf2_sha256$720000$x83pbyBDbmyAmRNQOxx8d2$2TUIqa9vozK/gk4BEQnZsd2V+O0s6ux6HdV0UGkdlUM=	2025-05-31 19:38:26.543265+00	f			brandon@gmail.com	f	t	2025-05-31 19:38:11.546649+00	\N	\N	\N	\N	\N	\N	\N	\N	f	f
+14	pbkdf2_sha256$720000$uQHw7DGXlu8XA3csYjYiq4$Cu11XFd+vai7AjmXLNiGnlSVjbeaz8BHBKakx5gZy8U=	\N	f	Marisa	Sears	marisa_sears@unc.edu	f	t	2025-08-08 15:19:32.316754+00	\N	\N	\N	\N	\N	\N	\N	\N	f	f
+1	pbkdf2_sha256$720000$UEJEFTpcbe9kTLaXRgiyQ2$983779Rr2U1oyhY0s7XdetwWH7clkd3ccss8CE0hxfE=	2025-12-18 19:21:10.874196+00	t	Brandon	Zhu	brandonzhu123@gmail.com	t	t	2025-03-31 20:18:12.931694+00						\N	\N	1	f	f
+11	pbkdf2_sha256$720000$DRahONfhJ4efaVYAYr1Ybh$iG14hPs4MC3h2d5Esu+T7SpzBf71upzx60IIuviQpw4=	\N	f	min	Li	lmin@niddk.nih.gov	f	t	2025-05-28 22:50:17.34638+00	\N	\N	\N	\N	\N	\N	\N	\N	f	f
+9	pbkdf2_sha256$720000$rgSUwlhBfHWuYrZaMwQ0bz$MkGZP/4lSKiGrya4kl2LBWT9u/iCtdC/e0bJ9Jnfflc=	2025-04-17 13:23:17.89429+00	f			yangs@nhlbi.nih.gov	f	t	2025-04-17 00:13:16.655552+00	\N	\N	\N	\N	\N	\N	\N	\N	f	f
+15	pbkdf2_sha256$720000$2i0Mm3G8MplEfwZlhCCeWy$+mi0bUxOxMpj9V09n7CG71Q0C7kBjRa1sSKhVHD6ot8=	\N	f	Yukun	Guan	cmaire@mail.nih.gov	f	t	2025-08-12 15:00:46.148048+00	\N	\N	\N	\N	\N	\N	\N	\N	f	f
+16	pbkdf2_sha256$720000$UII9T9fOyISOsHfVvuURJM$AOcTJduJrMEDuijruYQfq7u0+GeR56D+cC+N3NBMrtQ=	\N	f	Jason	Piotrowski	jason.piotrowski@nih.gov	f	t	2025-08-13 14:31:28.759721+00	\N	\N	\N	\N	\N	\N	\N	\N	f	f
+19	pbkdf2_sha256$720000$MRNBY5c3IVV6erCiCkJNHk$ZVbHdT5+/Jh2Q/IbwJ9xMbQ6oApxrXCWUdE5hDkdEz0=	2026-06-17 01:27:51.678987+00	t	Coding	Panda	conding.panda@gmail.com	t	t	2026-06-17 01:27:49.28712+00	\N	\N	\N	\N	\N	\N	\N	\N	f	t
+20	pbkdf2_sha256$720000$oTRmFxUzHbvbarMOTLcPIU$71XV9fif3XjBKpt8C2WS5sGrps9cUIIUDnEuXGwLJrs=	\N	t			coding.panda@gmail.com	t	t	2026-06-19 21:09:11.271791+00	\N	\N	\N	\N	\N	\N	\N	\N	f	t
 \.
 
 
 --
--- Data for Name: users_groups; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: users_groups; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.users_groups (id, user_id, group_id) FROM stdin;
@@ -42762,7 +42970,7 @@ COPY public.users_groups (id, user_id, group_id) FROM stdin;
 
 
 --
--- Data for Name: users_user_permissions; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: users_user_permissions; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.users_user_permissions (id, user_id, permission_id) FROM stdin;
@@ -42770,7 +42978,7 @@ COPY public.users_user_permissions (id, user_id, permission_id) FROM stdin;
 
 
 --
--- Data for Name: work_schedule; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: work_schedule; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.work_schedule (id, delivery_format_code, ready_status, work_period_earliest, work_period_latest, shipping_temp, storage_temp, stability_period, structure_type_code) FROM stdin;
@@ -42798,315 +43006,315 @@ COPY public.work_schedule (id, delivery_format_code, ready_status, work_period_e
 
 
 --
--- Name: api_emailverificationtoken_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: api_emailverificationtoken_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.api_emailverificationtoken_id_seq', 3, true);
 
 
 --
--- Name: auth_group_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: auth_group_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.auth_group_id_seq', 1, true);
 
 
 --
--- Name: auth_group_permissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: auth_group_permissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.auth_group_permissions_id_seq', 48, true);
 
 
 --
--- Name: auth_permission_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: auth_permission_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.auth_permission_id_seq', 212, true);
+SELECT pg_catalog.setval('public.auth_permission_id_seq', 216, true);
 
 
 --
--- Name: bacterial_markers_bacterial_marker_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: bacterial_markers_bacterial_marker_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.bacterial_markers_bacterial_marker_id_seq', 1, true);
 
 
 --
--- Name: bacterial_markers_special_case_bacterial_marker_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: bacterial_markers_special_case_bacterial_marker_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.bacterial_markers_special_case_bacterial_marker_id_seq', 11, true);
 
 
 --
--- Name: blog_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: blog_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.blog_id_seq', 2, true);
 
 
 --
--- Name: delivery_formats_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: delivery_formats_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.delivery_formats_id_seq', 5, true);
 
 
 --
--- Name: delivery_library_delivery_library_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: delivery_library_delivery_library_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.delivery_library_delivery_library_id_seq', 123, true);
 
 
 --
--- Name: design_library_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: design_library_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.design_library_id_seq', 68, true);
 
 
 --
--- Name: django_admin_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: django_admin_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.django_admin_log_id_seq', 86, true);
 
 
 --
--- Name: django_content_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: django_content_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.django_content_type_id_seq', 53, true);
-
-
---
--- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
---
-
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 104, true);
+SELECT pg_catalog.setval('public.django_content_type_id_seq', 54, true);
 
 
 --
--- Name: django_truncate_model1_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 109, true);
+
+
+--
+-- Name: django_truncate_model1_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.django_truncate_model1_id_seq', 1, false);
 
 
 --
--- Name: django_truncate_model2_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: django_truncate_model2_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.django_truncate_model2_id_seq', 1, false);
 
 
 --
--- Name: featured_products_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: featured_products_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.featured_products_id_seq', 51, true);
 
 
 --
--- Name: fluorescene_markers_fluorescene_marker_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: fluorescene_markers_fluorescene_marker_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.fluorescene_markers_fluorescene_marker_id_seq', 5, true);
 
 
 --
--- Name: function_types_function_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: function_types_function_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.function_types_function_type_id_seq', 10, true);
 
 
 --
--- Name: gene_library_gene_library_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: gene_library_gene_library_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.gene_library_gene_library_id_seq', 219803, true);
 
 
 --
--- Name: images_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: images_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.images_id_seq', 226, true);
 
 
 --
--- Name: invoices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: invoices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.invoices_id_seq', 2, true);
 
 
 --
--- Name: manual_files_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: manual_files_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.manual_files_id_seq', 41, true);
 
 
 --
--- Name: order_item_order_item_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: order_item_order_item_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.order_item_order_item_id_seq', 13, true);
 
 
 --
--- Name: orders_cartitem_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: orders_cartitem_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.orders_cartitem_id_seq', 58, true);
 
 
 --
--- Name: orders_order_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: orders_order_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.orders_order_id_seq', 13, true);
 
 
 --
--- Name: product_category_category_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: product_category_category_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.product_category_category_id_seq', 4, true);
 
 
 --
--- Name: product_inventory_inventory_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: product_inventory_inventory_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.product_inventory_inventory_id_seq', 1, true);
 
 
 --
--- Name: product_mode_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: product_mode_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.product_mode_id_seq', 10, true);
 
 
 --
--- Name: products_product_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: product_product_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.products_product_id_seq', 24, true);
+SELECT pg_catalog.setval('public.product_product_id_seq', 110, true);
 
 
 --
--- Name: products_union_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: products_union_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.products_union_id_seq', 210, true);
 
 
 --
--- Name: promoters_promoter_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: promoters_promoter_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.promoters_promoter_id_seq', 3, true);
 
 
 --
--- Name: promoters_special_case_promoter_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: promoters_special_case_promoter_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.promoters_special_case_promoter_id_seq', 9, true);
 
 
 --
--- Name: property_property_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: property_property_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.property_property_id_seq', 1, true);
 
 
 --
--- Name: protein_tags_protein_tag_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: protein_tags_protein_tag_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.protein_tags_protein_tag_id_seq', 4, true);
 
 
 --
--- Name: quotes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: quotes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.quotes_id_seq', 10, true);
 
 
 --
--- Name: selection_markers_selection_marker_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: selection_markers_selection_marker_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.selection_markers_selection_marker_id_seq', 4, true);
 
 
 --
--- Name: service_mode_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: service_mode_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.service_mode_id_seq', 11, true);
+SELECT pg_catalog.setval('public.service_mode_id_seq', 14, true);
 
 
 --
--- Name: structure_types_structure_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: structure_types_structure_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.structure_types_structure_type_id_seq', 10, true);
 
 
 --
--- Name: unit_prices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: unit_prices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.unit_prices_id_seq', 109, true);
 
 
 --
--- Name: users_address_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: users_address_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.users_address_id_seq', 7, true);
 
 
 --
--- Name: users_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: users_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.users_groups_id_seq', 3, true);
 
 
 --
--- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 19, true);
+SELECT pg_catalog.setval('public.users_id_seq', 20, true);
 
 
 --
--- Name: users_user_permissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: users_user_permissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.users_user_permissions_id_seq', 1, false);
 
 
 --
--- Name: work_schedule_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: work_schedule_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.work_schedule_id_seq', 20, true);
 
 
 --
--- Name: api_emailverificationtoken api_emailverificationtoken_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: api_emailverificationtoken api_emailverificationtoken_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.api_emailverificationtoken
@@ -43114,7 +43322,7 @@ ALTER TABLE ONLY public.api_emailverificationtoken
 
 
 --
--- Name: api_emailverificationtoken api_emailverificationtoken_token_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: api_emailverificationtoken api_emailverificationtoken_token_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.api_emailverificationtoken
@@ -43122,7 +43330,7 @@ ALTER TABLE ONLY public.api_emailverificationtoken
 
 
 --
--- Name: api_emailverificationtoken api_emailverificationtoken_user_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: api_emailverificationtoken api_emailverificationtoken_user_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.api_emailverificationtoken
@@ -43130,7 +43338,7 @@ ALTER TABLE ONLY public.api_emailverificationtoken
 
 
 --
--- Name: auth_group auth_group_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: auth_group auth_group_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_group
@@ -43138,7 +43346,7 @@ ALTER TABLE ONLY public.auth_group
 
 
 --
--- Name: auth_group_permissions auth_group_permissions_group_id_permission_id_0cd325b0_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: auth_group_permissions auth_group_permissions_group_id_permission_id_0cd325b0_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_group_permissions
@@ -43146,7 +43354,7 @@ ALTER TABLE ONLY public.auth_group_permissions
 
 
 --
--- Name: auth_group_permissions auth_group_permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: auth_group_permissions auth_group_permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_group_permissions
@@ -43154,7 +43362,7 @@ ALTER TABLE ONLY public.auth_group_permissions
 
 
 --
--- Name: auth_group auth_group_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: auth_group auth_group_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_group
@@ -43162,7 +43370,7 @@ ALTER TABLE ONLY public.auth_group
 
 
 --
--- Name: auth_permission auth_permission_content_type_id_codename_01ab375a_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: auth_permission auth_permission_content_type_id_codename_01ab375a_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_permission
@@ -43170,7 +43378,7 @@ ALTER TABLE ONLY public.auth_permission
 
 
 --
--- Name: auth_permission auth_permission_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: auth_permission auth_permission_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_permission
@@ -43178,7 +43386,7 @@ ALTER TABLE ONLY public.auth_permission
 
 
 --
--- Name: bacterial_markers bacterial_markers_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: bacterial_markers bacterial_markers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.bacterial_markers
@@ -43186,7 +43394,7 @@ ALTER TABLE ONLY public.bacterial_markers
 
 
 --
--- Name: bacterial_markers_special_case bacterial_markers_special_case_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: bacterial_markers_special_case bacterial_markers_special_case_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.bacterial_markers_special_case
@@ -43194,7 +43402,7 @@ ALTER TABLE ONLY public.bacterial_markers_special_case
 
 
 --
--- Name: blog blog_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: blog blog_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.blog
@@ -43202,7 +43410,7 @@ ALTER TABLE ONLY public.blog
 
 
 --
--- Name: delivery_formats delivery_formats_delivery_format_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: delivery_formats delivery_formats_delivery_format_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.delivery_formats
@@ -43210,7 +43418,7 @@ ALTER TABLE ONLY public.delivery_formats
 
 
 --
--- Name: delivery_formats delivery_formats_delivery_format_symbol_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: delivery_formats delivery_formats_delivery_format_symbol_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.delivery_formats
@@ -43218,7 +43426,7 @@ ALTER TABLE ONLY public.delivery_formats
 
 
 --
--- Name: delivery_formats delivery_formats_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: delivery_formats delivery_formats_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.delivery_formats
@@ -43226,7 +43434,7 @@ ALTER TABLE ONLY public.delivery_formats
 
 
 --
--- Name: delivery_library delivery_library_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: delivery_library delivery_library_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.delivery_library
@@ -43234,7 +43442,7 @@ ALTER TABLE ONLY public.delivery_library
 
 
 --
--- Name: design_library design_library_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: design_library design_library_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.design_library
@@ -43242,7 +43450,7 @@ ALTER TABLE ONLY public.design_library
 
 
 --
--- Name: django_admin_log django_admin_log_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: django_admin_log django_admin_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.django_admin_log
@@ -43250,7 +43458,7 @@ ALTER TABLE ONLY public.django_admin_log
 
 
 --
--- Name: django_content_type django_content_type_app_label_model_76bd3d3b_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: django_content_type django_content_type_app_label_model_76bd3d3b_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.django_content_type
@@ -43258,7 +43466,7 @@ ALTER TABLE ONLY public.django_content_type
 
 
 --
--- Name: django_content_type django_content_type_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: django_content_type django_content_type_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.django_content_type
@@ -43266,7 +43474,7 @@ ALTER TABLE ONLY public.django_content_type
 
 
 --
--- Name: django_migrations django_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: django_migrations django_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.django_migrations
@@ -43274,7 +43482,7 @@ ALTER TABLE ONLY public.django_migrations
 
 
 --
--- Name: django_session django_session_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: django_session django_session_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.django_session
@@ -43282,7 +43490,7 @@ ALTER TABLE ONLY public.django_session
 
 
 --
--- Name: django_truncate_model1 django_truncate_model1_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: django_truncate_model1 django_truncate_model1_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.django_truncate_model1
@@ -43290,7 +43498,7 @@ ALTER TABLE ONLY public.django_truncate_model1
 
 
 --
--- Name: django_truncate_model2 django_truncate_model2_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: django_truncate_model2 django_truncate_model2_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.django_truncate_model2
@@ -43298,7 +43506,7 @@ ALTER TABLE ONLY public.django_truncate_model2
 
 
 --
--- Name: featured_products featured_products_catalog_number_fbd713bd_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: featured_products featured_products_catalog_number_fbd713bd_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.featured_products
@@ -43306,7 +43514,7 @@ ALTER TABLE ONLY public.featured_products
 
 
 --
--- Name: featured_products featured_products_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: featured_products featured_products_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.featured_products
@@ -43314,7 +43522,7 @@ ALTER TABLE ONLY public.featured_products
 
 
 --
--- Name: featured_products featured_products_union_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: featured_products featured_products_union_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.featured_products
@@ -43322,7 +43530,7 @@ ALTER TABLE ONLY public.featured_products
 
 
 --
--- Name: fluorescene_markers fluorescene_markers_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: fluorescene_markers fluorescene_markers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.fluorescene_markers
@@ -43330,7 +43538,7 @@ ALTER TABLE ONLY public.fluorescene_markers
 
 
 --
--- Name: function_types function_types_function_type_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: function_types function_types_function_type_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.function_types
@@ -43338,7 +43546,7 @@ ALTER TABLE ONLY public.function_types
 
 
 --
--- Name: function_types function_types_function_type_symbol_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: function_types function_types_function_type_symbol_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.function_types
@@ -43346,7 +43554,7 @@ ALTER TABLE ONLY public.function_types
 
 
 --
--- Name: function_types function_types_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: function_types function_types_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.function_types
@@ -43354,7 +43562,7 @@ ALTER TABLE ONLY public.function_types
 
 
 --
--- Name: gene_library gene_library_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: gene_library gene_library_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.gene_library
@@ -43362,7 +43570,7 @@ ALTER TABLE ONLY public.gene_library
 
 
 --
--- Name: images images_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: images images_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.images
@@ -43370,7 +43578,7 @@ ALTER TABLE ONLY public.images
 
 
 --
--- Name: invoices invoices_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: invoices invoices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.invoices
@@ -43378,7 +43586,7 @@ ALTER TABLE ONLY public.invoices
 
 
 --
--- Name: manual_files manual_files_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: manual_files manual_files_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.manual_files
@@ -43386,7 +43594,7 @@ ALTER TABLE ONLY public.manual_files
 
 
 --
--- Name: order_item order_item_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: order_item order_item_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.order_item
@@ -43394,7 +43602,7 @@ ALTER TABLE ONLY public.order_item
 
 
 --
--- Name: orders_cartitem orders_cartitem_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: orders_cartitem orders_cartitem_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.orders_cartitem
@@ -43402,7 +43610,7 @@ ALTER TABLE ONLY public.orders_cartitem
 
 
 --
--- Name: orders orders_invoice_id_6bfdbcfb_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: orders orders_invoice_id_6bfdbcfb_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.orders
@@ -43410,7 +43618,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.orders
@@ -43418,7 +43626,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: product_category product_category_category_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: product_category product_category_category_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.product_category
@@ -43426,7 +43634,7 @@ ALTER TABLE ONLY public.product_category
 
 
 --
--- Name: product_category product_category_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: product_category product_category_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.product_category
@@ -43434,7 +43642,15 @@ ALTER TABLE ONLY public.product_category
 
 
 --
--- Name: product_inventory product_inventory_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: product product_external_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.product
+    ADD CONSTRAINT product_external_id_key UNIQUE (external_id);
+
+
+--
+-- Name: product_inventory product_inventory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.product_inventory
@@ -43442,7 +43658,7 @@ ALTER TABLE ONLY public.product_inventory
 
 
 --
--- Name: product_mode product_mode_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: product_mode product_mode_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.product_mode
@@ -43450,23 +43666,15 @@ ALTER TABLE ONLY public.product_mode
 
 
 --
--- Name: products products_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: product product_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.products
-    ADD CONSTRAINT products_pkey PRIMARY KEY (product_id);
-
-
---
--- Name: products products_union_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.products
-    ADD CONSTRAINT products_union_id_key UNIQUE (union_id);
+ALTER TABLE ONLY public.product
+    ADD CONSTRAINT product_pkey PRIMARY KEY (product_id);
 
 
 --
--- Name: products_union products_union_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: products_union products_union_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.products_union
@@ -43474,7 +43682,7 @@ ALTER TABLE ONLY public.products_union
 
 
 --
--- Name: promoters promoters_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: promoters promoters_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.promoters
@@ -43482,7 +43690,7 @@ ALTER TABLE ONLY public.promoters
 
 
 --
--- Name: promoters_special_case promoters_special_case_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: promoters_special_case promoters_special_case_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.promoters_special_case
@@ -43490,7 +43698,7 @@ ALTER TABLE ONLY public.promoters_special_case
 
 
 --
--- Name: property property_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: property property_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.property
@@ -43498,7 +43706,7 @@ ALTER TABLE ONLY public.property
 
 
 --
--- Name: protein_tags protein_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: protein_tags protein_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.protein_tags
@@ -43506,7 +43714,7 @@ ALTER TABLE ONLY public.protein_tags
 
 
 --
--- Name: quotes quotes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: quotes quotes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.quotes
@@ -43514,7 +43722,7 @@ ALTER TABLE ONLY public.quotes
 
 
 --
--- Name: selection_markers selection_markers_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: selection_markers selection_markers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.selection_markers
@@ -43522,7 +43730,7 @@ ALTER TABLE ONLY public.selection_markers
 
 
 --
--- Name: service_mode service_mode_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: service_mode service_mode_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.service_mode
@@ -43530,7 +43738,7 @@ ALTER TABLE ONLY public.service_mode
 
 
 --
--- Name: structure_types structure_types_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: structure_types structure_types_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.structure_types
@@ -43538,7 +43746,7 @@ ALTER TABLE ONLY public.structure_types
 
 
 --
--- Name: structure_types structure_types_structure_type_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: structure_types structure_types_structure_type_name_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.structure_types
@@ -43546,7 +43754,7 @@ ALTER TABLE ONLY public.structure_types
 
 
 --
--- Name: structure_types structure_types_structure_type_symbol_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: structure_types structure_types_structure_type_symbol_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.structure_types
@@ -43554,7 +43762,7 @@ ALTER TABLE ONLY public.structure_types
 
 
 --
--- Name: unit_prices unit_prices_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: unit_prices unit_prices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.unit_prices
@@ -43562,7 +43770,7 @@ ALTER TABLE ONLY public.unit_prices
 
 
 --
--- Name: addresses users_address_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: addresses users_address_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.addresses
@@ -43570,7 +43778,7 @@ ALTER TABLE ONLY public.addresses
 
 
 --
--- Name: users users_email_0ea73cca_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users users_email_0ea73cca_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
@@ -43578,7 +43786,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users_groups users_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users_groups users_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_groups
@@ -43586,7 +43794,7 @@ ALTER TABLE ONLY public.users_groups
 
 
 --
--- Name: users_groups users_groups_user_id_group_id_fc7788e8_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users_groups users_groups_user_id_group_id_fc7788e8_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_groups
@@ -43594,7 +43802,7 @@ ALTER TABLE ONLY public.users_groups
 
 
 --
--- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
@@ -43602,7 +43810,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users_user_permissions users_user_permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users_user_permissions users_user_permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_user_permissions
@@ -43610,7 +43818,7 @@ ALTER TABLE ONLY public.users_user_permissions
 
 
 --
--- Name: users_user_permissions users_user_permissions_user_id_permission_id_3b86cbdf_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users_user_permissions users_user_permissions_user_id_permission_id_3b86cbdf_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_user_permissions
@@ -43618,7 +43826,7 @@ ALTER TABLE ONLY public.users_user_permissions
 
 
 --
--- Name: work_schedule work_schedule_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: work_schedule work_schedule_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.work_schedule
@@ -43626,273 +43834,301 @@ ALTER TABLE ONLY public.work_schedule
 
 
 --
--- Name: api_emailverificationtoken_token_5e55b1bc_like; Type: INDEX; Schema: public; Owner: postgres
+-- Name: api_emailverificationtoken_token_5e55b1bc_like; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX api_emailverificationtoken_token_5e55b1bc_like ON public.api_emailverificationtoken USING btree (token varchar_pattern_ops);
 
 
 --
--- Name: auth_group_name_a6ea08ec_like; Type: INDEX; Schema: public; Owner: postgres
+-- Name: auth_group_name_a6ea08ec_like; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX auth_group_name_a6ea08ec_like ON public.auth_group USING btree (name varchar_pattern_ops);
 
 
 --
--- Name: auth_group_permissions_group_id_b120cbf9; Type: INDEX; Schema: public; Owner: postgres
+-- Name: auth_group_permissions_group_id_b120cbf9; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX auth_group_permissions_group_id_b120cbf9 ON public.auth_group_permissions USING btree (group_id);
 
 
 --
--- Name: auth_group_permissions_permission_id_84c5c92e; Type: INDEX; Schema: public; Owner: postgres
+-- Name: auth_group_permissions_permission_id_84c5c92e; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX auth_group_permissions_permission_id_84c5c92e ON public.auth_group_permissions USING btree (permission_id);
 
 
 --
--- Name: auth_permission_content_type_id_2f476e4b; Type: INDEX; Schema: public; Owner: postgres
+-- Name: auth_permission_content_type_id_2f476e4b; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX auth_permission_content_type_id_2f476e4b ON public.auth_permission USING btree (content_type_id);
 
 
 --
--- Name: delivery_formats_delivery_format_name_0f26b441_like; Type: INDEX; Schema: public; Owner: postgres
+-- Name: delivery_formats_delivery_format_name_0f26b441_like; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX delivery_formats_delivery_format_name_0f26b441_like ON public.delivery_formats USING btree (delivery_format_name varchar_pattern_ops);
 
 
 --
--- Name: delivery_formats_delivery_format_symbol_84d7991c_like; Type: INDEX; Schema: public; Owner: postgres
+-- Name: delivery_formats_delivery_format_symbol_84d7991c_like; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX delivery_formats_delivery_format_symbol_84d7991c_like ON public.delivery_formats USING btree (delivery_format_symbol varchar_pattern_ops);
 
 
 --
--- Name: django_admin_log_content_type_id_c4bce8eb; Type: INDEX; Schema: public; Owner: postgres
+-- Name: django_admin_log_content_type_id_c4bce8eb; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX django_admin_log_content_type_id_c4bce8eb ON public.django_admin_log USING btree (content_type_id);
 
 
 --
--- Name: django_admin_log_user_id_c564eba6; Type: INDEX; Schema: public; Owner: postgres
+-- Name: django_admin_log_user_id_c564eba6; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX django_admin_log_user_id_c564eba6 ON public.django_admin_log USING btree (user_id);
 
 
 --
--- Name: django_session_expire_date_a5c62663; Type: INDEX; Schema: public; Owner: postgres
+-- Name: django_session_expire_date_a5c62663; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX django_session_expire_date_a5c62663 ON public.django_session USING btree (expire_date);
 
 
 --
--- Name: django_session_session_key_c0390e0f_like; Type: INDEX; Schema: public; Owner: postgres
+-- Name: django_session_session_key_c0390e0f_like; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX django_session_session_key_c0390e0f_like ON public.django_session USING btree (session_key varchar_pattern_ops);
 
 
 --
--- Name: featured_products_catalog_number_fbd713bd_like; Type: INDEX; Schema: public; Owner: postgres
+-- Name: featured_products_catalog_number_fbd713bd_like; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX featured_products_catalog_number_fbd713bd_like ON public.featured_products USING btree (catalog_number varchar_pattern_ops);
 
 
 --
--- Name: function_types_function_type_name_52e17a37_like; Type: INDEX; Schema: public; Owner: postgres
+-- Name: function_types_function_type_name_52e17a37_like; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX function_types_function_type_name_52e17a37_like ON public.function_types USING btree (function_type_name varchar_pattern_ops);
 
 
 --
--- Name: function_types_function_type_symbol_914b7cab_like; Type: INDEX; Schema: public; Owner: postgres
+-- Name: function_types_function_type_symbol_914b7cab_like; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX function_types_function_type_symbol_914b7cab_like ON public.function_types USING btree (function_type_symbol varchar_pattern_ops);
 
 
 --
--- Name: images_union_id_cb10732c; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_product_catalog_number; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_product_catalog_number ON public.product USING btree (catalog_number);
+
+
+--
+-- Name: idx_product_category_external_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_product_category_external_id ON public.product USING btree (category_external_id);
+
+
+--
+-- Name: idx_product_display_order; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_product_display_order ON public.product USING btree (display_order);
+
+
+--
+-- Name: idx_product_show_in_featured; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_product_show_in_featured ON public.product USING btree (show_in_featured) WHERE (show_in_featured = true);
+
+
+--
+-- Name: images_union_id_cb10732c; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX images_union_id_cb10732c ON public.images USING btree (union_id);
 
 
 --
--- Name: invoices_billing_address_id_c95218be; Type: INDEX; Schema: public; Owner: postgres
+-- Name: invoices_billing_address_id_c95218be; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX invoices_billing_address_id_c95218be ON public.invoices USING btree (billing_address_id);
 
 
 --
--- Name: invoices_po_address_id_44d38dac; Type: INDEX; Schema: public; Owner: postgres
+-- Name: invoices_po_address_id_44d38dac; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX invoices_po_address_id_44d38dac ON public.invoices USING btree (po_address_id);
 
 
 --
--- Name: invoices_shipping_address_id_3f24ad23; Type: INDEX; Schema: public; Owner: postgres
+-- Name: invoices_shipping_address_id_3f24ad23; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX invoices_shipping_address_id_3f24ad23 ON public.invoices USING btree (shipping_address_id);
 
 
 --
--- Name: invoices_user_id_ff8879b0; Type: INDEX; Schema: public; Owner: postgres
+-- Name: invoices_user_id_ff8879b0; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX invoices_user_id_ff8879b0 ON public.invoices USING btree (user_id);
 
 
 --
--- Name: manual_files_union_id_1dc0ed0f; Type: INDEX; Schema: public; Owner: postgres
+-- Name: manual_files_union_id_1dc0ed0f; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX manual_files_union_id_1dc0ed0f ON public.manual_files USING btree (union_id);
 
 
 --
--- Name: order_item_order_id_0ca9e92e; Type: INDEX; Schema: public; Owner: postgres
+-- Name: order_item_order_id_0ca9e92e; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX order_item_order_id_0ca9e92e ON public.order_item USING btree (order_id);
 
 
 --
--- Name: orders_billing_address_id_53d8531b; Type: INDEX; Schema: public; Owner: postgres
+-- Name: orders_billing_address_id_53d8531b; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX orders_billing_address_id_53d8531b ON public.orders USING btree (billing_address_id);
 
 
 --
--- Name: orders_po_address_id_7947b6ed; Type: INDEX; Schema: public; Owner: postgres
+-- Name: orders_po_address_id_7947b6ed; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX orders_po_address_id_7947b6ed ON public.orders USING btree (po_address_id);
 
 
 --
--- Name: orders_shipping_address_id_bf7237b0; Type: INDEX; Schema: public; Owner: postgres
+-- Name: orders_shipping_address_id_bf7237b0; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX orders_shipping_address_id_bf7237b0 ON public.orders USING btree (shipping_address_id);
 
 
 --
--- Name: orders_user_id_7e2523fb; Type: INDEX; Schema: public; Owner: postgres
+-- Name: orders_user_id_7e2523fb; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX orders_user_id_7e2523fb ON public.orders USING btree (user_id);
 
 
 --
--- Name: product_category_category_name_670b01bc_like; Type: INDEX; Schema: public; Owner: postgres
+-- Name: product_category_category_name_670b01bc_like; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX product_category_category_name_670b01bc_like ON public.product_category USING btree (category_name varchar_pattern_ops);
 
 
 --
--- Name: quotes_user_id_c10fa7c3; Type: INDEX; Schema: public; Owner: postgres
+-- Name: quotes_user_id_c10fa7c3; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX quotes_user_id_c10fa7c3 ON public.quotes USING btree (user_id);
 
 
 --
--- Name: structure_types_structure_type_name_f9195ae9_like; Type: INDEX; Schema: public; Owner: postgres
+-- Name: structure_types_structure_type_name_f9195ae9_like; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX structure_types_structure_type_name_f9195ae9_like ON public.structure_types USING btree (structure_type_name varchar_pattern_ops);
 
 
 --
--- Name: structure_types_structure_type_symbol_463c9c78_like; Type: INDEX; Schema: public; Owner: postgres
+-- Name: structure_types_structure_type_symbol_463c9c78_like; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX structure_types_structure_type_symbol_463c9c78_like ON public.structure_types USING btree (structure_type_symbol varchar_pattern_ops);
 
 
 --
--- Name: unit_prices_union_id_b76d419e; Type: INDEX; Schema: public; Owner: postgres
+-- Name: unit_prices_union_id_b76d419e; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX unit_prices_union_id_b76d419e ON public.unit_prices USING btree (union_id);
 
 
 --
--- Name: users_address_id_96e92564; Type: INDEX; Schema: public; Owner: postgres
+-- Name: users_address_id_96e92564; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX users_address_id_96e92564 ON public.users USING btree (address_id);
 
 
 --
--- Name: users_billing_address_id_53318b60; Type: INDEX; Schema: public; Owner: postgres
+-- Name: users_billing_address_id_53318b60; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX users_billing_address_id_53318b60 ON public.users USING btree (billing_address_id);
 
 
 --
--- Name: users_email_0ea73cca_like; Type: INDEX; Schema: public; Owner: postgres
+-- Name: users_email_0ea73cca_like; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX users_email_0ea73cca_like ON public.users USING btree (email varchar_pattern_ops);
 
 
 --
--- Name: users_groups_group_id_2f3517aa; Type: INDEX; Schema: public; Owner: postgres
+-- Name: users_groups_group_id_2f3517aa; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX users_groups_group_id_2f3517aa ON public.users_groups USING btree (group_id);
 
 
 --
--- Name: users_groups_user_id_f500bee5; Type: INDEX; Schema: public; Owner: postgres
+-- Name: users_groups_user_id_f500bee5; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX users_groups_user_id_f500bee5 ON public.users_groups USING btree (user_id);
 
 
 --
--- Name: users_shipping_address_id_008c2dab; Type: INDEX; Schema: public; Owner: postgres
+-- Name: users_shipping_address_id_008c2dab; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX users_shipping_address_id_008c2dab ON public.users USING btree (shipping_address_id);
 
 
 --
--- Name: users_user_permissions_permission_id_6d08dcd2; Type: INDEX; Schema: public; Owner: postgres
+-- Name: users_user_permissions_permission_id_6d08dcd2; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX users_user_permissions_permission_id_6d08dcd2 ON public.users_user_permissions USING btree (permission_id);
 
 
 --
--- Name: users_user_permissions_user_id_92473840; Type: INDEX; Schema: public; Owner: postgres
+-- Name: users_user_permissions_user_id_92473840; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX users_user_permissions_user_id_92473840 ON public.users_user_permissions USING btree (user_id);
 
 
 --
--- Name: api_emailverificationtoken api_emailverificationtoken_user_id_7e807130_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: api_emailverificationtoken api_emailverificationtoken_user_id_7e807130_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.api_emailverificationtoken
@@ -43900,7 +44136,7 @@ ALTER TABLE ONLY public.api_emailverificationtoken
 
 
 --
--- Name: auth_group_permissions auth_group_permissio_permission_id_84c5c92e_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: auth_group_permissions auth_group_permissio_permission_id_84c5c92e_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_group_permissions
@@ -43908,7 +44144,7 @@ ALTER TABLE ONLY public.auth_group_permissions
 
 
 --
--- Name: auth_group_permissions auth_group_permissions_group_id_b120cbf9_fk_auth_group_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: auth_group_permissions auth_group_permissions_group_id_b120cbf9_fk_auth_group_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_group_permissions
@@ -43916,7 +44152,7 @@ ALTER TABLE ONLY public.auth_group_permissions
 
 
 --
--- Name: auth_permission auth_permission_content_type_id_2f476e4b_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: auth_permission auth_permission_content_type_id_2f476e4b_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_permission
@@ -43924,7 +44160,7 @@ ALTER TABLE ONLY public.auth_permission
 
 
 --
--- Name: django_admin_log django_admin_log_content_type_id_c4bce8eb_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: django_admin_log django_admin_log_content_type_id_c4bce8eb_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.django_admin_log
@@ -43932,7 +44168,7 @@ ALTER TABLE ONLY public.django_admin_log
 
 
 --
--- Name: django_admin_log django_admin_log_user_id_c564eba6_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: django_admin_log django_admin_log_user_id_c564eba6_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.django_admin_log
@@ -43940,7 +44176,7 @@ ALTER TABLE ONLY public.django_admin_log
 
 
 --
--- Name: featured_products featured_products_union_id_92cfd465_fk_products_union_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: featured_products featured_products_union_id_92cfd465_fk_products_union_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.featured_products
@@ -43948,7 +44184,7 @@ ALTER TABLE ONLY public.featured_products
 
 
 --
--- Name: images images_union_id_cb10732c_fk_products_union_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: images images_union_id_cb10732c_fk_products_union_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.images
@@ -43956,7 +44192,7 @@ ALTER TABLE ONLY public.images
 
 
 --
--- Name: invoices invoices_billing_address_id_c95218be_fk_addresses_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: invoices invoices_billing_address_id_c95218be_fk_addresses_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.invoices
@@ -43964,7 +44200,7 @@ ALTER TABLE ONLY public.invoices
 
 
 --
--- Name: invoices invoices_po_address_id_44d38dac_fk_addresses_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: invoices invoices_po_address_id_44d38dac_fk_addresses_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.invoices
@@ -43972,7 +44208,7 @@ ALTER TABLE ONLY public.invoices
 
 
 --
--- Name: invoices invoices_shipping_address_id_3f24ad23_fk_addresses_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: invoices invoices_shipping_address_id_3f24ad23_fk_addresses_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.invoices
@@ -43980,7 +44216,7 @@ ALTER TABLE ONLY public.invoices
 
 
 --
--- Name: invoices invoices_user_id_ff8879b0_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: invoices invoices_user_id_ff8879b0_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.invoices
@@ -43988,7 +44224,7 @@ ALTER TABLE ONLY public.invoices
 
 
 --
--- Name: manual_files manual_files_union_id_1dc0ed0f_fk_products_union_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: manual_files manual_files_union_id_1dc0ed0f_fk_products_union_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.manual_files
@@ -43996,7 +44232,7 @@ ALTER TABLE ONLY public.manual_files
 
 
 --
--- Name: order_item order_item_order_id_0ca9e92e_fk_orders_order_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: order_item order_item_order_id_0ca9e92e_fk_orders_order_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.order_item
@@ -44004,7 +44240,7 @@ ALTER TABLE ONLY public.order_item
 
 
 --
--- Name: orders orders_billing_address_id_53d8531b_fk_addresses_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: orders orders_billing_address_id_53d8531b_fk_addresses_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.orders
@@ -44012,7 +44248,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: orders orders_invoice_id_6bfdbcfb_fk_invoices_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: orders orders_invoice_id_6bfdbcfb_fk_invoices_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.orders
@@ -44020,7 +44256,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: orders orders_po_address_id_7947b6ed_fk_addresses_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: orders orders_po_address_id_7947b6ed_fk_addresses_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.orders
@@ -44028,7 +44264,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: orders orders_shipping_address_id_bf7237b0_fk_addresses_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: orders orders_shipping_address_id_bf7237b0_fk_addresses_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.orders
@@ -44036,7 +44272,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: orders orders_user_id_7e2523fb_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: orders orders_user_id_7e2523fb_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.orders
@@ -44044,15 +44280,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: products products_union_id_d4bb6e3e_fk_products_union_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.products
-    ADD CONSTRAINT products_union_id_d4bb6e3e_fk_products_union_id FOREIGN KEY (union_id) REFERENCES public.products_union(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: quotes quotes_user_id_c10fa7c3_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: quotes quotes_user_id_c10fa7c3_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.quotes
@@ -44060,7 +44288,7 @@ ALTER TABLE ONLY public.quotes
 
 
 --
--- Name: unit_prices unit_prices_union_id_b76d419e_fk_products_union_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: unit_prices unit_prices_union_id_b76d419e_fk_products_union_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.unit_prices
@@ -44068,7 +44296,7 @@ ALTER TABLE ONLY public.unit_prices
 
 
 --
--- Name: users users_address_id_96e92564_fk_users_address_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users users_address_id_96e92564_fk_users_address_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
@@ -44076,7 +44304,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users users_billing_address_id_53318b60_fk_users_address_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users users_billing_address_id_53318b60_fk_users_address_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
@@ -44084,7 +44312,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users_groups users_groups_group_id_2f3517aa_fk_auth_group_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users_groups users_groups_group_id_2f3517aa_fk_auth_group_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_groups
@@ -44092,7 +44320,7 @@ ALTER TABLE ONLY public.users_groups
 
 
 --
--- Name: users_groups users_groups_user_id_f500bee5_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users_groups users_groups_user_id_f500bee5_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_groups
@@ -44100,7 +44328,7 @@ ALTER TABLE ONLY public.users_groups
 
 
 --
--- Name: users users_shipping_address_id_008c2dab_fk_users_address_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users users_shipping_address_id_008c2dab_fk_users_address_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
@@ -44108,7 +44336,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users_user_permissions users_user_permissio_permission_id_6d08dcd2_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users_user_permissions users_user_permissio_permission_id_6d08dcd2_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_user_permissions
@@ -44116,7 +44344,7 @@ ALTER TABLE ONLY public.users_user_permissions
 
 
 --
--- Name: users_user_permissions users_user_permissions_user_id_92473840_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users_user_permissions users_user_permissions_user_id_92473840_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_user_permissions
@@ -44127,5 +44355,5 @@ ALTER TABLE ONLY public.users_user_permissions
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 92Hx1dlesidcRKWT3cH36gl62YeoSP3mxJTCUbiH48nkotJkUPqKQxcv9n8FUR0
+\unrestrict evjGjvLVgYp7bSWEWvYeLDg5LPuvKnpS3FPQluNXwBrvO38eKGbXCEe8AVco0W0
 

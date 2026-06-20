@@ -2,6 +2,23 @@ from django.urls import path, include
 from django.contrib import admin
 
 from . import views
+from .admin_views import (
+    admin_dashboard_stats,
+    admin_list_products, admin_get_product, admin_create_product,
+    admin_update_product, admin_delete_product,
+    admin_list_featured_products, admin_get_featured_product,
+    admin_create_featured_product, admin_update_featured_product,
+    admin_delete_featured_product,
+    admin_list_blogs, admin_get_blog, admin_create_blog,
+    admin_update_blog, admin_delete_blog,
+    admin_list_all_users, admin_get_user, admin_create_user,
+    admin_update_user, admin_delete_user, admin_toggle_admin,
+    admin_list_quotes, admin_get_quote, admin_mark_quote_read,
+    admin_delete_quote,
+    admin_list_services, admin_get_service, admin_create_service,
+    admin_update_service, admin_delete_service,
+    admin_list_media, admin_upload_media, admin_delete_media,
+)
 
 admin.site.site_header = "Bioark Site Administration"
 admin.site.site_title = "Bioark Site Administration"
@@ -25,4 +42,54 @@ urlpatterns = [
     path('contact-us/', views.send_contact_form, name='contact-us'),
     path('quote/', views.send_quote_form, name='quote'),
     path('search/', views.search_product, name='search'),
-]
+
+    # ── Admin Panel API ──────────────────────────────────────────────────
+    path('admin-panel/dashboard/', admin_dashboard_stats),
+
+    # Products
+    path('admin-panel/products/', admin_list_products),
+    path('admin-panel/products/create/', admin_create_product),
+    path('admin-panel/products/<int:product_id>/', admin_get_product),
+    path('admin-panel/products/<int:product_id>/update/', admin_update_product),
+    path('admin-panel/products/<int:product_id>/delete/', admin_delete_product),
+
+    # Featured Products
+    path('admin-panel/featured-products/', admin_list_featured_products),
+    path('admin-panel/featured-products/create/', admin_create_featured_product),
+    path('admin-panel/featured-products/<int:fp_id>/', admin_get_featured_product),
+    path('admin-panel/featured-products/<int:fp_id>/update/', admin_update_featured_product),
+    path('admin-panel/featured-products/<int:fp_id>/delete/', admin_delete_featured_product),
+
+    # Blogs
+    path('admin-panel/blogs/', admin_list_blogs),
+    path('admin-panel/blogs/create/', admin_create_blog),
+    path('admin-panel/blogs/<int:blog_id>/', admin_get_blog),
+    path('admin-panel/blogs/<int:blog_id>/update/', admin_update_blog),
+    path('admin-panel/blogs/<int:blog_id>/delete/', admin_delete_blog),
+
+    # Users
+    path('admin-panel/users/', admin_list_all_users),
+    path('admin-panel/users/create/', admin_create_user),
+    path('admin-panel/users/<int:user_id>/', admin_get_user),
+    path('admin-panel/users/<int:user_id>/update/', admin_update_user),
+    path('admin-panel/users/<int:user_id>/delete/', admin_delete_user),
+    path('admin-panel/users/<int:user_id>/toggle-admin/', admin_toggle_admin),
+
+    # Quotes
+    path('admin-panel/quotes/', admin_list_quotes),
+    path('admin-panel/quotes/<int:quote_id>/', admin_get_quote),
+    path('admin-panel/quotes/<int:quote_id>/mark-read/', admin_mark_quote_read),
+    path('admin-panel/quotes/<int:quote_id>/delete/', admin_delete_quote),
+
+    # Services
+    path('admin-panel/services/', admin_list_services),
+    path('admin-panel/services/create/', admin_create_service),
+    path('admin-panel/services/<int:service_id>/', admin_get_service),
+    path('admin-panel/services/<int:service_id>/update/', admin_update_service),
+    path('admin-panel/services/<int:service_id>/delete/', admin_delete_service),
+
+    # Media
+    path('admin-panel/media/', admin_list_media),
+    path('admin-panel/media/upload/', admin_upload_media),
+    path('admin-panel/media/<int:image_id>/delete/', admin_delete_media),
+]

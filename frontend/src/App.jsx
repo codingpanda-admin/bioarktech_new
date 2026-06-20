@@ -170,7 +170,7 @@ function App() {
 
   return (
     <div className="site-shell">
-      {isAdminPage ? (
+      {isAdminPage && currentUserProfile && (currentUserProfile.is_admin || currentUserProfile.isAdmin || currentUserProfile.is_staff) ? (
         <AdminHeader navigate={navigate} onLogout={handleLogout} />
       ) : (
         <SiteHeader 
@@ -184,7 +184,20 @@ function App() {
       )}
       
       {isAdminPage ? (
-        <AdminPage />
+        <AdminPage 
+          currentUser={currentUser} 
+          currentUserProfile={currentUserProfile} 
+          onLoginSuccess={async (email) => {
+            setCurrentUser(email);
+            try {
+              const profile = await apiFetch('/api/users/view-user-info/');
+              setCurrentUserProfile(profile);
+            } catch (profileErr) {
+              setCurrentUserProfile(null);
+            }
+          }} 
+          onLogout={handleLogout}
+        />
       ) : isRequestQuotePage ? (
         <RequestQuotePage navigate={navigate} cart={cart} onClearCart={handleClearCart} />
       ) : isSearchPage ? (
