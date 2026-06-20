@@ -35,7 +35,7 @@ services:
       - ./backend:/app
       - ./media:/var/www/django/media
       - ./db-conversion:/app/db-conversion
-    command: sh -c "python wait_for_db.py && python manage.py migrate --fake-initial && python populate_product.py && python populate_reagents.py && python populate_services.py && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "python wait_for_db.py && python manage.py migrate --fake-initial && python populate_product.py && python populate_reagents.py && python populate_services.py && python populate_blogs.py && python manage.py runserver 0.0.0.0:8000"
     depends_on:
       db:
         condition: service_healthy

@@ -1,3 +1,5 @@
+import { formatAssetUrl } from './api';
+
 const escapeHtml = (value) => String(value)
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
@@ -54,7 +56,7 @@ const formatInlineMarkdown = (value) => {
 
   output = output
     .replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+&quot;[^&]*&quot;)?\)/g, (_, alt, url) => {
-      const href = escapeHtml(toSafeHref(url));
+      const href = escapeHtml(formatAssetUrl(url));
       return `<img src="${href}" alt="${alt}" />`;
     })
     .replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+&quot;[^&]*&quot;)?\)/g, (_, label, url) => {
