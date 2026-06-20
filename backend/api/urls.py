@@ -27,6 +27,7 @@ admin.site.index_title = "Database Tables"
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('products/', include('products.urls')),
+    path('quotes/', include('quote.urls')),
     path('users/', include('users.urls')),
     path('orders/', include('orders.urls')),
     path('blogs/', include('blogs.urls')),
@@ -92,4 +93,4 @@ urlpatterns = [
     path('admin-panel/media/', admin_list_media),
     path('admin-panel/media/upload/', admin_upload_media),
     path('admin-panel/media/<int:image_id>/delete/', admin_delete_media),
-]
+]

@@ -28,6 +28,7 @@ function App() {
   const [searchParams, setSearchParams] = useState(new URLSearchParams(window.location.search));
   const [currentUser, setCurrentUser] = useState(null);
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Cart State & Methods
@@ -121,18 +122,17 @@ function App() {
   useEffect(() => {
     const checkUserSession = async () => {
       try {
-        const data = await apiFetch('/api/whoami/');
-        if (data.username) {
-          setCurrentUser(data.username);
-          try {
-            const profile = await apiFetch('/api/users/view-user-info/');
-            setCurrentUserProfile(profile);
-          } catch (profileErr) {
-            setCurrentUserProfile(null);
-          }
+        const session = await apiFetch('/api/session/');
+        if (session.isAuthenticated) {
+          const profile = await apiFetch('/api/users/view-user-info/');
+          setCurrentUser(profile.email);
+          setCurrentUserProfile(profile);
         }
       } catch (err) {
-        // Not authenticated
+        setCurrentUser(null);
+        setCurrentUserProfile(null);
+      } finally {
+        setAuthChecked(true);
       }
     };
     checkUserSession();
@@ -187,6 +187,7 @@ function App() {
         <AdminPage 
           currentUser={currentUser} 
           currentUserProfile={currentUserProfile} 
+          authChecked={authChecked}
           onLoginSuccess={async (email) => {
             setCurrentUser(email);
             try {
@@ -199,7 +200,13 @@ function App() {
           onLogout={handleLogout}
         />
       ) : isRequestQuotePage ? (
-        <RequestQuotePage navigate={navigate} cart={cart} onClearCart={handleClearCart} />
+        <RequestQuotePage
+          navigate={navigate}
+          cart={cart}
+          onClearCart={handleClearCart}
+          currentUser={currentUser}
+          currentUserProfile={currentUserProfile}
+        />
       ) : isSearchPage ? (
         <SearchPage 
           navigate={navigate} 

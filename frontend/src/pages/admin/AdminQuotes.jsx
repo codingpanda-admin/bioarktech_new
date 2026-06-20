@@ -52,10 +52,24 @@ function AdminQuotes() {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('en-US', { 
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return 'N/A';
+
+    return date.toLocaleDateString('en-US', { 
       year: 'numeric', month: 'short', day: 'numeric', 
       hour: '2-digit', minute: '2-digit' 
     });
+  };
+
+  const getQuoteValue = (quote, ...keys) => {
+    for (const key of keys) {
+      const value = quote[key];
+      if (value !== undefined && value !== null && String(value).trim() !== '') {
+        return value;
+      }
+    }
+
+    return 'N/A';
   };
 
   const filtered = quotes.filter(q => {
@@ -106,20 +120,23 @@ function AdminQuotes() {
                   </div>
                 </div>
                 <div className="admin-quote-meta">
-                  {quote.service_type && <span className="admin-badge badge-default">{quote.service_type}</span>}
-                  <span className="admin-quote-date">{formatDate(quote.created_at)}</span>
+                  {getQuoteValue(quote, 'service_type', 'serviceType') !== 'N/A' && (
+                    <span className="admin-badge badge-default">{getQuoteValue(quote, 'service_type', 'serviceType')}</span>
+                  )}
+                  <span className="admin-quote-date">{formatDate(getQuoteValue(quote, 'created_at', 'createdAt'))}</span>
                   <span className="admin-chevron">{expandedQuote === quote.id ? '▲' : '▼'}</span>
                 </div>
               </div>
               {expandedQuote === quote.id && (
                 <div className="admin-quote-details">
                   <div className="admin-quote-grid">
-                    {quote.phone && <div><strong>Phone:</strong> {quote.phone}</div>}
-                    {quote.company && <div><strong>Company:</strong> {quote.company}</div>}
-                    {quote.department && <div><strong>Department:</strong> {quote.department}</div>}
-                    {quote.timeline && <div><strong>Timeline:</strong> {quote.timeline}</div>}
-                    {quote.budget && <div><strong>Budget:</strong> {quote.budget}</div>}
-                    {quote.external_id && <div><strong>External ID:</strong> {quote.external_id}</div>}
+                    <div><strong>Phone Number:</strong> {getQuoteValue(quote, 'phone')}</div>
+                    <div className="admin-quote-full-row">
+                      <strong>Company:</strong> {getQuoteValue(quote, 'company')} <strong>Department:</strong> {getQuoteValue(quote, 'department')}
+                    </div>
+                    <div className="admin-quote-full-row">
+                      <strong>Service Type:</strong> {getQuoteValue(quote, 'service_type', 'serviceType')} <strong>Budget:</strong> {getQuoteValue(quote, 'budget')} <strong>Timeline:</strong> {getQuoteValue(quote, 'timeline')}
+                    </div>
                   </div>
                   {quote.project_description && (
                     <div className="admin-quote-desc">

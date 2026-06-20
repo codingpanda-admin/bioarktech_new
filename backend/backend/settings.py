@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'api',
     'corsheaders',
     'products',
+    'quote',
     'genes',
     'orders',
     'blogs',

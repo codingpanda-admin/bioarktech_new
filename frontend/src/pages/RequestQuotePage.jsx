@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/api';
 
-function RequestQuotePage({ navigate, cart, onClearCart }) {
+function RequestQuotePage({ navigate, cart, onClearCart, currentUser, currentUserProfile }) {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -27,6 +27,22 @@ function RequestQuotePage({ navigate, cart, onClearCart }) {
       }));
     }
   }, [cart]);
+
+  useEffect(() => {
+    if (!currentUser && !currentUserProfile) {
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      firstName: prev.firstName || currentUserProfile?.first_name || '',
+      lastName: prev.lastName || currentUserProfile?.last_name || '',
+      email: prev.email || currentUserProfile?.email || currentUser || '',
+      phone: prev.phone || currentUserProfile?.mobile || currentUserProfile?.telephone || '',
+      company: prev.company || currentUserProfile?.company || '',
+      department: prev.department || currentUserProfile?.department || '',
+    }));
+  }, [currentUser, currentUserProfile]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -57,7 +73,7 @@ function RequestQuotePage({ navigate, cart, onClearCart }) {
         message: `Departamento: ${formData.department || 'N/A'}\nTiempo: ${formData.timeline}\nPresupuesto: ${formData.budget}\nDescripción: ${formData.projectDescription}\nInformación Adicional: ${formData.additionalInformation || 'Ninguna'}`
       };
 
-      await apiFetch('/api/quote/', {
+      await apiFetch('/api/quotes/', {
         method: 'POST',
         body: payload
       });

@@ -14,7 +14,7 @@ from products.models import (
 )
 from blogs.models import Blog
 from users.models import User, Address
-from api.models import Quote
+from quote.models import Quote
 from interface.models import ProductMode, ServiceMode
 
 
@@ -761,7 +761,7 @@ def admin_list_quotes(request):
         return err
 
     try:
-        quotes = Quote.objects.all().order_by('-created_at')
+        quotes = Quote.objects.all().order_by('read', '-created_at')
         data = []
         for q in quotes:
             data.append({

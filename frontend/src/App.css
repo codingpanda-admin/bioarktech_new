@@ -4898,6 +4898,10 @@ label,
   margin-bottom: 16px;
 }
 
+.admin-quote-full-row {
+  grid-column: 1 / -1;
+}
+
 .admin-quote-desc {
   margin-bottom: 16px;
   font-size: 13px;

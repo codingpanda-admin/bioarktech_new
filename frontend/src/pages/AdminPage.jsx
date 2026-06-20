@@ -25,7 +25,7 @@ const adminLinks = [
   'Media',
 ];
 
-function AdminPage({ currentUser, currentUserProfile, onLoginSuccess, onLogout }) {
+function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSuccess, onLogout }) {
   const [activeSection, setActiveSection] = useState('Overview');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -52,6 +52,15 @@ function AdminPage({ currentUser, currentUserProfile, onLoginSuccess, onLogout }
     }
   };
 
+  if (!authChecked) {
+    return (
+      <main className="admin-loading-page">
+        <div className="admin-spinner"></div>
+        <p>Checking administrator session...</p>
+      </main>
+    );
+  }
+
   // 1. Not logged in -> Show admin login form
   if (!currentUser) {
     return (
@@ -62,25 +71,27 @@ function AdminPage({ currentUser, currentUserProfile, onLoginSuccess, onLogout }
             <p>Admin Console Sign In</p>
           </div>
           {error && <div className="admin-login-error">{error}</div>}
-          <form onSubmit={handleLoginSubmit}>
+          <form onSubmit={handleLoginSubmit} autoComplete="off">
             <div className="form-group">
               <label>Email Address</label>
               <input 
                 type="email" 
+                name="admin-email"
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
                 required 
-                placeholder="admin@bioarktech.com"
+                autoComplete="off"
               />
             </div>
             <div className="form-group">
               <label>Password</label>
               <input 
                 type="password" 
+                name="admin-password"
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
                 required 
-                placeholder="••••••••"
+                autoComplete="new-password"
               />
             </div>
             <button type="submit" className="admin-login-btn" disabled={loading}>

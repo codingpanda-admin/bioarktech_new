@@ -24,7 +24,9 @@ from rest_framework.response import Response
 
 from products.serializers import ProductSerializer
 from users.models import User
-from api.models import EmailVerificationToken, Quote
+from api.models import EmailVerificationToken
+from quote.models import Quote
+from quote.services import create_quote_record
 from products.models import *
 
 FRONTEND_DOMAIN = os.environ.get('FRONTEND_DOMAIN')
@@ -220,7 +222,7 @@ def send_quote_form(request):
 
     external_id = data.get('externalId') or data.get('external_id') or generate_quote_external_id(request)
 
-    quote = Quote.objects.create(
+    quote = create_quote_record(
         external_id=external_id,
         first_name=first_name,
         last_name=last_name,
