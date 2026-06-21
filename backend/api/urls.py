@@ -4,6 +4,9 @@ from django.contrib import admin
 from . import views
 from .admin_views import (
     admin_dashboard_stats,
+    admin_list_product_categories, admin_create_product_category,
+    admin_update_product_category, admin_reorder_product_categories,
+    admin_delete_product_category,
     admin_list_products, admin_get_product, admin_create_product,
     admin_update_product, admin_delete_product,
     admin_list_featured_products, admin_get_featured_product,
@@ -48,6 +51,11 @@ urlpatterns = [
     path('admin-panel/dashboard/', admin_dashboard_stats),
 
     # Products
+    path('admin-panel/product-categories/', admin_list_product_categories),
+    path('admin-panel/product-categories/create/', admin_create_product_category),
+    path('admin-panel/product-categories/reorder/', admin_reorder_product_categories),
+    path('admin-panel/product-categories/<int:category_id>/update/', admin_update_product_category),
+    path('admin-panel/product-categories/<int:category_id>/delete/', admin_delete_product_category),
     path('admin-panel/products/', admin_list_products),
     path('admin-panel/products/create/', admin_create_product),
     path('admin-panel/products/<int:product_id>/', admin_get_product),

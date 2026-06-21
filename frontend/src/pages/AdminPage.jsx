@@ -46,7 +46,7 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
         await onLoginSuccess(email);
       }
     } catch (err) {
-      setError(err.message || 'Login failed. Please verify credentials.');
+      setError('Failed to login, please check username and password again');
     } finally {
       setLoading(false);
     }

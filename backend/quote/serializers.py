@@ -4,6 +4,7 @@ from .models import Quote
 
 
 class QuoteSerializer(serializers.ModelSerializer):
+    userId = serializers.IntegerField(source='user_id', read_only=True)
     externalId = serializers.CharField(source='external_id', read_only=True)
     firstName = serializers.CharField(source='first_name', read_only=True)
     lastName = serializers.CharField(source='last_name', read_only=True)
@@ -16,6 +17,7 @@ class QuoteSerializer(serializers.ModelSerializer):
         model = Quote
         fields = [
             'id',
+            'userId',
             'external_id',
             'externalId',
             'first_name',
@@ -38,4 +40,3 @@ class QuoteSerializer(serializers.ModelSerializer):
             'createdAt',
             'read',
         ]
-

@@ -26,6 +26,16 @@ def require_admin(request):
 
 
 @api_view(['GET'])
+def list_my_quotes(request):
+    if not request.user.is_authenticated:
+        return Response({'detail': 'User is not authenticated.'}, status=401)
+
+    quotes = Quote.objects.filter(user=request.user).order_by('read', '-created_at')
+    serializer = QuoteSerializer(quotes, many=True)
+    return Response({'results': serializer.data})
+
+
+@api_view(['GET'])
 def list_quotes(request):
     error = require_admin(request)
     if error:
@@ -53,6 +63,7 @@ def create_quote(request):
     first_name = data.get('firstName') or data.get('first_name')
     last_name = data.get('lastName') or data.get('last_name')
     email = data.get('email')
+    user = request.user if request.user.is_authenticated else None
 
     if not first_name or not last_name or not email:
         return JsonResponse({'detail': 'First name, last name, and email are required.'}, status=400)
@@ -63,6 +74,7 @@ def create_quote(request):
         return JsonResponse({'detail': 'Invalid email address.'}, status=400)
 
     quote = create_quote_record(
+        user=user,
         external_id=data.get('externalId') or data.get('external_id') or generate_quote_external_id(request),
         first_name=first_name,
         last_name=last_name,

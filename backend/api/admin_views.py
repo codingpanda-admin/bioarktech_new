@@ -2,7 +2,8 @@ import json
 import traceback
 
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Max
+from django.utils.text import slugify
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -63,6 +64,140 @@ def admin_dashboard_stats(request):
 # ===========================================================================
 #  PRODUCTS CRUD
 # ===========================================================================
+
+def _serialize_product_category(category):
+    product_count = Product.objects.filter(category_external_id=category.external_id).count()
+    return {
+        'category_id': category.category_id,
+        'category_name': category.category_name,
+        'description': category.description,
+        'priority': category.priority,
+        'external_id': category.external_id,
+        'product_type': category.product_type,
+        'product_count': product_count,
+    }
+
+
+@api_view(['GET'])
+def admin_list_product_categories(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        product_type = request.GET.get('product_type')
+        categories = ProductCategory.objects.all().order_by('priority', 'category_id')
+        if product_type:
+            categories = categories.filter(product_type=product_type)
+
+        data = [_serialize_product_category(category) for category in categories]
+        return Response({'results': data})
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def admin_create_product_category(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        d = request.data
+        name = (d.get('category_name') or '').strip()
+        if not name:
+            return Response({'error': 'Catalog name is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        external_id = (d.get('external_id') or slugify(name) or f"category-{ProductCategory.objects.count() + 1}").strip()
+        base_external_id = external_id
+        suffix = 2
+        while ProductCategory.objects.filter(external_id=external_id).exists():
+            external_id = f"{base_external_id}-{suffix}"
+            suffix += 1
+
+        max_priority = ProductCategory.objects.aggregate(max_priority=Max('priority'))['max_priority'] or 0
+        category = ProductCategory.objects.create(
+            category_name=name,
+            external_id=external_id,
+            description=d.get('description') or '',
+            priority=d.get('priority') or max_priority + 1,
+            product_type=d.get('product_type') or 'product',
+        )
+        return Response(_serialize_product_category(category), status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def admin_update_product_category(request, category_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        category = ProductCategory.objects.get(category_id=category_id)
+        d = request.data
+
+        if 'category_name' in d:
+            name = (d.get('category_name') or '').strip()
+            if not name:
+                return Response({'error': 'Catalog name is required'}, status=status.HTTP_400_BAD_REQUEST)
+            category.category_name = name
+
+        if 'priority' in d:
+            category.priority = d.get('priority') or 1
+
+        if 'description' in d:
+            category.description = d.get('description') or ''
+
+        category.save()
+        return Response(_serialize_product_category(category))
+    except ProductCategory.DoesNotExist:
+        return Response({'error': 'Catalog not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def admin_reorder_product_categories(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        items = request.data.get('categories', [])
+        for index, item in enumerate(items, start=1):
+            category_id = item.get('category_id')
+            if category_id:
+                ProductCategory.objects.filter(category_id=category_id).update(priority=item.get('priority') or index)
+
+        categories = ProductCategory.objects.all().order_by('priority', 'category_id')
+        return Response({'results': [_serialize_product_category(category) for category in categories]})
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def admin_delete_product_category(request, category_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        category = ProductCategory.objects.get(category_id=category_id)
+        product_count = Product.objects.filter(category_external_id=category.external_id).count()
+        if product_count > 0:
+            return Response(
+                {'error': f'This catalog contains {product_count} product(s). Move or remove those products before deleting it.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        category.delete()
+        return Response({'message': 'Catalog deleted successfully'})
+    except ProductCategory.DoesNotExist:
+        return Response({'error': 'Catalog not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 def admin_list_products(request):
@@ -766,6 +901,7 @@ def admin_list_quotes(request):
         for q in quotes:
             data.append({
                 'id': q.id,
+                'userId': q.user_id,
                 'external_id': q.external_id,
                 'first_name': q.first_name,
                 'last_name': q.last_name,
@@ -796,6 +932,7 @@ def admin_get_quote(request, quote_id):
         q = Quote.objects.get(id=quote_id)
         data = {
             'id': q.id,
+            'userId': q.user_id,
             'external_id': q.external_id,
             'first_name': q.first_name,
             'last_name': q.last_name,

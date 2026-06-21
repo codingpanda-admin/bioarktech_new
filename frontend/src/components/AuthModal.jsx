@@ -49,7 +49,7 @@ function AuthModal({ onClose, onLoginSuccess }) {
       }
     } catch (err) {
       setMessageType('error');
-      setError(err.message || 'Authentication failed.');
+      setError(isRegisterMode ? (err.message || 'Authentication failed.') : 'Failed to login, please check username and password again');
     } finally {
       setLoading(false);
     }

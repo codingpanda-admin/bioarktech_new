@@ -254,14 +254,17 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
               {profileMenuOpen && (
                 <div className="profile-dropdown" id="profile-menu">
                   <div className="profile-dropdown-greeting">{profileAltText}</div>
+                  <a href="/profile" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/profile'); }}>
+                    My Profile
+                  </a>
+                  <a href="/quotes" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/quotes'); }}>
+                    My Quotes
+                  </a>
                   {isAdminUser && (
                     <a href="/admin" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/admin'); }}>
                       Admin Console
                     </a>
                   )}
-                  <a href="/profile" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/profile'); }}>
-                    Profile
-                  </a>
                   <a href="#" onClick={(e) => { e.preventDefault(); closeMenus(); onLogout(); }}>
                     Sign Out
                   </a>

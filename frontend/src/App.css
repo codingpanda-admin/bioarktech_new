@@ -2690,6 +2690,116 @@ label,
   padding-left: 20px;
 }
 
+.customer-quotes-page {
+  width: min(1120px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 52px 0 72px;
+}
+
+.customer-quotes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.customer-quotes-header h1 {
+  margin: 0;
+  font-size: 34px;
+  color: var(--ink);
+}
+
+.customer-quotes-empty {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 28px;
+  background: #fff;
+  color: var(--muted);
+}
+
+.customer-quotes-empty h2 {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 20px;
+}
+
+.customer-quotes-empty p {
+  margin: 0;
+}
+
+.customer-quotes-list {
+  display: grid;
+  gap: 14px;
+}
+
+.customer-quote-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+  background: #fff;
+}
+
+.customer-quote-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.customer-quote-card h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.customer-quote-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.customer-quote-status {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.customer-quote-status.is-read {
+  background: #eef7f1;
+  color: #247a3b;
+}
+
+.customer-quote-status.is-unread {
+  background: #fff7e8;
+  color: #9a5d00;
+}
+
+.customer-quote-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 18px 0 0;
+}
+
+.customer-quote-meta div {
+  min-width: 0;
+}
+
+.customer-quote-meta dt {
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.customer-quote-meta dd {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 600;
+}
+
 .immediate-assistance {
   margin: 28px 0 24px;
   padding-top: 28px;
@@ -4600,6 +4710,121 @@ label,
 .admin-form-field textarea:focus {
   border-color: var(--blue);
   box-shadow: 0 0 0 3px rgba(0, 111, 242, 0.12);
+}
+
+.admin-catalog-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+
+.admin-table-input {
+  width: 100%;
+  min-width: 180px;
+  border: 1px solid #cfdbea;
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.admin-table-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0, 111, 242, 0.12);
+  outline: 0;
+}
+
+.admin-data-table tr[draggable="true"] {
+  cursor: grab;
+}
+
+.admin-data-table tr[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.admin-data-table tr.is-dragging {
+  opacity: 0.55;
+  background: #eef6ff;
+}
+
+.admin-drag-handle {
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.admin-rich-text {
+  border: 1px solid #cfdbea;
+  border-radius: 6px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.admin-rich-text-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid #dbe4f0;
+  background: #f7fbff;
+}
+
+.admin-rich-text-toolbar select,
+.admin-rich-text-toolbar button {
+  min-height: 32px;
+  border: 1px solid #c7d5e6;
+  border-radius: 5px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  padding: 6px 9px;
+}
+
+.admin-rich-text-toolbar button {
+  cursor: pointer;
+}
+
+.admin-rich-text-toolbar button:hover,
+.admin-rich-text-toolbar select:focus,
+.admin-rich-text-toolbar button:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0, 111, 242, 0.1);
+  outline: 0;
+}
+
+.admin-rich-underline {
+  text-decoration: underline;
+}
+
+.admin-rich-text-editor {
+  min-height: 300px;
+  padding: 14px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+  outline: 0;
+  overflow-y: auto;
+}
+
+.admin-rich-text-editor:focus {
+  box-shadow: inset 0 0 0 2px rgba(0, 111, 242, 0.12);
+}
+
+.admin-rich-text-editor p,
+.admin-rich-text-editor h2,
+.admin-rich-text-editor h3,
+.admin-rich-text-editor blockquote,
+.admin-rich-text-editor ul,
+.admin-rich-text-editor ol {
+  margin-top: 0;
+}
+
+.admin-rich-text-editor a {
+  color: var(--blue);
+  text-decoration: underline;
 }
 
 .admin-form-toggles {

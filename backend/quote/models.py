@@ -3,6 +3,7 @@ from django.db import models
 
 class Quote(models.Model):
     id = models.BigAutoField(primary_key=True)
+    user = models.ForeignKey('users.User', on_delete=models.SET_NULL, related_name='quotes', db_column='user_id', blank=True, null=True)
     external_id = models.CharField(max_length=64, blank=True, null=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -24,4 +25,3 @@ class Quote(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} <{self.email}>"
-

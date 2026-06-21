@@ -22,6 +22,7 @@ import InvestorsPage from './pages/InvestorsPage';
 import AboutBioArkPage from './pages/AboutBioArkPage';
 import BlogDetailPage from './pages/BlogDetailPage';
 import ProfilePage from './pages/ProfilePage';
+import MyQuotesPage from './pages/MyQuotesPage';
 
 function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -167,6 +168,7 @@ function App() {
   const isInvestorsPage = currentPath === '/investors';
   const isAboutBioArkPage = currentPath === '/about-bioark';
   const isProfilePage = currentPath === '/profile';
+  const isMyQuotesPage = currentPath === '/quotes';
 
   return (
     <div className="site-shell">
@@ -231,6 +233,8 @@ function App() {
         <ResourcesPage navigate={navigate} />
       ) : isProfilePage ? (
         <ProfilePage navigate={navigate} />
+      ) : isMyQuotesPage ? (
+        <MyQuotesPage navigate={navigate} currentUser={currentUser} authChecked={authChecked} />
       ) : isBlogPage ? (
         <BlogDetailPage
           navigate={navigate}

@@ -9,7 +9,7 @@ const escapeHtml = (value) => String(value)
 
 const hasHtmlTags = (value) => /<\/?[a-z][\s\S]*>/i.test(value);
 
-const hasMarkdownSyntax = (value) => /(\*\*|__|!\[[^\]]*]\(|\[[^\]]+]\([^)]+\)|(?:^|\s)-\s+(?:\*\*)?[A-Za-z0-9]|^#{1,4}\s+)/m.test(value);
+const hasMarkdownSyntax = (value) => /(\*\*|__|!\[[^\]]*]\(|\[[^\]]+]\([^)]+\)|(?:^|\s)-\s+(?:\*\*)?[A-Za-z0-9]|(?:^|\s)#{1,4}\s+|\s---\s)/m.test(value);
 
 const decodeHtmlEntities = (value) => String(value)
   .replace(/&nbsp;/g, ' ')
@@ -111,6 +111,17 @@ const normalizeMarkdownImageBlocks = (value) => value.replace(
   '\n\n$1\n\n'
 );
 
+const normalizeInlineMarkdownStructure = (value) => String(value)
+  .replace(/\s+-\s+(?=\*\*[^*]+\*\*)/g, '\n- ')
+  .replace(/\s+---\s+/g, '\n\n---\n\n')
+  .replace(/(^|\s)(#{1,4})\s+/g, (_, lead, hashes) => (
+    `${lead ? '\n\n' : ''}${hashes} `
+  ))
+  .replace(/(#{1,4}\s+[^#\n-]+?)\s+(?=-\s+(?:\*\*)?[A-Za-z0-9])/g, '$1\n\n')
+  .replace(/(#{1,4}\s+Montgomery County[’']s Life Sciences Hub)\s+(Montgomery County[—–-])/g, '$1\n\n$2')
+  .replace(/([.!?])\s+(?=We(?:’|'| a)re\b)/g, '$1\n\n')
+  .replace(/(\*\*[^*]+\*\*\s+[—-]\s+[^\n]+?)\s+(?=(This event|This article|This post|We(?:’|'| a)re)\b)/g, '$1\n\n');
+
 const splitTableRow = (line) => line
   .trim()
   .replace(/^\|/, '')
@@ -207,7 +218,7 @@ export const formatRichText = (value) => {
 
   const source = hasHtmlTags(content) ? htmlToRichTextSource(content) : content;
 
-  return normalizeMarkdownImageBlocks(normalizeInlineListMarkers(source))
+  return normalizeMarkdownImageBlocks(normalizeInlineListMarkers(normalizeInlineMarkdownStructure(source)))
     .replace(/\r\n?/g, '\n')
     .split(/\n{2,}/)
     .map(formatBlock)

@@ -1,5 +1,80 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { apiFetch, API_URL, formatAssetUrl } from '../../utils/api';
+import { formatRichText } from '../../utils/richText';
+
+function BlogContentEditor({ value, onChange }) {
+  const editorRef = useRef(null);
+
+  useEffect(() => {
+    const editorHtml = formatRichText(value || '');
+    if (editorRef.current && editorRef.current.innerHTML !== editorHtml) {
+      editorRef.current.innerHTML = editorHtml;
+    }
+    if ((value || '') !== editorHtml) {
+      onChange(editorHtml);
+    }
+  }, [value, onChange]);
+
+  const syncValue = () => {
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
+  };
+
+  const runCommand = (command, commandValue = null) => {
+    if (editorRef.current) {
+      editorRef.current.focus();
+    }
+    document.execCommand(command, false, commandValue);
+    syncValue();
+  };
+
+  const handleLink = () => {
+    const url = window.prompt('Enter link URL');
+    if (!url) return;
+    runCommand('createLink', url);
+  };
+
+  const handleBlockChange = (event) => {
+    runCommand('formatBlock', event.target.value);
+    event.target.value = 'p';
+  };
+
+  const preventFocusLoss = (event) => {
+    event.preventDefault();
+  };
+
+  return (
+    <div className="admin-rich-text">
+      <div className="admin-rich-text-toolbar" aria-label="Blog content formatting tools">
+        <select aria-label="Text style" defaultValue="p" onChange={handleBlockChange}>
+          <option value="p">Paragraph</option>
+          <option value="h2">Heading 2</option>
+          <option value="h3">Heading 3</option>
+          <option value="blockquote">Quote</option>
+        </select>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('bold')}><strong>B</strong></button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('italic')}><em>I</em></button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('underline')}><span className="admin-rich-underline">U</span></button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertUnorderedList')}>Bullet List</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertOrderedList')}>Numbered List</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={handleLink}>Link</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('unlink')}>Unlink</button>
+      </div>
+      <div
+        ref={editorRef}
+        className="admin-rich-text-editor"
+        contentEditable
+        role="textbox"
+        aria-multiline="true"
+        aria-label="Blog content"
+        onInput={syncValue}
+        onBlur={syncValue}
+        suppressContentEditableWarning
+      />
+    </div>
+  );
+}
 
 function AdminBlogs() {
   const [blogs, setBlogs] = useState([]);
@@ -69,6 +144,17 @@ function AdminBlogs() {
     setSaving(true);
     setError('');
     try {
+      const contentText = (editingBlog.content || '')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .trim();
+
+      if (!contentText) {
+        setError('Blog content is required.');
+        setSaving(false);
+        return;
+      }
+
       const isNew = !editingBlog.id;
       const endpoint = isNew
         ? '/api/admin-panel/blogs/create/'
@@ -209,10 +295,10 @@ function AdminBlogs() {
                     </div>
                   )}
                 </label>
-                <label className="admin-form-field span-3">
-                  <span>Content (HTML) *</span>
-                  <textarea rows="12" value={editingBlog.content || ''} onChange={(e) => updateField('content', e.target.value)} required />
-                </label>
+                <div className="admin-form-field span-3">
+                  <span>Blog Content *</span>
+                  <BlogContentEditor value={editingBlog.content || ''} onChange={(value) => updateField('content', value)} />
+                </div>
               </div>
               <div className="admin-modal-footer">
                 <button type="button" className="secondary-admin-button" onClick={() => setIsModalOpen(false)}>Cancel</button>

@@ -211,6 +211,7 @@ def send_quote_form(request):
     service_type = data.get('serviceType')
     cell_line_amount = data.get('cellLineAmount')
     message = data.get('message')
+    user = request.user if request.user.is_authenticated else None
 
     if not first_name or not last_name or not email:
         return JsonResponse({'detail': 'First name, last name, and email are required.'}, status=400)
@@ -223,6 +224,7 @@ def send_quote_form(request):
     external_id = data.get('externalId') or data.get('external_id') or generate_quote_external_id(request)
 
     quote = create_quote_record(
+        user=user,
         external_id=external_id,
         first_name=first_name,
         last_name=last_name,
