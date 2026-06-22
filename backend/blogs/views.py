@@ -13,7 +13,7 @@ def get_blog(request, blog_id):
 
 @api_view(["GET"])
 def get_latest_blogs(request):
-    posts = Blog.objects.order_by('-date_posted')[:4]
+    posts = Blog.objects.order_by('-date_posted')[:3]
     serializer = PreviewBlogSerializer(posts, many=True)
     return JsonResponse(serializer.data, safe=False)
 

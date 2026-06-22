@@ -4,6 +4,30 @@ import { logo } from '../utils/api';
 import IconMark from '../components/IconMark';
 import ProductVisual from '../components/ProductVisual';
 
+const getBlogTimestamp = (blog) => {
+  const rawDate = blog?.date_posted || blog?.date || '';
+  const timestamp = rawDate ? new Date(rawDate).getTime() : 0;
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+};
+
+const getRecentBlogs = (items) => (
+  [...items].sort((a, b) => getBlogTimestamp(b) - getBlogTimestamp(a)).slice(0, 3)
+);
+
+const formatHomeBlogDate = (blog) => {
+  const rawDate = blog?.date_posted || blog?.date || '';
+  if (!rawDate) return '';
+
+  const date = new Date(rawDate);
+  if (Number.isNaN(date.getTime())) return rawDate;
+
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
 function HomePage({ navigate, searchParams }) {
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -44,9 +68,10 @@ function HomePage({ navigate, searchParams }) {
 
       try {
         const blogData = await apiFetch('/api/blogs/get-latest-blogs/');
-        setBlogs(blogData.length > 0 ? blogData : mockResources);
+        const homeBlogs = Array.isArray(blogData) && blogData.length > 0 ? blogData : mockResources;
+        setBlogs(getRecentBlogs(homeBlogs));
       } catch (err) {
-        setBlogs(mockResources);
+        setBlogs(getRecentBlogs(mockResources));
       }
 
       setLoading(false);
@@ -207,14 +232,19 @@ function HomePage({ navigate, searchParams }) {
         </section>
 
         <section className="resources-section" aria-labelledby="resources-title">
-          <h2 id="resources-title">Resources & Blog</h2>
+          <h2 id="resources-title">Resources and Blogs</h2>
           <div className="resource-grid">
             {blogs.map((blog, idx) => (
               <article className="resource-card" key={idx}>
-                <div className="resource-image"><span>{blog.tag || 'Blog'}</span></div>
+                <div className="resource-image">
+                  {blog.image && (
+                    <img src={formatAssetUrl(blog.image)} alt={blog.title || blog.name || 'Blog post'} />
+                  )}
+                  <span>{blog.tag || 'Blog'}</span>
+                </div>
                 <div className="resource-body">
                   <h3>{blog.title || blog.name}</h3>
-                  <p>{blog.date} <span>•</span> {blog.readTime || '3 min read'}</p>
+                  <p>{formatHomeBlogDate(blog)} <span>•</span> {blog.readTime || '3 min read'}</p>
                   <a href="#" onClick={(e) => e.preventDefault()}>Read More <span>→</span></a>
                 </div>
               </article>

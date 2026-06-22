@@ -35,6 +35,12 @@ function BlogContentEditor({ value, onChange }) {
     runCommand('createLink', url);
   };
 
+  const handleImage = () => {
+    const url = window.prompt('Enter image URL');
+    if (!url) return;
+    runCommand('insertImage', url);
+  };
+
   const handleBlockChange = (event) => {
     runCommand('formatBlock', event.target.value);
     event.target.value = 'p';
@@ -59,6 +65,7 @@ function BlogContentEditor({ value, onChange }) {
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertUnorderedList')}>Bullet List</button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertOrderedList')}>Numbered List</button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={handleLink}>Link</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={handleImage}>Image</button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('unlink')}>Unlink</button>
       </div>
       <div
@@ -81,7 +88,6 @@ function AdminBlogs() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editingBlog, setEditingBlog] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [imageFile, setImageFile] = useState(null);
@@ -113,19 +119,30 @@ function AdminBlogs() {
       author: '',
       content: '',
     });
+    setError('');
+    setSuccessMsg('');
     setImageFile(null);
-    setIsModalOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleEdit = async (blogId) => {
     try {
+      setError('');
+      setSuccessMsg('');
       const data = await apiFetch(`/api/admin-panel/blogs/${blogId}/`);
       setEditingBlog(data.blog || data);
       setImageFile(null);
-      setIsModalOpen(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setError(err.message);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingBlog(null);
+    setImageFile(null);
+    setError('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (blogId) => {
@@ -205,7 +222,6 @@ function AdminBlogs() {
       }
 
       showSuccess(isNew ? 'Blog post created!' : 'Blog post updated!');
-      setIsModalOpen(false);
       setEditingBlog(null);
       setImageFile(null);
       loadBlogs();
@@ -224,6 +240,66 @@ function AdminBlogs() {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
+
+  if (editingBlog) {
+    return (
+      <div className="admin-blog-editor-page">
+        <div className="admin-editor-header">
+          <div>
+            <button type="button" className="admin-back-button" onClick={handleCancelEdit}>
+              Back to Blog Posts
+            </button>
+            <h2 id="admin-content-title">{editingBlog.id ? 'Edit Blog Post' : 'Create Blog Post'}</h2>
+          </div>
+          <div className="admin-editor-header-actions">
+            <button type="button" className="secondary-admin-button" onClick={handleCancelEdit}>Cancel</button>
+            <button type="submit" form="admin-blog-editor-form" className="primary-button" disabled={saving}>
+              {saving ? 'Saving...' : (editingBlog.id ? 'Update Post' : 'Create Post')}
+            </button>
+          </div>
+        </div>
+
+        {error && <div className="admin-alert error">{error}</div>}
+
+        <form id="admin-blog-editor-form" onSubmit={handleSave} className="admin-editor-panel">
+          <div className="admin-form-grid">
+            <label className="admin-form-field span-2">
+              <span>Title *</span>
+              <input type="text" value={editingBlog.title || ''} onChange={(e) => updateField('title', e.target.value)} required maxLength="200" />
+            </label>
+            <label className="admin-form-field">
+              <span>Author *</span>
+              <input type="text" value={editingBlog.author || ''} onChange={(e) => updateField('author', e.target.value)} required maxLength="30" />
+            </label>
+            <label className="admin-form-field span-3">
+              <span>Description *</span>
+              <input type="text" value={editingBlog.description || ''} onChange={(e) => updateField('description', e.target.value)} required maxLength="150" />
+            </label>
+            <label className="admin-form-field span-3">
+              <span>Image</span>
+              <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0] || null)} />
+              {editingBlog.image && !imageFile && (
+                <div className="admin-current-image">
+                  <img src={formatAssetUrl(editingBlog.image)} alt="Current" />
+                  <span>Current image</span>
+                </div>
+              )}
+            </label>
+            <div className="admin-form-field span-3">
+              <span>Blog Content *</span>
+              <BlogContentEditor value={editingBlog.content || ''} onChange={(value) => updateField('content', value)} />
+            </div>
+          </div>
+          <div className="admin-editor-footer">
+            <button type="button" className="secondary-admin-button" onClick={handleCancelEdit}>Cancel</button>
+            <button type="submit" className="primary-button" disabled={saving}>
+              {saving ? 'Saving...' : (editingBlog.id ? 'Update Post' : 'Create Post')}
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -264,52 +340,6 @@ function AdminBlogs() {
         </div>
       )}
 
-      {isModalOpen && editingBlog && (
-        <div className="admin-modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="admin-modal admin-modal-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="admin-modal-header">
-              <h3>{editingBlog.id ? 'Edit Blog Post' : 'Create Blog Post'}</h3>
-              <button className="admin-modal-close" onClick={() => setIsModalOpen(false)}>×</button>
-            </div>
-            <form onSubmit={handleSave} className="admin-modal-body">
-              <div className="admin-form-grid">
-                <label className="admin-form-field span-2">
-                  <span>Title *</span>
-                  <input type="text" value={editingBlog.title || ''} onChange={(e) => updateField('title', e.target.value)} required maxLength="200" />
-                </label>
-                <label className="admin-form-field">
-                  <span>Author *</span>
-                  <input type="text" value={editingBlog.author || ''} onChange={(e) => updateField('author', e.target.value)} required maxLength="30" />
-                </label>
-                <label className="admin-form-field span-3">
-                  <span>Description *</span>
-                  <input type="text" value={editingBlog.description || ''} onChange={(e) => updateField('description', e.target.value)} required maxLength="150" />
-                </label>
-                <label className="admin-form-field span-3">
-                  <span>Image</span>
-                  <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0] || null)} />
-                  {editingBlog.image && !imageFile && (
-                    <div className="admin-current-image">
-                      <img src={formatAssetUrl(editingBlog.image)} alt="Current" />
-                      <span>Current image</span>
-                    </div>
-                  )}
-                </label>
-                <div className="admin-form-field span-3">
-                  <span>Blog Content *</span>
-                  <BlogContentEditor value={editingBlog.content || ''} onChange={(value) => updateField('content', value)} />
-                </div>
-              </div>
-              <div className="admin-modal-footer">
-                <button type="button" className="secondary-admin-button" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                <button type="submit" className="primary-button" disabled={saving}>
-                  {saving ? 'Saving...' : (editingBlog.id ? 'Update Post' : 'Create Post')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </>
   );
 }
