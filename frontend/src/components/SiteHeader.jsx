@@ -1,83 +1,36 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { apiFetch, logo } from '../utils/api';
 
-const serviceMenuGroups = [
-  {
-    name: 'Genetic Engineering',
-    services: [
-      { title: 'Genome Editing Services', query: 'Genome Editing Services' },
-      { title: 'Custom Cloning Services', query: 'Custom Cloning Services' },
-      { title: 'Stable Cell Line Services', query: 'Stable Cell Line Services' },
-    ],
-  },
-  {
-    name: 'Viral Vector Services',
-    services: [
-      { title: 'Lentivirus Package Services', query: 'Lentivirus Package Services' },
-      { title: 'Vector Construction Support', query: 'Vector Construction' },
-      { title: 'Functional Testing', query: 'Functional Testing' },
-    ],
-  },
-  {
-    name: 'Research Support',
-    services: [
-      { title: 'Experiment Services', query: 'Experiment Services' },
-      { title: 'Lab Supplies', query: 'Lab Supplies' },
-      { title: 'Project Consultation', query: 'Project Consultation' },
-    ],
-  },
-];
-
-const reagentMenuGroups = [
-  {
-    name: 'Molecular Biology Reagents',
-    items: [
-      { title: 'PCR & qPCR Reagents', query: 'PCR qPCR Reagents' },
-      { title: 'dNTPs & Nucleotides', query: 'dNTP Nucleotides' },
-      { title: 'Enzymes & Proteins', query: 'Enzymes Proteins' },
-    ],
-  },
-  {
-    name: 'Kits & Buffers',
-    items: [
-      { title: 'Plasmid Prep Kits', query: 'Plasmid Prep Kit' },
-      { title: 'Cloning Kits', query: 'Cloning Kit' },
-      { title: 'Reaction Buffers', query: 'Buffer' },
-    ],
-  },
-  {
-    name: 'Gel & Protein Analysis',
-    items: [
-      { title: 'Agarose Gels', query: 'Agarose Gel' },
-      { title: 'DNA Ladders & Markers', query: 'DNA Ladder Marker' },
-      { title: 'Protein Ladders', query: 'Protein Ladder' },
-    ],
-  },
-];
-
 const defaultProductCategories = [
-  { category_name: 'Genome Editing', external_id: 'genome-editing' },
-  { category_name: 'Vector Stock', external_id: 'vector-clones' },
-  { category_name: 'IVT mRNA', external_id: 'category-1764975611348' },
-  { category_name: 'Purified Protein', external_id: 'category-1764975769330' },
-  { category_name: 'Virus Product', external_id: 'lentivirus' },
-  { category_name: 'Cell Lines', external_id: 'stable-cell-lines' },
+  // Products
+  { category_name: 'Genome Editing', external_id: 'genome-editing', product_type: 'product' },
+  { category_name: 'Vector Stock', external_id: 'vector-clones', product_type: 'product' },
+  { category_name: 'IVT mRNA', external_id: 'category-1764975611348', product_type: 'product' },
+  { category_name: 'Purified Protein', external_id: 'category-1764975769330', product_type: 'product' },
+  { category_name: 'Virus Product', external_id: 'lentivirus', product_type: 'product' },
+  { category_name: 'Cell Lines', external_id: 'stable-cell-lines', product_type: 'product' },
+
+  // Services
+  { category_name: 'Genome Editing Services', external_id: 'genome-editing-services', product_type: 'service' },
+  { category_name: 'Custom Cloning Services', external_id: 'synthesis-cloning-services', product_type: 'service' },
+  { category_name: 'Stable Cell Line Services', external_id: 'cell-line-services', product_type: 'service' },
+  { category_name: 'Lentivirus Package Services', external_id: 'virus-packaging-services', product_type: 'service' },
+  { category_name: 'Vector Construction Support', external_id: 'vector-construction-services', product_type: 'service' },
+  { category_name: 'Functional Testing', external_id: 'functional-testing-services', product_type: 'service' },
+  { category_name: 'Experiment Services', external_id: 'experiment-services', product_type: 'service' },
+  { category_name: 'Lab Supplies', external_id: 'lab-supplies-services', product_type: 'service' },
+  { category_name: 'Project Consultation', external_id: 'project-consultation-services', product_type: 'service' },
+
+  // Reagents
+  { category_name: 'DNA Reagents', external_id: 'category-1765063995229', product_type: 'reagent' },
+  { category_name: 'RNA Reagents', external_id: 'category-1766675380397', product_type: 'reagent' },
+  { category_name: 'Protein Reagents', external_id: 'category-1766675365489', product_type: 'reagent' },
+  { category_name: 'Cell Reagents', external_id: 'category-1765995504911', product_type: 'reagent' },
+
+  // Consumables
+  { category_name: 'Consumables', external_id: 'category-1780539818236', product_type: 'consumable' },
 ];
 
-const buildCategoryOnlyCatalog = (categories) => (
-  categories
-    .filter((category) => category.external_id || category.externalId)
-    .map((category) => ({
-      category_id: category.category_id || null,
-      category_name: category.category_name,
-      external_id: category.external_id || category.externalId,
-      externalId: category.externalId || category.external_id,
-      product_count: category.product_count || 0,
-      subcategories: category.subcategories || [],
-    }))
-);
-
-// Icons for each category
 const categoryIcons = {
   'Genome Editing': (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -109,6 +62,241 @@ const categoryIcons = {
       <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>
     </svg>
   ),
+  'Genome Editing Services': (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2v6m0 8v6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24"/>
+    </svg>
+  ),
+  'Custom Cloning Services': (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+    </svg>
+  ),
+  'Stable Cell Line Services': (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+    </svg>
+  ),
+  'DNA Reagents': (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4.5 16.5c-1.5 1.25-2.5 3-2.5 5h20c0-2-1-3.75-2.5-5"/>
+      <path d="M12 2v14"/>
+      <circle cx="12" cy="5" r="3"/>
+    </svg>
+  ),
+  'RNA Reagents': (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 12h18M3 6h18M3 18h18"/>
+    </svg>
+  ),
+  'Protein Reagents': (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"/>
+    </svg>
+  ),
+  'Cell Reagents': (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+    </svg>
+  ),
+  'Consumables': (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+    </svg>
+  ),
+};
+
+const getCategorySubcategories = (cat) => {
+  if (cat.subcategories && cat.subcategories.length > 0) {
+    return cat.subcategories;
+  }
+  const id = cat.external_id;
+  if (id === 'genome-editing') {
+    return [
+      {
+        name: 'Genome Editing Tools',
+        products: [
+          { product_name: 'Cas9 Nuclease (S. pyogenes) Recombinant', external_id: 'cas9-nuclease-recombinant', catalog_number: 'CAS-001' },
+          { product_name: 'CRISPR Knockdown Kit', external_id: 'crispr-knockdown-kit', catalog_number: 'GEX-007' },
+          { product_name: 'KnockIn Kit at Safe Harbor Sites', external_id: 'knockin-kit-safe-harbor', catalog_number: 'GEX-003' },
+        ]
+      }
+    ];
+  }
+  if (id === 'vector-clones') {
+    return [
+      {
+        name: 'Vector Stocks',
+        products: [
+          { product_name: 'cDNA Vector Stock', external_id: 'cdna-vector-stock', catalog_number: 'VC-001' }
+        ]
+      }
+    ];
+  }
+  if (id === 'category-1765063995229') {
+    return [
+      {
+        name: 'qPCR Reagents',
+        products: [
+          { product_name: 'THUNDERBIRD Probe qPCR Mix', external_id: 'thunderbird-probe-qpcr-mix', catalog_number: 'QPS-101' },
+          { product_name: 'THUNDERBIRD Next Probe qPCR Mix', external_id: 'thunderbird-next-probe-qpcr-mix', catalog_number: 'QPX-101' },
+          { product_name: 'THUNDERBIRD SYBR qPCR Mix', external_id: 'thunderbird-sybr-qpcr-mix', catalog_number: 'QPS-201' },
+        ]
+      },
+      {
+        name: 'PCR Enzymes',
+        products: [
+          { product_name: 'Taq DNA Polymerase', external_id: 'taq-dna-polymerase', catalog_number: 'TAP-201' },
+          { product_name: 'rTaq DNA Polymerase', external_id: 'rtaq-dna-polymerase', catalog_number: 'TAP-202' },
+        ]
+      }
+    ];
+  }
+  if (id === 'category-1766675380397') {
+    return [
+      {
+        name: 'Reverse Transcription',
+        products: [
+          { product_name: 'ReverTra Ace qPCR RT Kit', external_id: 'revertra-ace-qpcr-rt-kit', catalog_number: 'TRT-101' },
+          { product_name: 'ReverTra Ace qPCR RT Master Mix', external_id: 'revertra-ace-qpcr-rt-master-mix', catalog_number: 'TRT-201' },
+        ]
+      }
+    ];
+  }
+  if (id === 'category-1766675365489') {
+    return [
+      {
+        name: 'Precast Protein Gels',
+        products: [
+          { product_name: 'FuturePAGE™ 4-12% Precast Mini Protein Gel', external_id: 'futurepage-4-12-precast-mini-protein-gel', catalog_number: 'FPG-412' },
+          { product_name: 'FuturePAGE™ 4-20% Precast Mini Protein Gel', external_id: 'futurepage-4-20-precast-mini-protein-gel', catalog_number: 'FPG-420' },
+        ]
+      }
+    ];
+  }
+  if (id === 'category-1765995504911') {
+    return [
+      {
+        name: 'Fetal Bovine Serum (FBS)',
+        products: [
+          { product_name: 'Premium USDA-Origin Fetal Bovine Serum (FBS)', external_id: 'premium-usda-origin-fbs-lonsera', catalog_number: 'LNS-FBS-001' },
+          { product_name: 'Standard-Grade Fetal Bovine Serum (FBS)', external_id: 'standard-grade-fbs-lonsera', catalog_number: 'LNS-FBS-002' },
+        ]
+      }
+    ];
+  }
+  if (id === 'category-1780539818236') {
+    return [
+      {
+        name: 'Culture Tubes & Storage',
+        products: [
+          { product_name: '15 mL Round-Bottom Culture Tube, Sterile', external_id: '15-ml-round-bottom-culture-tube-sterile', catalog_number: 'CT-15R' },
+          { product_name: '2.0 mL Sterile Cryogenic Vial (Liquid Nitrogen)', external_id: '2-0-ml-sterile-cryogenic-vial-liquid-nitrogen', catalog_number: 'CV-20LN' },
+        ]
+      }
+    ];
+  }
+  if (id === 'lentivirus') {
+    return [
+      {
+        name: 'Lentivirus Products',
+        products: [
+          { product_name: 'Lentivirus ORF Stock', external_id: 'lentivirus-orf-stock', catalog_number: 'LV-ORF' },
+          { product_name: 'Lentivirus Control Stock', external_id: 'lentivirus-control-stock', catalog_number: 'LV-CTR' }
+        ]
+      }
+    ];
+  }
+  if (id === 'stable-cell-lines') {
+    return [
+      {
+        name: 'Stable Cell Lines',
+        products: [
+          { product_name: 'Stable Cell Line Stock', external_id: 'stable-cell-line-stock', catalog_number: 'SCL-001' }
+        ]
+      }
+    ];
+  }
+  if (id === 'category-1764975769330') {
+    return [
+      {
+        name: 'Purified Proteins',
+        products: [
+          { product_name: 'Cas9 Nuclease (S. pyogenes) Recombinant', external_id: 'cas9-nuclease-recombinant', catalog_number: 'CAS-001' }
+        ]
+      }
+    ];
+  }
+  if (id === 'category-1764975611348') {
+    return [
+      {
+        name: 'IVT mRNA',
+        products: [
+          { product_name: 'CleanCap® FLuc mRNA', external_id: 'cleancap-fluc-mrna', catalog_number: 'mRNA-001' },
+          { product_name: 'CleanCap® EGFP mRNA', external_id: 'cleancap-egfp-mrna', catalog_number: 'mRNA-002' }
+        ]
+      }
+    ];
+  }
+
+  // Default Fallbacks for Services
+  if (id === 'genome-editing-services') {
+    return [
+      {
+        name: 'Genetic Engineering',
+        products: [
+          { product_name: 'Genome Editing Services', external_id: 'genome-editing-services' },
+          { product_name: 'Gene Tagging Service', external_id: 'gene-tagging-service' },
+          { product_name: 'Gene Knockout Service', external_id: 'gene-knockout-service' },
+        ]
+      }
+    ];
+  }
+  if (id === 'synthesis-cloning-services') {
+    return [
+      {
+        name: 'Vector Construction',
+        products: [
+          { product_name: 'Custom Cloning Services', external_id: 'custom-cloning-services' },
+          { product_name: 'Vector Construction Support', external_id: 'vector-construction-support' },
+        ]
+      }
+    ];
+  }
+  if (id === 'virus-packaging-services') {
+    return [
+      {
+        name: 'Viral Vector Packaging',
+        products: [
+          { product_name: 'Lentivirus Package Services', external_id: 'lentivirus-package-services' },
+          { product_name: 'AAV Packaging Services', external_id: 'aav-packaging-services' },
+        ]
+      }
+    ];
+  }
+  if (id === 'cell-line-services') {
+    return [
+      {
+        name: 'Cell Line Engineering',
+        products: [
+          { product_name: 'Stable Cell Line Services', external_id: 'stable-cell-line-services' },
+        ]
+      }
+    ];
+  }
+  if (id === 'experiment-services' || id === 'lab-supplies-services' || id === 'project-consultation-services') {
+    return [
+      {
+        name: 'Research Support',
+        products: [
+          { product_name: 'Experiment Services', external_id: 'experiment-services' },
+          { product_name: 'Lab Supplies', external_id: 'lab-supplies' },
+          { product_name: 'Project Consultation', external_id: 'project-consultation' },
+        ]
+      }
+    ];
+  }
+  return [];
 };
 
 function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onLogout, cartCount }) {
@@ -116,6 +304,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
   const [productMenuOpen, setProductMenuOpen] = useState(false);
   const [serviceMenuOpen, setServiceMenuOpen] = useState(false);
   const [reagentMenuOpen, setReagentMenuOpen] = useState(false);
+  const [consumablesMenuOpen, setConsumablesMenuOpen] = useState(false);
   const [aboutMenuOpen, setAboutMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [catalog, setCatalog] = useState([]);
@@ -125,38 +314,24 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
   useEffect(() => {
     let isMounted = true;
 
-    const loadCatalog = async () => {
+    const loadCatalogAndProducts = async () => {
       try {
-        const data = await apiFetch('/api/products/get-product-catalog/');
-        if (isMounted && data.length > 0) {
+        const data = await apiFetch('/api/products/get-nav-catalog/');
+        if (isMounted && Array.isArray(data)) {
           setCatalog(data);
-          setActiveCategory(data[0].external_id);
-          return;
+          
+          // Auto-select the first product category as default activeCategory
+          const firstProd = data.find(c => !c.product_type || c.product_type === 'product');
+          if (firstProd) {
+            setActiveCategory(firstProd.external_id);
+          }
         }
       } catch (err) {
-        console.error('Failed to load product catalog:', err);
-      }
-
-      try {
-        const categories = await apiFetch('/api/products/load-product-categories/');
-        const fallbackCatalog = buildCategoryOnlyCatalog(categories);
-        if (isMounted && fallbackCatalog.length > 0) {
-          setCatalog(fallbackCatalog);
-          setActiveCategory(fallbackCatalog[0].external_id);
-          return;
-        }
-      } catch (err) {
-        console.error('Failed to load product categories:', err);
-      }
-
-      const defaultCatalog = buildCategoryOnlyCatalog(defaultProductCategories);
-      if (isMounted) {
-        setCatalog(defaultCatalog);
-        setActiveCategory(defaultCatalog[0]?.external_id || null);
+        console.error('Failed to load navigation catalog:', err);
       }
     };
 
-    loadCatalog();
+    loadCatalogAndProducts();
 
     return () => { isMounted = false; };
   }, []);
@@ -173,6 +348,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
     setProductMenuOpen(false);
     setServiceMenuOpen(false);
     setReagentMenuOpen(false);
+    setConsumablesMenuOpen(false);
     setAboutMenuOpen(false);
     setProfileMenuOpen(false);
   }, []);
@@ -214,6 +390,150 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
   const profileAltText = `Hi, ${firstName}`;
   const isAdminUser = Boolean(currentUserProfile?.isAdmin || currentUserProfile?.is_admin);
 
+  const productCategories = catalog.filter((c) => !c.product_type || c.product_type === 'product');
+  const serviceCategories = catalog.filter((c) => c.product_type === 'service');
+  const reagentCategories = catalog.filter((c) => c.product_type === 'reagent' && c.external_id !== 'category-1780539818236');
+  const consumableCategories = catalog.filter((c) => c.product_type === 'consumable' || c.external_id === 'category-1780539818236');
+
+  const renderMegaMenu = (menuOpenState, menuType, menuCategories, menuCloseLabel) => {
+    if (!menuOpenState) return null;
+
+    const activeEntry = menuCategories.find((c) => c.external_id === activeCategory) || menuCategories[0];
+    const activeSubcategories = activeEntry ? (activeEntry.subcategories && activeEntry.subcategories.length > 0
+      ? activeEntry.subcategories
+      : getCategorySubcategories(activeEntry)) : [];
+    
+    const totalCount = activeEntry ? (activeEntry.product_count > 0
+      ? activeEntry.product_count
+      : activeSubcategories.reduce((acc, sub) => acc + (sub.products?.length || 0), 0)) : 0;
+
+    return (
+      <div className={`products-mega-menu catalog-mega-menu ${menuType}-mega-menu`} id={`${menuType}-menu`}>
+        <MenuCloseButton label={menuCloseLabel} />
+
+        {/* Category sidebar */}
+        <div className="catalog-sidebar">
+          <div className="catalog-sidebar-title">
+            {menuType === 'reagent' ? 'Reagents' : (menuType.charAt(0).toUpperCase() + menuType.slice(1))} Categories
+          </div>
+          {menuCategories.map((cat) => (
+            <button
+              key={cat.external_id}
+              className={`catalog-category-btn ${activeCategory === cat.external_id ? 'is-active' : ''}`}
+              type="button"
+              onMouseEnter={() => setActiveCategory(cat.external_id)}
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveCategory(cat.external_id);
+              }}
+            >
+              <span className="catalog-category-icon">
+                {categoryIcons[cat.category_name] || categoryIcons['Genome Editing']}
+              </span>
+              <span className="catalog-category-label">{cat.category_name}</span>
+              {cat.product_count > 0 && (
+                <span className="catalog-category-count">({cat.product_count})</span>
+              )}
+              <span className="catalog-category-arrow">›</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Detail panel for active category */}
+        <div className="catalog-detail">
+          {activeEntry && (
+            <>
+              <div className="catalog-detail-header">
+                <a
+                  className="catalog-detail-title"
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    closeMenus();
+                    navigate(`/search?category=${menuType === 'product' ? 'products' : (menuType === 'reagent' ? 'reagents' : (menuType === 'consumable' ? 'consumables' : ''))}&q=${encodeURIComponent(activeEntry.category_name)}`);
+                  }}
+                >
+                  {activeEntry.category_name}
+                  {totalCount > 0 && (
+                    <span className="catalog-detail-count">{totalCount} items</span>
+                  )}
+                </a>
+              </div>
+
+              {totalCount === 0 ? (
+                <div className="catalog-empty">
+                  <div className="catalog-empty-icon">🧬</div>
+                  <p>Products coming soon</p>
+                  <a
+                    href="#"
+                    className="catalog-browse-link"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      closeMenus();
+                      navigate('/request-quote');
+                    }}
+                  >
+                    Request a quote →
+                  </a>
+                </div>
+              ) : (
+                <div className="catalog-subcategories">
+                  {activeSubcategories.map((sub) => (
+                    <div className="catalog-subcategory" key={sub.name || '__default'}>
+                      {sub.name && (
+                        <div className="catalog-subcategory-name">
+                          <span className="catalog-sub-dot" />
+                          {sub.name}
+                        </div>
+                      )}
+                      <div className="catalog-products-list">
+                        {(sub.products || []).map((product) => (
+                          <a
+                            key={product.external_id}
+                            className="catalog-product-link"
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              closeMenus();
+                              if (menuType === 'service') {
+                                navigate(`/search?q=${encodeURIComponent(product.product_name)}`);
+                              } else {
+                                navigate(`/product/${product.externalId || product.external_id}`);
+                              }
+                            }}
+                          >
+                            <span className="catalog-product-name">{product.product_name}</span>
+                            {product.catalog_number && (
+                              <span className="catalog-product-sku">{product.catalog_number}</span>
+                            )}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="catalog-detail-footer">
+                <a
+                  href="#"
+                  className="catalog-view-all"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    closeMenus();
+                    navigate(`/search?category=${menuType === 'product' ? 'products' : (menuType === 'reagent' ? 'reagents' : (menuType === 'consumable' ? 'consumables' : ''))}&q=${encodeURIComponent(activeEntry.category_name)}`);
+                  }}
+                >
+                  View all {activeEntry.category_name} →
+                </a>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <header className="site-header">
       <div className="topbar">
@@ -242,10 +562,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
                 aria-expanded={profileMenuOpen}
                 aria-controls="profile-menu"
                 onClick={() => {
-                  setProductMenuOpen(false);
-                  setServiceMenuOpen(false);
-                  setReagentMenuOpen(false);
-                  setAboutMenuOpen(false);
+                  closeMenus();
                   setProfileMenuOpen((isOpen) => !isOpen);
                 }}
               >
@@ -279,253 +596,148 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
       </div>
 
       <nav className="main-nav" aria-label="Primary navigation">
-        <div className={`products-nav ${productMenuOpen ? 'is-open' : ''}`}>
+        <div 
+          className={`products-nav ${productMenuOpen ? 'is-open' : ''}`}
+          onMouseEnter={() => {
+            closeMenus();
+            setProductMenuOpen(true);
+            const first = catalog.find(c => !c.product_type || c.product_type === 'product');
+            if (first) {
+              setActiveCategory(first.external_id);
+            }
+          }}
+          onMouseLeave={closeMenus}
+        >
           <button
             className="nav-trigger products-trigger"
             type="button"
             aria-expanded={productMenuOpen}
             aria-controls="products-menu"
             onClick={() => {
-              setServiceMenuOpen(false);
-              setReagentMenuOpen(false);
-              setAboutMenuOpen(false);
+              closeMenus();
               setProductMenuOpen((isOpen) => !isOpen);
-              if (!productMenuOpen && catalog.length > 0 && !activeCategory) {
-                setActiveCategory(catalog[0].external_id);
+              if (!productMenuOpen) {
+                const first = catalog.find(c => !c.product_type || c.product_type === 'product');
+                if (first) setActiveCategory(first.external_id);
               }
             }}
           >
             Products
           </button>
-          {productMenuOpen && (
-            <div className="products-mega-menu catalog-mega-menu" id="products-menu">
-              <MenuCloseButton label="Close products menu" />
-
-              {/* Category sidebar */}
-              <div className="catalog-sidebar">
-                <div className="catalog-sidebar-title">Product Categories</div>
-                {catalog.map((cat) => (
-                  <button
-                    key={cat.external_id}
-                    className={`catalog-category-btn ${activeCategory === cat.external_id ? 'is-active' : ''}`}
-                    type="button"
-                    onMouseEnter={() => setActiveCategory(cat.external_id)}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setActiveCategory(cat.external_id);
-                    }}
-                  >
-                    <span className="catalog-category-icon">
-                      {categoryIcons[cat.category_name] || categoryIcons['Genome Editing']}
-                    </span>
-                    <span className="catalog-category-label">{cat.category_name}</span>
-                    <span className="catalog-category-count">({cat.product_count})</span>
-                    <span className="catalog-category-arrow">›</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Detail panel for active category */}
-              <div className="catalog-detail">
-                {activeCatalogEntry && (
-                  <>
-                    <div className="catalog-detail-header">
-                      <a
-                        className="catalog-detail-title"
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          closeMenus();
-                          navigate(`/search?q=${encodeURIComponent(activeCatalogEntry.category_name)}`);
-                        }}
-                      >
-                        {activeCatalogEntry.category_name}
-                        <span className="catalog-detail-count">{activeCatalogEntry.product_count} products</span>
-                      </a>
-                    </div>
-
-                    {activeCatalogEntry.product_count === 0 ? (
-                      <div className="catalog-empty">
-                        <div className="catalog-empty-icon">🧬</div>
-                        <p>Products coming soon</p>
-                        <a
-                          href="#"
-                          className="catalog-browse-link"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            closeMenus();
-                            navigate('/request-quote');
-                          }}
-                        >
-                          Request a quote →
-                        </a>
-                      </div>
-                    ) : (
-                      <div className="catalog-subcategories">
-                        {activeCatalogEntry.subcategories.map((sub) => (
-                          <div className="catalog-subcategory" key={sub.name || '__default'}>
-                            {sub.name && (
-                              <div className="catalog-subcategory-name">
-                                <span className="catalog-sub-dot" />
-                                {sub.name}
-                              </div>
-                            )}
-                            <div className="catalog-products-list">
-                              {sub.products.map((product) => (
-                                <a
-                                  key={product.external_id}
-                                  className="catalog-product-link"
-                                  href="#"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    closeMenus();
-                                    navigate(`/product/${product.externalId || product.external_id}`);
-                                  }}
-                                >
-                                  <span className="catalog-product-name">{product.product_name}</span>
-                                  <span className="catalog-product-sku">{product.catalog_number}</span>
-                                </a>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="catalog-detail-footer">
-                      <a
-                        href="#"
-                        className="catalog-view-all"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          closeMenus();
-                          navigate(`/search?q=${encodeURIComponent(activeCatalogEntry.category_name)}`);
-                        }}
-                      >
-                        View all {activeCatalogEntry.category_name} →
-                      </a>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+          {productMenuOpen && renderMegaMenu(productMenuOpen, 'product', productCategories, 'Close products menu')}
         </div>
-        <div className={`products-nav services-nav ${serviceMenuOpen ? 'is-open' : ''}`}>
+
+        <div 
+          className={`products-nav services-nav ${serviceMenuOpen ? 'is-open' : ''}`}
+          onMouseEnter={() => {
+            closeMenus();
+            setServiceMenuOpen(true);
+            const first = catalog.find(c => c.product_type === 'service');
+            if (first) {
+              setActiveCategory(first.external_id);
+            }
+          }}
+          onMouseLeave={closeMenus}
+        >
           <button
             className="nav-trigger services-trigger"
             type="button"
             aria-expanded={serviceMenuOpen}
             aria-controls="services-menu"
             onClick={() => {
-              setProductMenuOpen(false);
-              setReagentMenuOpen(false);
-              setAboutMenuOpen(false);
+              closeMenus();
               setServiceMenuOpen((isOpen) => !isOpen);
+              if (!serviceMenuOpen) {
+                const first = catalog.find(c => c.product_type === 'service');
+                if (first) setActiveCategory(first.external_id);
+              }
             }}
           >
             Services
           </button>
-          {serviceMenuOpen && (
-            <div className="products-mega-menu services-mega-menu" id="services-menu">
-              <MenuCloseButton label="Close services menu" />
-              {serviceMenuGroups.map((group) => (
-                <div className="product-menu-group" key={group.name}>
-                  <a
-                    className="product-menu-category"
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setServiceMenuOpen(false);
-                      navigate(`/search?q=${encodeURIComponent(group.name)}`);
-                    }}
-                  >
-                    {group.name}
-                  </a>
-                  <div className="product-menu-items">
-                    {group.services.map((service) => (
-                      <a
-                        href="#"
-                        key={service.title}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setServiceMenuOpen(false);
-                          navigate(`/search?q=${encodeURIComponent(service.query)}`);
-                        }}
-                      >
-                        {service.title}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {serviceMenuOpen && renderMegaMenu(serviceMenuOpen, 'service', serviceCategories, 'Close services menu')}
         </div>
-        <div className={`products-nav reagents-nav ${reagentMenuOpen ? 'is-open' : ''}`}>
+
+        <div 
+          className={`products-nav reagents-nav ${reagentMenuOpen ? 'is-open' : ''}`}
+          onMouseEnter={() => {
+            closeMenus();
+            setReagentMenuOpen(true);
+            const first = catalog.find(c => c.product_type === 'reagent' && c.external_id !== 'category-1780539818236');
+            if (first) {
+              setActiveCategory(first.external_id);
+            }
+          }}
+          onMouseLeave={closeMenus}
+        >
           <button
             className="nav-trigger reagents-trigger"
             type="button"
             aria-expanded={reagentMenuOpen}
             aria-controls="reagents-menu"
             onClick={() => {
-              setProductMenuOpen(false);
-              setServiceMenuOpen(false);
-              setAboutMenuOpen(false);
+              closeMenus();
               setReagentMenuOpen((isOpen) => !isOpen);
+              if (!reagentMenuOpen) {
+                const first = catalog.find(c => c.product_type === 'reagent' && c.external_id !== 'category-1780539818236');
+                if (first) setActiveCategory(first.external_id);
+              }
             }}
           >
             Reagents & Kits
           </button>
-          {reagentMenuOpen && (
-            <div className="products-mega-menu reagents-mega-menu" id="reagents-menu">
-              <MenuCloseButton label="Close reagents menu" />
-              {reagentMenuGroups.map((group) => (
-                <div className="product-menu-group" key={group.name}>
-                  <a
-                    className="product-menu-category"
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setReagentMenuOpen(false);
-                      navigate(`/search?category=reagents&q=${encodeURIComponent(group.name)}`);
-                    }}
-                  >
-                    {group.name}
-                  </a>
-                  <div className="product-menu-items">
-                    {group.items.map((item) => (
-                      <a
-                        href="#"
-                        key={item.title}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setReagentMenuOpen(false);
-                          navigate(`/search?category=reagents&q=${encodeURIComponent(item.query)}`);
-                        }}
-                      >
-                        {item.title}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {reagentMenuOpen && renderMegaMenu(reagentMenuOpen, 'reagent', reagentCategories, 'Close reagents menu')}
         </div>
-        <a href="#" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/search?category=consumables'); }}>Consumables</a>
-        <a href="#" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/request-quote'); }}>Design</a>
-        <a className="nav-link-plain" href="/resources" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/resources'); }}>Resources & Blogs</a>
-        <div className={`nav-dropdown ${aboutMenuOpen ? 'is-open' : ''}`}>
+
+        <div 
+          className={`products-nav consumables-nav ${consumablesMenuOpen ? 'is-open' : ''}`}
+          onMouseEnter={() => {
+            closeMenus();
+            setConsumablesMenuOpen(true);
+            const first = catalog.find(c => c.product_type === 'consumable' || c.external_id === 'category-1780539818236');
+            if (first) {
+              setActiveCategory(first.external_id);
+            }
+          }}
+          onMouseLeave={closeMenus}
+        >
+          <button
+            className="nav-trigger consumables-trigger"
+            type="button"
+            aria-expanded={consumablesMenuOpen}
+            aria-controls="consumables-menu"
+            onClick={() => {
+              closeMenus();
+              setConsumablesMenuOpen((isOpen) => !isOpen);
+              if (!consumablesMenuOpen) {
+                const first = catalog.find(c => c.product_type === 'consumable' || c.external_id === 'category-1780539818236');
+                if (first) setActiveCategory(first.external_id);
+              }
+            }}
+          >
+            Consumables
+          </button>
+          {consumablesMenuOpen && renderMegaMenu(consumablesMenuOpen, 'consumable', consumableCategories, 'Close consumables menu')}
+        </div>
+
+        <a href="#" onMouseEnter={closeMenus} onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/request-quote'); }}>Design</a>
+        <a className="nav-link-plain" href="/resources" onMouseEnter={closeMenus} onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/resources'); }}>Resources & Blogs</a>
+
+        <div 
+          className={`nav-dropdown ${aboutMenuOpen ? 'is-open' : ''}`}
+          onMouseEnter={() => {
+            closeMenus();
+            setAboutMenuOpen(true);
+          }}
+          onMouseLeave={closeMenus}
+        >
           <button
             className="nav-trigger"
             type="button"
             aria-expanded={aboutMenuOpen}
             aria-controls="about-menu"
             onClick={() => {
-              setProductMenuOpen(false);
-              setServiceMenuOpen(false);
-              setReagentMenuOpen(false);
+              closeMenus();
               setAboutMenuOpen((isOpen) => !isOpen);
             }}
           >
@@ -541,6 +753,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
         </div>
         <a
           className="quote-button"
+          onMouseEnter={closeMenus}
           href="/request-quote"
           onClick={(e) => {
             e.preventDefault();

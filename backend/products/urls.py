@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('load-product-categories/', views.load_product_categories),
+    path('get-nav-catalog/', views.get_nav_catalog),
     path('get-function-types-by-category/', views.get_function_types_by_category),
     path('get-structure-types-by-function-type/', views.get_structure_types_by_function_type),
     path('get-code-p-parameters/', views.get_code_p_parameters),
