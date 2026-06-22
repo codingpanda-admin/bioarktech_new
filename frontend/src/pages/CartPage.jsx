@@ -47,11 +47,22 @@ function CartPage({ navigate, cart, onUpdateQty, onRemoveItem, onClearCart }) {
                 
                 return (
                   <div className="cart-item-row" key={`${item.sku}-${item.unitSize}-${index}`}>
-                    <div className="cart-item-image">
+                    <div 
+                      className="cart-item-image" 
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => navigate(`/product/${item.sku}`)}
+                    >
                       <img src={item.image ? formatAssetUrl(item.image) : logo} alt={item.name} />
                     </div>
                     <div className="cart-item-details">
-                      <h4>{item.name}</h4>
+                      <h4 
+                        style={{ cursor: 'pointer', transition: 'color 0.2s' }}
+                        onMouseEnter={(e) => e.target.style.color = 'var(--blue)'}
+                        onMouseLeave={(e) => e.target.style.color = 'inherit'}
+                        onClick={() => navigate(`/product/${item.sku}`)}
+                      >
+                        {item.name}
+                      </h4>
                       <span>SKU: {item.sku}</span>
                       {item.unitSize && <span style={{ display: 'block', marginTop: '2px' }}>Spec: {item.unitSize}</span>}
                     </div>

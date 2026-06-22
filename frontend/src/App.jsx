@@ -48,12 +48,17 @@ function App() {
 
   const handleAddToCart = (product, quantity, selectedUnit) => {
     setCart((prevCart) => {
-      const isFeatured = !product.product_sku;
-      const sku = product.product_sku || product.catalog_number;
+      const isFeatured = Array.isArray(product.unit_prices) && product.unit_prices.length > 0;
+      const sku = product.product_sku || product.catalog_number || product.external_id;
       const unitSizeText = isFeatured ? (selectedUnit?.unit_size || '') : (product.unit_size || '');
-      const price = isFeatured ? (selectedUnit?.unit_price || product.unit_price || 0) : (product.unit_price || 0);
-      const listPrice = isFeatured ? (selectedUnit?.list_price || product.list_price || 0) : (product.list_price || 0);
-      const image = product.image || (product.images && product.images[0]?.image) || '';
+      
+      const rawPrice = isFeatured ? selectedUnit?.unit_price : (product.unit_price || product.list_price || 0);
+      const price = (rawPrice && !isNaN(Number(rawPrice))) ? Number(rawPrice) : 0;
+      
+      const rawListPrice = isFeatured ? selectedUnit?.list_price : (product.list_price || product.price_range || 0);
+      const listPrice = (rawListPrice && !isNaN(Number(rawListPrice))) ? Number(rawListPrice) : 0;
+      
+      const image = product.image || product.image_url || (product.images && (typeof product.images[0] === 'string' ? product.images[0] : product.images[0]?.image)) || '';
 
       const existingItemIndex = prevCart.findIndex(
         (item) => item.sku === sku && item.unitSize === unitSizeText
@@ -74,8 +79,8 @@ function App() {
             sku,
             name: product.product_name,
             unitSize: unitSizeText,
-            price: Number(price),
-            listPrice: Number(listPrice),
+            price,
+            listPrice,
             image,
             quantity,
             shippingCost,

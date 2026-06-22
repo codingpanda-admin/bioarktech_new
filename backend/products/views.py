@@ -6,7 +6,7 @@ from products.models import *
 from products.serializers import *
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import F
+from django.db.models import F, Q
 from orders.models import OrderItem
 from genes.models import *
 from django.core.paginator import Paginator
@@ -73,6 +73,211 @@ def load_product_categories(request):
     return Response(serializer.data)
     
     # return Response({'detail': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
+
+
+DEFAULT_PRODUCT_CATEGORIES = [
+    # Products
+    {'category_name': 'Genome Editing', 'external_id': 'genome-editing', 'product_type': 'product'},
+    {'category_name': 'Vector Stock', 'external_id': 'vector-clones', 'product_type': 'product'},
+    {'category_name': 'IVT mRNA', 'external_id': 'category-1764975611348', 'product_type': 'product'},
+    {'category_name': 'Purified Protein', 'external_id': 'category-1764975769330', 'product_type': 'product'},
+    {'category_name': 'Virus Product', 'external_id': 'lentivirus', 'product_type': 'product'},
+    {'category_name': 'Cell Lines', 'external_id': 'stable-cell-lines', 'product_type': 'product'},
+
+    # Services
+    {'category_name': 'Genome Editing Services', 'external_id': 'genome-editing-services', 'product_type': 'service'},
+    {'category_name': 'Custom Cloning Services', 'external_id': 'synthesis-cloning-services', 'product_type': 'service'},
+    {'category_name': 'Stable Cell Line Services', 'external_id': 'cell-line-services', 'product_type': 'service'},
+    {'category_name': 'Lentivirus Package Services', 'external_id': 'virus-packaging-services', 'product_type': 'service'},
+    {'category_name': 'Vector Construction Support', 'external_id': 'vector-construction-services', 'product_type': 'service'},
+    {'category_name': 'Functional Testing', 'external_id': 'functional-testing-services', 'product_type': 'service'},
+    {'category_name': 'Experiment Services', 'external_id': 'experiment-services', 'product_type': 'service'},
+    {'category_name': 'Lab Supplies', 'external_id': 'lab-supplies-services', 'product_type': 'service'},
+    {'category_name': 'Project Consultation', 'external_id': 'project-consultation-services', 'product_type': 'service'},
+
+    # Reagents
+    {'category_name': 'DNA Reagents', 'external_id': 'category-1765063995229', 'product_type': 'reagent'},
+    {'category_name': 'RNA Reagents', 'external_id': 'category-1766675380397', 'product_type': 'reagent'},
+    {'category_name': 'Protein Reagents', 'external_id': 'category-1766675365489', 'product_type': 'reagent'},
+    {'category_name': 'Cell Reagents', 'external_id': 'category-1765995504911', 'product_type': 'reagent'},
+
+    # Consumables
+    {'category_name': 'Consumables', 'external_id': 'category-1780539818236', 'product_type': 'consumable'},
+]
+
+import re
+
+def normalize_name(name):
+    if not name:
+        return ''
+    # remove whitespace and final 's'
+    normalized = re.sub(r'\s+', '', name.strip().lower())
+    if normalized.endswith('s'):
+        normalized = normalized[:-1]
+    return normalized
+
+@api_view(['GET'])
+def get_nav_catalog(request):
+    try:
+        # 1. Fetch categories from DB
+        db_categories = ProductCategory.objects.all().order_by("priority", "category_id")
+        
+        # 2. Fetch all products to group them by category and product group
+        # Exclude hidden products
+        all_products = Product.objects.filter(hidden=False)
+        
+        products_by_category = {}
+        for p in all_products:
+            cat_id = p.category_external_id
+            if cat_id:
+                if cat_id not in products_by_category:
+                    products_by_category[cat_id] = []
+                products_by_category[cat_id].append(p)
+        
+        merged_map = {}
+        
+        # Helper to match database categories to defaults by normalized name
+        def find_default_category(db_name):
+            if not db_name:
+                return None
+            norm_db = normalize_name(db_name)
+            
+            # Exact normalized check
+            for d in DEFAULT_PRODUCT_CATEGORIES:
+                if normalize_name(d['category_name']) == norm_db:
+                    return d
+            
+            # Partial substring check
+            db_lower = db_name.strip().lower()
+            for d in DEFAULT_PRODUCT_CATEGORIES:
+                d_lower = d['category_name'].strip().lower()
+                if db_lower in d_lower or d_lower in db_lower:
+                    return d
+            return None
+
+        # First, process DB categories
+        for cat in db_categories:
+            cat_id = cat.external_id
+            matched_default = None
+            
+            # Match by name to DEFAULT_PRODUCT_CATEGORIES if external_id is missing or null
+            if cat.category_name:
+                matched_default = find_default_category(cat.category_name)
+                
+            if matched_default:
+                cat_id = matched_default['external_id']
+                
+            if not cat_id and cat.category_name:
+                # slugify
+                cat_id = re.sub(r'[^a-z0-9]+', '-', cat.category_name.strip().lower()).strip('-')
+                
+            if not cat_id:
+                cat_id = f"cat-{cat.category_id}"
+                
+            cat_products = products_by_category.get(cat_id, [])
+            
+            # Filter out empty orphaned seed categories (like CRISPR-Cas9, RNAi etc. which have no products and are not defaults)
+            is_default = any(d['external_id'] == cat_id for d in DEFAULT_PRODUCT_CATEGORIES)
+            if not is_default and len(cat_products) == 0 and not cat.external_id:
+                continue
+                
+            # Build subcategories
+            subcategories_map = {}
+            for p in cat_products:
+                group = p.product_group or ''
+                if group not in subcategories_map:
+                    subcategories_map[group] = []
+                subcategories_map[group].append({
+                    'product_id': p.product_id,
+                    'product_name': p.product_name,
+                    'external_id': p.catalog_number or p.external_id,
+                    'externalId': p.catalog_number or p.external_id,
+                    'catalog_number': p.catalog_number,
+                })
+                
+            subcategories = [{'name': name, 'products': products} for name, products in subcategories_map.items()]
+            
+            final_name = matched_default['category_name'] if matched_default else cat.category_name
+            final_type = matched_default['product_type'] if matched_default else (cat.product_type or 'product')
+            
+            merged_map[cat_id] = {
+                'category_id': cat.category_id,
+                'category_name': final_name,
+                'external_id': cat_id,
+                'externalId': cat_id,
+                'product_count': len(cat_products),
+                'product_type': final_type,
+                'subcategories': subcategories,
+            }
+
+        # Next, process defaults fallbacks
+        for cat in DEFAULT_PRODUCT_CATEGORIES:
+            ext_id = cat['external_id']
+            if ext_id not in merged_map:
+                cat_products = products_by_category.get(ext_id, [])
+                
+                subcategories_map = {}
+                for p in cat_products:
+                    group = p.product_group or ''
+                    if group not in subcategories_map:
+                        subcategories_map[group] = []
+                    subcategories_map[group].append({
+                        'product_id': p.product_id,
+                        'product_name': p.product_name,
+                        'external_id': p.catalog_number or p.external_id,
+                        'externalId': p.catalog_number or p.external_id,
+                        'catalog_number': p.catalog_number,
+                    })
+                    
+                subcategories = [{'name': name, 'products': products} for name, products in subcategories_map.items()]
+                
+                merged_map[ext_id] = {
+                    'category_id': None,
+                    'category_name': cat['category_name'],
+                    'external_id': ext_id,
+                    'externalId': ext_id,
+                    'product_count': len(cat_products),
+                    'product_type': cat['product_type'],
+                    'subcategories': subcategories,
+                }
+                
+        # Finally, group any uncategorized/custom products in a "Custom Products" category
+        # Get all category external IDs currently in our catalog
+        active_cat_ids = set(merged_map.keys())
+        uncategorized_products = []
+        for p in all_products:
+            if not p.category_external_id or p.category_external_id not in active_cat_ids:
+                uncategorized_products.append(p)
+                
+        if len(uncategorized_products) > 0:
+            subcategories_map = {}
+            for p in uncategorized_products:
+                group = p.product_group or 'General'
+                if group not in subcategories_map:
+                    subcategories_map[group] = []
+                subcategories_map[group].append({
+                    'product_id': p.product_id,
+                    'product_name': p.product_name,
+                    'external_id': p.catalog_number or p.external_id,
+                    'externalId': p.catalog_number or p.external_id,
+                    'catalog_number': p.catalog_number,
+                })
+                
+            subcategories = [{'name': name, 'products': products} for name, products in subcategories_map.items()]
+            
+            merged_map['uncategorized'] = {
+                'category_id': None,
+                'category_name': 'Custom Products',
+                'external_id': 'uncategorized',
+                'externalId': 'uncategorized',
+                'product_count': len(uncategorized_products),
+                'product_type': 'product',
+                'subcategories': subcategories,
+            }
+
+        return Response(list(merged_map.values()))
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
@@ -265,12 +470,198 @@ def load_featured_product_page(request, catalog_number):
     return Response(serializer.data)
 
 
+MOCK_PRODUCTS = {
+    'cas9-nuclease-recombinant': {
+        'product_id': 99991,
+        'product_name': 'Cas9 Nuclease (S. pyogenes) Recombinant',
+        'catalog_number': 'CAS-001',
+        'external_id': 'cas9-nuclease-recombinant',
+        'description': 'High-purity recombinant Cas9 protein from S. pyogenes, containing a nuclear localization signal (NLS) for efficient genome editing.',
+        'availability': 'In Stock',
+        'list_price': 'Contact for Quote',
+        'unit_price': None,
+        'image_url': None,
+        'images': [],
+        'category_external_id': 'category-1764975769330',
+        'product_group': 'Purified Proteins',
+        'key_features': ['High-purity recombinant protein', 'NLS-tagged for nuclear import', 'Active in vitro and in vivo'],
+        'options': [],
+        'option_prices': {},
+        'storage_stability': 'Store at -20°C',
+        'performance_data': 'Highly active in gene knockout and knock-in validation assays.',
+        'data_description': None,
+        'manuals': [],
+        'manual_urls': [],
+    },
+    'CAS-001': 'cas9-nuclease-recombinant',
+    
+    'lentivirus-orf-stock': {
+        'product_id': 99992,
+        'product_name': 'Lentivirus ORF Stock',
+        'catalog_number': 'LV-ORF',
+        'external_id': 'lentivirus-orf-stock',
+        'description': 'Ready-to-use lentivirus particles containing human/mouse/rat ORFs for stable expression.',
+        'availability': 'In Stock',
+        'list_price': 'Contact for Quote',
+        'unit_price': None,
+        'image_url': None,
+        'images': [],
+        'category_external_id': 'lentivirus',
+        'product_group': 'Lentivirus Products',
+        'key_features': ['High titer (>10^8 TU/mL)', 'Stable integration', 'Wide host range'],
+        'options': [],
+        'option_prices': {},
+        'storage_stability': 'Store at -80°C',
+        'performance_data': 'Transduction validation in HeLa cells shows high expression levels.',
+        'data_description': None,
+        'manuals': [],
+        'manual_urls': [],
+    },
+    'LV-ORF': 'lentivirus-orf-stock',
+    
+    'lentivirus-control-stock': {
+        'product_id': 99993,
+        'product_name': 'Lentivirus Control Stock',
+        'catalog_number': 'LV-CTR',
+        'external_id': 'lentivirus-control-stock',
+        'description': 'Negative and positive control lentivirus particles (e.g. GFP, RFP, Null) for transduction optimization.',
+        'availability': 'In Stock',
+        'list_price': 'Contact for Quote',
+        'unit_price': None,
+        'image_url': None,
+        'images': [],
+        'category_external_id': 'lentivirus',
+        'product_group': 'Lentivirus Products',
+        'key_features': ['Control transduction validator', 'High quality QC validated', 'Available with fluorescence markers'],
+        'options': [],
+        'option_prices': {},
+        'storage_stability': 'Store at -80°C',
+        'performance_data': 'High-titer control for assay optimization.',
+        'data_description': None,
+        'manuals': [],
+        'manual_urls': [],
+    },
+    'LV-CTR': 'lentivirus-control-stock',
+    
+    'stable-cell-line-stock': {
+        'product_id': 99994,
+        'product_name': 'Stable Cell Line Stock',
+        'catalog_number': 'SCL-001',
+        'external_id': 'stable-cell-line-stock',
+        'description': 'Pre-made stable cell lines expressing popular reporters, checkpoints, or target genes.',
+        'availability': 'In Stock',
+        'list_price': 'Contact for Quote',
+        'unit_price': None,
+        'image_url': None,
+        'images': [],
+        'category_external_id': 'stable-cell-lines',
+        'product_group': 'Stable Cell Lines',
+        'key_features': ['Clonally isolated', 'High stability across passages', 'Mycoplasma free'],
+        'options': [],
+        'option_prices': {},
+        'storage_stability': 'Liquid nitrogen storage',
+        'performance_data': 'Validated for marker expression and proliferation rates.',
+        'data_description': None,
+        'manuals': [],
+        'manual_urls': [],
+    },
+    'SCL-001': 'stable-cell-line-stock',
+    
+    'cleancap-fluc-mrna': {
+        'product_id': 99995,
+        'product_name': 'CleanCap® FLuc mRNA',
+        'catalog_number': 'mRNA-001',
+        'external_id': 'cleancap-fluc-mrna',
+        'description': 'CleanCap-capped Firefly Luciferase mRNA for validation of translation and transfection efficiency in mammalian cells.',
+        'availability': 'In Stock',
+        'list_price': 'Contact for Quote',
+        'unit_price': None,
+        'image_url': None,
+        'images': [],
+        'category_external_id': 'category-1764975611348',
+        'product_group': 'IVT mRNA',
+        'key_features': ['Capped with CleanCap® AG', '99% purity by HPLC', 'Polyadenylated for stability'],
+        'options': [],
+        'option_prices': {},
+        'storage_stability': 'Store at -80°C',
+        'performance_data': 'HPLC chromatography showing single peak purity.',
+        'data_description': None,
+        'manuals': [],
+        'manual_urls': [],
+    },
+    'mRNA-001': 'cleancap-fluc-mrna',
+    
+    'cleancap-egfp-mrna': {
+        'product_id': 99996,
+        'product_name': 'CleanCap® EGFP mRNA',
+        'catalog_number': 'mRNA-002',
+        'external_id': 'cleancap-egfp-mrna',
+        'description': 'CleanCap-capped Enhanced Green Fluorescent Protein mRNA for easy visualization of transfection efficiency.',
+        'availability': 'In Stock',
+        'list_price': 'Contact for Quote',
+        'unit_price': None,
+        'image_url': None,
+        'images': [],
+        'category_external_id': 'category-1764975611348',
+        'product_group': 'IVT mRNA',
+        'key_features': ['High-expression GFP construct', 'HPLC purified', 'Safe non-viral transfection'],
+        'options': [],
+        'option_prices': {},
+        'storage_stability': 'Store at -80°C',
+        'performance_data': 'Transfection validation shows GFP expression in over 90% of cells.',
+        'data_description': None,
+        'manuals': [],
+        'manual_urls': [],
+    },
+    'mRNA-002': 'cleancap-egfp-mrna',
+}
+
 @api_view(['GET'])
 def load_product_by_external_id(request, external_id):
-    product = get_object_or_404(Product, external_id=external_id, hidden=False)
-    serializer = ProductSerializer(product)
+    # 1. Check if there is a FeaturedProduct associated with this external_id or catalog_number
+    product = Product.objects.filter(Q(external_id=external_id) | Q(catalog_number=external_id), hidden=False).first()
+    
+    featured_product = None
+    if product and product.catalog_number:
+        featured_product = FeaturedProduct.objects.filter(catalog_number=product.catalog_number).first()
+    if not featured_product:
+        featured_product = FeaturedProduct.objects.filter(catalog_number=external_id).first()
+        
+    if featured_product:
+        serializer = FeaturedProductSerializer(featured_product)
+        data = dict(serializer.data)
+        
+        # Mix in external_id and externalId
+        if product:
+            data['external_id'] = product.external_id
+            data['externalId'] = product.external_id
+        else:
+            p = Product.objects.filter(catalog_number=featured_product.catalog_number, hidden=False).first()
+            if p:
+                data['external_id'] = p.external_id
+                data['externalId'] = p.external_id
+            else:
+                data['external_id'] = featured_product.catalog_number
+                data['externalId'] = featured_product.catalog_number
+        return Response(data)
 
-    return Response(serializer.data)
+    # 2. If not featured, fall back to standard Product
+    if product:
+        serializer = ProductSerializer(product)
+        return Response(serializer.data)
+        
+    # Check mock fallbacks
+    resolved_id = MOCK_PRODUCTS.get(external_id)
+    if isinstance(resolved_id, str):
+        # Resolve alias
+        mock_data = MOCK_PRODUCTS.get(resolved_id)
+    else:
+        mock_data = resolved_id
+        
+    if mock_data:
+        return Response(mock_data)
+
+    return Response({'detail': 'Product not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['GET'])

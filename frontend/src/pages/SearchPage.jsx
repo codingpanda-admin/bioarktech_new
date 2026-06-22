@@ -37,7 +37,7 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
       setLoading(true);
       setError('');
       try {
-        const url = `/api/search/?q=${encodeURIComponent(currentQuery)}&category=${encodeURIComponent(currentCategory)}`;
+        const url = `/api/search/?q=${encodeURIComponent(currentQuery)}&category=${encodeURIComponent(currentCategory)}&page_size=10000`;
         const data = await apiFetch(url);
         setResults(data.products || []);
       } catch (err) {

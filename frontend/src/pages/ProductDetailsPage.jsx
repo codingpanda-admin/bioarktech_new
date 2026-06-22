@@ -25,11 +25,16 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
         }
         
         setProduct(productDetail);
+        if (productDetail && Array.isArray(productDetail.unit_prices) && productDetail.unit_prices.length > 0) {
+          setSelectedUnitSize(productDetail.unit_prices[0]);
+        } else {
+          setSelectedUnitSize(null);
+        }
         setMainImage(
           productDetail.image_url
             ? formatAssetUrl(productDetail.image_url)
             : productDetail.images?.[0]
-              ? formatAssetUrl(productDetail.images[0])
+              ? formatAssetUrl(typeof productDetail.images[0] === 'string' ? productDetail.images[0] : productDetail.images[0].image)
               : logo
         );
       } catch (err) {
