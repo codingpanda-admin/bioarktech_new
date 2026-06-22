@@ -630,6 +630,7 @@ def load_product_by_external_id(request, external_id):
     if featured_product:
         serializer = FeaturedProductSerializer(featured_product)
         data = dict(serializer.data)
+        source_product = product
         
         # Mix in external_id and externalId
         if product:
@@ -638,11 +639,16 @@ def load_product_by_external_id(request, external_id):
         else:
             p = Product.objects.filter(catalog_number=featured_product.catalog_number, hidden=False).first()
             if p:
+                source_product = p
                 data['external_id'] = p.external_id
                 data['externalId'] = p.external_id
             else:
                 data['external_id'] = featured_product.catalog_number
                 data['externalId'] = featured_product.catalog_number
+        if source_product:
+            data['category_external_id'] = source_product.category_external_id
+            data['category_name'] = get_product_category_name(source_product)
+            data['availability'] = source_product.availability
         return Response(data)
 
     # 2. If not featured, fall back to standard Product

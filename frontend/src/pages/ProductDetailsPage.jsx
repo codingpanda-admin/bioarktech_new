@@ -71,7 +71,8 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
 
   const isFeatured = product && Array.isArray(product.unit_prices);
   const name = product.product_name || product.externalId || product.external_id;
-  const sku = product.catalog_number || product.externalId || product.external_id;
+  const categoryLabel = product.category_name || product.categoryName || product.product_category || product.category_external_id;
+  const availabilityLabel = product.availability;
   
   // Calculate price dynamically for featured products based on selected unit size
   const price = isFeatured ? selectedUnitSize?.unit_price : product.unit_price;
@@ -108,8 +109,10 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
         {/* Info Panel Section */}
         <div className="product-container" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <h2>{name}</h2>
-          <p>Cat. #: <strong>{sku}</strong></p>
-          <p className="availability" style={{ color: 'var(--green)', fontWeight: 500 }}>Availability: In Stock</p>
+          <div className="product-detail-labels" aria-label="Product labels">
+            {categoryLabel && <span className="product-detail-pill category">{categoryLabel}</span>}
+            {availabilityLabel && <span className="product-detail-pill availability">{availabilityLabel}</span>}
+          </div>
 
           {/* Unit Size Selection (Featured only) */}
           {isFeatured && product.unit_prices && product.unit_prices.length > 0 && (

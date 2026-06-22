@@ -25,6 +25,10 @@ class ProductAdmin(ImportExportActionModelAdmin):
     resource_classes = [ProductResource]
     list_display = ('product_id', 'external_id', 'product_name', 'catalog_number', 'category_external_id', 'list_price', 'hidden')
 
+@admin.register(ProductImage)
+class ProductImageAdmin(admin.ModelAdmin):
+    list_display = ('image_id', 'product', 'image_url')
+
 @admin.register(FeaturedProduct)
 class FeaturedProductAdmin(admin.ModelAdmin):
     list_display = ('catalog_number', 'product_name', 'on_display', 'shelf_status', 'units_in_stock', 'union')

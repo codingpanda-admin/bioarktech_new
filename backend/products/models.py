@@ -240,6 +240,15 @@ class Product(models.Model):
         db_table = 'product'
 
 
+class ProductImage(models.Model):
+    image_id = models.BigAutoField(primary_key=True)
+    product = models.ForeignKey(Product, db_column='product_id', related_name='product_images', on_delete=models.CASCADE)
+    image_url = models.TextField()
+
+    class Meta:
+        db_table = 'product_image'
+
+
 class FeaturedProduct(models.Model):
     catalog_number = models.CharField(unique=True)
     product_name = models.CharField()

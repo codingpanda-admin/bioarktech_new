@@ -4155,6 +4155,34 @@ label,
   align-items: start;
 }
 
+.product-detail-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.product-detail-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.product-detail-pill.category {
+  color: #fff;
+  background: #2f80ff;
+}
+
+.product-detail-pill.availability {
+  color: #067a38;
+  background: #c9f8dc;
+}
+
 @media (max-width: 768px) {
   .product-details-container {
     grid-template-columns: 1fr;
