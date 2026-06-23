@@ -147,6 +147,54 @@ function AdminProducts({ categoryFilter = null }) {
     setEditingProduct(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleImageUpload = async (e, targetField) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      // CSRF token retrieval helper
+      let csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+
+      if (!csrfToken) {
+        const csrfRes = await fetch(`${API_URL}/api/csrf/`, { credentials: 'include' });
+        const csrfData = await csrfRes.json();
+        csrfToken = csrfData.csrftoken;
+      }
+
+      const response = await fetch(`${API_URL}/api/admin-panel/products/upload-image/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRFToken': csrfToken },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to upload image.');
+      }
+
+      const data = await response.json();
+      const newPath = data.image_path;
+
+      if (targetField === 'image_url') {
+        updateField('image_url', newPath);
+      } else if (targetField === 'images') {
+        const newImages = [...(editingProduct.images || []), newPath];
+        updateField('images', newImages);
+      }
+      showSuccess('Image uploaded successfully.');
+    } catch (err) {
+      setError(err.message || 'Image upload failed.');
+    }
+  };
+
   const fallbackCategories = categoryFilter === 'products' ? PRODUCTS_CATEGORIES : REAGENTS_CATEGORIES;
   const fallbackCategoryIds = fallbackCategories.map((cat) => cat.id);
   const currentProductType = categoryFilter === 'products' ? 'product' : 'reagent';
@@ -554,7 +602,7 @@ function AdminProducts({ categoryFilter = null }) {
 
       {isModalOpen && editingProduct && (
         <div className="admin-modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-modal admin-modal-lg" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <h3>{(editingProduct.product_id || editingProduct.id) ? 'Edit Product' : 'Create Product'}</h3>
               <button className="admin-modal-close" onClick={() => setIsModalOpen(false)}>×</button>
@@ -597,10 +645,120 @@ function AdminProducts({ categoryFilter = null }) {
                   <span>List Price</span>
                   <input type="text" value={editingProduct.list_price || ''} onChange={(e) => updateField('list_price', e.target.value)} />
                 </label>
-                <label className="admin-form-field">
-                  <span>Image URL</span>
-                  <input type="text" value={editingProduct.image_url || ''} onChange={(e) => updateField('image_url', e.target.value)} />
-                </label>
+                <div className="admin-form-field span-2" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontWeight: '500', color: 'var(--ink)' }}>Main Image</span>
+                  <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                    {editingProduct.image_url ? (
+                      <div className="admin-image-preview-wrapper" style={{ position: 'relative', width: '100px', height: '100px', border: '1px solid var(--line)', borderRadius: '6px', overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <img 
+                          src={formatAssetUrl(editingProduct.image_url)} 
+                          alt="Main Preview" 
+                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updateField('image_url', '')}
+                          style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(244, 67, 54, 0.9)', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+                          title="Remove image"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ width: '100px', height: '100px', border: '1px dashed var(--line)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontSize: '12px', background: '#fcfdfd', textAlign: 'center', padding: '5px' }}>
+                        No Image
+                      </div>
+                    )}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="Image URL or Path (e.g. media/product_images/...)" 
+                        value={editingProduct.image_url || ''} 
+                        onChange={(e) => updateField('image_url', e.target.value)} 
+                        style={{ width: '100%', padding: '8px', border: '1px solid var(--line)', borderRadius: '6px' }}
+                      />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <label className="secondary-admin-button" style={{ fontSize: '12px', padding: '6px 12px', cursor: 'pointer', margin: 0, display: 'inline-block' }}>
+                          Upload File
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={(e) => handleImageUpload(e, 'image_url')} 
+                            style={{ display: 'none' }}
+                          />
+                        </label>
+                        <span style={{ fontSize: '11px', color: 'var(--muted)' }}>or type route above</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="admin-form-field span-3" style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--line)', paddingTop: '15px', marginTop: '10px' }}>
+                  <span style={{ fontWeight: '600', color: 'var(--ink)' }}>Additional Gallery Images</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '15px', marginTop: '5px' }}>
+                    {(editingProduct.images || []).map((imgUrl, idx) => (
+                      <div key={idx} className="admin-image-preview-wrapper" style={{ position: 'relative', height: '150px', border: '1px solid var(--line)', borderRadius: '6px', overflow: 'hidden', background: '#fff', display: 'flex', flexDirection: 'column', padding: '5px', gap: '5px' }}>
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', minHeight: '80px', position: 'relative' }}>
+                          {imgUrl ? (
+                            <img 
+                              src={formatAssetUrl(imgUrl)} 
+                              alt={`Preview ${idx + 1}`} 
+                              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                            />
+                          ) : (
+                            <span style={{ fontSize: '11px', color: 'var(--muted)' }}>Empty Path</span>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={imgUrl || ''}
+                          onChange={(e) => {
+                            const newImages = [...(editingProduct.images || [])];
+                            newImages[idx] = e.target.value;
+                            updateField('images', newImages);
+                          }}
+                          placeholder="Image path"
+                          style={{ fontSize: '11px', padding: '4px', width: '100%', border: '1px solid var(--line)', borderRadius: '4px' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newImages = (editingProduct.images || []).filter((_, i) => i !== idx);
+                            updateField('images', newImages);
+                          }}
+                          style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(244, 67, 54, 0.9)', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                          title="Remove image"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                    
+                    {/* Add Image Option Card */}
+                    <div style={{ height: '150px', border: '1px dashed var(--line)', borderRadius: '6px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#fcfdfd', padding: '10px' }}>
+                      <button 
+                        type="button" 
+                        className="secondary-admin-button" 
+                        onClick={() => {
+                          const newImages = [...(editingProduct.images || []), ''];
+                          updateField('images', newImages);
+                        }}
+                        style={{ fontSize: '12px', padding: '6px 10px', width: '100%' }}
+                      >
+                        + Add Path
+                      </button>
+                      <label className="primary-button" style={{ fontSize: '12px', padding: '6px 10px', width: '100%', textAlign: 'center', cursor: 'pointer', display: 'inline-block', margin: 0 }}>
+                        + Upload File
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={(e) => handleImageUpload(e, 'images')} 
+                          style={{ display: 'none' }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
                 <label className="admin-form-field span-3">
                   <span>Description</span>
                   <textarea rows="4" value={editingProduct.description || ''} onChange={(e) => updateField('description', e.target.value)} />
