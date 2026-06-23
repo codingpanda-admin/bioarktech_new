@@ -58,7 +58,7 @@ export const apiFetch = async (endpoint, options = {}) => {
 
   options.credentials = 'include';
 
-  if (options.body && typeof options.body === 'object') {
+  if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
     options.body = JSON.stringify(options.body);
     options.headers = {
       ...options.headers,

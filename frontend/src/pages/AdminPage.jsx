@@ -10,6 +10,7 @@ import AdminServices from './admin/AdminServices';
 import AdminBlogs from './admin/AdminBlogs';
 import AdminQuotes from './admin/AdminQuotes';
 import AdminMedia from './admin/AdminMedia';
+import AdminHomepage from './admin/AdminHomepage';
 
 const adminLinks = [
   'Overview',
@@ -161,16 +162,7 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
         )}
 
         {activeSection === 'Homepage' && (
-          <>
-            <h2 id="admin-content-title">Homepage Settings</h2>
-            <div className="homepage-settings-grid">
-              {homepageSettings.map((section) => (
-                <article className="homepage-setting-card" key={section}>
-                  <h3>{section}</h3>
-                </article>
-              ))}
-            </div>
-          </>
+          <AdminHomepage />
         )}
 
         {activeSection === 'Users' && (
