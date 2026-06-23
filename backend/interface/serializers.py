@@ -10,3 +10,8 @@ class ServiceModeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceMode
         fields = '__all__'
+
+class HomepageSlideSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HomepageSlide
+        fields = '__all__'

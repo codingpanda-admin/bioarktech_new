@@ -28,12 +28,36 @@ const formatHomeBlogDate = (blog) => {
   });
 };
 
+const defaultSlides = [
+  {
+    id: 1,
+    eyebrow: 'Limited Offer',
+    title: '<span>50% Off</span> Precast Agarose Gels',
+    description: 'High-resolution, ready-to-use gels for fast and reliable DNA analysis.',
+    primary_button_text: 'Shop Now',
+    primary_button_link: '/search?q=Agarose',
+    secondary_button_text: 'Request a Quote',
+    secondary_button_link: '/request-quote',
+    image_url: ''
+  }
+];
+
+const getSlideImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('/images/')) {
+    return url;
+  }
+  return formatAssetUrl(url);
+};
+
 function HomePage({ navigate, searchParams }) {
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [featuredStartIndex, setFeaturedStartIndex] = useState(0);
+  const [slides, setSlides] = useState([]);
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
   // Smooth scroll logic
   useEffect(() => {
@@ -74,11 +98,40 @@ function HomePage({ navigate, searchParams }) {
         setBlogs(getRecentBlogs(mockResources));
       }
 
+      try {
+        const slideData = await apiFetch('/api/interface/get-homepage-slides/');
+        if (Array.isArray(slideData) && slideData.length > 0) {
+          setSlides(slideData);
+        }
+      } catch (err) {
+        console.error('Failed to load homepage slides:', err);
+      }
+
       setLoading(false);
     };
 
     loadHomeData();
   }, []);
+
+  const activeSlides = slides.length > 0 ? slides : defaultSlides;
+  const currentSlide = activeSlides[activeSlideIndex] || defaultSlides[0];
+
+  const handlePrevSlide = () => {
+    setActiveSlideIndex((prev) => (prev - 1 + activeSlides.length) % activeSlides.length);
+  };
+
+  const handleNextSlide = () => {
+    setActiveSlideIndex((prev) => (prev + 1) % activeSlides.length);
+  };
+
+  // Auto play carousel
+  useEffect(() => {
+    if (activeSlides.length <= 1) return;
+    const timer = setInterval(() => {
+      setActiveSlideIndex((prev) => (prev + 1) % activeSlides.length);
+    }, 7000);
+    return () => clearInterval(timer);
+  }, [activeSlides.length]);
 
   useEffect(() => {
     setFeaturedStartIndex(0);
@@ -109,38 +162,105 @@ function HomePage({ navigate, searchParams }) {
     <>
       <main>
         <section className="hero-section">
-          <button className="carousel-control prev" type="button" aria-label="Previous promotion">‹</button>
+          {currentSlide.image_url && (
+            <div
+              className="hero-background-image"
+              style={{
+                backgroundImage: `url("${getSlideImageUrl(currentSlide.image_url)}")`
+              }}
+            />
+          )}
+          <div className="hero-light-overlay" />
+
+          <button 
+            className="carousel-control prev" 
+            type="button" 
+            aria-label="Previous promotion"
+            onClick={handlePrevSlide}
+          >
+            ‹
+          </button>
+          
           <div className="hero-content">
-            <p className="eyebrow">Limited Offer</p>
-            <h1><span>50% Off</span> Precast Agarose Gels</h1>
-            <p>High-resolution, ready-to-use gels for fast and reliable DNA analysis.</p>
+            {currentSlide.eyebrow && <p className="eyebrow">{currentSlide.eyebrow}</p>}
+            <h1 dangerouslySetInnerHTML={{ __html: currentSlide.title }} />
+            <p>{currentSlide.description}</p>
             <div className="hero-actions">
-              <a href="#" className="primary-button" onClick={(e) => e.preventDefault()}>Shop Now</a>
-              <a href="/request-quote" className="secondary-button" onClick={(e) => { e.preventDefault(); navigate('/request-quote'); }}>Request a Quote</a>
+              {currentSlide.primary_button_text && (
+                <a 
+                  href={currentSlide.primary_button_link || '#'} 
+                  className="primary-button"
+                  onClick={(e) => {
+                    if (currentSlide.primary_button_link?.startsWith('/')) {
+                      e.preventDefault();
+                      navigate(currentSlide.primary_button_link);
+                    }
+                  }}
+                >
+                  {currentSlide.primary_button_text}
+                </a>
+              )}
+              {currentSlide.secondary_button_text && (
+                <a 
+                  href={currentSlide.secondary_button_link || '#'} 
+                  className="secondary-button"
+                  onClick={(e) => {
+                    if (currentSlide.secondary_button_link?.startsWith('/')) {
+                      e.preventDefault();
+                      navigate(currentSlide.secondary_button_link);
+                    }
+                  }}
+                >
+                  {currentSlide.secondary_button_text}
+                </a>
+              )}
             </div>
           </div>
 
-          <div className="hero-art" aria-label="BioArk agarose gel promotion">
-            <div className="dna-ribbon" />
-            <div className="glow-platform" />
-            <div className="gel-pack">
-              <div className="pack-logo">BIOARK TECH</div>
-              <div className="pack-lines" />
+          {currentSlide.image_url ? (
+            <div className="hero-slide-empty-right-column" style={{ width: '100%', height: '100%', pointerEvents: 'none' }} />
+          ) : (
+            <div className="hero-art" aria-label="BioArk agarose gel promotion">
+              <div className="dna-ribbon" />
+              <div className="glow-platform" />
+              <div className="gel-pack">
+                <div className="pack-logo">BIOARK TECH</div>
+                <div className="pack-lines" />
+              </div>
+              <div className="gel-tray">
+                {Array.from({ length: 12 }).map((_, index) => (
+                  <span key={index} />
+                ))}
+              </div>
+              <div className="sample-box">
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <span key={index} />
+                ))}
+              </div>
             </div>
-            <div className="gel-tray">
-              {Array.from({ length: 12 }).map((_, index) => (
-                <span key={index} />
-              ))}
-            </div>
-            <div className="sample-box">
-              {Array.from({ length: 8 }).map((_, index) => (
-                <span key={index} />
-              ))}
-            </div>
+          )}
+
+          <button 
+            className="carousel-control next" 
+            type="button" 
+            aria-label="Next promotion"
+            onClick={handleNextSlide}
+          >
+            ›
+          </button>
+          
+          <div className="hero-dots" aria-hidden="true">
+            {activeSlides.map((_, idx) => (
+              <span 
+                key={idx}
+                className={activeSlideIndex === idx ? 'is-active' : ''}
+                onClick={() => setActiveSlideIndex(idx)}
+                style={{ cursor: 'pointer' }}
+              />
+            ))}
           </div>
-          <button className="carousel-control next" type="button" aria-label="Next promotion">›</button>
-          <div className="hero-dots" aria-hidden="true"><span /><span /><span /><span /></div>
         </section>
+
 
         <section className="categories-section" aria-labelledby="categories-title">
           <h2 id="categories-title">Explore Popular Categories</h2>

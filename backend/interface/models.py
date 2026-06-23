@@ -20,3 +20,21 @@ class ServiceMode(models.Model):
 
     class Meta:
         db_table = 'service_mode'
+
+class HomepageSlide(models.Model):
+    id = models.AutoField(primary_key=True)
+    eyebrow = models.CharField(max_length=255, blank=True, null=True)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    primary_button_text = models.CharField(max_length=100, blank=True, null=True)
+    primary_button_link = models.CharField(max_length=255, blank=True, null=True)
+    secondary_button_text = models.CharField(max_length=100, blank=True, null=True)
+    secondary_button_link = models.CharField(max_length=255, blank=True, null=True)
+    image_url = models.TextField(blank=True, null=True)
+    display_order = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'homepage_slide'
+        ordering = ['display_order', 'id']
+

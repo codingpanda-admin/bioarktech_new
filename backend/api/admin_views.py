@@ -16,7 +16,7 @@ from products.models import (
 from blogs.models import Blog
 from users.models import User, Address
 from quote.models import Quote
-from interface.models import ProductMode, ServiceMode
+from interface.models import ProductMode, ServiceMode, HomepageSlide
 
 
 # ---------------------------------------------------------------------------
@@ -1219,3 +1219,140 @@ def admin_delete_media(request, image_id):
         return Response({'error': 'Image not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ===========================================================================
+#  HOMEPAGE SLIDES CRUD (HomepageSlide)
+# ===========================================================================
+
+@api_view(['GET'])
+def admin_list_slides(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        slides = HomepageSlide.objects.all().order_by('display_order', 'id')
+        data = []
+        for s in slides:
+            data.append({
+                'id': s.id,
+                'eyebrow': s.eyebrow,
+                'title': s.title,
+                'description': s.description,
+                'primary_button_text': s.primary_button_text,
+                'primary_button_link': s.primary_button_link,
+                'secondary_button_text': s.secondary_button_text,
+                'secondary_button_link': s.secondary_button_link,
+                'image_url': s.image_url,
+                'display_order': s.display_order,
+                'is_active': s.is_active,
+            })
+        return Response({'results': data})
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def admin_get_slide(request, slide_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        s = HomepageSlide.objects.get(id=slide_id)
+        return Response({
+            'id': s.id,
+            'eyebrow': s.eyebrow,
+            'title': s.title,
+            'description': s.description,
+            'primary_button_text': s.primary_button_text,
+            'primary_button_link': s.primary_button_link,
+            'secondary_button_text': s.secondary_button_text,
+            'secondary_button_link': s.secondary_button_link,
+            'image_url': s.image_url,
+            'display_order': s.display_order,
+            'is_active': s.is_active,
+        })
+    except HomepageSlide.DoesNotExist:
+        return Response({'error': 'Slide not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def admin_create_slide(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        data = request.data
+        try:
+            display_order = int(data.get('display_order', 0))
+        except (ValueError, TypeError):
+            display_order = 0
+
+        s = HomepageSlide(
+            eyebrow=data.get('eyebrow', ''),
+            title=data.get('title', ''),
+            description=data.get('description', ''),
+            primary_button_text=data.get('primary_button_text', ''),
+            primary_button_link=data.get('primary_button_link', ''),
+            secondary_button_text=data.get('secondary_button_text', ''),
+            secondary_button_link=data.get('secondary_button_link', ''),
+            image_url=data.get('image_url', ''),
+            display_order=display_order,
+            is_active=bool(data.get('is_active', True)),
+        )
+        s.save()
+        return Response({'message': 'Slide created successfully', 'id': s.id}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PUT'])
+def admin_update_slide(request, slide_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        s = HomepageSlide.objects.get(id=slide_id)
+        data = request.data
+        s.eyebrow = data.get('eyebrow', s.eyebrow)
+        s.title = data.get('title', s.title)
+        s.description = data.get('description', s.description)
+        s.primary_button_text = data.get('primary_button_text', s.primary_button_text)
+        s.primary_button_link = data.get('primary_button_link', s.primary_button_link)
+        s.secondary_button_text = data.get('secondary_button_text', s.secondary_button_text)
+        s.secondary_button_link = data.get('secondary_button_link', s.secondary_button_link)
+        s.image_url = data.get('image_url', s.image_url)
+        try:
+            s.display_order = int(data.get('display_order', s.display_order))
+        except (ValueError, TypeError):
+            pass
+        s.is_active = bool(data.get('is_active', s.is_active))
+        s.save()
+        return Response({'message': 'Slide updated successfully'})
+    except HomepageSlide.DoesNotExist:
+        return Response({'error': 'Slide not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+def admin_delete_slide(request, slide_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        s = HomepageSlide.objects.get(id=slide_id)
+        s.delete()
+        return Response({'message': 'Slide deleted successfully'})
+    except HomepageSlide.DoesNotExist:
+        return Response({'error': 'Slide not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
