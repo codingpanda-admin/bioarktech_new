@@ -27,6 +27,8 @@ DEFAULT_CATEGORY_LABELS = {
 
 
 def get_product_category_name(product):
+    if hasattr(product, 'category') and product.category:
+        return product.category.category_name
     category_external_id = getattr(product, 'category_external_id', None)
     if not category_external_id:
         return None
@@ -135,6 +137,12 @@ class PreviewFeaturedProductSerializer(serializers.ModelSerializer):
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
+        fields = "__all__"
+
+
+class ImgSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Img
         fields = "__all__"
 
 

@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS public.product (
     image_url TEXT,
     product_link TEXT,
     category_external_id VARCHAR(100),
+    category_id INTEGER REFERENCES product_category(category_id) ON DELETE SET NULL,
     product_group VARCHAR(100),
     source_type VARCHAR(50),
     display_order INTEGER,
@@ -74,6 +75,7 @@ def main():
 
     if table_exists and has_records:
         print("Product table already exists and contains data. Skipping initial population.")
+        populate_mock_products_and_images()
         ensure_admin_users()
         return
 
@@ -105,7 +107,239 @@ def main():
 
     print(f"Product table populated successfully. Total products: {Product.objects.count()}")
     
+    populate_mock_products_and_images()
     ensure_admin_users()
+
+
+MOCK_PRODUCTS = [
+    {
+        'product_name': 'Cas9 Nuclease (S. pyogenes) Recombinant',
+        'catalog_number': 'CAS-001',
+        'external_id': 'cas9-nuclease-recombinant',
+        'description': 'High-purity recombinant Cas9 protein from S. pyogenes, containing a nuclear localization signal (NLS) for efficient genome editing.',
+        'availability': 'In Stock',
+        'list_price': 'Contact for Quote',
+        'category_external_id': 'category-1764975769330',
+        'product_group': 'Purified Proteins',
+        'key_features': ['High-purity recombinant protein', 'NLS-tagged for nuclear import', 'Active in vitro and in vivo'],
+        'options': [],
+        'option_prices': {},
+        'storage_stability': 'Store at -20°C',
+        'performance_data': 'Highly active in gene knockout and knock-in validation assays.',
+        'manuals': [],
+        'manual_urls': [],
+        'images': [],
+    },
+    {
+        'product_name': 'Lentivirus ORF Stock',
+        'catalog_number': 'LV-ORF',
+        'external_id': 'lentivirus-orf-stock',
+        'description': 'Ready-to-use lentivirus particles containing human/mouse/rat ORFs for stable expression.',
+        'availability': 'In Stock',
+        'list_price': 'Contact for Quote',
+        'category_external_id': 'lentivirus',
+        'product_group': 'Lentivirus Products',
+        'key_features': ['High titer (>10^8 TU/mL)', 'Stable integration', 'Wide host range'],
+        'options': [],
+        'option_prices': {},
+        'storage_stability': 'Store at -80°C',
+        'performance_data': 'Transduction validation in HeLa cells shows high expression levels.',
+        'manuals': [],
+        'manual_urls': [],
+        'images': [],
+    },
+    {
+        'product_name': 'Lentivirus Control Stock',
+        'catalog_number': 'LV-CTR',
+        'external_id': 'lentivirus-control-stock',
+        'description': 'Negative and positive control lentivirus particles (e.g. GFP, RFP, Null) for transduction optimization.',
+        'availability': 'In Stock',
+        'list_price': 'Contact for Quote',
+        'category_external_id': 'lentivirus',
+        'product_group': 'Lentivirus Products',
+        'key_features': ['Control transduction validator', 'High quality QC validated', 'Available with fluorescence markers'],
+        'options': [],
+        'option_prices': {},
+        'storage_stability': 'Store at -80°C',
+        'performance_data': 'High-titer control for assay optimization.',
+        'manuals': [],
+        'manual_urls': [],
+        'images': [],
+    },
+    {
+        'product_name': 'Stable Cell Line Stock',
+        'catalog_number': 'SCL-001',
+        'external_id': 'stable-cell-line-stock',
+        'description': 'Pre-made stable cell lines expressing popular reporters, checkpoints, or target genes.',
+        'availability': 'In Stock',
+        'list_price': 'Contact for Quote',
+        'category_external_id': 'stable-cell-lines',
+        'product_group': 'Stable Cell Lines',
+        'key_features': ['Clonally isolated', 'High stability across passages', 'Mycoplasma free'],
+        'options': [],
+        'option_prices': {},
+        'storage_stability': 'Liquid nitrogen storage',
+        'performance_data': 'Validated for marker expression and proliferation rates.',
+        'manuals': [],
+        'manual_urls': [],
+        'images': [],
+    },
+    {
+        'product_name': 'CleanCap® FLuc mRNA',
+        'catalog_number': 'mRNA-001',
+        'external_id': 'cleancap-fluc-mrna',
+        'description': 'CleanCap-capped Firefly Luciferase mRNA for validation of translation and transfection efficiency in mammalian cells.',
+        'availability': 'In Stock',
+        'list_price': 'Contact for Quote',
+        'category_external_id': 'category-1764975611348',
+        'product_group': 'IVT mRNA',
+        'key_features': ['Capped with CleanCap® AG', '99% purity by HPLC', 'Polyadenylated for stability'],
+        'options': [],
+        'option_prices': {},
+        'storage_stability': 'Store at -80°C',
+        'performance_data': 'HPLC chromatography showing single peak purity.',
+        'manuals': [],
+        'manual_urls': [],
+        'images': [],
+    },
+    {
+        'product_name': 'CleanCap® EGFP mRNA',
+        'catalog_number': 'mRNA-002',
+        'external_id': 'cleancap-egfp-mrna',
+        'description': 'CleanCap-capped Enhanced Green Fluorescent Protein mRNA for easy visualization of transfection efficiency.',
+        'availability': 'In Stock',
+        'list_price': 'Contact for Quote',
+        'category_external_id': 'category-1764975611348',
+        'product_group': 'IVT mRNA',
+        'key_features': ['High-expression GFP construct', 'HPLC purified', 'Safe non-viral transfection'],
+        'options': [],
+        'option_prices': {},
+        'storage_stability': 'Store at -80°C',
+        'performance_data': 'Transfection validation shows GFP expression in over 90% of cells.',
+        'manuals': [],
+        'manual_urls': [],
+        'images': [],
+    }
+]
+
+
+DEFAULT_PRODUCT_CATEGORIES = [
+    # Products
+    {'category_name': 'Genome Editing', 'external_id': 'genome-editing', 'product_type': 'product'},
+    {'category_name': 'Vector Stock', 'external_id': 'vector-clones', 'product_type': 'product'},
+    {'category_name': 'IVT mRNA', 'external_id': 'category-1764975611348', 'product_type': 'product'},
+    {'category_name': 'Purified Protein', 'external_id': 'category-1764975769330', 'product_type': 'product'},
+    {'category_name': 'Virus Product', 'external_id': 'lentivirus', 'product_type': 'product'},
+    {'category_name': 'Cell Lines', 'external_id': 'stable-cell-lines', 'product_type': 'product'},
+
+    # Services
+    {'category_name': 'Genome Editing Services', 'external_id': 'genome-editing-services', 'product_type': 'service'},
+    {'category_name': 'Custom Cloning Services', 'external_id': 'synthesis-cloning-services', 'product_type': 'service'},
+    {'category_name': 'Stable Cell Line Services', 'external_id': 'cell-line-services', 'product_type': 'service'},
+    {'category_name': 'Lentivirus Package Services', 'external_id': 'virus-packaging-services', 'product_type': 'service'},
+    {'category_name': 'Vector Construction Support', 'external_id': 'vector-construction-services', 'product_type': 'service'},
+    {'category_name': 'Functional Testing', 'external_id': 'functional-testing-services', 'product_type': 'service'},
+    {'category_name': 'Experiment Services', 'external_id': 'experiment-services', 'product_type': 'service'},
+    {'category_name': 'Lab Supplies', 'external_id': 'lab-supplies-services', 'product_type': 'service'},
+    {'category_name': 'Project Consultation', 'external_id': 'project-consultation-services', 'product_type': 'service'},
+
+    # Reagents
+    {'category_name': 'DNA Reagents', 'external_id': 'category-1765063995229', 'product_type': 'reagent'},
+    {'category_name': 'RNA Reagents', 'external_id': 'category-1766675380397', 'product_type': 'reagent'},
+    {'category_name': 'Protein Reagents', 'external_id': 'category-1766675365489', 'product_type': 'reagent'},
+    {'category_name': 'Cell Reagents', 'external_id': 'category-1765995504911', 'product_type': 'reagent'},
+
+    # Consumables
+    {'category_name': 'Consumables', 'external_id': 'category-1780539818236', 'product_type': 'consumable'},
+]
+
+
+def populate_mock_products_and_images():
+    print("Populating categories into the database...")
+    from products.models import ProductCategory
+    for item in DEFAULT_PRODUCT_CATEGORIES:
+        cat_obj, created = ProductCategory.objects.update_or_create(
+            category_name=item['category_name'],
+            defaults={
+                'external_id': item['external_id'],
+                'product_type': item['product_type']
+            }
+        )
+        action = "Created" if created else "Updated"
+        print(f"{action} category: {cat_obj.category_name} ({cat_obj.external_id})")
+
+    print("Populating mock products into the database...")
+    for item in MOCK_PRODUCTS:
+        p, created = Product.objects.update_or_create(
+            external_id=item['external_id'],
+            defaults={
+                'product_name': item['product_name'],
+                'catalog_number': item['catalog_number'],
+                'description': item['description'],
+                'availability': item['availability'],
+                'list_price': item['list_price'],
+                'category_external_id': item['category_external_id'],
+                'product_group': item['product_group'],
+                'key_features': item['key_features'],
+                'options': item['options'],
+                'option_prices': item['option_prices'],
+                'storage_stability': item['storage_stability'],
+                'performance_data': item['performance_data'],
+                'manuals': item['manuals'],
+                'manual_urls': item['manual_urls'],
+                'images': item['images'],
+                'source_type': 'mock'
+            }
+        )
+        action = "Created" if created else "Updated"
+        print(f"{action} mock product: {p.product_name}")
+
+    print("Migrating product images to relational tables (img and product_images)...")
+    from products.models import Img, ProductImage, Image
+    
+    # Clean previous image relations to avoid duplicates and starting fresh
+    ProductImage.objects.all().delete()
+    Img.objects.all().delete()
+
+    for product in Product.objects.all():
+        image_paths = []
+        if product.image_url:
+            image_paths.append(product.image_url)
+        if product.images:
+            for img_path in product.images:
+                if img_path and img_path not in image_paths:
+                    image_paths.append(img_path)
+
+        for path in image_paths:
+            if not path:
+                continue
+            # Get or create Img record
+            img_obj, _ = Img.objects.get_or_create(image_path=path)
+            # Create link
+            ProductImage.objects.get_or_create(product=product, img=img_obj)
+
+    print("Migrating featured product/Image model records to relational tables...")
+    for image in Image.objects.all():
+        if not image.image or not image.image.name:
+            continue
+        path = f"/media/{image.image.name}"
+        if image.union and image.union.product_id:
+            products = Product.objects.filter(catalog_number=image.union.product_id)
+            for product in products:
+                img_obj, _ = Img.objects.get_or_create(image_path=path)
+                ProductImage.objects.get_or_create(product=product, img=img_obj)
+    
+    print("Relational images population finished successfully!")
+
+    print("Linking products to their categories in the database...")
+    for product in Product.objects.all():
+        if product.category_external_id:
+            cat_obj = ProductCategory.objects.filter(external_id=product.category_external_id).first()
+            if cat_obj:
+                product.category = cat_obj
+                product.save()
+    print("Category relationships synced successfully!")
+
 
 def ensure_admin_users():
     from users.models import User

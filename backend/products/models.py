@@ -197,6 +197,16 @@ class ProductsUnion(models.Model):
     def __str__(self):
         return self.product_id
 
+class Img(models.Model):
+    id = models.AutoField(primary_key=True)
+    image_path = models.TextField()
+
+    class Meta:
+        db_table = 'img'
+
+    def __str__(self):
+        return self.image_path
+
 class Product(models.Model):
     product_id = models.BigAutoField(primary_key=True)
     external_id = models.CharField(max_length=100, unique=True)
@@ -205,6 +215,7 @@ class Product(models.Model):
     image_url = models.TextField(blank=True, null=True)
     product_link = models.TextField(blank=True, null=True)
     category_external_id = models.CharField(max_length=100, blank=True, null=True)
+    category = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL, null=True, blank=True, db_column='category_id', related_name='products')
     product_group = models.CharField(max_length=100, blank=True, null=True)
     source_type = models.CharField(max_length=50, blank=True, null=True)
     display_order = models.IntegerField(blank=True, null=True)
@@ -235,6 +246,7 @@ class Product(models.Model):
     raw_detail = models.JSONField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    images_relation = models.ManyToManyField(Img, through='ProductImage', blank=True)
 
     class Meta:
         db_table = 'product'
@@ -243,10 +255,11 @@ class Product(models.Model):
 class ProductImage(models.Model):
     image_id = models.BigAutoField(primary_key=True)
     product = models.ForeignKey(Product, db_column='product_id', related_name='product_images', on_delete=models.CASCADE)
-    image_url = models.TextField()
+    img = models.ForeignKey(Img, db_column='img_id', related_name='product_images', on_delete=models.CASCADE, null=True)
 
     class Meta:
-        db_table = 'product_image'
+        db_table = 'product_images_association'
+        unique_together = ('product', 'img')
 
 
 class FeaturedProduct(models.Model):
@@ -299,4 +312,41 @@ class UnitPrice(models.Model):
 
     class Meta:
         db_table = 'unit_prices'
+
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=Product)
+def sync_product_relations(sender, instance, **kwargs):
+    # 1. Sync category ForeignKey without trigger loop
+    if instance.category_external_id:
+        try:
+            cat_obj = ProductCategory.objects.filter(external_id=instance.category_external_id).first()
+            if cat_obj and instance.category_id != cat_obj.category_id:
+                Product.objects.filter(product_id=instance.product_id).update(category=cat_obj)
+        except Exception:
+            pass
+
+    # 2. Sync Img and ProductImage relations
+    try:
+        image_paths = []
+        if instance.image_url:
+            image_paths.append(instance.image_url)
+        if instance.images:
+            for img_path in instance.images:
+                if img_path and img_path not in image_paths:
+                    image_paths.append(img_path)
+
+        current_links = list(ProductImage.objects.filter(product=instance).values_list('img__image_path', flat=True))
+
+        if set(image_paths) != set(current_links):
+            ProductImage.objects.filter(product=instance).delete()
+            for path in image_paths:
+                if not path:
+                    continue
+                img_obj, _ = Img.objects.get_or_create(image_path=path)
+                ProductImage.objects.get_or_create(product=instance, img=img_obj)
+    except Exception:
+        pass
 

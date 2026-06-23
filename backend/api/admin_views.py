@@ -398,6 +398,35 @@ def admin_delete_product(request, product_id):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@api_view(['POST'])
+def admin_upload_product_image(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        image_file = request.FILES.get('image')
+        if not image_file:
+            return Response({'error': 'No image file provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        from django.core.files.storage import default_storage
+        # Save file under media/product_images/
+        file_path = f"product_images/{image_file.name}"
+        saved_path = default_storage.save(file_path, image_file)
+        
+        # The database expects a path like "media/product_images/xxx.png"
+        relative_url = f"media/{saved_path}"
+
+        return Response({
+            'image_path': relative_url,
+            'url': request.build_absolute_uri(default_storage.url(saved_path)),
+            'message': 'Image uploaded successfully'
+        }, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
 # ===========================================================================
 #  FEATURED PRODUCTS CRUD
 # ===========================================================================
