@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { logo, apiFetch, formatAssetUrl } from '../utils/api';
 
 function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
@@ -12,6 +12,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
   const [mainImage, setMainImage] = useState(logo);
   const [selectedUnitSize, setSelectedUnitSize] = useState(null);
   const [cartAdded, setCartAdded] = useState(false);
+  const thumbnailStripRef = useRef(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -73,6 +74,24 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
   const name = product.product_name || product.externalId || product.external_id;
   const categoryLabel = product.category_name || product.categoryName || product.product_category || product.category_external_id;
   const availabilityLabel = product.availability;
+  const getImageUrl = (image) => {
+    if (!image) return '';
+    if (typeof image === 'string') return image;
+    return image.image || image.url || image.image_url || '';
+  };
+  const productImages = Array.from(new Set([
+    product.image_url,
+    ...(Array.isArray(product.images) ? product.images.map(getImageUrl) : []),
+  ].filter(Boolean)));
+  const showThumbnailNav = productImages.length > 4;
+
+  const scrollThumbnails = (direction) => {
+    if (!thumbnailStripRef.current) return;
+    thumbnailStripRef.current.scrollBy({
+      left: direction * 260,
+      behavior: 'smooth',
+    });
+  };
   
   // Calculate price dynamically for featured products based on selected unit size
   const price = isFeatured ? selectedUnitSize?.unit_price : product.unit_price;
@@ -83,31 +102,64 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
 
   return (
     <main className="product-page" style={{ width: 'min(1200px, calc(100% - 48px))', margin: '40px auto' }}>
-      <div className="content" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px', marginBottom: '40px' }}>
+      <div className="content" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: '48px', marginBottom: '40px' }}>
         
         {/* Gallery Section */}
-        <div className="diagram">
-          <img src={mainImage} className="main-image" alt={name} style={{ width: '100%', maxHeight: '380px', objectFit: 'contain', borderRadius: '8px', border: '1px solid var(--line)', padding: '20px' }} />
-          {product.images && product.images.length > 1 && (
-            <div className="preview" style={{ display: 'flex', gap: '10px', marginTop: '15px', overflowX: 'auto', paddingBottom: '10px' }}>
-              {product.images.map((imgObj, idx) => {
-                const imageUrl = typeof imgObj === 'string' ? imgObj : imgObj.image;
-                return (
-                  <img
-                    key={idx}
-                    src={formatAssetUrl(imageUrl)}
-                    alt="preview"
-                    onClick={() => setMainImage(formatAssetUrl(imageUrl))}
-                    style={{ width: '70px', height: '70px', objectFit: 'contain', border: '1px solid var(--line)', borderRadius: '6px', cursor: 'pointer', padding: '5px', background: '#fff' }}
-                  />
-                );
-              })}
+        <div className="product-detail-gallery">
+          <div className="product-main-image-frame">
+            <img src={mainImage} className="product-main-image" alt={name} />
+          </div>
+          {productImages.length > 1 && (
+            <div className={`product-thumbnail-carousel ${showThumbnailNav ? 'has-nav' : 'no-nav'}`}>
+              {showThumbnailNav && (
+                <button
+                  type="button"
+                  className="product-thumbnail-nav"
+                  aria-label="Previous product images"
+                  onClick={() => scrollThumbnails(-1)}
+                >
+                  &lt;
+                </button>
+              )}
+              <div className="product-thumbnail-strip" ref={thumbnailStripRef}>
+                {productImages.map((imageUrl, idx) => {
+                  const thumbnailUrl = formatAssetUrl(imageUrl);
+                  return (
+                    <button
+                      key={`${imageUrl}-${idx}`}
+                      type="button"
+                      className={`product-thumbnail-button ${mainImage === thumbnailUrl ? 'active' : ''}`}
+                      onClick={() => setMainImage(thumbnailUrl)}
+                      aria-label={`View product image ${idx + 1}`}
+                    >
+                      <img src={thumbnailUrl} alt="" />
+                    </button>
+                  );
+                })}
+              </div>
+              {showThumbnailNav && (
+                <button
+                  type="button"
+                  className="product-thumbnail-nav"
+                  aria-label="Next product images"
+                  onClick={() => scrollThumbnails(1)}
+                >
+                  &gt;
+                </button>
+              )}
             </div>
           )}
         </div>
 
         {/* Info Panel Section */}
         <div className="product-container" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {categoryLabel && (
+            <nav className="product-breadcrumb" aria-label="Breadcrumb">
+              <span>{categoryLabel}</span>
+              <span aria-hidden="true">/</span>
+              <span>{name}</span>
+            </nav>
+          )}
           <h2>{name}</h2>
           <div className="product-detail-labels" aria-label="Product labels">
             {categoryLabel && <span className="product-detail-pill category">{categoryLabel}</span>}

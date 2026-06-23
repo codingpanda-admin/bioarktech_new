@@ -28,6 +28,11 @@ const formatHomeBlogDate = (blog) => {
   });
 };
 
+const getHomeBlogHref = (blog, index) => {
+  const blogId = blog?.id || blog?.blog_id || blog?.external_id;
+  return blogId ? `/blog/${blogId}` : `/blog/mock-${index}`;
+};
+
 const defaultSlides = [
   {
     id: 1,
@@ -354,8 +359,10 @@ function HomePage({ navigate, searchParams }) {
         <section className="resources-section" aria-labelledby="resources-title">
           <h2 id="resources-title">Resources and Blogs</h2>
           <div className="resource-grid">
-            {blogs.map((blog, idx) => (
-              <article className="resource-card" key={idx}>
+            {blogs.map((blog, idx) => {
+              const blogHref = getHomeBlogHref(blog, idx);
+              return (
+              <article className="resource-card" key={blog.id || blog.external_id || idx}>
                 <div className="resource-image">
                   {blog.image && (
                     <img src={formatAssetUrl(blog.image)} alt={blog.title || blog.name || 'Blog post'} />
@@ -365,12 +372,13 @@ function HomePage({ navigate, searchParams }) {
                 <div className="resource-body">
                   <h3>{blog.title || blog.name}</h3>
                   <p>{formatHomeBlogDate(blog)} <span>•</span> {blog.readTime || '3 min read'}</p>
-                  <a href="#" onClick={(e) => e.preventDefault()}>Read More <span>→</span></a>
+                  <a href={blogHref} onClick={(e) => { e.preventDefault(); navigate(blogHref); }}>Read More <span>→</span></a>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
-          <a className="view-all" href="/resources" onClick={(e) => { e.preventDefault(); navigate('/resources'); }}>View All Resources <span>→</span></a>
+          <a className="view-all" href="/resources" onClick={(e) => { e.preventDefault(); navigate('/resources'); }}>View All Resources & Blogs <span>→</span></a>
         </section>
 
         <section className="bulk-cta">

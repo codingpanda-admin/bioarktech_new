@@ -745,7 +745,6 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
           </button>
           {aboutMenuOpen && (
             <div className="dropdown-menu" id="about-menu">
-              <MenuCloseButton label="Close about menu" />
               <a href="/investors" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/investors'); }}>Investors</a>
               <a href="/about-bioark" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/about-bioark'); }}>Why BioArk</a>
             </div>

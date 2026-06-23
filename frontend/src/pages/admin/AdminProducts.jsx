@@ -33,6 +33,7 @@ function AdminProducts({ categoryFilter = null }) {
   const [catalogRows, setCatalogRows] = useState([]);
   const [catalogSaving, setCatalogSaving] = useState(false);
   const [draggedCatalogIndex, setDraggedCatalogIndex] = useState(null);
+  const [collapsedCatalogs, setCollapsedCatalogs] = useState(() => new Set());
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -446,6 +447,18 @@ function AdminProducts({ categoryFilter = null }) {
 
   const groupedData = getGroupedData();
 
+  const toggleCatalogCollapse = (catalogId) => {
+    setCollapsedCatalogs((prev) => {
+      const next = new Set(prev);
+      if (next.has(catalogId)) {
+        next.delete(catalogId);
+      } else {
+        next.add(catalogId);
+      }
+      return next;
+    });
+  };
+
   return (
     <>
       <div className="admin-section-header">
@@ -510,27 +523,42 @@ function AdminProducts({ categoryFilter = null }) {
           {groupedData.map((groupObj) => {
             const cat = groupObj.category;
             const subGroups = groupObj.subgroups;
+            const catalogId = cat.category_id;
+            const isCollapsed = collapsedCatalogs.has(catalogId);
             
             if (selectedCategory === 'All' && groupObj.totalCount === 0) {
               return null;
             }
 
             return (
-              <div key={cat.category_id} className="admin-category-group">
+              <div key={catalogId} className={`admin-category-group ${isCollapsed ? 'is-collapsed' : ''}`}>
                 <h3 className="admin-category-title">
-                  <span>{cat.category_name}</span>
+                  <button
+                    className="admin-category-toggle"
+                    type="button"
+                    aria-expanded={!isCollapsed}
+                    aria-controls={`catalog-panel-${catalogId}`}
+                    onClick={() => toggleCatalogCollapse(catalogId)}
+                  >
+                    <span className="admin-category-toggle-icon" aria-hidden="true">
+                      {isCollapsed ? '+' : '-'}
+                    </span>
+                    <span>{cat.category_name}</span>
+                  </button>
                   <span className="admin-category-badge">{groupObj.totalCount} items</span>
                 </h3>
 
-                {groupObj.totalCount === 0 ? (
-                  <div className="admin-empty-table" style={{ minHeight: '80px', background: '#fcfdfd' }}>
-                    No items in this category.
-                  </div>
-                ) : (
-                  Object.keys(subGroups).map((subGroupName) => {
-                    const productsList = subGroups[subGroupName];
-                    return (
-                      <div key={subGroupName} className="admin-subgroup-group">
+                {!isCollapsed && (
+                  <div id={`catalog-panel-${catalogId}`} className="admin-category-panel">
+                    {groupObj.totalCount === 0 ? (
+                      <div className="admin-empty-table" style={{ minHeight: '80px', background: '#fcfdfd' }}>
+                        No items in this category.
+                      </div>
+                    ) : (
+                      Object.keys(subGroups).map((subGroupName) => {
+                        const productsList = subGroups[subGroupName];
+                        return (
+                          <div key={subGroupName} className="admin-subgroup-group">
                         <h4 className="admin-subgroup-title">
                           {subGroupName || 'General'} ({productsList.length})
                         </h4>
@@ -588,9 +616,11 @@ function AdminProducts({ categoryFilter = null }) {
                             </tbody>
                           </table>
                         </div>
-                      </div>
-                    );
-                  })
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 )}
               </div>
             );
