@@ -3,9 +3,13 @@ import { apiFetch, formatAssetUrl } from '../../utils/api';
 
 function AdminHomepage() {
   const [slides, setSlides] = useState([]);
+  const [originalSlides, setOriginalSlides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isReorderMode, setIsReorderMode] = useState(false);
+  const [draggedSlideId, setDraggedSlideId] = useState(null);
+  const [savingOrder, setSavingOrder] = useState(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,6 +35,7 @@ function AdminHomepage() {
     try {
       const data = await apiFetch('/api/admin-panel/homepage-slides/');
       setSlides(data.results || []);
+      setOriginalSlides(data.results || []);
     } catch (err) {
       setError('Failed to fetch homepage slides: ' + err.message);
     } finally {
@@ -171,6 +176,66 @@ function AdminHomepage() {
     }
   };
 
+  const startReorderMode = () => {
+    setOriginalSlides(slides);
+    setIsReorderMode(true);
+    setError('');
+    setSuccess('');
+  };
+
+  const cancelReorderMode = () => {
+    setSlides(originalSlides);
+    setIsReorderMode(false);
+    setDraggedSlideId(null);
+    setError('');
+  };
+
+  const handleDragStart = (slideId) => {
+    if (!isReorderMode) return;
+    setDraggedSlideId(slideId);
+  };
+
+  const handleDragOver = (event) => {
+    if (!isReorderMode) return;
+    event.preventDefault();
+  };
+
+  const handleDrop = (targetSlideId) => {
+    if (!isReorderMode || draggedSlideId === null || draggedSlideId === targetSlideId) return;
+
+    setSlides((currentSlides) => {
+      const draggedIndex = currentSlides.findIndex((slide) => slide.id === draggedSlideId);
+      const targetIndex = currentSlides.findIndex((slide) => slide.id === targetSlideId);
+      if (draggedIndex < 0 || targetIndex < 0) return currentSlides;
+
+      const nextSlides = [...currentSlides];
+      const [draggedSlide] = nextSlides.splice(draggedIndex, 1);
+      nextSlides.splice(targetIndex, 0, draggedSlide);
+      return nextSlides.map((slide, index) => ({ ...slide, display_order: index + 1 }));
+    });
+    setDraggedSlideId(null);
+  };
+
+  const handleSaveOrder = async () => {
+    if (savingOrder) return;
+    setSavingOrder(true);
+    setError('');
+    try {
+      await apiFetch('/api/admin-panel/homepage-slides/reorder/', {
+        method: 'POST',
+        body: { slide_ids: slides.map((slide) => slide.id) },
+      });
+      setSuccess('Homepage slide order updated successfully');
+      setIsReorderMode(false);
+      fetchSlides();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError('Failed to save slide order: ' + err.message);
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
   const getSlideThumbnail = (url) => {
     if (!url) return null;
     if (url.startsWith('/images/')) {
@@ -181,29 +246,48 @@ function AdminHomepage() {
 
   return (
     <>
-      <div className="admin-header-actions">
-        <h2 id="admin-content-title">Homepage Slides</h2>
-        <button className="admin-btn-primary" onClick={openAddModal}>
-          + Add New Slide
-        </button>
+      <div className="admin-section-header admin-homepage-header">
+        <h2 id="admin-content-title">Homepage</h2>
+        <div className="admin-homepage-actions">
+          {isReorderMode ? (
+            <>
+              <button className="admin-btn-secondary" onClick={cancelReorderMode} disabled={savingOrder}>
+                Cancel
+              </button>
+              <button className="admin-btn-primary" onClick={handleSaveOrder} disabled={savingOrder}>
+                {savingOrder ? 'Saving...' : 'Save Order'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="admin-btn-secondary" onClick={startReorderMode} disabled={slides.length < 2}>
+                Reorder Slides
+              </button>
+              <button className="admin-btn-primary" onClick={openAddModal}>
+                + Add New Slide
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <p className="admin-section-subtitle">
-        Manage the hero promotion slides that display on the main website homepage. Slides are shown in order of their display order values.
+        Manage the hero promotion slides that display on the main website homepage. Use Reorder Slides to drag records into the desired order.
       </p>
 
       {error && <div className="admin-notification error">{error}</div>}
       {success && <div className="admin-notification success">{success}</div>}
 
       {loading ? (
-        <div className="admin-loading">Loading homepage slides...</div>
+        <div className="admin-empty-table">Loading homepage slides...</div>
       ) : (
-        <div className="admin-table-container">
-          <table className="admin-table">
+        <div className="admin-data-table-wrap">
+          <table className="admin-data-table">
             <thead>
               <tr>
-                <th style={{ width: '80px' }}>Order</th>
-                <th style={{ width: '120px' }}>Preview</th>
+                {isReorderMode && <th style={{ width: '70px' }}>Move</th>}
+                <th className="homepage-slide-order-cell">Order</th>
+                <th style={{ width: '180px' }}>Preview</th>
                 <th>Eyebrow</th>
                 <th>Title</th>
                 <th>Primary CTA</th>
@@ -214,22 +298,37 @@ function AdminHomepage() {
             <tbody>
               {slides.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '24px' }}>
+                  <td colSpan={isReorderMode ? 8 : 7} style={{ textAlign: 'center', padding: '24px' }}>
                     No slides found in the database.
                   </td>
                 </tr>
               ) : (
                 slides.map((slide) => (
-                  <tr key={slide.id}>
-                    <td><strong>{slide.display_order}</strong></td>
+                  <tr
+                    key={slide.id}
+                    draggable={isReorderMode}
+                    className={`${isReorderMode ? 'admin-draggable-row' : ''} ${draggedSlideId === slide.id ? 'is-dragging' : ''}`}
+                    onDragStart={() => handleDragStart(slide.id)}
+                    onDragOver={handleDragOver}
+                    onDrop={() => handleDrop(slide.id)}
+                    onDragEnd={() => setDraggedSlideId(null)}
+                  >
+                    {isReorderMode && (
+                      <td>
+                        <button className="admin-drag-button" type="button" aria-label={`Drag ${slide.title}`}>
+                          ::
+                        </button>
+                      </td>
+                    )}
+                    <td className="homepage-slide-order-cell"><strong>{slide.display_order}</strong></td>
                     <td>
                       {slide.image_url ? (
                         <img
                           src={getSlideThumbnail(slide.image_url)}
                           alt={slide.title}
                           style={{
-                            width: '90px',
-                            height: '55px',
+                            width: '150px',
+                            height: '84px',
                             objectFit: 'cover',
                             borderRadius: '4px',
                             border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -259,11 +358,11 @@ function AdminHomepage() {
                       </span>
                     </td>
                     <td>
-                      <div className="admin-table-actions">
-                        <button className="admin-action-btn edit" onClick={() => openEditModal(slide)}>
+                      <div className="admin-row-actions">
+                        <button className="admin-action-btn edit" onClick={() => openEditModal(slide)} disabled={isReorderMode}>
                           Edit
                         </button>
-                        <button className="admin-action-btn delete" onClick={() => handleDelete(slide.id)}>
+                        <button className="admin-action-btn delete" onClick={() => handleDelete(slide.id)} disabled={isReorderMode}>
                           Delete
                         </button>
                       </div>

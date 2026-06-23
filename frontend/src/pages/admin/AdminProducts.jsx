@@ -461,11 +461,9 @@ function AdminProducts({ categoryFilter = null }) {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          {categoryFilter === 'products' && (
-            <button className="secondary-admin-button" onClick={openCatalogEditor}>
-              Edit Catalog
-            </button>
-          )}
+          <button className="secondary-admin-button" onClick={openCatalogEditor}>
+            Edit Catalog
+          </button>
           <button className="primary-button" onClick={handleCreate}>
             + Add {categoryFilter === 'products' ? 'Product' : 'Reagent'}
           </button>

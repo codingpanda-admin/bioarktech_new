@@ -2,6 +2,7 @@ import json
 import traceback
 
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Q, Max
 from django.utils.text import slugify
 
@@ -67,6 +68,9 @@ def admin_dashboard_stats(request):
 
 def _serialize_product_category(category):
     product_count = Product.objects.filter(category_external_id=category.external_id).count()
+    service_count = 0
+    if category.product_type == 'service':
+        service_count = ServiceMode.objects.filter(category=category.external_id).count()
     return {
         'category_id': category.category_id,
         'category_name': category.category_name,
@@ -74,7 +78,8 @@ def _serialize_product_category(category):
         'priority': category.priority,
         'external_id': category.external_id,
         'product_type': category.product_type,
-        'product_count': product_count,
+        'product_count': service_count if category.product_type == 'service' else product_count,
+        'service_count': service_count,
     }
 
 
@@ -150,6 +155,9 @@ def admin_update_product_category(request, category_id):
         if 'description' in d:
             category.description = d.get('description') or ''
 
+        if 'product_type' in d:
+            category.product_type = d.get('product_type') or category.product_type
+
         category.save()
         return Response(_serialize_product_category(category))
     except ProductCategory.DoesNotExist:
@@ -185,10 +193,16 @@ def admin_delete_product_category(request, category_id):
 
     try:
         category = ProductCategory.objects.get(category_id=category_id)
-        product_count = Product.objects.filter(category_external_id=category.external_id).count()
-        if product_count > 0:
+        if category.product_type == 'service':
+            item_count = ServiceMode.objects.filter(category=category.external_id).count()
+            item_label = 'service(s)'
+        else:
+            item_count = Product.objects.filter(category_external_id=category.external_id).count()
+            item_label = 'product(s)'
+
+        if item_count > 0:
             return Response(
-                {'error': f'This catalog contains {product_count} product(s). Move or remove those products before deleting it.'},
+                {'error': f'This catalog contains {item_count} {item_label}. Move or remove those items before deleting it.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -1337,6 +1351,26 @@ def admin_update_slide(request, slide_id):
         return Response({'message': 'Slide updated successfully'})
     except HomepageSlide.DoesNotExist:
         return Response({'error': 'Slide not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def admin_reorder_slides(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        slide_ids = request.data.get('slide_ids') or request.data.get('ordered_ids') or []
+        if not isinstance(slide_ids, list) or not slide_ids:
+            return Response({'error': 'slide_ids must be a non-empty list'}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            for index, slide_id in enumerate(slide_ids, start=1):
+                HomepageSlide.objects.filter(id=slide_id).update(display_order=index)
+
+        return Response({'message': 'Homepage slide order updated successfully'})
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

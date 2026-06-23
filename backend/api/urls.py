@@ -22,7 +22,7 @@ from .admin_views import (
     admin_update_service, admin_delete_service,
     admin_list_media, admin_upload_media, admin_delete_media,
     admin_list_slides, admin_get_slide, admin_create_slide,
-    admin_update_slide, admin_delete_slide,
+    admin_update_slide, admin_reorder_slides, admin_delete_slide,
 )
 
 admin.site.site_header = "Bioark Site Administration"
@@ -108,6 +108,7 @@ urlpatterns = [
     # Homepage Slides
     path('admin-panel/homepage-slides/', admin_list_slides),
     path('admin-panel/homepage-slides/create/', admin_create_slide),
+    path('admin-panel/homepage-slides/reorder/', admin_reorder_slides),
     path('admin-panel/homepage-slides/<int:slide_id>/', admin_get_slide),
     path('admin-panel/homepage-slides/<int:slide_id>/update/', admin_update_slide),
     path('admin-panel/homepage-slides/<int:slide_id>/delete/', admin_delete_slide),
