@@ -39,6 +39,20 @@ def _check_admin(request):
     return None
 
 
+def _get_resolved_image_url(request, image_field):
+    if not image_field:
+        return None
+    import os
+    from django.conf import settings
+    filename = os.path.basename(image_field.name)
+    subfolder_path = os.path.join(settings.MEDIA_ROOT, 'product_images', filename)
+    if os.path.exists(subfolder_path):
+        url = f"/media/product_images/{filename}"
+    else:
+        url = f"/media/{filename}"
+    return request.build_absolute_uri(url)
+
+
 # ===========================================================================
 #  DASHBOARD
 # ===========================================================================
@@ -471,7 +485,7 @@ def admin_list_featured_products(request):
                     images.append({
                         'id': img.id,
                         'main_display': img.main_display,
-                        'url': request.build_absolute_uri(img.image.url) if img.image else None,
+                        'url': _get_resolved_image_url(request, img.image),
                     })
 
             data.append({
@@ -520,7 +534,7 @@ def admin_get_featured_product(request, fp_id):
                 images.append({
                     'id': img.id,
                     'main_display': img.main_display,
-                    'url': request.build_absolute_uri(img.image.url) if img.image else None,
+                    'url': _get_resolved_image_url(request, img.image),
                 })
             for mf in ManualFile.objects.filter(union=fp.union):
                 manuals.append({
@@ -1168,7 +1182,7 @@ def admin_list_media(request):
 
             data.append({
                 'id': img.id,
-                'url': request.build_absolute_uri(img.image.url) if img.image else None,
+                'url': _get_resolved_image_url(request, img.image),
                 'main_display': img.main_display,
                 'union_id': img.union_id,
                 'product_name': fp.product_name if fp else None,
@@ -1212,7 +1226,7 @@ def admin_upload_media(request):
 
         return Response({
             'id': img.id,
-            'url': request.build_absolute_uri(img.image.url),
+            'url': _get_resolved_image_url(request, img.image),
             'message': 'Image uploaded successfully',
         }, status=status.HTTP_201_CREATED)
     except Exception as e:

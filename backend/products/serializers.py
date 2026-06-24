@@ -120,24 +120,86 @@ class PreviewFeaturedProductSerializer(serializers.ModelSerializer):
     externalId = serializers.CharField(source='external_id', read_only=True)
     unit_price = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
+    product_name = serializers.SerializerMethodField()
+    catalog_number = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = ['product_name', 'external_id', 'externalId', 'catalog_number', 'unit_price', 'image']
+
+    def get_product_name(self, product):
+        if product.external_id and product.external_id.startswith('fp-'):
+            cat_num = product.external_id[3:].upper()
+            fp = FeaturedProduct.objects.filter(catalog_number__iexact=cat_num).first()
+            if fp:
+                return fp.product_name
+        return product.product_name
+
+    def get_catalog_number(self, product):
+        if product.external_id and product.external_id.startswith('fp-'):
+            return product.external_id[3:].upper()
+        return product.catalog_number
     
     def get_unit_price(self, product):
+        if product.external_id and product.external_id.startswith('fp-'):
+            cat_num = product.external_id[3:].upper()
+            fp = FeaturedProduct.objects.filter(catalog_number__iexact=cat_num).first()
+            if fp:
+                prices = UnitPrice.objects.filter(union=fp.union).order_by('unit_price')
+                if prices.exists():
+                    p_min = prices.first().unit_price
+                    p_max = prices.last().unit_price
+                    if p_min == p_max:
+                        return f"${p_min:.0f}" if p_min % 1 == 0 else f"${p_min:.2f}"
+                    min_str = f"${p_min:.0f}" if p_min % 1 == 0 else f"${p_min:.2f}"
+                    max_str = f"${p_max:.0f}" if p_max % 1 == 0 else f"${p_max:.2f}"
+                    return f"{min_str} - {max_str}"
+                return fp.on_discount
         return product.list_price or product.price_range
 
     def get_image(self, product):
+        fp = None
+        if product.external_id and product.external_id.startswith('fp-'):
+            cat_num = product.external_id[3:].upper()
+            fp = FeaturedProduct.objects.filter(catalog_number__iexact=cat_num).first()
+        elif product.catalog_number:
+            fp = FeaturedProduct.objects.filter(catalog_number__iexact=product.catalog_number).first()
+
+        if fp:
+            img = Image.objects.filter(union=fp.union, main_display=True).first()
+            if not img:
+                img = Image.objects.filter(union=fp.union).first()
+            if img and img.image:
+                import os
+                from django.conf import settings
+                filename = os.path.basename(img.image.name)
+                subfolder_path = os.path.join(settings.MEDIA_ROOT, 'product_images', filename)
+                if os.path.exists(subfolder_path):
+                    return f"/media/product_images/{filename}"
+                return f"/media/{filename}"
         if product.image_url:
             return product.image_url
         return product.images[0] if product.images else None
 
 
+
 class ImageSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = Image
         fields = "__all__"
+
+    def get_image(self, obj):
+        if not obj.image:
+            return None
+        import os
+        from django.conf import settings
+        filename = os.path.basename(obj.image.name)
+        subfolder_path = os.path.join(settings.MEDIA_ROOT, 'product_images', filename)
+        if os.path.exists(subfolder_path):
+            return f"/media/product_images/{filename}"
+        return f"/media/{filename}"
 
 
 class ImgSerializer(serializers.ModelSerializer):

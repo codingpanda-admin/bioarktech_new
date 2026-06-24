@@ -392,8 +392,20 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
 
   const productCategories = catalog.filter((c) => !c.product_type || c.product_type === 'product');
   const serviceCategories = catalog.filter((c) => c.product_type === 'service');
-  const reagentCategories = catalog.filter((c) => c.product_type === 'reagent' && c.external_id !== 'category-1780539818236');
-  const consumableCategories = catalog.filter((c) => c.product_type === 'consumable' || c.external_id === 'category-1780539818236');
+  
+  // Combine Reagents and Consumables categories, placing Consumables directly below Cell Reagents
+  const pureReagents = catalog.filter((c) => c.product_type === 'reagent' && c.external_id !== 'category-1780539818236');
+  const consumablesCat = catalog.find((c) => c.product_type === 'consumable' || c.external_id === 'category-1780539818236');
+  const reagentCategories = [...pureReagents];
+  if (consumablesCat) {
+    const cellIdx = reagentCategories.findIndex(c => c.category_name === 'Cell Reagents' || c.external_id === 'category-1765995504911');
+    if (cellIdx !== -1) {
+      reagentCategories.splice(cellIdx + 1, 0, consumablesCat);
+    } else {
+      reagentCategories.push(consumablesCat);
+    }
+  }
+  const consumableCategories = consumablesCat ? [consumablesCat] : [];
 
   const renderMegaMenu = (menuOpenState, menuType, menuCategories, menuCloseLabel) => {
     if (!menuOpenState) return null;
@@ -406,6 +418,12 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
     const totalCount = activeEntry ? (activeEntry.product_count > 0
       ? activeEntry.product_count
       : activeSubcategories.reduce((acc, sub) => acc + (sub.products?.length || 0), 0)) : 0;
+
+    const targetCategoryParam = activeEntry ? (
+      activeEntry.product_type === 'product' ? 'products' :
+      (activeEntry.product_type === 'service' ? 'services' :
+      (activeEntry.product_type === 'consumable' || activeEntry.external_id === 'category-1780539818236' ? 'consumables' : 'reagents'))
+    ) : 'products';
 
     return (
       <div className={`products-mega-menu catalog-mega-menu ${menuType}-mega-menu`} id={`${menuType}-menu`}>
@@ -450,7 +468,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
                   onClick={(e) => {
                     e.preventDefault();
                     closeMenus();
-                    navigate(`/search?category=${menuType === 'product' ? 'products' : (menuType === 'reagent' ? 'reagents' : (menuType === 'consumable' ? 'consumables' : ''))}&q=${encodeURIComponent(activeEntry.category_name)}`);
+                    navigate(`/search?category=${targetCategoryParam}&q=${encodeURIComponent(activeEntry.category_name)}`);
                   }}
                 >
                   {activeEntry.category_name}
@@ -521,7 +539,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
                   onClick={(e) => {
                     e.preventDefault();
                     closeMenus();
-                    navigate(`/search?category=${menuType === 'product' ? 'products' : (menuType === 'reagent' ? 'reagents' : (menuType === 'consumable' ? 'consumables' : ''))}&q=${encodeURIComponent(activeEntry.category_name)}`);
+                    navigate(`/search?category=${targetCategoryParam}&q=${encodeURIComponent(activeEntry.category_name)}`);
                   }}
                 >
                   View all {activeEntry.category_name} →
@@ -688,37 +706,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
           </button>
           {reagentMenuOpen && renderMegaMenu(reagentMenuOpen, 'reagent', reagentCategories, 'Close reagents menu')}
         </div>
-
-        <div 
-          className={`products-nav consumables-nav ${consumablesMenuOpen ? 'is-open' : ''}`}
-          onMouseEnter={() => {
-            closeMenus();
-            setConsumablesMenuOpen(true);
-            const first = catalog.find(c => c.product_type === 'consumable' || c.external_id === 'category-1780539818236');
-            if (first) {
-              setActiveCategory(first.external_id);
-            }
-          }}
-          onMouseLeave={closeMenus}
-        >
-          <button
-            className="nav-trigger consumables-trigger"
-            type="button"
-            aria-expanded={consumablesMenuOpen}
-            aria-controls="consumables-menu"
-            onClick={() => {
-              closeMenus();
-              setConsumablesMenuOpen((isOpen) => !isOpen);
-              if (!consumablesMenuOpen) {
-                const first = catalog.find(c => c.product_type === 'consumable' || c.external_id === 'category-1780539818236');
-                if (first) setActiveCategory(first.external_id);
-              }
-            }}
-          >
-            Consumables
-          </button>
-          {consumablesMenuOpen && renderMegaMenu(consumablesMenuOpen, 'consumable', consumableCategories, 'Close consumables menu')}
-        </div>
+        {/* Consumables link is now placed inside Reagents & Kits below Cell Reagents */}
 
         <a href="#" onMouseEnter={closeMenus} onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/request-quote'); }}>Design</a>
         <a className="nav-link-plain" href="/resources" onMouseEnter={closeMenus} onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/resources'); }}>Resources & Blogs</a>

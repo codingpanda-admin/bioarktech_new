@@ -436,7 +436,17 @@ def search_product(request):
         list_p = float(up.list_price) if up else 0.0
         
         img = Image.objects.filter(union=fp.union).first()
-        img_url = img.image.url if img and img.image else None
+        if img and img.image:
+            import os
+            from django.conf import settings
+            filename = os.path.basename(img.image.name)
+            subfolder_path = os.path.join(settings.MEDIA_ROOT, 'product_images', filename)
+            if os.path.exists(subfolder_path):
+                img_url = f"/media/product_images/{filename}"
+            else:
+                img_url = f"/media/{filename}"
+        else:
+            img_url = None
         
         combined_results.append({
             'product_id': fp.id,
