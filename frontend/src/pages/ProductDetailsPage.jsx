@@ -50,6 +50,10 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
   }, [skuOrCatalog]);
 
   const handleAddToCart = () => {
+    if (product?.quote_only || product?.quoteOnly) {
+      return;
+    }
+
     if (onAddToCart && product) {
       onAddToCart(product, quantity, isFeatured ? selectedUnitSize : null);
     }
@@ -74,6 +78,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
   const name = product.product_name || product.externalId || product.external_id;
   const categoryLabel = product.category_name || product.categoryName || product.product_category || product.category_external_id;
   const availabilityLabel = product.availability;
+  const quoteOnly = Boolean(product.quote_only || product.quoteOnly);
   const getImageUrl = (image) => {
     if (!image) return '';
     if (typeof image === 'string') return image;
@@ -118,7 +123,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
                   aria-label="Previous product images"
                   onClick={() => scrollThumbnails(-1)}
                 >
-                  &lt;
+                  <span className="product-thumbnail-chevron prev" aria-hidden="true" />
                 </button>
               )}
               <div className="product-thumbnail-strip" ref={thumbnailStripRef}>
@@ -144,7 +149,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
                   aria-label="Next product images"
                   onClick={() => scrollThumbnails(1)}
                 >
-                  &gt;
+                  <span className="product-thumbnail-chevron next" aria-hidden="true" />
                 </button>
               )}
             </div>
@@ -213,28 +218,41 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
           )}
 
           {/* Quantity Selector */}
-          <div className="quantity" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px' }}>
-            <label htmlFor="qty" style={{ fontWeight: 500 }}>Qty</label>
-            <input 
-              id="qty" 
-              type="number" 
-              min="1" 
-              value={quantity} 
-              onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-              style={{ width: '60px', padding: '8px', borderRadius: '6px', border: '1px solid var(--line)', textAlign: 'center' }}
-            />
-          </div>
+          {!quoteOnly && (
+            <div className="quantity" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px' }}>
+              <label htmlFor="qty" style={{ fontWeight: 500 }}>Qty</label>
+              <input 
+                id="qty" 
+                type="number" 
+                min="1" 
+                value={quantity} 
+                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                style={{ width: '60px', padding: '8px', borderRadius: '6px', border: '1px solid var(--line)', textAlign: 'center' }}
+              />
+            </div>
+          )}
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: '16px', marginTop: '20px' }}>
-            <button 
-              type="button" 
-              className="primary-button" 
-              onClick={handleAddToCart}
-              style={{ padding: '12px 28px' }}
-            >
-              {cartAdded ? 'Added to Cart!' : 'Add to Cart'}
-            </button>
+            {quoteOnly ? (
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => navigate('/request-quote')}
+                style={{ padding: '12px 28px' }}
+              >
+                Request for Quote
+              </button>
+            ) : (
+              <button 
+                type="button" 
+                className="primary-button" 
+                onClick={handleAddToCart}
+                style={{ padding: '12px 28px' }}
+              >
+                {cartAdded ? 'Added to Cart!' : 'Add to Cart'}
+              </button>
+            )}
             <button 
               type="button" 
               className="secondary-button" 
