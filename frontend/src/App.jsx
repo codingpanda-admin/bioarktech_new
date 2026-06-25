@@ -23,6 +23,7 @@ import AboutBioArkPage from './pages/AboutBioArkPage';
 import BlogDetailPage from './pages/BlogDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import MyQuotesPage from './pages/MyQuotesPage';
+import DesignPage from './pages/DesignPage';
 
 function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -174,6 +175,7 @@ function App() {
   const isAboutBioArkPage = currentPath === '/about-bioark';
   const isProfilePage = currentPath === '/profile';
   const isMyQuotesPage = currentPath === '/quotes';
+  const isDesignPage = currentPath === '/design';
 
   return (
     <div className="site-shell">
@@ -213,6 +215,7 @@ function App() {
           onClearCart={handleClearCart}
           currentUser={currentUser}
           currentUserProfile={currentUserProfile}
+          quotePrefill={searchParams}
         />
       ) : isSearchPage ? (
         <SearchPage 
@@ -240,6 +243,8 @@ function App() {
         <ProfilePage navigate={navigate} />
       ) : isMyQuotesPage ? (
         <MyQuotesPage navigate={navigate} currentUser={currentUser} authChecked={authChecked} />
+      ) : isDesignPage ? (
+        <DesignPage navigate={navigate} />
       ) : isBlogPage ? (
         <BlogDetailPage
           navigate={navigate}

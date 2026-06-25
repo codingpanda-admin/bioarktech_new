@@ -708,7 +708,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
         </div>
         {/* Consumables link is now placed inside Reagents & Kits below Cell Reagents */}
 
-        <a href="#" onMouseEnter={closeMenus} onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/request-quote'); }}>Design</a>
+        <a className="nav-link-plain" href="/design" onMouseEnter={closeMenus} onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/design'); }}>Design</a>
         <a className="nav-link-plain" href="/resources" onMouseEnter={closeMenus} onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/resources'); }}>Resources & Blogs</a>
 
         <div 

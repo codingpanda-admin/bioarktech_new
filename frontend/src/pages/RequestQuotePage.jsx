@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/api';
 
-function RequestQuotePage({ navigate, cart, onClearCart, currentUser, currentUserProfile }) {
+function RequestQuotePage({ navigate, cart, onClearCart, currentUser, currentUserProfile, quotePrefill }) {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -18,6 +18,18 @@ function RequestQuotePage({ navigate, cart, onClearCart, currentUser, currentUse
   const [status, setStatus] = useState({ type: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+
+  useEffect(() => {
+    const projectDescription = quotePrefill?.get('projectDescription') || '';
+    if (!projectDescription) {
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      projectDescription,
+    }));
+  }, [quotePrefill]);
 
   useEffect(() => {
     if (cart && cart.length > 0) {

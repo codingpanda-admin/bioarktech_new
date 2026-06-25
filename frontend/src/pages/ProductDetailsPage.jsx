@@ -79,6 +79,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
   const categoryLabel = product.category_name || product.categoryName || product.product_category || product.category_external_id;
   const availabilityLabel = product.availability;
   const quoteOnly = Boolean(product.quote_only || product.quoteOnly);
+  const productCode = product.catalog_number || product.product_sku || product.external_id || product.externalId || '';
   const getImageUrl = (image) => {
     if (!image) return '';
     if (typeof image === 'string') return image;
@@ -96,6 +97,18 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
       left: direction * 260,
       behavior: 'smooth',
     });
+  };
+
+  const handleRequestQuote = () => {
+    const quoteDescription = [
+      `Product Name: ${name || 'N/A'}`,
+      `Product Code: ${productCode || 'N/A'}`,
+      `Product Group: ${product.product_group || product.productGroup || 'N/A'}`,
+      `Product Category: ${categoryLabel || 'N/A'}`,
+    ].join('\n');
+    const params = new URLSearchParams({ projectDescription: quoteDescription });
+
+    navigate(`/request-quote?${params.toString()}`);
   };
   
   // Calculate price dynamically for featured products based on selected unit size
@@ -238,7 +251,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
               <button
                 type="button"
                 className="primary-button"
-                onClick={() => navigate('/request-quote')}
+                onClick={handleRequestQuote}
                 style={{ padding: '12px 28px' }}
               >
                 Request for Quote
