@@ -1,17 +1,22 @@
-FROM node:20-alpine
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Copiar configuración de dependencias
-COPY package*.json /app/
+COPY package*.json ./
+RUN npm ci
 
-# Instalar módulos de node
-RUN npm install
+COPY . .
 
-# Copiar el código del frontend
-COPY . /app/
+ARG VITE_API_URL=http://93.127.217.163:8000
+ENV VITE_API_URL=$VITE_API_URL
 
-EXPOSE 5173
+RUN npm run build
 
-# Ejecutar el servidor de desarrollo de Vite
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+FROM nginx:alpine
+
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

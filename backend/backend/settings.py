@@ -127,13 +127,19 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 AUTH_USER_MODEL = 'users.User'
 
-CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = 'None'
-SESSION_COOKIE_SECURE = True
+if DEBUG:
+    CSRF_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SECURE = False
+else:
+    CSRF_COOKIE_SAMESITE = 'None'
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = 'None'
+    SESSION_COOKIE_SECURE = True
 # CSRF_COOKIE_HTTPONLY = True
 # SESSION_COOKIE_HTTPONLY = True
-CSRF_TRUSTED_ORIGINS = ['http://localhost:4200', 'http://127.0.0.1:4200', 'http://localhost:5173', 'http://127.0.0.1:5173', 'https://bioarktech.com', 'https://www.bioarktech.com', 'https://api.bioarktech.com', 'https://store.bioarktech.com']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:4200', 'http://127.0.0.1:4200', 'http://localhost:5173', 'http://127.0.0.1:5173', 'https://bioarktech.com', 'https://www.bioarktech.com', 'https://api.bioarktech.com', 'https://store.bioarktech.com', 'http://93.127.217.163', 'http://93.127.217.163:5173', 'http://93.127.217.163:8000']
 
 CART_SESSION_ID = 'cart'
 
@@ -234,7 +240,10 @@ CORS_ALLOWED_ORIGINS = [
    "https://bioarktech.com",
    "https://www.bioarktech.com",
    "https://api.bioarktech.com",
-   "https://store.bioarktech.com"
+   "https://store.bioarktech.com",
+   "http://93.127.217.163",
+   "http://93.127.217.163:5173",
+   "http://93.127.217.163:8000",
 ]
 CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken', 'Access-Control-Allow-Origin']
 CORS_ALLOW_CREDENTIALS = True
