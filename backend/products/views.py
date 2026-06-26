@@ -503,6 +503,8 @@ def load_product_by_external_id(request, external_id):
             data['category_external_id'] = source_product.category_external_id
             data['category_name'] = get_product_category_name(source_product)
             data['availability'] = source_product.availability
+            data['content_text'] = source_product.content_text
+            data['raw_detail'] = source_product.raw_detail
         return Response(data)
 
     # 2. If not featured, fall back to standard Product

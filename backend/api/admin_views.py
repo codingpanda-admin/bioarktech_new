@@ -336,6 +336,10 @@ def admin_create_product(request):
 
     try:
         d = request.data
+        raw_detail = d.get('raw_detail')
+        if isinstance(raw_detail, dict) and 'content_text' in d:
+            raw_detail = {**raw_detail, 'contentText': d.get('content_text', '')}
+
         p = Product.objects.create(
             external_id=d.get('external_id', ''),
             product_name=d.get('product_name', ''),
@@ -368,7 +372,7 @@ def admin_create_product(request):
             hidden=d.get('hidden', False),
             raw_product=d.get('raw_product'),
             raw_override=d.get('raw_override'),
-            raw_detail=d.get('raw_detail'),
+            raw_detail=raw_detail,
         )
         return Response({'id': p.product_id, 'message': 'Product created successfully'}, status=status.HTTP_201_CREATED)
     except Exception as e:
@@ -400,6 +404,9 @@ def admin_update_product(request, product_id):
         for field in updatable_fields:
             if field in d:
                 setattr(p, field, d[field])
+
+        if 'content_text' in d and isinstance(p.raw_detail, dict):
+            p.raw_detail = {**p.raw_detail, 'contentText': p.content_text or ''}
 
         p.save()
         return Response({'message': 'Product updated successfully'})

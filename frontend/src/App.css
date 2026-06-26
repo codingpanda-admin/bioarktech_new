@@ -4524,6 +4524,36 @@ label,
   width: 40%;
 }
 
+.product-detail-content {
+  padding: 8px 0 24px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.product-detail-content .rich-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.product-detail-content table {
+  width: 100%;
+  min-width: 0;
+  table-layout: auto;
+}
+
+.product-detail-content th,
+.product-detail-content td {
+  min-width: 96px;
+  padding: 10px 11px;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.product-detail-content th[colspan],
+.product-detail-content td[colspan] {
+  min-width: 0;
+}
+
 .product-description-block {
   line-height: 1.6;
   color: var(--muted);
@@ -5401,6 +5431,13 @@ label,
   outline: 0;
 }
 
+.admin-rich-text-divider {
+  width: 1px;
+  height: 24px;
+  background: #d5dfec;
+  margin: 0 2px;
+}
+
 .admin-rich-underline {
   text-decoration: underline;
 }
@@ -5439,6 +5476,32 @@ label,
   height: auto;
   margin: 16px 0;
   border-radius: 6px;
+}
+
+.admin-rich-text-editor table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  background: #fff;
+}
+
+.admin-rich-text-editor th,
+.admin-rich-text-editor td {
+  min-width: 90px;
+  border: 1px solid #cfdbea;
+  padding: 8px 10px;
+  vertical-align: top;
+}
+
+.admin-rich-text-editor th {
+  background: #f7fbff;
+  font-weight: 700;
+}
+
+.admin-rich-text-editor td:focus,
+.admin-rich-text-editor th:focus {
+  outline: 2px solid rgba(0, 111, 242, 0.24);
+  outline-offset: -2px;
 }
 
 .admin-form-toggles {

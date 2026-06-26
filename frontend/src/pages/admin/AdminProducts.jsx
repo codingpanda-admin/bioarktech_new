@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useImperativeHandle } from 'react';
 import { apiFetch, API_URL, formatAssetUrl } from '../../utils/api';
+import { formatRichText } from '../../utils/richText';
 
 const PRODUCTS_CATEGORIES = [
   { id: 'genome-editing', name: 'Genome Editing' },
@@ -18,6 +19,223 @@ const REAGENTS_CATEGORIES = [
   { id: 'category-1780539818236', name: 'Consumables' }
 ];
 
+const ProductContentEditor = React.forwardRef(function ProductContentEditor({ value, onChange }, ref) {
+  const editorRef = useRef(null);
+
+  useEffect(() => {
+    const editorHtml = formatRichText(value || '');
+    if (editorRef.current && editorRef.current.innerHTML !== editorHtml) {
+      editorRef.current.innerHTML = editorHtml;
+    }
+    if ((value || '') !== editorHtml) {
+      onChange(editorHtml);
+    }
+  }, [value, onChange]);
+
+  const syncValue = () => {
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    getHtml: () => editorRef.current?.innerHTML || '',
+    sync: () => syncValue(),
+  }));
+
+  const preventFocusLoss = (event) => {
+    event.preventDefault();
+  };
+
+  const focusEditor = () => {
+    if (editorRef.current) {
+      editorRef.current.focus();
+    }
+  };
+
+  const runCommand = (command, commandValue = null) => {
+    focusEditor();
+    document.execCommand(command, false, commandValue);
+    syncValue();
+  };
+
+  const handleLink = () => {
+    const url = window.prompt('Enter link URL');
+    if (!url) return;
+    runCommand('createLink', url);
+  };
+
+  const handleImage = () => {
+    const url = window.prompt('Enter image URL');
+    if (!url) return;
+    runCommand('insertImage', url);
+  };
+
+  const handleBlockChange = (event) => {
+    runCommand('formatBlock', event.target.value);
+    event.target.value = 'p';
+  };
+
+  const getSelectedTableCell = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return null;
+
+    let node = selection.anchorNode;
+    if (node?.nodeType === Node.TEXT_NODE) {
+      node = node.parentElement;
+    }
+
+    return node?.closest?.('td, th') || null;
+  };
+
+  const insertTable = () => {
+    focusEditor();
+    const tableHtml = `
+      <table>
+        <thead>
+          <tr><th>Header 1</th><th>Header 2</th><th>Header 3</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Cell</td><td>Cell</td><td>Cell</td></tr>
+          <tr><td>Cell</td><td>Cell</td><td>Cell</td></tr>
+        </tbody>
+      </table>
+      <p><br></p>
+    `;
+    document.execCommand('insertHTML', false, tableHtml);
+    syncValue();
+  };
+
+  const addTableRow = () => {
+    const cell = getSelectedTableCell();
+    const row = cell?.parentElement;
+    if (!row) return;
+
+    const newRow = row.cloneNode(true);
+    newRow.querySelectorAll('th, td').forEach((item) => {
+      item.innerHTML = 'Cell';
+    });
+    row.after(newRow);
+    syncValue();
+  };
+
+  const addTableColumn = () => {
+    const cell = getSelectedTableCell();
+    const table = cell?.closest('table');
+    if (!cell || !table) return;
+
+    const columnIndex = cell.cellIndex;
+    table.querySelectorAll('tr').forEach((row) => {
+      const referenceCell = row.children[columnIndex];
+      const newCell = referenceCell.cloneNode(false);
+      newCell.innerHTML = referenceCell.tagName.toLowerCase() === 'th' ? 'Header' : 'Cell';
+      referenceCell.after(newCell);
+    });
+    syncValue();
+  };
+
+  const deleteTableRow = () => {
+    const cell = getSelectedTableCell();
+    const row = cell?.parentElement;
+    const table = cell?.closest('table');
+    if (!row || !table) return;
+
+    if (table.querySelectorAll('tr').length <= 1) {
+      table.remove();
+    } else {
+      row.remove();
+    }
+    syncValue();
+  };
+
+  const deleteTableColumn = () => {
+    const cell = getSelectedTableCell();
+    const table = cell?.closest('table');
+    if (!cell || !table) return;
+
+    const columnIndex = cell.cellIndex;
+    table.querySelectorAll('tr').forEach((row) => {
+      row.children[columnIndex]?.remove();
+    });
+    if (!table.querySelector('th, td')) {
+      table.remove();
+    }
+    syncValue();
+  };
+
+  const mergeCellRight = () => {
+    const cell = getSelectedTableCell();
+    const nextCell = cell?.nextElementSibling;
+    if (!cell || !nextCell || !['TD', 'TH'].includes(nextCell.tagName)) return;
+
+    const currentColSpan = Number(cell.getAttribute('colspan') || 1);
+    const nextColSpan = Number(nextCell.getAttribute('colspan') || 1);
+    const separator = cell.innerHTML.trim() && nextCell.innerHTML.trim() ? '<br>' : '';
+    cell.innerHTML = `${cell.innerHTML}${separator}${nextCell.innerHTML}`;
+    cell.setAttribute('colspan', String(currentColSpan + nextColSpan));
+    nextCell.remove();
+    syncValue();
+  };
+
+  const mergeCellDown = () => {
+    const cell = getSelectedTableCell();
+    const row = cell?.parentElement;
+    const nextRow = row?.nextElementSibling;
+    if (!cell || !nextRow) return;
+
+    const cellBelow = nextRow.children[cell.cellIndex];
+    if (!cellBelow || !['TD', 'TH'].includes(cellBelow.tagName)) return;
+
+    const currentRowSpan = Number(cell.getAttribute('rowspan') || 1);
+    const belowRowSpan = Number(cellBelow.getAttribute('rowspan') || 1);
+    const separator = cell.innerHTML.trim() && cellBelow.innerHTML.trim() ? '<br>' : '';
+    cell.innerHTML = `${cell.innerHTML}${separator}${cellBelow.innerHTML}`;
+    cell.setAttribute('rowspan', String(currentRowSpan + belowRowSpan));
+    cellBelow.remove();
+    syncValue();
+  };
+
+  return (
+    <div className="admin-rich-text admin-product-rich-text">
+      <div className="admin-rich-text-toolbar" aria-label="Product content formatting tools">
+        <select aria-label="Text style" defaultValue="p" onChange={handleBlockChange}>
+          <option value="p">Paragraph</option>
+          <option value="h2">Heading 2</option>
+          <option value="h3">Heading 3</option>
+          <option value="blockquote">Quote</option>
+        </select>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('bold')}><strong>B</strong></button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('italic')}><em>I</em></button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('underline')}><span className="admin-rich-underline">U</span></button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertUnorderedList')}>Bullet List</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertOrderedList')}>Numbered List</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={handleLink}>Link</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={handleImage}>Image</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('unlink')}>Unlink</button>
+        <span className="admin-rich-text-divider" aria-hidden="true" />
+        <button type="button" onMouseDown={preventFocusLoss} onClick={insertTable}>Insert Table</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={addTableRow}>Add Row</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={addTableColumn}>Add Column</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={mergeCellRight}>Merge Right</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={mergeCellDown}>Merge Down</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={deleteTableRow}>Delete Row</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={deleteTableColumn}>Delete Column</button>
+      </div>
+      <div
+        ref={editorRef}
+        className="admin-rich-text-editor"
+        contentEditable
+        role="textbox"
+        aria-multiline="true"
+        aria-label="Product content text"
+        onInput={syncValue}
+        onBlur={syncValue}
+        suppressContentEditableWarning
+      />
+    </div>
+  );
+});
+
 function AdminProducts({ categoryFilter = null }) {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -34,6 +252,7 @@ function AdminProducts({ categoryFilter = null }) {
   const [catalogSaving, setCatalogSaving] = useState(false);
   const [draggedCatalogIndex, setDraggedCatalogIndex] = useState(null);
   const [collapsedCatalogs, setCollapsedCatalogs] = useState(() => new Set());
+  const productContentEditorRef = useRef(null);
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -86,21 +305,34 @@ function AdminProducts({ categoryFilter = null }) {
       key_features: [],
       content_text: '',
     });
-    setIsModalOpen(true);
+    setIsModalOpen(false);
+    setError('');
+    setSuccessMsg('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleEdit = async (productId) => {
     try {
+      setError('');
+      setSuccessMsg('');
       const data = await apiFetch(`/api/admin-panel/products/${productId}/`);
       const productData = data.product || data;
       setEditingProduct({
         ...productData,
         product_id: productData.product_id || productData.id || productId
       });
-      setIsModalOpen(true);
+      setIsModalOpen(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setError(err.message);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingProduct(null);
+    setIsModalOpen(false);
+    setError('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (productId) => {
@@ -114,10 +346,18 @@ function AdminProducts({ categoryFilter = null }) {
     }
   };
 
-  const handleSave = async (e) => {
+  const handleSave = async (e, { closeAfterSave = true } = {}) => {
     e.preventDefault();
     setSaving(true);
     try {
+      const latestContentText = productContentEditorRef.current?.getHtml?.() ?? editingProduct.content_text ?? '';
+      const updatedRawDetail = (
+        editingProduct.raw_detail &&
+        typeof editingProduct.raw_detail === 'object' &&
+        !Array.isArray(editingProduct.raw_detail)
+      )
+        ? { ...editingProduct.raw_detail, contentText: latestContentText }
+        : editingProduct.raw_detail;
       const isNew = !editingProduct.product_id;
       const endpoint = isNew
         ? '/api/admin-panel/products/create/'
@@ -126,16 +366,33 @@ function AdminProducts({ categoryFilter = null }) {
       // Map 'uncategorized' option back to null or empty string for DB submission
       const payload = {
         ...editingProduct,
+        content_text: latestContentText,
+        key_features: normalizeKeyFeaturesForSave(editingProduct.key_features),
+        raw_detail: updatedRawDetail,
         category_external_id: editingProduct.category_external_id === 'uncategorized' ? '' : editingProduct.category_external_id
       };
 
-      await apiFetch(endpoint, {
+      const saveResponse = await apiFetch(endpoint, {
         method: 'POST',
         body: payload,
       });
       showSuccess(isNew ? 'Product created!' : 'Product updated!');
       setIsModalOpen(false);
-      setEditingProduct(null);
+      if (closeAfterSave) {
+        setEditingProduct(null);
+      } else if (isNew) {
+        setEditingProduct((prev) => ({
+          ...prev,
+          ...payload,
+          product_id: saveResponse?.id,
+          id: saveResponse?.id,
+        }));
+      } else {
+        setEditingProduct((prev) => ({
+          ...prev,
+          ...payload,
+        }));
+      }
       loadProducts();
     } catch (err) {
       setError(err.message);
@@ -146,6 +403,27 @@ function AdminProducts({ categoryFilter = null }) {
 
   const updateField = (field, value) => {
     setEditingProduct(prev => ({ ...prev, [field]: value }));
+  };
+
+  const formatKeyFeaturesForEdit = (value) => {
+    if (Array.isArray(value)) {
+      return value.join('\n');
+    }
+    return value || '';
+  };
+
+  const updateKeyFeatures = (value) => {
+    updateField('key_features', value);
+  };
+
+  const normalizeKeyFeaturesForSave = (value) => {
+    if (Array.isArray(value)) {
+      return value;
+    }
+    return String(value || '')
+      .split('\n')
+      .map((item) => item.trim())
+      .filter(Boolean);
   };
 
   const handleImageUpload = async (e, targetField) => {
@@ -458,6 +736,254 @@ function AdminProducts({ categoryFilter = null }) {
       return next;
     });
   };
+
+  if (editingProduct) {
+    const isEditingExistingProduct = Boolean(editingProduct.product_id || editingProduct.id);
+
+    return (
+      <div className="admin-blog-editor-page admin-product-editor-page">
+        <div className="admin-editor-header">
+          <div>
+            <button type="button" className="admin-back-button" onClick={handleCancelEdit}>
+              Back to {categoryFilter === 'products' ? 'Products Catalog' : 'Reagents Catalog'}
+            </button>
+            <h2 id="admin-content-title">
+              {isEditingExistingProduct ? `Edit ${categoryFilter === 'products' ? 'Product' : 'Reagent'}` : `Create ${categoryFilter === 'products' ? 'Product' : 'Reagent'}`}
+            </h2>
+          </div>
+          <div className="admin-editor-header-actions">
+            <button type="button" className="secondary-admin-button" onClick={handleCancelEdit}>Cancel</button>
+            <button type="button" className="secondary-admin-button" disabled={saving} onClick={(e) => handleSave(e, { closeAfterSave: false })}>
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+            <button type="submit" form="admin-product-editor-form" className="primary-button" disabled={saving}>
+              {saving ? 'Saving...' : (isEditingExistingProduct ? 'Save & Close' : 'Create & Close')}
+            </button>
+          </div>
+        </div>
+
+        {error && <div className="admin-alert error">{error}</div>}
+
+        <form id="admin-product-editor-form" onSubmit={handleSave} className="admin-editor-panel">
+          <div className="admin-form-grid">
+            <label className="admin-form-field span-2">
+              <span>Product Name *</span>
+              <input type="text" value={editingProduct.product_name || ''} onChange={(e) => updateField('product_name', e.target.value)} required />
+            </label>
+            <label className="admin-form-field">
+              <span>External ID *</span>
+              <input type="text" value={editingProduct.external_id || ''} onChange={(e) => updateField('external_id', e.target.value)} required />
+            </label>
+            <label className="admin-form-field">
+              <span>Catalog Number</span>
+              <input type="text" value={editingProduct.catalog_number || ''} onChange={(e) => updateField('catalog_number', e.target.value)} />
+            </label>
+            <label className="admin-form-field">
+              <span>Category *</span>
+              <select
+                value={editingProduct.category_external_id || ''}
+                onChange={(e) => updateField('category_external_id', e.target.value)}
+                required
+              >
+                <option value="">-- Select Category --</option>
+                {matchedCategories.map(cat => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name} ({cat.id})
+                  </option>
+                ))}
+                <option value="uncategorized">Uncategorized / Custom</option>
+              </select>
+            </label>
+            <label className="admin-form-field">
+              <span>Product Group (Subcategory)</span>
+              <input type="text" value={editingProduct.product_group || ''} onChange={(e) => updateField('product_group', e.target.value)} placeholder="e.g. DNA, RNA, Non-Viral" />
+            </label>
+            <label className="admin-form-field">
+              <span>List Price</span>
+              <input type="text" value={editingProduct.list_price || ''} onChange={(e) => updateField('list_price', e.target.value)} />
+            </label>
+
+            <div className="admin-form-field span-2" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <span style={{ fontWeight: '500', color: 'var(--ink)' }}>Main Image</span>
+              <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                {editingProduct.image_url ? (
+                  <div className="admin-image-preview-wrapper" style={{ position: 'relative', width: '100px', height: '100px', border: '1px solid var(--line)', borderRadius: '6px', overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img
+                      src={formatAssetUrl(editingProduct.image_url)}
+                      alt="Main Preview"
+                      style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => updateField('image_url', '')}
+                      style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(244, 67, 54, 0.9)', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+                      title="Remove image"
+                    >
+                      x
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ width: '100px', height: '100px', border: '1px dashed var(--line)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontSize: '12px', background: '#fcfdfd', textAlign: 'center', padding: '5px' }}>
+                    No Image
+                  </div>
+                )}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <input
+                    type="text"
+                    placeholder="Image URL or Path (e.g. media/product_images/...)"
+                    value={editingProduct.image_url || ''}
+                    onChange={(e) => updateField('image_url', e.target.value)}
+                    style={{ width: '100%', padding: '8px', border: '1px solid var(--line)', borderRadius: '6px' }}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <label className="secondary-admin-button" style={{ fontSize: '12px', padding: '6px 12px', cursor: 'pointer', margin: 0, display: 'inline-block' }}>
+                      Upload File
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, 'image_url')}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                    <span style={{ fontSize: '11px', color: 'var(--muted)' }}>or type route above</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="admin-form-field span-3" style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--line)', paddingTop: '15px', marginTop: '10px' }}>
+              <span style={{ fontWeight: '600', color: 'var(--ink)' }}>Additional Gallery Images</span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '15px', marginTop: '5px' }}>
+                {(editingProduct.images || []).map((imgUrl, idx) => (
+                  <div key={idx} className="admin-image-preview-wrapper" style={{ position: 'relative', height: '150px', border: '1px solid var(--line)', borderRadius: '6px', overflow: 'hidden', background: '#fff', display: 'flex', flexDirection: 'column', padding: '5px', gap: '5px' }}>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', minHeight: '80px', position: 'relative' }}>
+                      {imgUrl ? (
+                        <img
+                          src={formatAssetUrl(imgUrl)}
+                          alt={`Preview ${idx + 1}`}
+                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: '11px', color: 'var(--muted)' }}>Empty Path</span>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      value={imgUrl || ''}
+                      onChange={(e) => {
+                        const newImages = [...(editingProduct.images || [])];
+                        newImages[idx] = e.target.value;
+                        updateField('images', newImages);
+                      }}
+                      placeholder="Image path"
+                      style={{ fontSize: '11px', padding: '4px', width: '100%', border: '1px solid var(--line)', borderRadius: '4px' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newImages = (editingProduct.images || []).filter((_, i) => i !== idx);
+                        updateField('images', newImages);
+                      }}
+                      style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(244, 67, 54, 0.9)', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                      title="Remove image"
+                    >
+                      x
+                    </button>
+                  </div>
+                ))}
+
+                <div style={{ height: '150px', border: '1px dashed var(--line)', borderRadius: '6px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#fcfdfd', padding: '10px' }}>
+                  <button
+                    type="button"
+                    className="secondary-admin-button"
+                    onClick={() => {
+                      const newImages = [...(editingProduct.images || []), ''];
+                      updateField('images', newImages);
+                    }}
+                    style={{ fontSize: '12px', padding: '6px 10px', width: '100%' }}
+                  >
+                    + Add Path
+                  </button>
+                  <label className="primary-button" style={{ fontSize: '12px', padding: '6px 10px', width: '100%', textAlign: 'center', cursor: 'pointer', display: 'inline-block', margin: 0 }}>
+                    + Upload File
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 'images')}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <label className="admin-form-field span-3">
+              <span>Description</span>
+              <textarea rows="4" value={editingProduct.description || ''} onChange={(e) => updateField('description', e.target.value)} />
+            </label>
+            <label className="admin-form-field span-3">
+              <span>Key Features</span>
+              <textarea
+                rows="5"
+                value={formatKeyFeaturesForEdit(editingProduct.key_features)}
+                onChange={(e) => updateKeyFeatures(e.target.value)}
+                placeholder="Enter one key feature per line"
+              />
+            </label>
+            <label className="admin-form-field span-3">
+              <span>Storage &amp; Stability</span>
+              <textarea rows="4" value={editingProduct.storage_stability || ''} onChange={(e) => updateField('storage_stability', e.target.value)} />
+            </label>
+            <label className="admin-form-field span-3">
+              <span>Performance Data</span>
+              <textarea rows="4" value={editingProduct.performance_data || ''} onChange={(e) => updateField('performance_data', e.target.value)} />
+            </label>
+            <div className="admin-form-field span-3">
+              <span>Content Text</span>
+              <ProductContentEditor ref={productContentEditorRef} value={editingProduct.content_text || ''} onChange={(value) => updateField('content_text', value)} />
+            </div>
+            <label className="admin-form-field">
+              <span>Availability</span>
+              <input type="text" value={editingProduct.availability || ''} onChange={(e) => updateField('availability', e.target.value)} />
+            </label>
+            <label className="admin-form-field">
+              <span>Source Type</span>
+              <input type="text" value={editingProduct.source_type || ''} onChange={(e) => updateField('source_type', e.target.value)} />
+            </label>
+            <label className="admin-form-field">
+              <span>Display Order</span>
+              <input type="number" value={editingProduct.display_order || ''} onChange={(e) => updateField('display_order', e.target.value ? parseInt(e.target.value) : null)} />
+            </label>
+          </div>
+
+          <div className="admin-form-toggles">
+            <label className="admin-toggle">
+              <input type="checkbox" checked={!!editingProduct.hidden} onChange={(e) => updateField('hidden', e.target.checked)} />
+              <span>Hidden</span>
+            </label>
+            <label className="admin-toggle">
+              <input type="checkbox" checked={!!editingProduct.is_featured} onChange={(e) => updateField('is_featured', e.target.checked)} />
+              <span>Featured</span>
+            </label>
+            <label className="admin-toggle">
+              <input type="checkbox" checked={!!editingProduct.quote_only} onChange={(e) => updateField('quote_only', e.target.checked)} />
+              <span>Quote Only</span>
+            </label>
+          </div>
+
+          <div className="admin-editor-footer">
+            <button type="button" className="secondary-admin-button" onClick={handleCancelEdit}>Cancel</button>
+            <button type="button" className="secondary-admin-button" disabled={saving} onClick={(e) => handleSave(e, { closeAfterSave: false })}>
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+            <button type="submit" className="primary-button" disabled={saving}>
+              {saving ? 'Saving...' : (isEditingExistingProduct ? 'Save & Close' : 'Create & Close')}
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -792,9 +1318,26 @@ function AdminProducts({ categoryFilter = null }) {
                   <textarea rows="4" value={editingProduct.description || ''} onChange={(e) => updateField('description', e.target.value)} />
                 </label>
                 <label className="admin-form-field span-3">
-                  <span>Content Text</span>
-                  <textarea rows="3" value={editingProduct.content_text || ''} onChange={(e) => updateField('content_text', e.target.value)} />
+                  <span>Key Features</span>
+                  <textarea
+                    rows="5"
+                    value={formatKeyFeaturesForEdit(editingProduct.key_features)}
+                    onChange={(e) => updateKeyFeatures(e.target.value)}
+                    placeholder="Enter one key feature per line"
+                  />
                 </label>
+                <label className="admin-form-field span-3">
+                  <span>Storage &amp; Stability</span>
+                  <textarea rows="4" value={editingProduct.storage_stability || ''} onChange={(e) => updateField('storage_stability', e.target.value)} />
+                </label>
+                <label className="admin-form-field span-3">
+                  <span>Performance Data</span>
+                  <textarea rows="4" value={editingProduct.performance_data || ''} onChange={(e) => updateField('performance_data', e.target.value)} />
+                </label>
+                <div className="admin-form-field span-3">
+                  <span>Content Text</span>
+                  <ProductContentEditor value={editingProduct.content_text || ''} onChange={(value) => updateField('content_text', value)} />
+                </div>
                 <label className="admin-form-field">
                   <span>Availability</span>
                   <input type="text" value={editingProduct.availability || ''} onChange={(e) => updateField('availability', e.target.value)} />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { logo, apiFetch, formatAssetUrl } from '../utils/api';
+import { formatRichText } from '../utils/richText';
 
 function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
   const [product, setProduct] = useState(null);
@@ -80,6 +81,9 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
   const availabilityLabel = product.availability;
   const quoteOnly = Boolean(product.quote_only || product.quoteOnly);
   const productCode = product.catalog_number || product.product_sku || product.external_id || product.externalId || '';
+  const detailsContent = formatRichText(
+    product.content_text || product.contentText || product.raw_detail?.contentText || ''
+  );
   const getImageUrl = (image) => {
     if (!image) return '';
     if (typeof image === 'string') return image;
@@ -291,6 +295,15 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
                 Specifications
               </a>
             </li>
+            <li className="nav-item">
+              <a
+                className={`nav-link ${activeTab === 'details' ? 'active' : ''}`}
+                onClick={() => setActiveTab('details')}
+                style={{ display: 'block', padding: '12px 0', fontWeight: 500, cursor: 'pointer', borderBottom: activeTab === 'details' ? '2px solid var(--blue)' : 'none', color: activeTab === 'details' ? 'var(--blue)' : 'var(--muted)' }}
+              >
+                Details
+              </a>
+            </li>
             {isFeatured && product.performance_data && (
               <li className="nav-item">
                 <a
@@ -355,16 +368,16 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
                         <td>{product.description}</td>
                       </tr>
                     )}
-                    {product.category_external_id && (
+                    {categoryLabel && (
                       <tr>
-                        <td>Category</td>
-                        <td>{product.category_external_id}</td>
+                        <td>Product Category</td>
+                        <td>{categoryLabel}</td>
                       </tr>
                     )}
-                    {product.product_group && (
+                    {(product.product_group || product.productGroup) && (
                       <tr>
                         <td>Product Group</td>
-                        <td>{product.product_group}</td>
+                        <td>{product.product_group || product.productGroup}</td>
                       </tr>
                     )}
                     {product.catalog_number && (
@@ -401,6 +414,23 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
                 )}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Details Tab */}
+        {activeTab === 'details' && (
+          <div style={{ marginTop: '24px' }}>
+            <div className="tab-header" style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Details</div>
+            {detailsContent ? (
+              <div
+                className="blog-detail-content product-detail-content"
+                dangerouslySetInnerHTML={{ __html: detailsContent }}
+              />
+            ) : (
+              <div className="admin-empty-table" style={{ minHeight: '80px', background: '#fcfdfd' }}>
+                No additional details available.
+              </div>
+            )}
           </div>
         )}
 
