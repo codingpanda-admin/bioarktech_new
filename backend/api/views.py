@@ -464,10 +464,47 @@ def search_product(request):
             'shipping_cost': 100.0 if category_type == 'consumables' else 40.0
         })
 
+    # 3. Add services from ServiceMode
+    if category_filter not in ['reagents', 'consumables']:
+        from interface.models import ServiceMode
+        if list_keywords:
+            service_query = Q()
+            for keyword in list_keywords:
+                service_query |= Q(title__icontains=keyword)
+                service_query |= Q(url__icontains=keyword)
+                service_query |= Q(content__icontains=keyword)
+                service_query |= Q(category__icontains=keyword)
+            services = ServiceMode.objects.filter(service_query)
+        else:
+            services = ServiceMode.objects.all()
+
+        for s in services:
+            # Clean HTML content for description snippet
+            import re
+            clean_desc = re.sub(r'<[^>]*>', '', s.content)[:180] + "..." if s.content else ""
+            
+            combined_results.append({
+                'product_id': f"svc-{s.id}",
+                'product_sku': s.url.upper(),
+                'external_id': s.url,
+                'externalId': s.url,
+                'catalog_number': s.url.upper(),
+                'product_name': s.title,
+                'description': clean_desc,
+                'unit_price': 0.0,
+                'list_price': 'Contact for Quote',
+                'image': f"/media/{s.image.name}" if s.image else None,
+                'category': 'Services',
+                'category_external_id': s.category or 'services',
+                'product_group': 'Services',
+                'shipping_cost': 0.0
+            })
+
     # Sort all results alphabetically by name
     combined_results.sort(key=lambda x: x['product_name'].lower())
 
     paginator = Paginator(combined_results, page_size)
+
     page_obj = paginator.get_page(page_number)
 
     data = {

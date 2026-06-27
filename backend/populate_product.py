@@ -242,6 +242,7 @@ DEFAULT_PRODUCT_CATEGORIES = [
     {'category_name': 'Experiment Services', 'external_id': 'experiment-services', 'product_type': 'service'},
     {'category_name': 'Lab Supplies', 'external_id': 'lab-supplies-services', 'product_type': 'service'},
     {'category_name': 'Project Consultation', 'external_id': 'project-consultation-services', 'product_type': 'service'},
+    {'category_name': 'Protein Purification', 'external_id': 'protein-purification-services', 'product_type': 'service'},
 
     # Reagents
     {'category_name': 'DNA Reagents', 'external_id': 'category-1765063995229', 'product_type': 'reagent'},

@@ -39,25 +39,43 @@ for title, category in service_mappings.items():
     except Exception as e:
         print(f"Error updating '{title}': {e}")
 
+# 1.5 Update specific images for existing services if not set or mapping them
+existing_service_images = {
+    'stable-cell-line': 'service_images/Service-3-Stable-Cell-Line-Services.jpeg',
+    'lab-supplies': 'service_images/Service-5-Lab-Supplies.png',
+}
+
+for slug, img_path in existing_service_images.items():
+    try:
+        s = ServiceMode.objects.get(url=slug)
+        s.image = img_path
+        s.save()
+        print(f"Updated image for existing service '{slug}' to '{img_path}'")
+    except Exception as e:
+        print(f"Error updating image for '{slug}': {e}")
+
 # 2. Add missing services
 missing_services = [
     {
         'title': 'Gene Tagging Service',
         'url': 'gene-tagging-service',
         'category': 'genome-editing',
-        'content': '<h3>Gene Tagging Service</h3><p>Advanced CRISPR-based endogenous gene tagging services to visualize and track proteins inside cells.</p>'
+        'content': '<h3>Gene Tagging Service</h3><p>Advanced CRISPR-based endogenous gene tagging services to visualize and track proteins inside cells.</p>',
+        'image': 'service_images/b154b10a-d7ad-46c6-b639-d44d1139f77f.jpg'
     },
     {
         'title': 'Gene Knockout Service',
         'url': 'gene-knockout-service',
         'category': 'genome-editing',
-        'content': '<h3>Gene Knockout Service</h3><p>High-efficiency CRISPR knockouts in a variety of cell lines for functional gene analysis.</p>'
+        'content': '<h3>Gene Knockout Service</h3><p>High-efficiency CRISPR knockouts in a variety of cell lines for functional gene analysis.</p>',
+        'image': None
     },
     {
         'title': 'mRNA LNP packaging Service',
         'url': 'mrna-lnp-packaging-service',
         'category': 'ivt-mrna-services',
-        'content': '<h3>mRNA LNP packaging Service</h3><p>Custom IVT mRNA synthesis and Lipid Nanoparticle (LNP) encapsulation for robust in vitro and in vivo transfection.</p>'
+        'content': '<h3>mRNA LNP packaging Service</h3><p>Custom IVT mRNA synthesis and Lipid Nanoparticle (LNP) encapsulation for robust in vitro and in vivo transfection.</p>',
+        'image': 'service_images/0889bb39-7a02-4bb1-b32b-be64bb006090.jpg'
     }
 ]
 
@@ -67,7 +85,8 @@ for item in missing_services:
         defaults={
             'title': item['title'],
             'content': item['content'],
-            'category': item['category']
+            'category': item['category'],
+            'image': item.get('image')
         }
     )
     if created:
@@ -75,8 +94,11 @@ for item in missing_services:
     else:
         s.category = item['category']
         s.title = item['title']
+        if item.get('image'):
+            s.image = item['image']
         s.save()
         print(f"Updated existing service slug '{item['url']}' with category '{item['category']}'")
+
 
 # 3. Add homepage slides
 print("Populating homepage slides...")
@@ -160,4 +182,3 @@ for slide_data in slides:
         print(f"Updated homepage slide: '{s.title}'")
 
 print("Services and Homepage slides population finished!")
-

@@ -34,20 +34,30 @@ The application environment consists of three main Docker services:
 
 ## 🚦 Getting Started (How to Run)
 
-Follow these simple steps to spin up the development environment:
+Choose the environment you want to spin up:
 
-### 1. Build and Start the Containers
+### 💻 Local Development (React Port 5173)
+Open your terminal in the root directory of the project and execute:
+```bash
+docker compose -f docker-compose.local.yml up --build -d
+```
+Once the containers are up and running, you can access:
+* **Frontend Web:** [http://localhost:5173](http://localhost:5173)
+* **Admin Console:** [http://localhost:5173/admin](http://localhost:5173/admin)
+* **Backend REST API:** [http://localhost:8000](http://localhost:8000)
+
+---
+
+### 🌐 Production/Staging (Standard Web Port 80)
 Open your terminal in the root directory of the project and execute:
 ```bash
 docker compose up --build -d
 ```
-This command downloads the required images, builds the frontend/backend servers, initializes the PostgreSQL database, and mounts local directories for hot-reloading.
-
-### 2. Access the Applications
-Once the containers are up and running (verify with `docker ps`), you can access:
-* **Frontend Web:** [http://localhost:5173](http://localhost:5173)
-* **Admin Console:** [http://localhost:5173/admin](http://localhost:5173/admin)
+Once the containers are up and running, you can access:
+* **Frontend Web:** [http://localhost:80](http://localhost:80)
+* **Admin Console:** [http://localhost:80/admin](http://localhost:80/admin)
 * **Backend REST API:** [http://localhost:8000](http://localhost:8000)
+
 
 ---
 
@@ -69,24 +79,33 @@ Shipping costs are calculated as a **single flat fee for the entire order** (it 
 ## ⚙️ Maintenance & Useful Commands
 
 ### Manage Services
-* **Start the stack:** `docker compose up -d`
-* **Stop the stack (keeps data volume):** `docker compose down`
-* **Quick restart:** `docker compose restart`
+* **Start the stack:**
+  * Local: `docker compose -f docker-compose.local.yml up -d`
+  * Prod: `docker compose up -d`
+* **Stop the stack (keeps data volume):**
+  * Local: `docker compose -f docker-compose.local.yml down`
+  * Prod: `docker compose down`
+* **Quick restart:**
+  * Local: `docker compose -f docker-compose.local.yml restart`
+  * Prod: `docker compose restart`
 
 ### Reset the Database from Scratch
 If you want to clear all database volumes and force a fresh initialization using the `backend/bioarktech.sql` dump file:
 ```bash
-# Stop containers and destroy the postgres volume
-docker compose down -v
+# For Local Development:
+docker compose -f docker-compose.local.yml down -v
+docker compose -f docker-compose.local.yml up -d
 
-# Start the stack back up (init.sql will run automatically)
+# For Production:
+docker compose down -v
 docker compose up -d
 ```
 
 ### Monitor Live Logs
-* **Stream all logs:** `docker compose logs -f`
+* **Stream all logs:** `docker compose logs -f` (add `-f docker-compose.local.yml` for local)
 * **Stream Backend logs only:** `docker compose logs -f backend`
 * **Stream Frontend logs only:** `docker compose logs -f frontend`
+
 
 ---
 

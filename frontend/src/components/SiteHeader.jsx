@@ -77,6 +77,12 @@ const categoryIcons = {
       <circle cx="12" cy="12" r="10"/>
     </svg>
   ),
+  'Protein Purification': (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"/>
+    </svg>
+  ),
+
   'DNA Reagents': (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4.5 16.5c-1.5 1.25-2.5 3-2.5 5h20c0-2-1-3.75-2.5-5"/>
@@ -243,11 +249,47 @@ const getCategorySubcategories = (cat) => {
   if (id === 'genome-editing-services') {
     return [
       {
-        name: 'Genetic Engineering',
+        name: 'Genome Editing Overview & Tools',
         products: [
           { product_name: 'Genome Editing Services', external_id: 'genome-editing-services' },
+          { product_name: 'CRISPR Services Overview (GEDT)', external_id: 'genome-editing' },
+          { product_name: 'CRISPR Deletion Service (GEDT-012)', external_id: 'crispr-knockout' },
+          { product_name: 'CRISPR Targeting KnockIn (GEDT-013)', external_id: 'crispr-targeting-knockin-service-gedt-013' },
+        ]
+      },
+      {
+        name: 'Gene Engineering',
+        products: [
           { product_name: 'Gene Tagging Service', external_id: 'gene-tagging-service' },
           { product_name: 'Gene Knockout Service', external_id: 'gene-knockout-service' },
+          { product_name: 'CRISPR Primer Editing (GEDT-033)', external_id: 'crispr-primer-editing-cbe-033' },
+          { product_name: 'CRISPR ABE/CBE Editing (GEDT-031)', external_id: 'crispr-abe-editing-gedt-031' },
+        ]
+      },
+      {
+        name: 'Inducible & Overexpression',
+        products: [
+          { product_name: 'CRISPR Targeting Inducible Expression Service (IDCB-021)', external_id: 'crispr-targeting-inducible-expression-service' },
+          { product_name: 'Classical Inducible Expression Service (IDCB-011)', external_id: 'classical-inducible-expression-service' },
+          { product_name: 'CRISPR Targeting OverExp Service (ORFX-021)', external_id: 'crispr-targeting-overexp-service' },
+          { product_name: 'Classical OverExpression Service (ORFX-011)', external_id: 'classical-overexpression-service' },
+        ]
+      },
+      {
+        name: 'RNA & miRNA Editing',
+        products: [
+          { product_name: 'RNA Editing Overview (RNET)', external_id: 'rna-editing-overview-rnet' },
+          { product_name: 'Classical miRNA service (RNET-012)', external_id: 'classical-mirna-service' },
+          { product_name: 'CRISPR RNAi Service (RNET-021)', external_id: 'crispr-rnai-service' },
+          { product_name: 'Classical RNAi Service (RNET-011)', external_id: 'classical-rnai-service' },
+        ]
+      },
+      {
+        name: 'CRISPR Imaging & Regulation',
+        products: [
+          { product_name: 'CRISPR Imaging Service (GEDT-023)', external_id: 'crispr-imaging-service-gedt-033' },
+          { product_name: 'CRISPR Inhibition Service (GEDT-022)', external_id: 'crispr-inhibition-service-gedt-022' },
+          { product_name: 'CRISPR Activation Service (GEDT-021)', external_id: 'crispr-activation-service-gedt-021' },
         ]
       }
     ];
@@ -255,10 +297,62 @@ const getCategorySubcategories = (cat) => {
   if (id === 'synthesis-cloning-services') {
     return [
       {
-        name: 'Vector Construction',
+        name: 'Cloning Services',
         products: [
-          { product_name: 'Custom Cloning Services', external_id: 'custom-cloning-services' },
-          { product_name: 'Vector Construction Support', external_id: 'vector-construction-support' },
+          { product_name: 'Custom Cloning Services', external_id: 'custom-cloning' },
+          { product_name: 'Plasmid Cloning Service Overview', external_id: 'dna-cloning-service' },
+          { product_name: 'Standard Cloning Service (PCST)', external_id: 'standard-cloning-service-pcst' },
+          { product_name: 'BioArk Complex Cloning Sevice (PCBC)', external_id: 'bioark-complex-cloning-sevice-pcbc' },
+          { product_name: 'BioArk Vector Cloning Service (PCBA)', external_id: 'bioark-vector-cloning-services' },
+          { product_name: 'Custom Cloning Service (PCCT)', external_id: 'custom-cloning-pcct' },
+          { product_name: 'Subcloning Services (PCSC)', external_id: 'subcloning-services-pcsc' },
+        ]
+      },
+      {
+        name: 'Plasmid Prep & Mutagenesis',
+        products: [
+          { product_name: 'Plasmid Preparation Service (PPMX)', external_id: 'plasmid-preparation-service' },
+          { product_name: 'Plasmid Mutagenesis Service (PLMU)', external_id: 'mutagenesis-service-plmu' },
+        ]
+      }
+    ];
+  }
+  if (id === 'cell-line-services') {
+    return [
+      {
+        name: 'Cell Line Generation & Research',
+        products: [
+          { product_name: 'Stable Cell Line Services', external_id: 'stable-cell-line' },
+          { product_name: 'Stable Cell Pool Service Overview', external_id: 'cell-line-generation' },
+          { product_name: 'Cell Research Service Overview', external_id: 'cell-research-service-overview' },
+          { product_name: 'Stable Single Clone Overview', external_id: 'stable-single-clone-overview' },
+        ]
+      },
+      {
+        name: 'Cell Expression Services',
+        products: [
+          { product_name: 'Inducible Expression Service', external_id: 'inducible-expression-service' },
+          { product_name: 'OverExpression Service', external_id: 'overexpression-service-2' },
+          { product_name: 'RNAi Exp Service', external_id: 'rnai-service' },
+          { product_name: 'CRISPR Exp Service', external_id: 'crispr-exp-service' },
+        ]
+      },
+      {
+        name: 'Stable Single Clones',
+        products: [
+          { product_name: 'Inducible Stable Clone', external_id: 'inducible-stable-clone' },
+          { product_name: 'Overexpression Stable Clone', external_id: 'overexpression-stable-clone' },
+          { product_name: 'RNAi Stable Clone', external_id: 'rnai-stable-clone' },
+          { product_name: 'CRISPR Stable Clone', external_id: 'crispr-stable-clone' },
+        ]
+      },
+      {
+        name: 'Stable Cell Pools',
+        products: [
+          { product_name: 'Inducible Cell Pool', external_id: 'inducible-cell-pool' },
+          { product_name: 'OverExpression Cell Pool', external_id: 'overexpression-cell-pool' },
+          { product_name: 'RNAi Cell Pool', external_id: 'rnai-cell-pool' },
+          { product_name: 'CRISPR Cell Pool', external_id: 'crispr-cell-pool' },
         ]
       }
     ];
@@ -268,36 +362,86 @@ const getCategorySubcategories = (cat) => {
       {
         name: 'Viral Vector Packaging',
         products: [
-          { product_name: 'Lentivirus Package Services', external_id: 'lentivirus-package-services' },
-          { product_name: 'AAV Packaging Services', external_id: 'aav-packaging-services' },
+          { product_name: 'Lentivirus Package Services', external_id: 'lentivirus-package' },
+          { product_name: 'Virus Packaging Overview', external_id: 'virus-packaging-overview' },
+          { product_name: 'AAV Packaging Services (AAVP)', external_id: 'aav-packaging-services' },
+          { product_name: 'Lentivirus Packaging Services', external_id: 'lentivirus-packaging-services' },
         ]
       }
     ];
   }
-  if (id === 'cell-line-services') {
+  if (id === 'protein-purification-services') {
     return [
       {
-        name: 'Cell Line Engineering',
+        name: 'Mammalian Cell Purification',
         products: [
-          { product_name: 'Stable Cell Line Services', external_id: 'stable-cell-line-services' },
+          { product_name: 'CHO Antibody Protein Purification', external_id: 'cho-antibody-protein-purification' },
+          { product_name: '293T Antigen Protein Purification', external_id: '293t-antigen-protein-purification' },
+        ]
+      },
+      {
+        name: 'Bacterial & Insect Purification',
+        products: [
+          { product_name: 'Ecoil Protein Purification', external_id: 'ecoil-protein-purification' },
+          { product_name: 'Sf9 Protein Purification', external_id: 'sf9-cell-protein-purification' },
         ]
       }
     ];
   }
-  if (id === 'experiment-services' || id === 'lab-supplies-services' || id === 'project-consultation-services') {
+  if (id === 'vector-construction-services') {
+    return [
+      {
+        name: 'Vector Support',
+        products: [
+          { product_name: 'Vector Construction Support', external_id: 'vector-construction-support' }
+        ]
+      }
+    ];
+  }
+  if (id === 'functional-testing-services') {
+    return [
+      {
+        name: 'Functional Validation',
+        products: [
+          { product_name: 'Functional Testing', external_id: 'functional-testing' }
+        ]
+      }
+    ];
+  }
+  if (id === 'experiment-services') {
     return [
       {
         name: 'Research Support',
         products: [
-          { product_name: 'Experiment Services', external_id: 'experiment-services' },
+          { product_name: 'Experiment Services', external_id: 'experiment-services' }
+        ]
+      }
+    ];
+  }
+  if (id === 'lab-supplies-services') {
+    return [
+      {
+        name: 'Laboratory Consumables',
+        products: [
           { product_name: 'Lab Supplies', external_id: 'lab-supplies' },
-          { product_name: 'Project Consultation', external_id: 'project-consultation' },
+          { product_name: 'mRNA LNP packaging Service', external_id: 'mrna-lnp-packaging-service' },
+        ]
+      }
+    ];
+  }
+  if (id === 'project-consultation-services') {
+    return [
+      {
+        name: 'Consultation Services',
+        products: [
+          { product_name: 'Project Consultation', external_id: 'project-consultation' }
         ]
       }
     ];
   }
   return [];
 };
+
 
 function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onLogout, cartCount }) {
   const [query, setQuery] = useState('');
@@ -513,11 +657,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
                             onClick={(e) => {
                               e.preventDefault();
                               closeMenus();
-                              if (menuType === 'service') {
-                                navigate(`/search?q=${encodeURIComponent(product.product_name)}`);
-                              } else {
-                                navigate(`/product/${product.externalId || product.external_id}`);
-                              }
+                              navigate(`/product/${product.externalId || product.external_id}`);
                             }}
                           >
                             <span className="catalog-product-name">{product.product_name}</span>

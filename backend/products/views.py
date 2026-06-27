@@ -512,7 +512,44 @@ def load_product_by_external_id(request, external_id):
         serializer = ProductSerializer(product)
         return Response(serializer.data)
 
+    # 3. Fall back to ServiceMode (services)
+    from interface.models import ServiceMode
+    service = ServiceMode.objects.filter(url=external_id).first()
+    if service:
+        # Get matching ProductCategory to display correct category name
+        from products.models import ProductCategory
+        cat_name = "Services"
+        cat_ext_id = service.category or "services"
+        if service.category:
+            cat_obj = ProductCategory.objects.filter(external_id=service.category).first()
+            if cat_obj:
+                cat_name = cat_obj.category_name
+        
+        # Clean HTML content for description snippet
+        import re
+        clean_desc = re.sub(r'<[^>]*>', '', service.content)[:250] + "..." if service.content else ""
+
+        service_data = {
+            'product_id': f"svc-{service.id}",
+            'product_name': service.title,
+            'external_id': service.url,
+            'externalId': service.url,
+            'catalog_number': service.url.upper(),
+            'product_sku': service.url,
+            'image_url': f"/media/{service.image.name}" if service.image else None,
+            'category_name': cat_name,
+            'category_external_id': cat_ext_id,
+            'availability': 'Quote Required',
+            'quote_only': True,
+            'quoteOnly': True,
+            'description': clean_desc,
+            'content_text': service.content,
+            'unit_prices': []
+        }
+        return Response(service_data)
+
     return Response({'detail': 'Product not found.'}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 @api_view(['GET'])
