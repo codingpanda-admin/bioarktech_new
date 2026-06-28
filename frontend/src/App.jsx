@@ -24,6 +24,7 @@ import BlogDetailPage from './pages/BlogDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import MyQuotesPage from './pages/MyQuotesPage';
 import DesignPage from './pages/DesignPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -32,6 +33,39 @@ function App() {
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  const handleOpenAuth = () => {
+    const width = 520;
+    const height = 700;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
+    const popup = window.open(
+      '/auth-popup',
+      'BioarkAuth',
+      `width=${width},height=${height},left=${left},top=${top},status=no,menubar=no,toolbar=no,scrollbars=yes`
+    );
+    
+    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+      setAuthModalOpen(true);
+    }
+  };
+
+  useEffect(() => {
+    const handleMessage = async (event) => {
+      if (event.data?.type === 'AUTH_SUCCESS') {
+        const email = event.data.email;
+        setCurrentUser(email);
+        try {
+          const profile = await apiFetch('/api/users/view-user-info/');
+          setCurrentUserProfile(profile);
+        } catch (profileErr) {
+          setCurrentUserProfile(null);
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   // Cart State & Methods
   const [cart, setCart] = useState(() => {
@@ -176,6 +210,36 @@ function App() {
   const isProfilePage = currentPath === '/profile';
   const isMyQuotesPage = currentPath === '/quotes';
   const isDesignPage = currentPath === '/design';
+  const isResetPasswordPage = currentPath.startsWith('/reset-password/');
+  const isAuthPopupPage = currentPath === '/auth-popup';
+
+  if (isAuthPopupPage) {
+    return (
+      <div className="auth-popup-page" style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: 'var(--panel)',
+        padding: '20px'
+      }}>
+        <AuthModal 
+          isPopupPage={true} 
+          onLoginSuccess={async (email) => {
+            if (window.opener) {
+              window.opener.postMessage({ type: 'AUTH_SUCCESS', email: email }, '*');
+              window.close();
+            }
+          }} 
+          onClose={() => {
+            if (window.opener) {
+              window.close();
+            }
+          }} 
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="site-shell">
@@ -186,7 +250,7 @@ function App() {
           navigate={navigate} 
           currentUser={currentUser} 
           currentUserProfile={currentUserProfile}
-          onOpenAuth={() => setAuthModalOpen(true)} 
+          onOpenAuth={handleOpenAuth} 
           onLogout={handleLogout} 
           cartCount={cartCount}
         />
@@ -236,7 +300,11 @@ function App() {
           onUpdateQty={handleUpdateQty} 
           onRemoveItem={handleRemoveItem} 
           onClearCart={handleClearCart}
+          currentUser={currentUser}
+          onOpenAuth={handleOpenAuth}
         />
+      ) : isResetPasswordPage ? (
+        <ResetPasswordPage navigate={navigate} token={currentPath.split('/reset-password/')[1]?.split('?')[0] || ''} />
       ) : isResourcesPage ? (
         <ResourcesPage navigate={navigate} />
       ) : isProfilePage ? (

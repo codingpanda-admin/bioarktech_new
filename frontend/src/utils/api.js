@@ -97,7 +97,7 @@ export const getCategoryIcon = (name) => {
 };
 
 export const getProductShippingCost = (product) => {
-  if (!product) return 40;
+  if (!product) return 60;
   
   // Use backend provided shipping cost if available
   if (product.shipping_cost !== undefined && product.shipping_cost !== null) {
@@ -135,7 +135,7 @@ export const getProductShippingCost = (product) => {
     }
   }
 
-  return 40;
+  return 60;
 };
 
 // Formats file URLs safely, avoiding double-protocol prefix issues and relative media directory issues

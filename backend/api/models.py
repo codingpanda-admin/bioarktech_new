@@ -20,3 +20,17 @@ class EmailVerificationToken(models.Model):
             self.token = get_random_string(64)
         super().save(*args, **kwargs)
 
+
+class PasswordResetToken(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    token = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_valid(self):
+        return now() < self.created_at + timedelta(hours=2)  # Valid for 2 hours
+
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = get_random_string(64)
+        super().save(*args, **kwargs)
+

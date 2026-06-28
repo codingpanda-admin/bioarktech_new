@@ -60,6 +60,7 @@ class User(AbstractUser):
     shipping_address = models.ForeignKey(Address, related_name='shipping_address', on_delete=models.PROTECT, null=True, blank=True)
     has_set_password = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
+    profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []

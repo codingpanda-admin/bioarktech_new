@@ -32,6 +32,9 @@ def view_order(request, payment_token):
 
 @api_view(['GET'])
 def view_orders(request):
+    if not request.user.is_authenticated:
+        return Response({'detail': 'User is not authenticated.'}, status=401)
+
     page_number = request.query_params.get('page_number', 1)
     page_size = request.query_params.get('page_size', 5)
     order_class = request.query_params.get('order_class', None)
@@ -217,3 +220,20 @@ def reset_user_password(request):
         return Response({'detail': 'Password reset successfully.'}, status=200)
     except Exception as e:
         return Response({'detail': 'An unexpected error occurred. Try again.'}, status=500)
+
+
+@api_view(['POST'])
+def upload_profile_picture(request):
+    if not request.user.is_authenticated:
+        return Response({'detail': 'User is not authenticated.'}, status=401)
+
+    user = User.objects.get(id=request.user.id)
+    file = request.FILES.get('profile_picture')
+    if not file:
+        return Response({'detail': 'No file uploaded.'}, status=400)
+
+    user.profile_picture = file
+    user.save()
+
+    serializer = UserSerializer(user)
+    return Response({'success': True, 'user': serializer.data})

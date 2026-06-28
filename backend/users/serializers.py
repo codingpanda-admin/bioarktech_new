@@ -27,6 +27,7 @@ class UserSerializer(serializers.ModelSerializer):
             'shipping_address',
             'is_admin',
             'isAdmin',
+            'profile_picture',
         ]
         depth = 1
 

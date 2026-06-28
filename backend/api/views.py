@@ -24,12 +24,12 @@ from rest_framework.response import Response
 
 from products.serializers import ProductSerializer
 from users.models import User
-from api.models import EmailVerificationToken
+from api.models import EmailVerificationToken, PasswordResetToken
 from quote.models import Quote
 from quote.services import create_quote_record
 from products.models import *
 
-FRONTEND_DOMAIN = os.environ.get('FRONTEND_DOMAIN')
+FRONTEND_DOMAIN = os.environ.get('FRONTEND_DOMAIN') or 'http://localhost:5173'
 logger = logging.getLogger(__name__)
 
 
@@ -51,6 +51,15 @@ def signup_view(request):
     password = data.get('password')
     first_name = data.get('firstName', '')
     last_name = data.get('lastName', '')
+
+    # Address fields
+    address_line_1 = data.get('addressLine1', '')
+    address_line_2 = data.get('addressLine2', '')
+    apt_suite = data.get('aptSuite', '')
+    city = data.get('city', '')
+    state = data.get('state', '')
+    zipcode = data.get('zipcode', '')
+    country = data.get('country', 'US')
 
     # Basic validation
     if not email:
@@ -90,12 +99,32 @@ def signup_view(request):
             return JsonResponse({'detail': 'Verification email sent to activate account.'})
 
         else:
+            # Create address if provided
+            from users.models import Address
+            shipping_address = None
+            if address_line_1 or city or state or zipcode:
+                shipping_address = Address.objects.create(
+                    address_line_1=address_line_1,
+                    address_line_2=address_line_2,
+                    apt_suite=apt_suite,
+                    city=city,
+                    state=state,
+                    zipcode=zipcode,
+                    country=country
+                )
+
             # Create a new user
-            user = User.objects.create_user(email=email, password=password, first_name=first_name, last_name=last_name)
+            user = User.objects.create_user(
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                shipping_address=shipping_address
+            )
             user.save()
             return JsonResponse({'detail': 'Successfully signed up.', 'success': True})
     except Exception as e:
-        return JsonResponse({'detail': 'An error has occurred when processing your email. Try again.', 'error': e}, status=400)
+        return JsonResponse({'detail': 'An error has occurred when processing your email. Try again.', 'error': str(e)}, status=400)
 
 
 @require_POST
@@ -409,7 +438,7 @@ def search_product(request):
             'category': prod_cat,
             'category_external_id': p.category_external_id,
             'product_group': p.product_group,
-            'shipping_cost': 100.0 if category_type == 'consumables' else 40.0
+            'shipping_cost': 100.0 if category_type == 'consumables' else 60.0
         })
         
     # 2. Add featured products (including the imported reagents)
@@ -461,7 +490,7 @@ def search_product(request):
             'category': prod_cat,
             'category_external_id': linked_cat_id,
             'product_group': linked_group,
-            'shipping_cost': 100.0 if category_type == 'consumables' else 40.0
+            'shipping_cost': 100.0 if category_type == 'consumables' else 60.0
         })
 
     # 3. Add services from ServiceMode
@@ -514,3 +543,148 @@ def search_product(request):
     }
 
     return Response(data)
+
+
+@require_POST
+def request_password_reset(request):
+    try:
+        data = json.loads(request.body)
+        email = data.get('email', '').strip().lower()
+        if not email:
+            return JsonResponse({'detail': 'Email is required.'}, status=400)
+
+        user = User.objects.filter(email=email).first()
+        if user:
+            # Delete any existing reset tokens for this user
+            PasswordResetToken.objects.filter(user=user).delete()
+            # Create a new token
+            token_obj = PasswordResetToken.objects.create(user=user)
+            
+            # Send reset email
+            reset_url = f"{FRONTEND_DOMAIN}/reset-password/{token_obj.token}/"
+            email_body = (
+                f"Hello {user.first_name or 'user'},\n\n"
+                f"We received a request to reset your password for your Bioark Tech account.\n"
+                f"Click the link below to reset your password (this link expires in 2 hours):\n"
+                f"{reset_url}\n\n"
+                f"If you did not request this change, please ignore this email.\n\n"
+                f"Best regards,\n"
+                f"The Bioark Tech Team"
+            )
+            
+            try:
+                send_mail(
+                    subject="Reset your password - Bioark Tech",
+                    message=email_body,
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[user.email],
+                    fail_silently=False
+                )
+            except Exception as e:
+                logger.error(f"Failed to send password reset email: {e}")
+                
+        return JsonResponse({'detail': 'If your email is registered, you will receive a password reset link shortly.', 'success': True})
+    except Exception as e:
+        return JsonResponse({'detail': f'An unexpected error occurred: {str(e)}'}, status=500)
+
+
+@require_POST
+def confirm_password_reset(request, token):
+    try:
+        data = json.loads(request.body)
+        new_password = data.get('password')
+        confirm_password = data.get('confirmPassword')
+        
+        if not new_password or not confirm_password:
+            return JsonResponse({'detail': 'New password and confirmation are required.'}, status=400)
+            
+        if new_password != confirm_password:
+            return JsonResponse({'detail': 'Passwords do not match.'}, status=400)
+            
+        token_obj = PasswordResetToken.objects.filter(token=token).first()
+        if not token_obj or not token_obj.is_valid():
+            return JsonResponse({'detail': 'The password reset link is invalid or has expired.'}, status=400)
+            
+        user = token_obj.user
+        user.set_password(new_password)
+        user.save()
+        
+        # Delete token after use
+        token_obj.delete()
+        
+        return JsonResponse({'detail': 'Your password has been reset successfully. You can now sign in.', 'success': True})
+    except Exception as e:
+        return JsonResponse({'detail': f'An unexpected error occurred: {str(e)}'}, status=500)
+
+
+@require_POST
+def google_login(request):
+    try:
+        data = json.loads(request.body)
+        credential = data.get('credential')
+        if not credential:
+            return JsonResponse({'detail': 'No credential provided.'}, status=400)
+            
+        # Verify the token using Google tokeninfo endpoint
+        import requests
+        response = requests.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}")
+        if response.status_code != 200:
+            return JsonResponse({'detail': 'Invalid Google credential token.'}, status=400)
+            
+        token_info = response.json()
+        
+        email = token_info.get('email')
+        email_verified = token_info.get('email_verified')
+        first_name = token_info.get('given_name', '')
+        last_name = token_info.get('family_name', '')
+        picture = token_info.get('picture', '')
+        
+        if not email or (email_verified != 'true' and email_verified != True):
+            return JsonResponse({'detail': 'Google email is not verified or unavailable.'}, status=400)
+            
+        email = email.lower()
+        
+        # Check if user already exists
+        user = User.objects.filter(email=email).first()
+        
+        if user:
+            # Connect accounts seamlessly since email is verified by Google
+            if not user.profile_picture and picture:
+                try:
+                    from django.core.files.base import ContentFile
+                    img_response = requests.get(picture, timeout=5)
+                    if img_response.status_code == 200:
+                        user.profile_picture.save(f"google_{user.id}.jpg", ContentFile(img_response.content), save=True)
+                except Exception as img_err:
+                    logger.error(f"Failed to save Google profile picture: {img_err}")
+            
+            if not user.is_active:
+                user.is_active = True
+                user.save()
+        else:
+            # Create new user
+            user = User.objects.create_user(
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                is_active=True
+            )
+            user.set_unusable_password()
+            
+            if picture:
+                try:
+                    from django.core.files.base import ContentFile
+                    img_response = requests.get(picture, timeout=5)
+                    if img_response.status_code == 200:
+                        user.profile_picture.save(f"google_{user.id}.jpg", ContentFile(img_response.content), save=True)
+                except Exception as img_err:
+                    logger.error(f"Failed to save Google profile picture for new user: {img_err}")
+                    
+            user.save()
+
+        # Log the user in
+        login(request, user)
+        return JsonResponse({'detail': 'Successfully logged in with Google.', 'success': True, 'email': email})
+        
+    except Exception as e:
+        return JsonResponse({'detail': f'An unexpected error occurred: {str(e)}'}, status=500)

@@ -33,8 +33,48 @@ function RequestQuotePage({ navigate, cart, onClearCart, currentUser, currentUse
 
   useEffect(() => {
     if (cart && cart.length > 0) {
+      // Create a nice text list of products
+      const itemsList = cart.map(item => 
+        `- ${item.name} (${item.sku})${item.unitSize ? ` - ${item.unitSize}` : ''} x${item.quantity} ($${(item.price * item.quantity).toFixed(2)})`
+      ).join('\n');
+      
+      const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+      
+      // Separate items into groups to calculate shipping
+      const consumableItems = cart.filter(item => item.shippingCost === 100);
+      const reagentItems = cart.filter(item => item.shippingCost !== 100 && item.shippingCost !== 0);
+      
+      const subtotalConsumables = consumableItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+      const subtotalReagents = reagentItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+      
+      let shippingConsumables = 0;
+      let shippingReagents = 0;
+      const hasConsumables = consumableItems.length > 0;
+      const hasReagents = reagentItems.length > 0;
+
+      if (hasConsumables) {
+        const shippingSubtotal = subtotalConsumables + subtotalReagents;
+        if (shippingSubtotal <= 2000) {
+          shippingConsumables = 100;
+        } else {
+          shippingConsumables = Math.min(700, 100 + Math.ceil((shippingSubtotal - 2000) / 1000) * 60);
+        }
+      } else if (hasReagents) {
+        if (subtotalReagents <= 1000) {
+          shippingReagents = 60;
+        } else {
+          shippingReagents = Math.min(300, 60 + Math.ceil((subtotalReagents - 1000) / 500) * 30);
+        }
+      }
+      
+      const totalShipping = shippingConsumables + shippingReagents;
+      const grandTotal = subtotal + totalShipping;
+      
+      const cartSummaryText = `[Productos Seleccionados]:\n${itemsList}\n\nSubtotal: $${subtotal.toFixed(2)}\nEnvío Consumibles: $${shippingConsumables.toFixed(2)}\nEnvío Reactivos: $${shippingReagents.toFixed(2)}\nEnvío Total: $${totalShipping.toFixed(2)}\nTotal Estimado: $${grandTotal.toFixed(2)}`;
+      
       setFormData(prev => ({
         ...prev,
+        projectDescription: prev.projectDescription || cartSummaryText,
         serviceType: prev.serviceType || 'Featured Products',
       }));
     }
