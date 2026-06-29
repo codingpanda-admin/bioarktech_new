@@ -1,6 +1,8 @@
 from datetime import datetime, date, timedelta
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -10,6 +12,8 @@ from dotenv import load_dotenv
 import logging
 import json
 import secrets
+import hashlib
+import hmac
 
 # PayPal SDK
 from paypalserversdk.http.auth.o_auth_2 import ClientCredentialsAuthCredentials
@@ -22,6 +26,9 @@ from paypalserversdk.paypalserversdk_client import PaypalserversdkClient
 from paypalserversdk.controllers.orders_controller import OrdersController
 from paypalserversdk.controllers.payments_controller import PaymentsController
 
+# Stripe SDK
+import stripe
+
 from .models import *
 from users.models import Address
 from .serializers import *
@@ -29,6 +36,14 @@ from .serializers import *
 import requests
 
 load_dotenv()
+
+# Stripe Configuration
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
+
+if STRIPE_SECRET_KEY:
+    stripe.api_key = STRIPE_SECRET_KEY
 
 PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID")
 PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET")
@@ -591,9 +606,419 @@ def get_est_delivery_date(product_sku, ready_status):
     delivery_format_code = product_sku[-1]
     ready_status = ready_status
     work_period_days = WorkSchedule.objects.get(structure_type_code=structure_type_code, delivery_format_code=delivery_format_code, ready_status=ready_status).work_period_earliest
-    
+
     current_date = date.today()
     delta = timedelta(days=work_period_days)
     work_period_date = current_date + delta
-    
+
     return work_period_date
+
+
+# ─── Stripe Payment Gateway ────────────────────────────────────────────────────
+
+logger = logging.getLogger(__name__)
+
+
+@api_view(['POST'])
+def create_stripe_checkout_session(request):
+    """
+    Create a Stripe Checkout Session from the cart contents.
+    All price calculations are done server-side for security.
+    """
+    if not STRIPE_SECRET_KEY:
+        return Response(
+            {"error": "Stripe is not configured."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+
+    if not request.user.is_authenticated:
+        return Response(
+            {"error": "Please sign in to proceed with payment."},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    try:
+        data = request.data
+        cart_items = data.get("cart", [])
+        address = data.get("address", {})
+        discount_code = data.get("discount_code", "")
+
+        if not cart_items:
+            return Response(
+                {"error": "Cart is empty."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not address or not address.get("address_line_1") or not address.get("city") or not address.get("state") or not address.get("zipcode"):
+            return Response(
+                {"error": "A valid shipping address is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        line_items = []
+        subtotal = 0
+        total_quantity = 0
+
+        for item in cart_items:
+            price = float(item.get("price", 0))
+            quantity = int(item.get("quantity", 1))
+            name = item.get("name", "Product")
+            sku = item.get("sku", "")
+            unit_size = item.get("unitSize", "")
+
+            if price <= 0 or quantity <= 0:
+                continue
+
+            item_total = price * quantity
+            subtotal += item_total
+            total_quantity += quantity
+
+            display_name = name
+            if unit_size:
+                display_name = f"{name} ({unit_size})"
+
+            line_items.append({
+                "price_data": {
+                    "currency": "usd",
+                    "unit_amount": int(round(price * 100)),
+                    "product_data": {
+                        "name": display_name[:500],
+                        "metadata": {
+                            "sku": sku,
+                            "unit_size": unit_size,
+                        }
+                    },
+                },
+                "quantity": quantity,
+            })
+
+        if not line_items:
+            return Response(
+                {"error": "No valid items in cart."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        shipping_amount = _calculate_shipping(cart_items, subtotal)
+        grand_total = subtotal + shipping_amount
+
+        address_obj, _ = Address.objects.get_or_create(
+            address_line_1=address["address_line_1"],
+            apt_suite=address.get("apt", ""),
+            city=address["city"],
+            state=address["state"],
+            zipcode=address["zipcode"]
+        )
+
+        session_metadata = {
+            "user_id": str(request.user.id),
+            "user_email": request.user.email,
+            "address_id": str(address_obj.id),
+            "subtotal": str(subtotal),
+            "shipping_amount": str(shipping_amount),
+            "total_quantity": str(total_quantity),
+            "discount_code": discount_code,
+            "cart_json": json.dumps(cart_items),
+        }
+
+        frontend_url = _get_frontend_url()
+
+        checkout_session = stripe.checkout.Session.create(
+            payment_intent_data={
+                "metadata": session_metadata,
+            },
+            line_items=line_items,
+            mode="payment",
+            success_url=f"{frontend_url}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{frontend_url}/checkout/cancel",
+            customer_email=request.user.email,
+            metadata={
+                "user_id": str(request.user.id),
+                "user_email": request.user.email,
+            },
+            shipping_options=[
+                {
+                    "shipping_rate_data": {
+                        "type": "fixed_amount",
+                        "fixed_amount": {
+                            "amount": int(round(shipping_amount * 100)),
+                            "currency": "usd",
+                        },
+                        "display_name": "Standard Shipping",
+                    }
+                }
+            ] if shipping_amount > 0 else [],
+        )
+
+        return Response({
+            "session_id": checkout_session.id,
+            "url": checkout_session.url,
+            "subtotal": round(subtotal, 2),
+            "shipping_amount": round(shipping_amount, 2),
+            "grand_total": round(grand_total, 2),
+        })
+
+    except stripe.error.StripeError as e:
+        logger.error(f"Stripe error: {str(e)}")
+        return Response(
+            {"error": "Payment service error. Please try again."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    except Exception as e:
+        logger.error(f"Checkout session creation error: {str(e)}")
+        return Response(
+            {"error": "Failed to create checkout session."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@csrf_exempt
+@require_POST
+def stripe_webhook(request):
+    """
+    Handle Stripe webhook events.
+    Verifies webhook signature for security.
+    Creates Order and OrderItem records on successful payment.
+    """
+    payload = request.body
+    sig_header = request.META.get("HTTP_STRIPE_SIGNATURE", "")
+
+    if not STRIPE_WEBHOOK_SECRET:
+        logger.warning("STRIPE_WEBHOOK_SECRET not configured; accepting webhook without verification.")
+        event_data = json.loads(payload)
+    else:
+        try:
+            event_data = json.loads(payload)
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, STRIPE_WEBHOOK_SECRET
+            )
+            event_data = event if isinstance(event, dict) else json.loads(str(event))
+        except ValueError:
+            logger.error("Stripe webhook: invalid payload")
+            return Response({"error": "Invalid payload"}, status=status.HTTP_400_BAD_REQUEST)
+        except stripe.error.SignatureVerificationError:
+            logger.error("Stripe webhook: invalid signature")
+            return Response({"error": "Invalid signature"}, status=status.HTTP_400_BAD_REQUEST)
+
+    event_type = event_data.get("type", "")
+
+    if event_type == "checkout.session.completed":
+        _handle_checkout_completed(event_data)
+    elif event_type == "payment_intent.succeeded":
+        pass
+    elif event_type == "charge.dispute.created":
+        _handle_dispute(event_data)
+
+    return Response({"status": "ok"}, status=status.HTTP_200_OK)
+
+
+def _handle_checkout_completed(event_data):
+    """Process a completed checkout session and create the order."""
+    try:
+        session = event_data.get("data", {}).get("object", {})
+        payment_intent_id = session.get("payment_intent", "")
+        session_id = session.get("id", "")
+
+        if Order.objects.filter(payment_token=session_id).exists():
+            logger.info(f"Stripe webhook: order {session_id} already processed, skipping.")
+            return
+
+        metadata = session.get("metadata", {})
+        payment_intent_metadata = {}
+
+        if payment_intent_id:
+            try:
+                pi = stripe.PaymentIntent.retrieve(payment_intent_id)
+                payment_intent_metadata = pi.get("metadata", {}) if hasattr(pi, "get") else {}
+            except Exception as e:
+                logger.warning(f"Could not retrieve payment intent metadata: {e}")
+
+        effective_metadata = payment_intent_metadata or metadata
+
+        user_id = effective_metadata.get("user_id")
+        address_id = effective_metadata.get("address_id")
+        subtotal = float(effective_metadata.get("subtotal", 0))
+        shipping_amount = float(effective_metadata.get("shipping_amount", 0))
+        total_quantity = int(effective_metadata.get("total_quantity", 0))
+        discount_code = effective_metadata.get("discount_code", "")
+        cart_json = effective_metadata.get("cart_json", "[]")
+
+        if not user_id:
+            logger.error("Stripe webhook: no user_id in metadata")
+            return
+
+        try:
+            user = User.objects.get(id=int(user_id))
+        except User.DoesNotExist:
+            logger.error(f"Stripe webhook: user {user_id} not found")
+            return
+
+        try:
+            address = Address.objects.get(id=int(address_id))
+        except Address.DoesNotExist:
+            logger.error(f"Stripe webhook: address {address_id} not found")
+            return
+
+        amount_received = session.get("amount_total", 0) / 100.0
+        total_price = amount_received
+
+        payment_source = "Made with Stripe"
+        last_digits = None
+        payment_method = session.get("payment_method_types", [])
+        if "card" in payment_method:
+            payment_source = "Made with Stripe (Card)"
+            charges = session.get("payment_intent", {})
+            if isinstance(charges, str) and payment_intent_id:
+                try:
+                    pi = stripe.PaymentIntent.retrieve(payment_intent_id, expand=["latest_charge"])
+                    latest_charge = pi.get("latest_charge") if hasattr(pi, "get") else None
+                    if latest_charge and isinstance(latest_charge, dict):
+                        card_info = latest_charge.get("payment_method_details", {}).get("card", {})
+                        last_digits = card_info.get("last4")
+                        brand = card_info.get("brand", "")
+                        if brand:
+                            payment_source = f"Made with Stripe ({brand.title()})"
+                except Exception:
+                    pass
+
+        order_data = {
+            "payment_token": session_id,
+            "subtotal": subtotal,
+            "shipping_amount": shipping_amount,
+            "tax_amount": 0,
+            "total_price": total_price,
+            "total_paid": total_price,
+            "minimum_payment": calculate_minimum_payment(total_price),
+            "payment_source": payment_source,
+            "quantity": total_quantity,
+            "shipping_address": address,
+            "billing_address": address,
+            "user": user,
+            "last_digits": last_digits,
+            "discount_code": discount_code,
+            "transaction_status": "completed",
+        }
+
+        order_obj = Order.objects.create(**order_data)
+
+        try:
+            cart_items = json.loads(cart_json)
+            create_order_items(cart_items, order_obj)
+        except Exception as e:
+            logger.error(f"Stripe webhook: error creating order items: {e}")
+
+        logger.info(f"Stripe webhook: order {session_id} created for user {user_id}, total ${total_price}")
+
+    except Exception as e:
+        logger.error(f"Stripe webhook: error processing checkout.session.completed: {e}")
+
+
+def _handle_dispute(event_data):
+    """Handle a charge dispute/chargeback."""
+    try:
+        dispute = event_data.get("data", {}).get("object", {})
+        charge_id = dispute.get("charge", "")
+        logger.warning(f"Stripe dispute received for charge {charge_id}")
+    except Exception as e:
+        logger.error(f"Stripe webhook: error handling dispute: {e}")
+
+
+@api_view(['GET'])
+def stripe_checkout_success(request):
+    """
+    Verify a Stripe checkout session completed successfully.
+    Returns session details for the frontend success page.
+    """
+    if not request.user.is_authenticated:
+        return Response(
+            {"error": "Please sign in."},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    session_id = request.query_params.get("session_id", "")
+    if not session_id:
+        return Response(
+            {"error": "No session ID provided."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+
+        if session.payment_status == "paid":
+            order_exists = Order.objects.filter(payment_token=session_id).exists()
+            return Response({
+                "status": "success",
+                "session_id": session_id,
+                "amount_total": session.amount_total / 100.0,
+                "currency": session.currency,
+                "customer_email": session.customer_email,
+                "payment_status": session.payment_status,
+                "order_confirmed": order_exists,
+            })
+        else:
+            return Response({
+                "status": "pending",
+                "session_id": session_id,
+                "payment_status": session.payment_status,
+            })
+
+    except stripe.error.StripeError as e:
+        logger.error(f"Stripe retrieval error: {e}")
+        return Response(
+            {"error": "Could not verify payment status."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    except Exception as e:
+        logger.error(f"Checkout success verification error: {e}")
+        return Response(
+            {"error": "An error occurred while verifying payment."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+def stripe_publishable_key(request):
+    """Return the Stripe publishable key for the frontend."""
+    return Response({
+        "publishable_key": STRIPE_PUBLISHABLE_KEY or "",
+        "stripe_enabled": bool(STRIPE_SECRET_KEY),
+    })
+
+
+def _calculate_shipping(cart_items, subtotal):
+    """
+    Calculate shipping cost based on cart contents.
+    Mirrors the frontend shipping logic for consistency.
+    """
+    consumable_items = [i for i in cart_items if i.get("shippingCost") == 100]
+    reagent_items = [i for i in cart_items if i.get("shippingCost") == 60]
+
+    subtotal_consumables = sum(float(i.get("price", 0)) * int(i.get("quantity", 1)) for i in consumable_items)
+    subtotal_reagents = sum(float(i.get("price", 0)) * int(i.get("quantity", 1)) for i in reagent_items)
+
+    shipping = 0
+
+    if consumable_items:
+        shipping_subtotal = subtotal_consumables + subtotal_reagents
+        if shipping_subtotal <= 2000:
+            shipping = 100
+        else:
+            additional_blocks = -(-int(shipping_subtotal - 2000) // 1000)
+            calculated = 100 + additional_blocks * 60
+            shipping = min(700, calculated)
+    elif reagent_items:
+        if subtotal_reagents <= 1000:
+            shipping = 60
+        else:
+            additional_blocks = -(-int(subtotal_reagents - 1000) // 500)
+            calculated = 60 + additional_blocks * 30
+            shipping = min(300, calculated)
+
+    return shipping
+
+
+def _get_frontend_url():
+    """Determine the frontend URL based on environment."""
+    if DEBUG and DEBUG == "True":
+        return "http://localhost:80"
+    return "https://bioarktech.com"

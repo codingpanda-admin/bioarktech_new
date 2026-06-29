@@ -17,6 +17,8 @@ import SearchPage from './pages/SearchPage';
 import AdminPage from './pages/AdminPage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
 import CartPage from './pages/CartPage';
+import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
+import CheckoutCancelPage from './pages/CheckoutCancelPage';
 import ResourcesPage from './pages/ResourcesPage';
 import InvestorsPage from './pages/InvestorsPage';
 import AboutBioArkPage from './pages/AboutBioArkPage';
@@ -203,6 +205,8 @@ function App() {
   const isSearchPage = currentPath === '/search';
   const isProductPage = currentPath.startsWith('/product/');
   const isCartPage = currentPath === '/cart';
+  const isCheckoutSuccess = currentPath === '/checkout/success';
+  const isCheckoutCancel = currentPath === '/checkout/cancel';
   const isResourcesPage = currentPath === '/resources' || currentPath === '/resource';
   const isBlogPage = currentPath.startsWith('/blog/');
   const isInvestorsPage = currentPath === '/investors';
@@ -294,15 +298,23 @@ function App() {
           onAddToCart={handleAddToCart}
         />
       ) : isCartPage ? (
-        <CartPage 
-          navigate={navigate} 
-          cart={cart} 
-          onUpdateQty={handleUpdateQty} 
-          onRemoveItem={handleRemoveItem} 
+        <CartPage
+          navigate={navigate}
+          cart={cart}
+          onUpdateQty={handleUpdateQty}
+          onRemoveItem={handleRemoveItem}
           onClearCart={handleClearCart}
           currentUser={currentUser}
+          currentUserProfile={currentUserProfile}
           onOpenAuth={handleOpenAuth}
         />
+      ) : isCheckoutSuccess ? (
+        <CheckoutSuccessPage
+          navigate={navigate}
+          onClearCart={handleClearCart}
+        />
+      ) : isCheckoutCancel ? (
+        <CheckoutCancelPage navigate={navigate} />
       ) : isResetPasswordPage ? (
         <ResetPasswordPage navigate={navigate} token={currentPath.split('/reset-password/')[1]?.split('?')[0] || ''} />
       ) : isResourcesPage ? (
