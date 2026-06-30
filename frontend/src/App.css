@@ -4132,21 +4132,22 @@ label,
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(6, 23, 60, 0.4);
-  backdrop-filter: blur(8px);
-  z-index: 100;
+  background: rgba(6, 23, 60, 0.52);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 24px;
   animation: fadeIn 0.2s ease-out;
 }
 
 .auth-modal {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 8px;
   width: min(440px, 90%);
-  padding: 32px;
-  box-shadow: var(--shadow);
+  padding: 30px;
+  box-shadow: 0 22px 48px rgba(6, 23, 60, 0.18);
   border: 1px solid var(--line);
   position: relative;
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -4170,15 +4171,17 @@ label,
 
 .auth-modal input {
   padding: 12px 14px;
-  border-radius: 8px;
+  border-radius: 7px;
   border: 1px solid #cfdbea;
   outline: none;
   background: #f9fbff;
-  transition: border-color 0.2s;
+  color: var(--ink);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .auth-modal input:focus {
   border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0, 111, 242, 0.12);
 }
 
 .auth-modal .modal-actions {
@@ -4190,14 +4193,28 @@ label,
 
 .auth-modal .modal-close {
   position: absolute;
-  top: 18px;
-  right: 18px;
-  border: 0;
-  background: transparent;
-  font-size: 24px;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d9e4f2;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 22px;
   cursor: pointer;
   color: var(--muted);
   line-height: 1;
+  box-shadow: 0 6px 14px rgba(6, 23, 60, 0.08);
+}
+
+.auth-modal .modal-close:hover,
+.auth-modal .modal-close:focus-visible {
+  color: var(--blue-dark);
+  border-color: #b8cce5;
+  background: #f4f8ff;
+  outline: 0;
 }
 
 .auth-toggle-mode {

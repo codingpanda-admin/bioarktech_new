@@ -37,19 +37,7 @@ function App() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const handleOpenAuth = () => {
-    const width = 520;
-    const height = 700;
-    const left = window.screen.width / 2 - width / 2;
-    const top = window.screen.height / 2 - height / 2;
-    const popup = window.open(
-      '/auth-popup',
-      'BioarkAuth',
-      `width=${width},height=${height},left=${left},top=${top},status=no,menubar=no,toolbar=no,scrollbars=yes`
-    );
-    
-    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-      setAuthModalOpen(true);
-    }
+    setAuthModalOpen(true);
   };
 
   useEffect(() => {
@@ -351,6 +339,7 @@ function App() {
             } catch (profileErr) {
               setCurrentUserProfile(null);
             }
+            setAuthModalOpen(false);
           }} 
         />
       )}
