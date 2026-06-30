@@ -56,27 +56,31 @@ if DEBUG == "True":
     PAYPAL_API_BASE = "https://api-m.sandbox.paypal.com"
 
 
-paypal_client: PaypalserversdkClient = PaypalserversdkClient(
-    client_credentials_auth_credentials=ClientCredentialsAuthCredentials(
-        o_auth_client_id=PAYPAL_CLIENT_ID,
-        o_auth_client_secret=PAYPAL_CLIENT_SECRET,
-    ),
-    # logging_configuration=LoggingConfiguration(
-    #     log_level=logging.INFO,
-    #     # Disable masking of sensitive headers for Sandbox testing.
-    #     # This should be set to True (the default if unset)in production.
-    #     mask_sensitive_headers=False,
-    #     request_logging_config=RequestLoggingConfiguration(
-    #         log_headers=True, log_body=True
-    #     ),
-    #     response_logging_config=ResponseLoggingConfiguration(
-    #         log_headers=True, log_body=True
-    #     ),
-    # ),
-)
-
-orders_controller: OrdersController = paypal_client.orders
-payments_controller: PaymentsController = paypal_client.payments
+if PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET:
+    paypal_client: PaypalserversdkClient = PaypalserversdkClient(
+        client_credentials_auth_credentials=ClientCredentialsAuthCredentials(
+            o_auth_client_id=PAYPAL_CLIENT_ID,
+            o_auth_client_secret=PAYPAL_CLIENT_SECRET,
+        ),
+        # logging_configuration=LoggingConfiguration(
+        #     log_level=logging.INFO,
+        #     # Disable masking of sensitive headers for Sandbox testing.
+        #     # This should be set to True (the default if unset)in production.
+        #     mask_sensitive_headers=False,
+        #     request_logging_config=RequestLoggingConfiguration(
+        #         log_headers=True, log_body=True
+        #     ),
+        #     response_logging_config=ResponseLoggingConfiguration(
+        #         log_headers=True, log_body=True
+        #     ),
+        # ),
+    )
+    orders_controller: OrdersController = paypal_client.orders
+    payments_controller: PaymentsController = paypal_client.payments
+else:
+    paypal_client = None
+    orders_controller = None
+    payments_controller = None
 
 # Step 1: Obtain Access Token
 def get_access_token():
