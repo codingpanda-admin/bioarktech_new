@@ -34,6 +34,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      - ./backend:/app
       - ./media:/var/www/django/media
       - ./db-conversion:/app/db-conversion
     command: >

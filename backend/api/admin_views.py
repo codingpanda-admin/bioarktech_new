@@ -14,7 +14,7 @@ from products.models import (
     Product, FeaturedProduct, ProductsUnion, Image,
     UnitPrice, ManualFile, ProductCategory,
 )
-from blogs.models import Blog
+from blogs.models import Blog, ResourceDocument
 from users.models import User, Address
 from quote.models import Quote
 from interface.models import ProductMode, ServiceMode, HomepageSlide
@@ -674,6 +674,7 @@ def admin_list_blogs(request):
                 'image': request.build_absolute_uri(b.image.url) if b.image else None,
                 'date_posted': b.date_posted,
                 'date_modified': b.date_modified,
+                'is_featured': b.is_featured,
             })
         return Response({'results': data})
     except Exception as e:
@@ -697,6 +698,7 @@ def admin_get_blog(request, blog_id):
             'image': request.build_absolute_uri(b.image.url) if b.image else None,
             'date_posted': b.date_posted,
             'date_modified': b.date_modified,
+            'is_featured': b.is_featured,
         }
         return Response(data)
     except Blog.DoesNotExist:
@@ -718,6 +720,7 @@ def admin_create_blog(request):
             description=d.get('description', ''),
             author=d.get('author', ''),
             content=d.get('content', ''),
+            is_featured=str(d.get('is_featured', 'false')).lower() == 'true',
         )
         if request.FILES.get('image'):
             b.image = request.FILES['image']
@@ -740,6 +743,9 @@ def admin_update_blog(request, blog_id):
         for field in ['title', 'description', 'author', 'content']:
             if field in d:
                 setattr(b, field, d[field])
+
+        if 'is_featured' in d:
+            b.is_featured = str(d['is_featured']).lower() == 'true'
 
         if request.FILES.get('image'):
             b.image = request.FILES['image']
@@ -764,6 +770,121 @@ def admin_delete_blog(request, blog_id):
         return Response({'message': 'Blog deleted successfully'})
     except Blog.DoesNotExist:
         return Response({'error': 'Blog not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ===========================================================================
+#  RESOURCES CRUD
+# ===========================================================================
+
+@api_view(['GET'])
+def admin_list_resources(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        resources = ResourceDocument.objects.all().order_by('-date_created')
+        data = []
+        for r in resources:
+            data.append({
+                'id': r.id,
+                'name': r.name,
+                'category': r.category,
+                'description': r.description,
+                'download_url': r.download_url,
+                'file': request.build_absolute_uri(r.file.url) if r.file else None,
+                'date_created': r.date_created,
+            })
+        return Response({'results': data})
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def admin_get_resource(request, resource_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        r = ResourceDocument.objects.get(id=resource_id)
+        data = {
+            'id': r.id,
+            'name': r.name,
+            'category': r.category,
+            'description': r.description,
+            'download_url': r.download_url,
+            'file': request.build_absolute_uri(r.file.url) if r.file else None,
+            'date_created': r.date_created,
+        }
+        return Response(data)
+    except ResourceDocument.DoesNotExist:
+        return Response({'error': 'Resource not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def admin_create_resource(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        d = request.data
+        r = ResourceDocument(
+            name=d.get('name', ''),
+            category=d.get('category', ''),
+            description=d.get('description', ''),
+            download_url=d.get('download_url', ''),
+        )
+        if request.FILES.get('file'):
+            r.file = request.FILES['file']
+        r.save()
+        return Response({'id': r.id, 'message': 'Resource created successfully'}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def admin_update_resource(request, resource_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        r = ResourceDocument.objects.get(id=resource_id)
+        d = request.data
+
+        for field in ['name', 'category', 'description', 'download_url']:
+            if field in d:
+                setattr(r, field, d[field])
+
+        if request.FILES.get('file'):
+            r.file = request.FILES['file']
+
+        r.save()
+        return Response({'message': 'Resource updated successfully'})
+    except ResourceDocument.DoesNotExist:
+        return Response({'error': 'Resource not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def admin_delete_resource(request, resource_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        r = ResourceDocument.objects.get(id=resource_id)
+        r.delete()
+        return Response({'message': 'Resource deleted successfully'})
+    except ResourceDocument.DoesNotExist:
+        return Response({'error': 'Resource not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

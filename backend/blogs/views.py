@@ -22,3 +22,9 @@ def get_all_blogs(request):
     posts = Blog.objects.order_by('-date_posted')
     serializer = PreviewBlogSerializer(posts, many=True)
     return JsonResponse(serializer.data, safe=False)
+
+@api_view(["GET"])
+def get_all_resources(request):
+    resources = ResourceDocument.objects.all().order_by('-date_created')
+    serializer = ResourceDocumentSerializer(resources, many=True)
+    return JsonResponse(serializer.data, safe=False)

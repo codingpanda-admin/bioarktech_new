@@ -14,6 +14,8 @@ from .admin_views import (
     admin_delete_featured_product,
     admin_list_blogs, admin_get_blog, admin_create_blog,
     admin_update_blog, admin_delete_blog,
+    admin_list_resources, admin_get_resource, admin_create_resource,
+    admin_update_resource, admin_delete_resource,
     admin_list_all_users, admin_get_user, admin_create_user,
     admin_update_user, admin_delete_user, admin_toggle_admin,
     admin_list_quotes, admin_get_quote, admin_mark_quote_read,
@@ -81,6 +83,13 @@ urlpatterns = [
     path('admin-panel/blogs/<int:blog_id>/', admin_get_blog),
     path('admin-panel/blogs/<int:blog_id>/update/', admin_update_blog),
     path('admin-panel/blogs/<int:blog_id>/delete/', admin_delete_blog),
+
+    # Resources (documents)
+    path('admin-panel/resources/', admin_list_resources),
+    path('admin-panel/resources/create/', admin_create_resource),
+    path('admin-panel/resources/<int:resource_id>/', admin_get_resource),
+    path('admin-panel/resources/<int:resource_id>/update/', admin_update_resource),
+    path('admin-panel/resources/<int:resource_id>/delete/', admin_delete_resource),
 
     # Users
     path('admin-panel/users/', admin_list_all_users),

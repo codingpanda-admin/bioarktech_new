@@ -8,6 +8,7 @@ import AdminProducts from './admin/AdminProducts';
 import AdminFeaturedProducts from './admin/AdminFeaturedProducts';
 import AdminServices from './admin/AdminServices';
 import AdminBlogs from './admin/AdminBlogs';
+import AdminResources from './admin/AdminResources';
 import AdminQuotes from './admin/AdminQuotes';
 import AdminMedia from './admin/AdminMedia';
 import AdminHomepage from './admin/AdminHomepage';
@@ -21,6 +22,7 @@ const adminLinks = [
   'Reagents',
   'Services',
   'Blogs',
+  'Documents',
   'Quotes',
   'Email (SMTP)',
   'Media',
@@ -187,6 +189,10 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
 
         {activeSection === 'Blogs' && (
           <AdminBlogs />
+        )}
+
+        {activeSection === 'Documents' && (
+          <AdminResources />
         )}
 
         {activeSection === 'Quotes' && (

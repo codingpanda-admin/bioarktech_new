@@ -282,6 +282,24 @@ function AdminBlogs() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleToggleFeatured = async (blog) => {
+    try {
+      setError('');
+      setSuccessMsg('');
+      const updatedFeatured = !blog.is_featured;
+      await apiFetch(`/api/admin-panel/blogs/${blog.id}/update/`, {
+        method: 'POST',
+        body: {
+          is_featured: updatedFeatured,
+        },
+      });
+      showSuccess(updatedFeatured ? 'Blog marked as featured!' : 'Blog removed from featured.');
+      loadBlogs();
+    } catch (err) {
+      setError(err.message || 'Failed to update featured status.');
+    }
+  };
+
   const handleDelete = async (blogId) => {
     if (!confirm('Are you sure you want to delete this blog post?')) return;
     try {
@@ -323,6 +341,7 @@ function AdminBlogs() {
         formData.append('author', editingBlog.author);
         formData.append('content', latestContent);
         formData.append('image', imageFile);
+        formData.append('is_featured', String(!!editingBlog.is_featured));
 
         // For FormData, we need to handle CSRF manually and not set Content-Type
         let csrfToken = document.cookie
@@ -355,6 +374,7 @@ function AdminBlogs() {
             description: editingBlog.description,
             author: editingBlog.author,
             content: latestContent,
+            is_featured: !!editingBlog.is_featured,
           },
         });
       }
@@ -423,6 +443,15 @@ function AdminBlogs() {
                 </div>
               )}
             </label>
+            <label className="admin-form-field span-3" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '5px 0' }}>
+              <input 
+                type="checkbox" 
+                checked={!!editingBlog.is_featured} 
+                onChange={(e) => updateField('is_featured', e.target.checked)} 
+                style={{ width: '20px', height: '20px', cursor: 'pointer', margin: 0 }} 
+              />
+              <span style={{ fontWeight: '600', color: 'var(--ink)' }}>Featured Blog (Destacado)</span>
+            </label>
             <div className="admin-form-field span-3">
               <span>Blog Content *</span>
               <BlogContentEditor ref={blogContentEditorRef} value={editingBlog.content || ''} onChange={(value) => updateField('content', value)} />
@@ -463,13 +492,32 @@ function AdminBlogs() {
                 </div>
               )}
               <div className="admin-card-body">
-                <h4>{blog.title}</h4>
+                <h4 style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  {blog.title}
+                  {blog.is_featured && (
+                    <span style={{
+                      fontSize: '0.65rem',
+                      background: 'var(--green)',
+                      color: 'white',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      Featured
+                    </span>
+                  )}
+                </h4>
                 <p className="admin-card-meta">
                   <span>{blog.author}</span> · <span>{formatDate(blog.date_posted)}</span>
                 </p>
                 <p className="admin-card-desc">{blog.description}</p>
                 <div className="admin-row-actions">
                   <button className="admin-action-btn edit" onClick={() => handleEdit(blog.id)}>Edit</button>
+                  <button className={`admin-action-btn star ${blog.is_featured ? 'active' : ''}`} onClick={() => handleToggleFeatured(blog)}>
+                    {blog.is_featured ? '★ Featured' : '☆ Feature'}
+                  </button>
                   <button className="admin-action-btn delete" onClick={() => handleDelete(blog.id)}>Delete</button>
                 </div>
               </div>
