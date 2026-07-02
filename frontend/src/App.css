@@ -6368,11 +6368,11 @@ label,
 .catalog-mega-menu {
   display: flex !important; /* override grid layout */
   padding: 0 !important;
-  width: 1000px !important;
+  width: 1100px !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
-  min-height: 480px;
-  max-height: min(75vh, 600px) !important;
+  min-height: 580px;
+  max-height: min(75vh, 700px) !important;
   overflow: hidden !important;
 }
 

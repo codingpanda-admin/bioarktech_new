@@ -278,6 +278,7 @@ function App() {
           navigate={navigate} 
           currentQuery={searchParams.get('q') || ''} 
           currentCategory={searchParams.get('category') || ''} 
+          initialSelectedCategory={searchParams.get('cat') || null}
         />
       ) : isProductPage ? (
         <ProductDetailsPage 

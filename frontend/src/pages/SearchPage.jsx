@@ -3,13 +3,26 @@ import { apiFetch, formatAssetUrl } from '../utils/api';
 import ProductVisual from '../components/ProductVisual';
 
 const PRODUCTS_CATEGORIES = [
-  { id: 'all-products', label: 'All Products & Services' },
+  { id: 'all-products', label: 'All Products' },
   { id: 'genome-editing', label: 'Genome Editing', subcategories: ['DNA', 'RNA'] },
   { id: 'vector-clones', label: 'Vector Stock', subcategories: ['Non-Viral', 'Stock'] },
   { id: 'category-1764975611348', label: 'IVT mRNA' },
   { id: 'category-1764975769330', label: 'Purified Protein' },
   { id: 'lentivirus', label: 'Virus Product' },
   { id: 'stable-cell-lines', label: 'Cell Lines' }
+];
+
+const SERVICES_CATEGORIES = [
+  { id: 'all-services', label: 'All Services' },
+  { id: 'genome-editing-services', label: 'Genome Editing Services' },
+  { id: 'synthesis-cloning-services', label: 'Custom Cloning Services' },
+  { id: 'cell-line-services', label: 'Stable Cell Line Services' },
+  { id: 'virus-packaging-services', label: 'Lentivirus Package Services' },
+  { id: 'vector-construction-services', label: 'Vector Construction Support' },
+  { id: 'functional-testing-services', label: 'Functional Testing' },
+  { id: 'experiment-services', label: 'Experiment Services' },
+  { id: 'lab-supplies-services', label: 'Lab Supplies' },
+  { id: 'project-consultation-services', label: 'Project Consultation' }
 ];
 
 const REAGENTS_CATEGORIES = [
@@ -24,20 +37,41 @@ const CONSUMABLES_CATEGORIES = [
   { id: 'category-1780539818236', label: 'Consumables & Supplies' }
 ];
 
-function SearchPage({ navigate, currentQuery, currentCategory }) {
+function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCategory }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [sortBy, setSortBy] = useState('name-asc');
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(initialSelectedCategory);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+
+  useEffect(() => {
+    setSelectedCategory(initialSelectedCategory);
+    setSelectedSubcategory(null);
+  }, [initialSelectedCategory]);
+
+  useEffect(() => {
+    if (currentQuery) {
+      const matchedCat = [
+        ...PRODUCTS_CATEGORIES,
+        ...SERVICES_CATEGORIES,
+        ...REAGENTS_CATEGORIES,
+        ...CONSUMABLES_CATEGORIES
+      ].find(c => c.label.toLowerCase() === currentQuery.trim().toLowerCase());
+
+      if (matchedCat && matchedCat.id !== 'all-products' && matchedCat.id !== 'all-reagents' && matchedCat.id !== 'all-services') {
+        navigate(`/search?category=${currentCategory || ''}&cat=${matchedCat.id}`);
+      }
+    }
+  }, [currentQuery, currentCategory, navigate]);
 
   useEffect(() => {
     const doSearch = async () => {
       setLoading(true);
       setError('');
       try {
-        const url = `/api/search/?q=${encodeURIComponent(currentQuery)}&category=${encodeURIComponent(currentCategory)}&page_size=10000`;
+        const apiCat = currentCategory === 'consumables' ? 'reagents' : currentCategory;
+        const url = `/api/search/?q=${encodeURIComponent(currentQuery)}&category=${encodeURIComponent(apiCat || '')}&page_size=10000`;
         const data = await apiFetch(url);
         setResults(data.products || []);
       } catch (err) {
@@ -72,7 +106,10 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
       return prod.category === 'Products & Services';
     }
     if (selectedCategory === 'all-reagents') {
-      return prod.category === 'Reagents & Kits';
+      return prod.category === 'Reagents & Kits' || prod.category === 'Consumables';
+    }
+    if (selectedCategory === 'all-services') {
+      return prod.category === 'Services';
     }
 
     const catMatch = prod.category_external_id === selectedCategory;
@@ -103,12 +140,12 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
 
   const displayTitle = currentQuery 
     ? `Results for "${currentQuery}"` 
-    : currentCategory === 'consumables' 
-      ? 'Consumables & Laboratory Supplies' 
-      : currentCategory === 'reagents' 
-        ? 'Reagents & Kits Catalog' 
+    : (currentCategory === 'consumables' || currentCategory === 'reagents')
+      ? 'Reagents, Kits & Consumables' 
+      : currentCategory === 'services'
+        ? 'Services Catalog'
         : currentCategory === 'products'
-          ? 'Products & Services Catalog'
+          ? 'Products Catalog'
           : 'All Products';
 
   return (
@@ -583,10 +620,10 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
       <div className="search-header-banner">
         <h1>{displayTitle}</h1>
         <p>
-          {currentCategory === 'consumables' 
-            ? 'Browse our complete catalog of high-quality laboratory consumables, including cryogenic storage, cell culture flasks, serological pipettes, centrifuge tubes, qPCR plates, and personal protective equipment (PPE).'
-            : currentCategory === 'reagents'
-              ? 'Discover our state-of-the-art biological reagents, enzymes, protein ladders, DNA markers, transfection reagents, and qPCR master mixes designed for maximum accuracy and reproducibility.'
+          {(currentCategory === 'consumables' || currentCategory === 'reagents')
+            ? 'Discover our biological reagents, enzymes, transfection kits, and premium laboratory consumables, including cryogenic storage, cell culture supplies, serological pipettes, and PCR plates.'
+            : currentCategory === 'services'
+              ? 'Empowering scientific workflows with our custom cloning, stable cell line generation, lentivirus packaging, and molecular biology support services.'
               : currentCategory === 'products'
                 ? 'Empowering molecular biology, genomics, and cellular research with high-performance reagents, kits, and laboratory supplies.'
                 : 'Explore BioArk Tech\'s comprehensive selection of genetic tools, high-performance reagents, and premium lab supplies.'}
@@ -605,19 +642,25 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
           className={`search-tab-button ${currentCategory === 'products' ? 'active' : ''}`}
           onClick={() => handleTabChange('products')}
         >
-          Products & Services
+          Products
         </button>
         <button 
-          className={`search-tab-button ${currentCategory === 'reagents' ? 'active' : ''}`}
+          className={`search-tab-button ${currentCategory === 'services' ? 'active' : ''}`}
+          onClick={() => handleTabChange('services')}
+        >
+          Services
+        </button>
+        <button 
+          className={`search-tab-button ${(currentCategory === 'reagents' || currentCategory === 'consumables') ? 'active' : ''}`}
           onClick={() => handleTabChange('reagents')}
         >
           Reagents & Kits
         </button>
         <button 
-          className={`search-tab-button ${currentCategory === 'consumables' ? 'active' : ''}`}
-          onClick={() => handleTabChange('consumables')}
+          className={`search-tab-button ${currentCategory === 'featured' ? 'active' : ''}`}
+          onClick={() => handleTabChange('featured')}
         >
-          Consumables & Supplies
+          Featured
         </button>
       </div>
 
@@ -627,9 +670,9 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
           <h3 className="sidebar-title">Filters</h3>
 
           {/* Products Categories */}
-          {(!currentCategory || currentCategory === 'products') && (
+          {(!currentCategory || currentCategory === 'products' || currentCategory === 'featured') && (
             <div className="sidebar-group">
-              <h4 className="sidebar-group-title">Products & Services</h4>
+              <h4 className="sidebar-group-title">Products</h4>
               <ul className="sidebar-list">
                 {PRODUCTS_CATEGORIES.map(cat => (
                   <li key={cat.id}>
@@ -662,8 +705,30 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
             </div>
           )}
 
+          {/* Services Categories */}
+          {(!currentCategory || currentCategory === 'services') && (
+            <div className="sidebar-group">
+              <h4 className="sidebar-group-title">Services</h4>
+              <ul className="sidebar-list">
+                {SERVICES_CATEGORIES.map(cat => (
+                  <li key={cat.id}>
+                    <button
+                      className={`sidebar-item-btn ${selectedCategory === cat.id ? 'active' : ''}`}
+                      onClick={() => {
+                        setSelectedCategory(selectedCategory === cat.id ? null : cat.id);
+                        setSelectedSubcategory(null);
+                      }}
+                    >
+                      {cat.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Reagents Categories */}
-          {(!currentCategory || currentCategory === 'reagents') && (
+          {(!currentCategory || currentCategory === 'reagents' || currentCategory === 'consumables' || currentCategory === 'featured') && (
             <div className="sidebar-group">
               <h4 className="sidebar-group-title">Reagents & Kits</h4>
               <ul className="sidebar-list">
@@ -685,7 +750,7 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
           )}
 
           {/* Consumables Categories */}
-          {(!currentCategory || currentCategory === 'consumables') && (
+          {(!currentCategory || currentCategory === 'reagents' || currentCategory === 'consumables' || currentCategory === 'featured') && (
             <div className="sidebar-group">
               <h4 className="sidebar-group-title">Consumables & Supplies</h4>
               <ul className="sidebar-list">
@@ -763,7 +828,22 @@ function SearchPage({ navigate, currentQuery, currentCategory }) {
                 return (
                   <article className="modern-product-card" key={idx}>
                     {/* Floating Badges */}
-                    <div className="card-badges">
+                    <div className="card-badges" style={{ flexWrap: 'wrap', gap: '4px' }}>
+                      {prod.is_featured && (
+                        <span className="badge-featured" style={{
+                          background: 'linear-gradient(135deg, #ff9900 0%, #ff5500 100%)',
+                          color: 'white',
+                          fontSize: '10px',
+                          fontWeight: '700',
+                          padding: '4px 10px',
+                          borderRadius: '20px',
+                          textTransform: 'uppercase',
+                          boxShadow: '0 2px 4px rgba(255, 85, 0, 0.2)',
+                          border: 'none'
+                        }}>
+                          ★ Featured
+                        </span>
+                      )}
                       <span className={`badge-category ${isConsumable ? 'consumable' : (prod.category === 'Reagents & Kits' ? 'reagent' : 'product')}`}>
                         {isConsumable ? 'Consumable' : (prod.category === 'Reagents & Kits' ? 'Reagent / Kit' : 'Product / Service')}
                       </span>

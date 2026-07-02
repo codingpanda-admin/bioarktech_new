@@ -22,6 +22,7 @@ function CartPage({
   });
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
+  const [showRulesModal, setShowRulesModal] = useState(false);
 
   const handleAddressChange = (field, value) => {
     setAddress((prev) => ({ ...prev, [field]: value }));
@@ -271,27 +272,6 @@ function CartPage({
           </div>
         ) : (
           <div>
-            {/* Shipping Rules Information Card */}
-            <div className="shipping-rule-card">
-              <div className="shipping-rule-header">
-                <span>🚚 Applied Shipping Rates & Rules</span>
-              </div>
-              <div className="shipping-rule-grid">
-                <div className="shipping-rule-item">
-                  <strong>📦 Consumables</strong>
-                  Base rate of <strong>$100.00</strong> if subtotal &le; $2,000.00.<br />
-                  Additional <strong>$60.00</strong> for each additional $1,000.00.<br />
-                  <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Maximum shipping fee: $700.00 (starting from $12,000.00).</span>
-                </div>
-                <div className="shipping-rule-item">
-                  <strong>🧪 Other Reagents</strong>
-                  Base rate of <strong>$60.00</strong> if subtotal &le; $1,000.00.<br />
-                  Additional <strong>$30.00</strong> for each additional $500.00.<br />
-                  <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Maximum shipping fee: $300.00 (starting from $5,000.00).</span>
-                </div>
-              </div>
-            </div>
-
             <div className="cart-container">
               {/* Items Panel */}
               <div className="cart-items-panel" style={{ padding: '8px 24px 24px' }}>
@@ -584,9 +564,31 @@ function CartPage({
                   </div>
                 )}
 
-                <div className="summary-row" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '12px', borderBottom: '1px solid var(--line)' }}>
-                  <span>Total Shipping Cost:</span>
-                  <span style={{ fontWeight: 600 }}>${totalShipping.toFixed(2)}</span>
+                <div className="summary-row" style={{ display: 'flex', flexDirection: 'column', marginBottom: '20px', paddingBottom: '12px', borderBottom: '1px solid var(--line)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                    <span>Total Shipping Cost:</span>
+                    <span style={{ fontWeight: 600 }}>${totalShipping.toFixed(2)}</span>
+                  </div>
+                  <button 
+                    onClick={() => setShowRulesModal(true)} 
+                    style={{ 
+                      background: 'none', 
+                      border: 'none', 
+                      color: 'var(--blue)', 
+                      fontSize: '12px', 
+                      textAlign: 'left', 
+                      padding: 0, 
+                      cursor: 'pointer', 
+                      marginTop: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontWeight: 500,
+                      textDecoration: 'none'
+                    }}
+                  >
+                    ℹ️ Shipping rules & rates
+                  </button>
                 </div>
                 
                 <div className="summary-row total" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', fontSize: '20px', fontWeight: 700 }}>
@@ -800,6 +802,120 @@ function CartPage({
           </div>
         )}
       </div>
+      
+      {showRulesModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          padding: '20px',
+        }} onClick={() => setShowRulesModal(false)}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            width: '100%',
+            maxWidth: '500px',
+            padding: '28px',
+            position: 'relative',
+            border: '1px solid var(--line)',
+          }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🚚</span> Shipping Rates & Rules
+              </h3>
+              <button 
+                onClick={() => setShowRulesModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  color: 'var(--muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  lineHeight: '1',
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ 
+                padding: '16px', 
+                backgroundColor: 'rgba(59, 130, 246, 0.05)', 
+                borderRadius: '12px',
+                borderLeft: '4px solid var(--blue)',
+              }}>
+                <strong style={{ display: 'block', marginBottom: '6px', color: 'var(--ink)' }}>📦 Consumables</strong>
+                <span style={{ fontSize: '14px', color: 'var(--muted)', lineHeight: '1.5' }}>
+                  Base rate of <strong>$100.00</strong> if subtotal &le; $2,000.00.<br />
+                  Additional <strong>$60.00</strong> for each additional $1,000.00.<br />
+                  <span style={{ fontSize: '12px', display: 'block', marginTop: '4px', color: 'var(--blue)', fontWeight: 500 }}>
+                    Maximum shipping fee capped at $700.00.
+                  </span>
+                </span>
+              </div>
+              
+              <div style={{ 
+                padding: '16px', 
+                backgroundColor: 'rgba(16, 185, 129, 0.05)', 
+                borderRadius: '12px',
+                borderLeft: '4px solid #10b981',
+              }}>
+                <strong style={{ display: 'block', marginBottom: '6px', color: 'var(--ink)' }}>🧪 Other Reagents</strong>
+                <span style={{ fontSize: '14px', color: 'var(--muted)', lineHeight: '1.5' }}>
+                  Base rate of <strong>$60.00</strong> if subtotal &le; $1,000.00.<br />
+                  Additional <strong>$30.00</strong> for each additional $500.00.<br />
+                  <span style={{ fontSize: '12px', display: 'block', marginTop: '4px', color: '#10b981', fontWeight: 500 }}>
+                    Maximum shipping fee capped at $300.00.
+                  </span>
+                </span>
+              </div>
+
+              <div style={{ 
+                padding: '16px', 
+                backgroundColor: 'rgba(107, 114, 128, 0.05)', 
+                borderRadius: '12px',
+                borderLeft: '4px solid #6b7280',
+              }}>
+                <strong style={{ display: 'block', marginBottom: '6px', color: 'var(--ink)' }}>🧬 Services</strong>
+                <span style={{ fontSize: '14px', color: 'var(--muted)', lineHeight: '1.5' }}>
+                  All services qualify for <strong>Free Shipping</strong> (no delivery fee).
+                </span>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setShowRulesModal(false)}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--blue)',
+                color: 'var(--white)',
+                border: 'none',
+                fontWeight: 600,
+                cursor: 'pointer',
+                marginTop: '24px',
+                transition: 'opacity 0.2s',
+              }}
+              onMouseEnter={(e) => e.target.style.opacity = 0.9}
+              onMouseLeave={(e) => e.target.style.opacity = 1}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

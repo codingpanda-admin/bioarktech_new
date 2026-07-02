@@ -137,7 +137,7 @@ def get_nav_catalog(request):
         merged_map = {}
         
         # Helper to match database categories to defaults by normalized name
-        def find_default_category(db_name):
+        def find_default_category(db_name, db_type):
             if not db_name:
                 return None
             norm_db = normalize_name(db_name)
@@ -145,11 +145,14 @@ def get_nav_catalog(request):
             # Exact normalized check
             for d in DEFAULT_PRODUCT_CATEGORIES:
                 if normalize_name(d['category_name']) == norm_db:
-                    return d
+                    if not db_type or d.get('product_type') == db_type:
+                        return d
             
             # Partial substring check
             db_lower = db_name.strip().lower()
             for d in DEFAULT_PRODUCT_CATEGORIES:
+                if db_type and d.get('product_type') != db_type:
+                    continue
                 d_lower = d['category_name'].strip().lower()
                 if db_lower in d_lower or d_lower in db_lower:
                     return d
@@ -162,7 +165,7 @@ def get_nav_catalog(request):
             
             # Match by name to DEFAULT_PRODUCT_CATEGORIES if external_id is missing or null
             if cat.category_name:
-                matched_default = find_default_category(cat.category_name)
+                matched_default = find_default_category(cat.category_name, cat.product_type)
                 
             if matched_default:
                 cat_id = matched_default['external_id']

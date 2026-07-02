@@ -378,6 +378,9 @@ def search_product(request):
     elif query.lower() in ['products', 'productos', 'custom products']:
         category_filter = 'products'
         query = ''
+    elif query.lower() in ['services', 'servicios']:
+        category_filter = 'services'
+        query = ''
 
     list_keywords = query.split()
 
@@ -415,12 +418,18 @@ def search_product(request):
         category_type = classify_product(p.category_external_id, p.source_type)
         
         # Apply category filter
-        if category_filter == 'consumables' and category_type != 'consumables':
-            continue
-        if category_filter == 'reagents' and category_type != 'reagents':
-            continue
-        if category_filter == 'products' and category_type != 'products':
-            continue
+        if category_filter == 'featured':
+            if not (p.is_featured or p.show_in_featured):
+                continue
+        else:
+            if category_filter == 'consumables' and category_type != 'consumables':
+                continue
+            if category_filter == 'reagents' and category_type not in ['reagents', 'consumables']:
+                continue
+            if category_filter == 'products' and category_type != 'products':
+                continue
+            if category_filter == 'services':
+                continue
 
         prod_cat = 'Consumables' if category_type == 'consumables' else ('Reagents & Kits' if category_type == 'reagents' else 'Products & Services')
 
@@ -438,7 +447,8 @@ def search_product(request):
             'category': prod_cat,
             'category_external_id': p.category_external_id,
             'product_group': p.product_group,
-            'shipping_cost': 100.0 if category_type == 'consumables' else 60.0
+            'shipping_cost': 100.0 if category_type == 'consumables' else 60.0,
+            'is_featured': p.is_featured or p.show_in_featured
         })
         
     # 2. Add featured products (including the imported reagents)
@@ -451,12 +461,18 @@ def search_product(request):
         category_type = classify_product(linked_cat_id, linked_src_type)
         
         # Apply category filter
-        if category_filter == 'consumables' and category_type != 'consumables':
-            continue
-        if category_filter == 'reagents' and category_type != 'reagents':
-            continue
-        if category_filter == 'products' and category_type != 'products':
-            continue
+        if category_filter == 'featured':
+            # Featured products are always featured
+            pass
+        else:
+            if category_filter == 'consumables' and category_type != 'consumables':
+                continue
+            if category_filter == 'reagents' and category_type not in ['reagents', 'consumables']:
+                continue
+            if category_filter == 'products' and category_type != 'products':
+                continue
+            if category_filter == 'services':
+                continue
 
         prod_cat = 'Consumables' if category_type == 'consumables' else ('Reagents & Kits' if category_type == 'reagents' else 'Products & Services')
 
@@ -490,11 +506,12 @@ def search_product(request):
             'category': prod_cat,
             'category_external_id': linked_cat_id,
             'product_group': linked_group,
-            'shipping_cost': 100.0 if category_type == 'consumables' else 60.0
+            'shipping_cost': 100.0 if category_type == 'consumables' else 60.0,
+            'is_featured': True
         })
 
     # 3. Add services from ServiceMode
-    if category_filter not in ['reagents', 'consumables']:
+    if category_filter not in ['reagents', 'consumables', 'featured'] and category_filter != 'products':
         from interface.models import ServiceMode
         if list_keywords:
             service_query = Q()
@@ -512,6 +529,19 @@ def search_product(request):
             import re
             clean_desc = re.sub(r'<[^>]*>', '', s.content)[:180] + "..." if s.content else ""
             
+            # Map category to service category external ID
+            svc_cat = s.category or 'services'
+            if svc_cat == 'genome-editing':
+                svc_cat = 'genome-editing-services'
+            elif svc_cat == 'synthesis-cloning':
+                svc_cat = 'synthesis-cloning-services'
+            elif svc_cat == 'virus-packaging':
+                svc_cat = 'virus-packaging-services'
+            elif svc_cat == 'vector-construction':
+                svc_cat = 'vector-construction-services'
+            elif svc_cat == 'functional-testing':
+                svc_cat = 'functional-testing-services'
+            
             combined_results.append({
                 'product_id': f"svc-{s.id}",
                 'product_sku': s.url.upper(),
@@ -524,9 +554,10 @@ def search_product(request):
                 'list_price': 'Contact for Quote',
                 'image': f"/media/{s.image.name}" if s.image else None,
                 'category': 'Services',
-                'category_external_id': s.category or 'services',
+                'category_external_id': svc_cat,
                 'product_group': 'Services',
-                'shipping_cost': 0.0
+                'shipping_cost': 0.0,
+                'is_featured': False
             })
 
     # Sort all results alphabetically by name

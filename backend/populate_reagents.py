@@ -47,6 +47,7 @@ new_reagents = [
         'product_group': 'qPCR Reagents',
         'list_price': 'Contact for Quote',
         'availability': 'In Stock',
+        'image_url': 'reagent_images/sybr_green_qpcr_master_mix.jpg',
         'description': 'High-performance 2x master mix designed for real-time PCR using TaqMan probes.'
     },
     {
@@ -57,6 +58,7 @@ new_reagents = [
         'product_group': 'qPCR Reagents',
         'list_price': 'Contact for Quote',
         'availability': 'In Stock',
+        'image_url': 'reagent_images/sybr_green_qpcr_master_mix.jpg',
         'description': 'Next-generation qPCR master mix featuring enhanced resistance to PCR inhibitors and higher sensitivity.'
     },
     {
@@ -67,6 +69,7 @@ new_reagents = [
         'product_group': 'qPCR Reagents',
         'list_price': 'Contact for Quote',
         'availability': 'In Stock',
+        'image_url': 'reagent_images/sybr_green_qpcr_master_mix.jpg',
         'description': 'High-performance 2x master mix for real-time PCR using SYBR Green I detection.'
     },
     {
@@ -77,6 +80,7 @@ new_reagents = [
         'product_group': 'qPCR Reagents',
         'list_price': 'Contact for Quote',
         'availability': 'In Stock',
+        'image_url': 'reagent_images/sybr_green_qpcr_master_mix.jpg',
         'description': 'Next-generation SYBR Green real-time PCR mix with fast cycling capabilities and high specificity.'
     },
     {
@@ -87,6 +91,7 @@ new_reagents = [
         'product_group': 'PCR Enzymes',
         'list_price': 'Contact for Quote',
         'availability': 'In Stock',
+        'image_url': 'reagent_images/dna_polymerase_enzyme.png',
         'description': 'Recombinant Taq DNA Polymerase for standard PCR applications.'
     },
     {
@@ -97,6 +102,7 @@ new_reagents = [
         'product_group': 'PCR Enzymes',
         'list_price': 'Contact for Quote',
         'availability': 'In Stock',
+        'image_url': 'reagent_images/dna_polymerase_enzyme.png',
         'description': 'Highly purified recombinant Taq DNA Polymerase for high-yield PCR.'
     },
     {
@@ -107,6 +113,7 @@ new_reagents = [
         'product_group': 'PCR Enzymes',
         'list_price': 'Contact for Quote',
         'availability': 'In Stock',
+        'image_url': 'reagent_images/dna_polymerase_enzyme.png',
         'description': 'Thermostable DNA polymerase with reverse transcriptase activity in the presence of manganese ions.'
     },
     {
@@ -117,6 +124,7 @@ new_reagents = [
         'product_group': 'PCR Enzymes',
         'list_price': 'Contact for Quote',
         'availability': 'In Stock',
+        'image_url': 'reagent_images/dna_polymerase_enzyme.png',
         'description': 'High-fidelity DNA polymerase designed for amplification from challenging templates, including epigenetically modified DNA.'
     },
     {
@@ -127,6 +135,7 @@ new_reagents = [
         'product_group': 'PCR Enzymes',
         'list_price': 'Contact for Quote',
         'availability': 'In Stock',
+        'image_url': 'reagent_images/dna_polymerase_enzyme.png',
         'description': 'Antibody-mediated hot start DNA polymerase for highly specific PCR.'
     },
     {
@@ -137,6 +146,7 @@ new_reagents = [
         'product_group': 'PCR Master Mixes',
         'list_price': 'Contact for Quote',
         'availability': 'In Stock',
+        'image_url': 'reagent_images/dna_polymerase_enzyme.png',
         'description': 'Ready-to-use 2x PCR master mix containing KOD One DNA polymerase for ultra-fast PCR.'
     },
     {
@@ -147,6 +157,7 @@ new_reagents = [
         'product_group': 'Mutagenesis Kits',
         'list_price': 'Contact for Quote',
         'availability': 'In Stock',
+        'image_url': 'reagent_images/dna_polymerase_enzyme.png',
         'description': 'High-efficiency site-directed mutagenesis kit utilizing high-fidelity KOD -Plus- DNA polymerase.'
     },
     {
@@ -157,7 +168,118 @@ new_reagents = [
         'product_group': 'PCR Master Mixes',
         'list_price': 'Contact for Quote',
         'availability': 'In Stock',
+        'image_url': 'reagent_images/dna_polymerase_enzyme.png',
         'description': 'KOD One PCR Master Mix pre-mixed with loading dye for direct gel loading.'
+    },
+    {
+        'product_name': 'DNA 100bp Ladder',
+        'external_id': 'BADM3367',
+        'catalog_number': 'BADM3367',
+        'category_external_id': 'category-1765063995229',
+        'product_group': 'DNA Ladders',
+        'list_price': 'Contact for Quote',
+        'availability': 'In Stock',
+        'image_url': 'reagent_images/dna_1kb_ladder.jpg',
+        'description': 'BioArk DNA 100 bp Ladder consists of 10 linear double-stranded DNA fragments (100-1000 bp) premixed with loading buffer for electrophoresis.'
+    },
+    {
+        'product_name': 'DNA 1kb Ladder',
+        'external_id': 'BADM3363',
+        'catalog_number': 'BADM3363',
+        'category_external_id': 'category-1765063995229',
+        'product_group': 'DNA Ladders',
+        'list_price': 'Contact for Quote',
+        'availability': 'In Stock',
+        'image_url': 'reagent_images/dna_1kb_ladder.jpg',
+        'description': 'BioArk DNA 1kb Ladder consists of 10 linear double-stranded DNA bands (300-10000bp) premixed with loading buffer for electrophoresis.'
+    },
+    {
+        'product_name': '1% Precast Agarose Gel, 100bp Ladder, 10pcs/box, All-in-one',
+        'external_id': 'precast-agarose-gel-1-100bp',
+        'catalog_number': 'PAG-101',
+        'category_external_id': 'category-1765063995229',
+        'product_group': 'Precast Agarose Gels',
+        'list_price': 'Contact for Quote',
+        'availability': 'In Stock',
+        'image_url': 'reagent_images/precast_mini_protein_gel.jpg',
+        'description': 'High-resolution 1% precast agarose gel with integrated 100bp DNA ladder for convenient and efficient DNA electrophoresis, 10 pcs per box.'
+    },
+    {
+        'product_name': '1.2% Precast Agarose Gel, 100bp Ladder, 10pcs/box, All-in-one',
+        'external_id': 'precast-agarose-gel-12-100bp',
+        'catalog_number': 'PAG-102',
+        'category_external_id': 'category-1765063995229',
+        'product_group': 'Precast Agarose Gels',
+        'list_price': 'Contact for Quote',
+        'availability': 'In Stock',
+        'image_url': 'reagent_images/precast_mini_protein_gel.jpg',
+        'description': 'High-resolution 1.2% precast agarose gel with integrated 100bp DNA ladder for convenient and efficient DNA electrophoresis, 10 pcs per box.'
+    },
+    {
+        'product_name': '1.5% Precast Agarose Gel, 100bp Ladder, 10pcs/box, All-in-one',
+        'external_id': 'precast-agarose-gel-15-100bp',
+        'catalog_number': 'PAG-103',
+        'category_external_id': 'category-1765063995229',
+        'product_group': 'Precast Agarose Gels',
+        'list_price': 'Contact for Quote',
+        'availability': 'In Stock',
+        'image_url': 'reagent_images/precast_mini_protein_gel.jpg',
+        'description': 'High-resolution 1.5% precast agarose gel with integrated 100bp DNA ladder for convenient and efficient DNA electrophoresis, 10 pcs per box.'
+    },
+    {
+        'product_name': '2% Precast Agarose Gel, 100bp Ladder, 10pcs/box, All-in-one',
+        'external_id': 'precast-agarose-gel-2-100bp',
+        'catalog_number': 'PAG-104',
+        'category_external_id': 'category-1765063995229',
+        'product_group': 'Precast Agarose Gels',
+        'list_price': 'Contact for Quote',
+        'availability': 'In Stock',
+        'image_url': 'reagent_images/precast_mini_protein_gel.jpg',
+        'description': 'High-resolution 2% precast agarose gel with integrated 100bp DNA ladder for convenient and efficient DNA electrophoresis, 10 pcs per box.'
+    },
+    {
+        'product_name': '1% Precast Agarose Gel, 1000bp Ladder, 10pcs/box, All-in-one',
+        'external_id': 'precast-agarose-gel-1-1000bp',
+        'catalog_number': 'PAG-201',
+        'category_external_id': 'category-1765063995229',
+        'product_group': 'Precast Agarose Gels',
+        'list_price': 'Contact for Quote',
+        'availability': 'In Stock',
+        'image_url': 'reagent_images/precast_mini_protein_gel.jpg',
+        'description': 'High-resolution 1% precast agarose gel with integrated 1000bp (1kb) DNA ladder for convenient and efficient DNA electrophoresis, 10 pcs per box.'
+    },
+    {
+        'product_name': '1.2% Precast Agarose Gel, 1000bp Ladder, 10pcs/box, All-in-one',
+        'external_id': 'precast-agarose-gel-12-1000bp',
+        'catalog_number': 'PAG-202',
+        'category_external_id': 'category-1765063995229',
+        'product_group': 'Precast Agarose Gels',
+        'list_price': 'Contact for Quote',
+        'availability': 'In Stock',
+        'image_url': 'reagent_images/precast_mini_protein_gel.jpg',
+        'description': 'High-resolution 1.2% precast agarose gel with integrated 1000bp (1kb) DNA ladder for convenient and efficient DNA electrophoresis, 10 pcs per box.'
+    },
+    {
+        'product_name': '1.5% Precast Agarose Gel, 1000bp Ladder, 10pcs/box, All-in-one',
+        'external_id': 'precast-agarose-gel-15-1000bp',
+        'catalog_number': 'PAG-203',
+        'category_external_id': 'category-1765063995229',
+        'product_group': 'Precast Agarose Gels',
+        'list_price': 'Contact for Quote',
+        'availability': 'In Stock',
+        'image_url': 'reagent_images/precast_mini_protein_gel.jpg',
+        'description': 'High-resolution 1.5% precast agarose gel with integrated 1000bp (1kb) DNA ladder for convenient and efficient DNA electrophoresis, 10 pcs per box.'
+    },
+    {
+        'product_name': '2% Precast Agarose Gel, 1000bp Ladder, 10pcs/box, All-in-one',
+        'external_id': 'precast-agarose-gel-2-1000bp',
+        'catalog_number': 'PAG-204',
+        'category_external_id': 'category-1765063995229',
+        'product_group': 'Precast Agarose Gels',
+        'list_price': 'Contact for Quote',
+        'availability': 'In Stock',
+        'image_url': 'reagent_images/precast_mini_protein_gel.jpg',
+        'description': 'High-resolution 2% precast agarose gel with integrated 1000bp (1kb) DNA ladder for convenient and efficient DNA electrophoresis, 10 pcs per box.'
     },
     
     # --- RNA Reagents ---
@@ -401,7 +523,7 @@ for item in new_reagents:
             'availability': item['availability'],
             'description': item['description'],
             'source_type': 'reagent',
-            'image_url': '/placeholder.svg'
+            'image_url': item.get('image_url') or '/placeholder.svg'
         }
     )
     if created:
@@ -411,7 +533,9 @@ for item in new_reagents:
         p.category_external_id = item['category_external_id']
         p.product_group = item['product_group']
         p.source_type = 'reagent'
+        if 'image_url' in item:
+            p.image_url = item['image_url']
         p.save()
-        print(f"Updated category/group of existing reagent '{item['product_name']}'")
+        print(f"Updated category/group/image of existing reagent '{item['product_name']}'")
 
 print("Reagents population finished!")

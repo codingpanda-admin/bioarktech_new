@@ -612,7 +612,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
                   onClick={(e) => {
                     e.preventDefault();
                     closeMenus();
-                    navigate(`/search?category=${targetCategoryParam}&q=${encodeURIComponent(activeEntry.category_name)}`);
+                    navigate(`/search?category=${targetCategoryParam}&cat=${activeEntry.external_id}`);
                   }}
                 >
                   {activeEntry.category_name}
@@ -679,7 +679,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
                   onClick={(e) => {
                     e.preventDefault();
                     closeMenus();
-                    navigate(`/search?category=${targetCategoryParam}&q=${encodeURIComponent(activeEntry.category_name)}`);
+                    navigate(`/search?category=${targetCategoryParam}&cat=${activeEntry.external_id}`);
                   }}
                 >
                   View all {activeEntry.category_name} →
