@@ -195,7 +195,7 @@ function App() {
   const isCartPage = currentPath === '/cart';
   const isCheckoutSuccess = currentPath === '/checkout/success';
   const isCheckoutCancel = currentPath === '/checkout/cancel';
-  const isResourcesPage = currentPath === '/resources' || currentPath === '/resource';
+  const isBlogsPage = currentPath === '/blogs';
   const isBlogPage = currentPath.startsWith('/blog/');
   const isInvestorsPage = currentPath === '/investors';
   const isAboutBioArkPage = currentPath === '/about-bioark';
@@ -285,6 +285,8 @@ function App() {
           navigate={navigate} 
           skuOrCatalog={currentPath.substring('/product/'.length)} 
           onAddToCart={handleAddToCart}
+          currentUser={currentUser}
+          currentUserProfile={currentUserProfile}
         />
       ) : isCartPage ? (
         <CartPage
@@ -306,7 +308,7 @@ function App() {
         <CheckoutCancelPage navigate={navigate} />
       ) : isResetPasswordPage ? (
         <ResetPasswordPage navigate={navigate} token={currentPath.split('/reset-password/')[1]?.split('?')[0] || ''} />
-      ) : isResourcesPage ? (
+      ) : isBlogsPage ? (
         <ResourcesPage navigate={navigate} />
       ) : isProfilePage ? (
         <ProfilePage navigate={navigate} />

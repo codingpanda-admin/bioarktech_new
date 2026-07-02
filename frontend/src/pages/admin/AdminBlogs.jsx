@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useImperativeHandle } from 'react';
 import { apiFetch, API_URL, formatAssetUrl } from '../../utils/api';
 import { formatRichText } from '../../utils/richText';
 
-function BlogContentEditor({ value, onChange }) {
+const BlogContentEditor = React.forwardRef(function BlogContentEditor({ value, onChange }, ref) {
   const editorRef = useRef(null);
 
   useEffect(() => {
@@ -21,10 +21,19 @@ function BlogContentEditor({ value, onChange }) {
     }
   };
 
-  const runCommand = (command, commandValue = null) => {
+  useImperativeHandle(ref, () => ({
+    getHtml: () => editorRef.current?.innerHTML || '',
+    sync: () => syncValue(),
+  }));
+
+  const focusEditor = () => {
     if (editorRef.current) {
       editorRef.current.focus();
     }
+  };
+
+  const runCommand = (command, commandValue = null) => {
+    focusEditor();
     document.execCommand(command, false, commandValue);
     syncValue();
   };
@@ -50,6 +59,125 @@ function BlogContentEditor({ value, onChange }) {
     event.preventDefault();
   };
 
+  const getSelectedTableCell = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return null;
+
+    let node = selection.anchorNode;
+    if (node?.nodeType === Node.TEXT_NODE) {
+      node = node.parentElement;
+    }
+
+    return node?.closest?.('td, th') || null;
+  };
+
+  const insertTable = () => {
+    focusEditor();
+    const tableHtml = `
+      <table>
+        <thead>
+          <tr><th>Header 1</th><th>Header 2</th><th>Header 3</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Cell</td><td>Cell</td><td>Cell</td></tr>
+          <tr><td>Cell</td><td>Cell</td><td>Cell</td></tr>
+        </tbody>
+      </table>
+      <p><br></p>
+    `;
+    document.execCommand('insertHTML', false, tableHtml);
+    syncValue();
+  };
+
+  const addTableRow = () => {
+    const cell = getSelectedTableCell();
+    const row = cell?.parentElement;
+    if (!row) return;
+
+    const newRow = row.cloneNode(true);
+    newRow.querySelectorAll('th, td').forEach((item) => {
+      item.innerHTML = item.tagName.toLowerCase() === 'th' ? 'Header' : 'Cell';
+    });
+    row.after(newRow);
+    syncValue();
+  };
+
+  const addTableColumn = () => {
+    const cell = getSelectedTableCell();
+    const table = cell?.closest('table');
+    if (!cell || !table) return;
+
+    const columnIndex = cell.cellIndex;
+    table.querySelectorAll('tr').forEach((row) => {
+      const referenceCell = row.children[columnIndex];
+      const newCell = referenceCell.cloneNode(false);
+      newCell.innerHTML = referenceCell.tagName.toLowerCase() === 'th' ? 'Header' : 'Cell';
+      referenceCell.after(newCell);
+    });
+    syncValue();
+  };
+
+  const deleteTableRow = () => {
+    const cell = getSelectedTableCell();
+    const row = cell?.parentElement;
+    const table = cell?.closest('table');
+    if (!row || !table) return;
+
+    if (table.querySelectorAll('tr').length <= 1) {
+      table.remove();
+    } else {
+      row.remove();
+    }
+    syncValue();
+  };
+
+  const deleteTableColumn = () => {
+    const cell = getSelectedTableCell();
+    const table = cell?.closest('table');
+    if (!cell || !table) return;
+
+    const columnIndex = cell.cellIndex;
+    table.querySelectorAll('tr').forEach((row) => {
+      row.children[columnIndex]?.remove();
+    });
+    if (!table.querySelector('th, td')) {
+      table.remove();
+    }
+    syncValue();
+  };
+
+  const mergeCellRight = () => {
+    const cell = getSelectedTableCell();
+    const nextCell = cell?.nextElementSibling;
+    if (!cell || !nextCell || !['TD', 'TH'].includes(nextCell.tagName)) return;
+
+    const currentColSpan = Number(cell.getAttribute('colspan') || 1);
+    const nextColSpan = Number(nextCell.getAttribute('colspan') || 1);
+    const separator = cell.innerHTML.trim() && nextCell.innerHTML.trim() ? '<br>' : '';
+    cell.innerHTML = `${cell.innerHTML}${separator}${nextCell.innerHTML}`;
+    cell.setAttribute('colspan', String(currentColSpan + nextColSpan));
+    nextCell.remove();
+    syncValue();
+  };
+
+  const mergeCellDown = () => {
+    const cell = getSelectedTableCell();
+    const row = cell?.parentElement;
+    const nextRow = row?.nextElementSibling;
+    if (!cell || !nextRow) return;
+
+    const cellBelow = nextRow.children[cell.cellIndex];
+    if (!cellBelow || !['TD', 'TH'].includes(cellBelow.tagName)) return;
+
+    const currentRowSpan = Number(cell.getAttribute('rowspan') || 1);
+    const belowRowSpan = Number(cellBelow.getAttribute('rowspan') || 1);
+    const separator = cell.innerHTML.trim() && cellBelow.innerHTML.trim() ? '<br>' : '';
+    cell.innerHTML = `${cell.innerHTML}${separator}${cellBelow.innerHTML}`;
+    cell.setAttribute('rowspan', String(currentRowSpan + belowRowSpan));
+    cellBelow.remove();
+    syncValue();
+  };
+
   return (
     <div className="admin-rich-text">
       <div className="admin-rich-text-toolbar" aria-label="Blog content formatting tools">
@@ -67,6 +195,14 @@ function BlogContentEditor({ value, onChange }) {
         <button type="button" onMouseDown={preventFocusLoss} onClick={handleLink}>Link</button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={handleImage}>Image</button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('unlink')}>Unlink</button>
+        <span className="admin-rich-text-divider" aria-hidden="true" />
+        <button type="button" onMouseDown={preventFocusLoss} onClick={insertTable}>Insert Table</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={addTableRow}>Add Row</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={addTableColumn}>Add Column</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={mergeCellRight}>Merge Right</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={mergeCellDown}>Merge Down</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={deleteTableRow}>Delete Row</button>
+        <button type="button" onMouseDown={preventFocusLoss} onClick={deleteTableColumn}>Delete Column</button>
       </div>
       <div
         ref={editorRef}
@@ -81,7 +217,7 @@ function BlogContentEditor({ value, onChange }) {
       />
     </div>
   );
-}
+});
 
 function AdminBlogs() {
   const [blogs, setBlogs] = useState([]);
@@ -91,6 +227,7 @@ function AdminBlogs() {
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [imageFile, setImageFile] = useState(null);
+  const blogContentEditorRef = useRef(null);
 
   const loadBlogs = useCallback(async () => {
     setLoading(true);
@@ -161,7 +298,8 @@ function AdminBlogs() {
     setSaving(true);
     setError('');
     try {
-      const contentText = (editingBlog.content || '')
+      const latestContent = blogContentEditorRef.current?.getHtml?.() ?? editingBlog.content ?? '';
+      const contentText = latestContent
         .replace(/<[^>]+>/g, '')
         .replace(/&nbsp;/g, ' ')
         .trim();
@@ -183,7 +321,7 @@ function AdminBlogs() {
         formData.append('title', editingBlog.title);
         formData.append('description', editingBlog.description);
         formData.append('author', editingBlog.author);
-        formData.append('content', editingBlog.content);
+        formData.append('content', latestContent);
         formData.append('image', imageFile);
 
         // For FormData, we need to handle CSRF manually and not set Content-Type
@@ -216,7 +354,7 @@ function AdminBlogs() {
             title: editingBlog.title,
             description: editingBlog.description,
             author: editingBlog.author,
-            content: editingBlog.content,
+            content: latestContent,
           },
         });
       }
@@ -287,7 +425,7 @@ function AdminBlogs() {
             </label>
             <div className="admin-form-field span-3">
               <span>Blog Content *</span>
-              <BlogContentEditor value={editingBlog.content || ''} onChange={(value) => updateField('content', value)} />
+              <BlogContentEditor ref={blogContentEditorRef} value={editingBlog.content || ''} onChange={(value) => updateField('content', value)} />
             </div>
           </div>
           <div className="admin-editor-footer">

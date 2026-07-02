@@ -22,7 +22,7 @@ function AdminDashboard({ onNavigate }) {
   const cards = [
     { label: 'Products', key: 'total_products', icon: '🧬', section: 'Products', color: '#006ff2' },
     { label: 'Featured Products', key: 'total_featured_products', icon: '⭐', section: 'Featured Products', color: '#e5a800' },
-    { label: 'Blog Posts', key: 'total_blogs', icon: '📝', section: 'Blog', color: '#00b37e' },
+    { label: 'Blog Posts', key: 'total_blogs', icon: '📝', section: 'Blogs', color: '#00b37e' },
     { label: 'Users', key: 'total_users', icon: '👥', section: 'Users', color: '#7c3aed' },
     { label: 'Quotes', key: 'total_quotes', icon: '📋', section: 'Quotes', color: '#0891b2' },
     { label: 'Unread Quotes', key: 'unread_quotes', icon: '🔔', section: 'Quotes', color: '#dc2626' },
@@ -55,7 +55,7 @@ function AdminDashboard({ onNavigate }) {
           <button className="admin-quick-btn" onClick={() => onNavigate('Products')}>
             <span>+</span> Add Product
           </button>
-          <button className="admin-quick-btn" onClick={() => onNavigate('Blog')}>
+          <button className="admin-quick-btn" onClick={() => onNavigate('Blogs')}>
             <span>+</span> Add Blog Post
           </button>
           <button className="admin-quick-btn" onClick={() => onNavigate('Users')}>

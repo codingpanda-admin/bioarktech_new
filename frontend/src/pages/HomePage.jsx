@@ -378,7 +378,7 @@ function HomePage({ navigate, searchParams }) {
               );
             })}
           </div>
-          <a className="view-all" href="/resources" onClick={(e) => { e.preventDefault(); navigate('/resources'); }}>View All Resources & Blogs <span>→</span></a>
+          <a className="view-all" href="/blogs" onClick={(e) => { e.preventDefault(); navigate('/blogs'); }}>View All Resources & Blogs <span>→</span></a>
         </section>
 
         <section className="bulk-cta">

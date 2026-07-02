@@ -1,8 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { logo, apiFetch, formatAssetUrl } from '../utils/api';
 import { formatRichText } from '../utils/richText';
+import QuoteRequestForm from '../components/QuoteRequestForm';
+import { SERVICES_CATEGORIES } from '../data/catalogCategories';
 
-function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
+const SERVICE_CATEGORY_ALIASES = {
+  'genome-editing-service': 'Genome Editing Services',
+  'genome-editing': 'Genome Editing Services',
+  'synthesis-cloning': 'Custom Cloning Services',
+  'custom-cloning': 'Custom Cloning Services',
+  'dna-cloning-service': 'Custom Cloning Services',
+  'cell-line-generation': 'Stable Cell Line Services',
+  'stable-cell-line': 'Stable Cell Line Services',
+  'virus-packaging': 'Lentivirus Package Services',
+  'lentivirus-package': 'Lentivirus Package Services',
+  'lentivirus-packaging-services': 'Lentivirus Package Services',
+  'vector-construction': 'Vector Construction Support',
+  'functional-testing': 'Functional Testing',
+  'lab-supplies': 'Lab Supplies',
+  'project-consultation': 'Project Consultation'
+};
+
+function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, currentUserProfile }) {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -13,6 +32,8 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
   const [mainImage, setMainImage] = useState(logo);
   const [selectedUnitSize, setSelectedUnitSize] = useState(null);
   const [cartAdded, setCartAdded] = useState(false);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [showQuoteConfirmation, setShowQuoteConfirmation] = useState(false);
   const thumbnailStripRef = useRef(null);
 
   useEffect(() => {
@@ -103,16 +124,43 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
     });
   };
 
-  const handleRequestQuote = () => {
-    const quoteDescription = [
+  const getProductQuoteDescription = () => (
+    [
       `Product Name: ${name || 'N/A'}`,
       `Product Code: ${productCode || 'N/A'}`,
       `Product Group: ${product.product_group || product.productGroup || 'N/A'}`,
       `Product Category: ${categoryLabel || 'N/A'}`,
-    ].join('\n');
-    const params = new URLSearchParams({ projectDescription: quoteDescription });
+    ].join('\n')
+  );
 
-    navigate(`/request-quote?${params.toString()}`);
+  const getQuoteServiceType = () => {
+    const categoryValues = [
+      product.category_external_id,
+      product.categoryExternalId,
+      product.product_category,
+      product.category_name,
+      product.categoryName,
+      categoryLabel
+    ].filter(Boolean);
+
+    const aliasedCategory = categoryValues
+      .map(value => SERVICE_CATEGORY_ALIASES[String(value).toLowerCase()])
+      .find(Boolean);
+
+    if (aliasedCategory) {
+      return aliasedCategory;
+    }
+
+    const serviceCategoryMatch = SERVICES_CATEGORIES.find(category => (
+      categoryValues.some(value => String(value).toLowerCase() === category.id.toLowerCase() || String(value).toLowerCase() === category.label.toLowerCase())
+    ));
+
+    return serviceCategoryMatch?.label || 'Products';
+  };
+
+  const handleRequestQuote = () => {
+    setShowQuoteModal(true);
+    setShowQuoteConfirmation(false);
   };
   
   // Calculate price dynamically for featured products based on selected unit size
@@ -281,6 +329,44 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart }) {
           </div>
         </div>
       </div>
+
+      {showQuoteModal && (
+        <div
+          className="modal-overlay product-quote-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={showQuoteConfirmation ? 'quote-confirmation-title' : 'quote-form-title'}
+          onClick={() => setShowQuoteModal(false)}
+        >
+          {showQuoteConfirmation ? (
+            <div className="quote-confirmation-modal" onClick={(e) => e.stopPropagation()}>
+              <h2 id="quote-confirmation-title">Quote Request Submitted</h2>
+              <p>Your quote request has been submitted successfully. Our team will review the details and contact you shortly.</p>
+              <button type="button" className="primary-button" onClick={() => setShowQuoteModal(false)}>
+                Close
+              </button>
+            </div>
+          ) : (
+            <div className="quote-panel product-quote-modal" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                className="product-quote-modal-close"
+                aria-label="Close quote form"
+                onClick={() => setShowQuoteModal(false)}
+              >
+                x
+              </button>
+              <QuoteRequestForm
+                currentUser={currentUser}
+                currentUserProfile={currentUserProfile}
+                initialProjectDescription={getProductQuoteDescription()}
+                initialServiceType={getQuoteServiceType()}
+                onSubmitted={() => setShowQuoteConfirmation(true)}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tabs / Info Table Section */}
       <div className="product-info-table">

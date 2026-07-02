@@ -66,7 +66,7 @@ function SiteFooter({ navigate }) {
           <h3>Company</h3>
           <a href="/investors" onClick={(e) => goToFooterLink(e, '/investors')}>Investors</a>
           <a href="/about-bioark" onClick={(e) => goToFooterLink(e, '/about-bioark')}>Why BioArk</a>
-          <a href="/resources" onClick={(e) => goToFooterLink(e, '/resources')}>Resources & Blogs</a>
+          <a href="/blogs" onClick={(e) => goToFooterLink(e, '/blogs')}>Resources & Blogs</a>
           <a href="#" onClick={(e) => goToFooterLink(e)}>Privacy Policy</a>
           <a href="#" onClick={(e) => goToFooterLink(e)}>Terms of Service</a>
         </div>

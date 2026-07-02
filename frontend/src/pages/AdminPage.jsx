@@ -20,7 +20,7 @@ const adminLinks = [
   'Featured Products',
   'Reagents',
   'Services',
-  'Blog',
+  'Blogs',
   'Quotes',
   'Email (SMTP)',
   'Media',
@@ -185,7 +185,7 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
           <AdminServices />
         )}
 
-        {activeSection === 'Blog' && (
+        {activeSection === 'Blogs' && (
           <AdminBlogs />
         )}
 

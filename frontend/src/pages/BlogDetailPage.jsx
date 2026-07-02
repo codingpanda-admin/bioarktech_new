@@ -51,7 +51,7 @@ function BlogDetailPage({ blogId, navigate }) {
   if (error || !blog) {
     return (
       <main className="blog-detail-page">
-        <button className="blog-back-button" type="button" onClick={() => navigate('/resources')}>
+        <button className="blog-back-button" type="button" onClick={() => navigate('/blogs')}>
           Back to Resources & Blogs
         </button>
         <div className="alert-banner error">{error || 'Blog post not found.'}</div>
@@ -67,7 +67,7 @@ function BlogDetailPage({ blogId, navigate }) {
 
   return (
     <main className="blog-detail-page">
-      <button className="blog-back-button" type="button" onClick={() => navigate('/resources')}>
+      <button className="blog-back-button" type="button" onClick={() => navigate('/blogs')}>
         Back to Resources & Blogs
       </button>
 

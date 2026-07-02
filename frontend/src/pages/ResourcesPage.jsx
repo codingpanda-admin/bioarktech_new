@@ -17,18 +17,6 @@ const inferBlogCategory = (blog) => {
   return 'Biotech Outlook';
 };
 
-const formatBlogDate = (value) => {
-  if (!value) return 'BioArkTech';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  return date.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
-
 function ResourcesPage({ navigate }) {
   const [blogs, setBlogs] = useState([]);
   const [activeCategory, setActiveCategory] = useState('All');
@@ -107,25 +95,13 @@ function ResourcesPage({ navigate }) {
                 onClick={() => setActiveCategory(category)}
               >
                 <span>{category}</span>
+                <small>{categoryCounts[category] || 0}</small>
               </button>
             ))}
           </nav>
         </aside>
 
         <section className="blog-results" aria-label="Blog posts">
-          <div className="blog-tabs" role="tablist" aria-label="Blog categories">
-            {BLOG_CATEGORIES.map((category) => (
-              <button
-                key={category}
-                className={activeCategory === category ? 'is-active' : ''}
-                type="button"
-                onClick={() => setActiveCategory(category)}
-              >
-                {category} <span>({categoryCounts[category] || 0})</span>
-              </button>
-            ))}
-          </div>
-
           {visibleBlogs.length > 0 ? (
             <div className="blog-card-grid">
               {visibleBlogs.map((blog, index) => {
@@ -161,12 +137,6 @@ function ResourcesPage({ navigate }) {
                           {title}
                         </a>
                       </h2>
-                      <div className="blog-card-meta">
-                        <span>{formatBlogDate(blog.date_posted || blog.date)}</span>
-                        <span>◷ 5 min read</span>
-                        <span>◎ 0 views</span>
-                      </div>
-                      <p>{blog.description || blog.summary || 'Explore BioArkTech updates, technical guidance, and research workflow insights.'}</p>
                     </div>
                   </article>
                 );

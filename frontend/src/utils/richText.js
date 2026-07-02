@@ -9,7 +9,7 @@ const escapeHtml = (value) => String(value)
 
 const hasHtmlTags = (value) => /<\/?[a-z][\s\S]*>/i.test(value);
 
-const hasMarkdownSyntax = (value) => /(\*\*|__|!\[[^\]]*]\(|\[[^\]]+]\([^)]+\)|(?:^|\s)-\s+(?:\*\*)?[A-Za-z0-9]|(?:^|\s)#{1,4}\s+|\s---\s)/m.test(value);
+const hasMarkdownSyntax = (value) => /(\*\*|__|!\[[^\]]*]\(|\[[^\]]+]\([^)]+\)|(?:^|\s)-\s+(?:\*\*)?[A-Za-z0-9]|(?:^|\s)#{1,4}\s*|\s---\s|^\s*\|?.+\|.+(?:\n|\r\n?)\s*\|?\s*:?-{3,}|^\s*\|?[^|\n]+(?:\|[^|\n]+){2,}\|?\s*$)/m.test(value);
 
 const decodeHtmlEntities = (value) => String(value)
   .replace(/&nbsp;/g, ' ')
@@ -137,6 +137,73 @@ const isTableLine = (line) => {
   return cells.length > 1 && cells.some(Boolean);
 };
 
+const normalizeMarkdownTableBlocks = (value) => {
+  const lines = String(value).replace(/\r\n?/g, '\n').split('\n');
+
+  return lines
+    .filter((line, index) => {
+      const trimmedLine = line.trim();
+      const previousTableLine = lines
+        .slice(0, index)
+        .reverse()
+        .find((candidate) => candidate.trim() && !/^\|\s*$/.test(candidate.trim()));
+      const nextTableLine = lines
+        .slice(index + 1)
+        .find((candidate) => candidate.trim() && !/^\|\s*$/.test(candidate.trim()));
+
+      if (/^\|\s*$/.test(trimmedLine)) {
+        return !(isTableLine(previousTableLine || '') && isTableLine(nextTableLine || ''));
+      }
+
+      if (trimmedLine) return true;
+
+      const previousLine = previousTableLine || '';
+      const nextLine = nextTableLine || '';
+      return !(isTableLine(previousLine) && isTableLine(nextLine));
+    })
+    .join('\n');
+};
+
+const compactLooseMarkdownTables = (value) => {
+  const lines = String(value).replace(/\r\n?/g, '\n').split('\n');
+  const output = [];
+  let tableRows = [];
+
+  const flushTableRows = () => {
+    if (!tableRows.length) return;
+
+    if (tableRows.length > 1) {
+      output.push(tableRows.join('\n'));
+    } else {
+      output.push(tableRows[0]);
+    }
+    tableRows = [];
+  };
+
+  lines.forEach((line) => {
+    const trimmedLine = line.trim();
+
+    if (isTableLine(trimmedLine) && !/^\|\s*$/.test(trimmedLine)) {
+      tableRows.push(line);
+      return;
+    }
+
+    if (!trimmedLine || /^\|\s*$/.test(trimmedLine)) {
+      if (tableRows.length) {
+        return;
+      }
+      output.push(line);
+      return;
+    }
+
+    flushTableRows();
+    output.push(line);
+  });
+
+  flushTableRows();
+  return output.join('\n');
+};
+
 const formatTableBlock = (lines) => {
   const rows = lines
     .filter((line) => !isTableDivider(line))
@@ -163,6 +230,7 @@ const formatTableBlock = (lines) => {
 const formatBlock = (block) => {
   const lines = block.split('\n').map((line) => line.trimEnd()).filter(Boolean);
   const text = lines.join('\n').trim();
+  const headingLinePattern = /^\s{0,3}(#{1,4})\s*(.+)$/;
   const firstUnorderedListIndex = lines.findIndex((line) => /^\s*[-*+]\s+/.test(line));
   const firstOrderedListIndex = lines.findIndex((line) => /^\s*\d+[.)]\s+/.test(line));
 
@@ -173,7 +241,30 @@ const formatBlock = (block) => {
     return formatTableBlock(lines);
   }
 
-  const heading = text.match(/^(#{1,4})\s+(.+)$/);
+  if (lines.length > 1 && lines.some((line) => headingLinePattern.test(line))) {
+    const blocks = [];
+    let currentBlock = [];
+
+    lines.forEach((line) => {
+      if (headingLinePattern.test(line)) {
+        if (currentBlock.length) {
+          blocks.push(currentBlock.join('\n'));
+          currentBlock = [];
+        }
+        blocks.push(line);
+      } else {
+        currentBlock.push(line);
+      }
+    });
+
+    if (currentBlock.length) {
+      blocks.push(currentBlock.join('\n'));
+    }
+
+    return blocks.map(formatBlock).join('');
+  }
+
+  const heading = text.match(headingLinePattern);
   if (heading) {
     const level = heading[1].length;
     return `<h${level}>${formatInlineMarkdown(heading[2].trim())}</h${level}>`;
@@ -218,7 +309,7 @@ export const formatRichText = (value) => {
 
   const source = hasHtmlTags(content) ? htmlToRichTextSource(content) : content;
 
-  return normalizeMarkdownImageBlocks(normalizeInlineListMarkers(normalizeInlineMarkdownStructure(source)))
+  return normalizeMarkdownImageBlocks(normalizeInlineListMarkers(normalizeInlineMarkdownStructure(compactLooseMarkdownTables(normalizeMarkdownTableBlocks(source)))))
     .replace(/\r\n?/g, '\n')
     .split(/\n{2,}/)
     .map(formatBlock)
