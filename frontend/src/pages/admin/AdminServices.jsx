@@ -103,6 +103,7 @@ function AdminServices() {
       title: '',
       content: '',
       category: selectedCategory !== 'All' ? selectedCategory : 'uncategorized',
+      is_featured: false,
     });
     setImageFile(null);
     setIsModalOpen(true);
@@ -130,6 +131,22 @@ function AdminServices() {
     }
   };
 
+  const handleToggleFeatured = async (serviceId, currentStatus) => {
+    try {
+      const updatedStatus = !currentStatus;
+      await apiFetch(`/api/admin-panel/services/${serviceId}/update/`, {
+        method: 'POST',
+        body: {
+          is_featured: updatedStatus
+        }
+      });
+      showSuccess(updatedStatus ? 'Service is now featured.' : 'Service is no longer featured.');
+      loadServices();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -145,6 +162,7 @@ function AdminServices() {
       formData.append('title', editingService.title);
       formData.append('content', editingService.content);
       formData.append('category', editingService.category || 'uncategorized');
+      formData.append('is_featured', editingService.is_featured ? 'true' : 'false');
       if (imageFile) {
         formData.append('image', imageFile);
       }
@@ -404,6 +422,11 @@ function AdminServices() {
                                   />
                                 )}
                                 <strong>{service.title}</strong>
+                                {service.is_featured && (
+                                  <span className="admin-badge badge-accent" style={{ marginLeft: '8px' }}>
+                                    Featured
+                                  </span>
+                                )}
                               </div>
                             </td>
                             <td><code>{service.url}</code></td>
@@ -412,6 +435,26 @@ function AdminServices() {
                             </td>
                             <td>
                               <div className="admin-row-actions">
+                                <button
+                                  className="admin-action-btn"
+                                  onClick={() => handleToggleFeatured(service.id, service.is_featured)}
+                                  title={service.is_featured ? "Remove from Featured" : "Mark as Featured"}
+                                  style={{
+                                    background: service.is_featured ? 'var(--blue)' : '#f1f5f9',
+                                    color: service.is_featured ? '#fff' : 'var(--ink-light)',
+                                    border: '1px solid ' + (service.is_featured ? 'var(--blue)' : '#cbd5e1'),
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 'bold'
+                                  }}
+                                >
+                                  ★
+                                </button>
                                 <button className="admin-action-btn edit" onClick={() => handleEdit(service.id)}>Edit</button>
                                 <button className="admin-action-btn delete" onClick={() => handleDelete(service.id)}>Delete</button>
                               </div>
@@ -470,6 +513,17 @@ function AdminServices() {
                     </div>
                   )}
                 </label>
+                <div className="admin-form-field span-3" style={{ margin: '4px 0 12px 0' }}>
+                  <label className="checkbox-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                    <input
+                      type="checkbox"
+                      checked={!!editingService.is_featured}
+                      onChange={(e) => updateField('is_featured', e.target.checked)}
+                      style={{ width: '18px', height: '18px', accentColor: 'var(--blue)' }}
+                    />
+                    <span>Featured Service (display on homepage)</span>
+                  </label>
+                </div>
                 <label className="admin-form-field span-3">
                   <span>Content (HTML) *</span>
                   <textarea rows="14" value={editingService.content || ''} onChange={(e) => updateField('content', e.target.value)} required />

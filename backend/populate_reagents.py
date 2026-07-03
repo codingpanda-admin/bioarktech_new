@@ -1,11 +1,17 @@
 import os
 import django
+import sys
 
 # Setup django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 
 from products.models import Product
+
+# Check if reagents are already populated
+if Product.objects.filter(source_type='reagent').count() > 5:
+    print("Reagents already populated. Skipping population script.")
+    sys.exit(0)
 
 print("Populating and categorizing reagents...")
 

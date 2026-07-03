@@ -1,5 +1,6 @@
 import os
 import django
+import sys
 
 # Setup Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
@@ -7,6 +8,11 @@ django.setup()
 
 from blogs.models import Blog
 from django.utils.dateparse import parse_datetime
+
+# Check if blogs are already populated
+if Blog.objects.exists():
+    print("Blogs already populated. Skipping population script.")
+    sys.exit(0)
 
 print("Populating blogs in the database...")
 

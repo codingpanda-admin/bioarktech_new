@@ -567,6 +567,17 @@ def get_latest_featured_products(request):
 
 
 @api_view(['GET'])
+def get_featured_general_products(request):
+    products = Product.objects.filter(is_featured=True, hidden=False).exclude(external_id__startswith='fp-').order_by(
+        F("display_order").asc(nulls_last=True),
+        "product_name",
+    )
+    serializer = PreviewFeaturedProductSerializer(products, many=True)
+
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
 def get_product_catalog(request):
     categories = ProductCategory.objects.exclude(external_id__isnull=True).exclude(external_id='').order_by(
         'priority',

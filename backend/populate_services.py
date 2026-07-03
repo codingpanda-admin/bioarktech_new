@@ -1,11 +1,17 @@
 import os
 import django
+import sys
 
 # Setup django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 
 from interface.models import ServiceMode
+
+# Check if services are already populated
+if ServiceMode.objects.count() > 5:
+    print("Services already populated. Skipping population script.")
+    sys.exit(0)
 
 print("Populating and categorizing services...")
 

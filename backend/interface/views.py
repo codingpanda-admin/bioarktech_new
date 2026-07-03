@@ -24,4 +24,10 @@ def get_service_page(request, url):
 def get_homepage_slides(request):
     slides = HomepageSlide.objects.filter(is_active=True).order_by('display_order', 'id')
     serializer = HomepageSlideSerializer(slides, many=True)
+    return JsonResponse(serializer.data, safe=False)
+
+@api_view(['GET'])
+def get_featured_services(request):
+    services = ServiceMode.objects.filter(is_featured=True)
+    serializer = ServiceModeSerializer(services, many=True)
     return JsonResponse(serializer.data, safe=False)

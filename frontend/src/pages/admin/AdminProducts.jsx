@@ -346,6 +346,22 @@ function AdminProducts({ categoryFilter = null }) {
     }
   };
 
+  const handleToggleFeatured = async (productId, currentStatus) => {
+    try {
+      const updatedStatus = !currentStatus;
+      await apiFetch(`/api/admin-panel/products/${productId}/update/`, {
+        method: 'POST',
+        body: {
+          is_featured: updatedStatus
+        }
+      });
+      showSuccess(updatedStatus ? 'Product is now featured.' : 'Product is no longer featured.');
+      loadProducts();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleSave = async (e, { closeAfterSave = true } = {}) => {
     e.preventDefault();
     setSaving(true);
@@ -1132,6 +1148,26 @@ function AdminProducts({ categoryFilter = null }) {
                                     </td>
                                     <td>
                                       <div className="admin-row-actions">
+                                        <button
+                                          className="admin-action-btn"
+                                          onClick={() => handleToggleFeatured(pId, product.is_featured)}
+                                          title={product.is_featured ? "Remove from Featured" : "Mark as Featured"}
+                                          style={{
+                                            background: product.is_featured ? 'var(--blue)' : '#f1f5f9',
+                                            color: product.is_featured ? '#fff' : 'var(--ink-light)',
+                                            border: '1px solid ' + (product.is_featured ? 'var(--blue)' : '#cbd5e1'),
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer',
+                                            fontSize: '14px',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontWeight: 'bold'
+                                          }}
+                                        >
+                                          ★
+                                        </button>
                                         <button className="admin-action-btn edit" onClick={() => handleEdit(pId)}>Edit</button>
                                         <button className="admin-action-btn delete" onClick={() => handleDelete(pId)}>Hide</button>
                                       </div>

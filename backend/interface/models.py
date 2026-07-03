@@ -17,6 +17,7 @@ class ServiceMode(models.Model):
     content = HTMLField()
     image = models.ImageField(blank=True, null=True)
     category = models.CharField(max_length=100, blank=True, null=True)
+    is_featured = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'service_mode'

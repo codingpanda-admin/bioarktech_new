@@ -1194,6 +1194,7 @@ def admin_list_services(request):
                 'content': s.content,
                 'image': request.build_absolute_uri(s.image.url) if s.image else None,
                 'category': s.category,
+                'is_featured': s.is_featured,
             })
         return Response({'results': data})
     except Exception as e:
@@ -1215,6 +1216,7 @@ def admin_get_service(request, service_id):
             'content': s.content,
             'image': request.build_absolute_uri(s.image.url) if s.image else None,
             'category': s.category,
+            'is_featured': s.is_featured,
         }
         return Response(data)
     except ServiceMode.DoesNotExist:
@@ -1231,11 +1233,15 @@ def admin_create_service(request):
 
     try:
         d = request.data
+        is_featured_val = d.get('is_featured', False)
+        if isinstance(is_featured_val, str):
+            is_featured_val = is_featured_val.lower() == 'true'
         s = ServiceMode(
             url=d.get('url', ''),
             title=d.get('title', ''),
             content=d.get('content', ''),
             category=d.get('category', ''),
+            is_featured=is_featured_val,
         )
         if request.FILES.get('image'):
             s.image = request.FILES['image']
@@ -1258,6 +1264,12 @@ def admin_update_service(request, service_id):
         for field in ['url', 'title', 'content', 'category']:
             if field in d:
                 setattr(s, field, d[field])
+
+        if 'is_featured' in d:
+            is_featured_val = d['is_featured']
+            if isinstance(is_featured_val, str):
+                is_featured_val = is_featured_val.lower() == 'true'
+            s.is_featured = is_featured_val
 
         if request.FILES.get('image'):
             s.image = request.FILES['image']

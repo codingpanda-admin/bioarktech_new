@@ -256,90 +256,92 @@ DEFAULT_PRODUCT_CATEGORIES = [
 
 
 def populate_mock_products_and_images():
-    print("Populating categories into the database...")
-    from products.models import ProductCategory
-    for item in DEFAULT_PRODUCT_CATEGORIES:
-        cat_obj, created = ProductCategory.objects.update_or_create(
-            category_name=item['category_name'],
-            defaults={
-                'external_id': item['external_id'],
-                'product_type': item['product_type']
-            }
-        )
-        action = "Created" if created else "Updated"
-        print(f"{action} category: {cat_obj.category_name} ({cat_obj.external_id})")
+    from products.models import ProductCategory, Product, Img, ProductImage, Image
 
-    print("Populating mock products into the database...")
-    for item in MOCK_PRODUCTS:
-        p, created = Product.objects.update_or_create(
-            external_id=item['external_id'],
-            defaults={
-                'product_name': item['product_name'],
-                'catalog_number': item['catalog_number'],
-                'description': item['description'],
-                'availability': item['availability'],
-                'list_price': item['list_price'],
-                'category_external_id': item['category_external_id'],
-                'product_group': item['product_group'],
-                'key_features': item['key_features'],
-                'options': item['options'],
-                'option_prices': item['option_prices'],
-                'storage_stability': item['storage_stability'],
-                'performance_data': item['performance_data'],
-                'manuals': item['manuals'],
-                'manual_urls': item['manual_urls'],
-                'images': item['images'],
-                'source_type': 'mock'
-            }
-        )
-        action = "Created" if created else "Updated"
-        print(f"{action} mock product: {p.product_name}")
+    if ProductCategory.objects.exists():
+        print("Categories already populated. Skipping category population.")
+    else:
+        print("Populating categories into the database...")
+        for item in DEFAULT_PRODUCT_CATEGORIES:
+            cat_obj, created = ProductCategory.objects.get_or_create(
+                category_name=item['category_name'],
+                defaults={
+                    'external_id': item['external_id'],
+                    'product_type': item['product_type']
+                }
+            )
+            print(f"Ensured category: {cat_obj.category_name}")
 
-    print("Migrating product images to relational tables (img and product_images)...")
-    from products.models import Img, ProductImage, Image
-    
-    # Clean previous image relations to avoid duplicates and starting fresh
-    ProductImage.objects.all().delete()
-    Img.objects.all().delete()
+    if Product.objects.filter(source_type='mock').exists():
+        print("Mock products already populated. Skipping mock products population.")
+    else:
+        print("Populating mock products into the database...")
+        for item in MOCK_PRODUCTS:
+            p, created = Product.objects.get_or_create(
+                external_id=item['external_id'],
+                defaults={
+                    'product_name': item['product_name'],
+                    'catalog_number': item['catalog_number'],
+                    'description': item['description'],
+                    'availability': item['availability'],
+                    'list_price': item['list_price'],
+                    'category_external_id': item['category_external_id'],
+                    'product_group': item['product_group'],
+                    'key_features': item['key_features'],
+                    'options': item['options'],
+                    'option_prices': item['option_prices'],
+                    'storage_stability': item['storage_stability'],
+                    'performance_data': item['performance_data'],
+                    'manuals': item['manuals'],
+                    'manual_urls': item['manual_urls'],
+                    'images': item['images'],
+                    'source_type': 'mock'
+                }
+            )
+            print(f"Ensured mock product: {p.product_name}")
 
-    for product in Product.objects.all():
-        image_paths = []
-        if product.image_url:
-            image_paths.append(product.image_url)
-        if product.images:
-            for img_path in product.images:
-                if img_path and img_path not in image_paths:
-                    image_paths.append(img_path)
+    if ProductImage.objects.exists():
+        print("Product image relations already populated. Skipping image migration.")
+    else:
+        print("Migrating product images to relational tables (img and product_images)...")
+        for product in Product.objects.all():
+            image_paths = []
+            if product.image_url:
+                image_paths.append(product.image_url)
+            if product.images:
+                for img_path in product.images:
+                    if img_path and img_path not in image_paths:
+                        image_paths.append(img_path)
 
-        for path in image_paths:
-            if not path:
-                continue
-            # Get or create Img record
-            img_obj, _ = Img.objects.get_or_create(image_path=path)
-            # Create link
-            ProductImage.objects.get_or_create(product=product, img=img_obj)
-
-    print("Migrating featured product/Image model records to relational tables...")
-    for image in Image.objects.all():
-        if not image.image or not image.image.name:
-            continue
-        path = f"/media/{image.image.name}"
-        if image.union and image.union.product_id:
-            products = Product.objects.filter(catalog_number=image.union.product_id)
-            for product in products:
+            for path in image_paths:
+                if not path:
+                    continue
                 img_obj, _ = Img.objects.get_or_create(image_path=path)
                 ProductImage.objects.get_or_create(product=product, img=img_obj)
-    
-    print("Relational images population finished successfully!")
 
-    print("Linking products to their categories in the database...")
-    for product in Product.objects.all():
-        if product.category_external_id:
-            cat_obj = ProductCategory.objects.filter(external_id=product.category_external_id).first()
-            if cat_obj:
-                product.category = cat_obj
-                product.save()
-    print("Category relationships synced successfully!")
+        print("Migrating featured product/Image model records to relational tables...")
+        for image in Image.objects.all():
+            if not image.image or not image.image.name:
+                continue
+            path = f"/media/{image.image.name}"
+            if image.union and image.union.product_id:
+                products = Product.objects.filter(catalog_number=image.union.product_id)
+                for product in products:
+                    img_obj, _ = Img.objects.get_or_create(image_path=path)
+                    ProductImage.objects.get_or_create(product=product, img=img_obj)
+        print("Relational images population finished successfully!")
+
+    if Product.objects.filter(category__isnull=False).exists():
+        print("Category relationships already linked. Skipping linkage.")
+    else:
+        print("Linking products to their categories in the database...")
+        for product in Product.objects.all():
+            if product.category_external_id:
+                cat_obj = ProductCategory.objects.filter(external_id=product.category_external_id).first()
+                if cat_obj:
+                    product.category = cat_obj
+                    product.save()
+        print("Category relationships synced successfully!")
 
 
 def ensure_admin_users():
