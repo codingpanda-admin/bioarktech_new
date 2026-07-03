@@ -179,7 +179,8 @@ else:
             'USER': 'postgres',
             'PORT': 5432,
             'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
-            'PASSWORD': pg_password
+            'PASSWORD': pg_password,
+            'CONN_MAX_AGE': 60,
         }
     }
 

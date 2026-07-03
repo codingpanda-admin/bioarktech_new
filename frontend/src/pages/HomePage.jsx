@@ -86,51 +86,35 @@ function HomePage({ navigate, searchParams }) {
   useEffect(() => {
     const loadHomeData = async () => {
       try {
-        const catData = await apiFetch('/api/products/load-product-categories/');
-        setCategories(catData.length > 0 ? catData : mockCategories);
-      } catch (err) {
-        setCategories(mockCategories);
-      }
+        const [
+          catData,
+          prodData,
+          generalProdData,
+          servicesData,
+          blogData,
+          slideData
+        ] = await Promise.all([
+          apiFetch('/api/products/load-product-categories/').catch(() => mockCategories),
+          apiFetch('/api/products/get-latest-featured-products/').catch(() => mockProducts),
+          apiFetch('/api/products/get-featured-general-products/').catch(() => []),
+          apiFetch('/api/interface/get-featured-services/').catch(() => []),
+          apiFetch('/api/blogs/get-latest-blogs/').catch(() => mockResources),
+          apiFetch('/api/interface/get-homepage-slides/').catch(() => [])
+        ]);
 
-      try {
-        const prodData = await apiFetch('/api/products/get-latest-featured-products/');
+        setCategories(Array.isArray(catData) && catData.length > 0 ? catData : mockCategories);
         setFeaturedProducts(Array.isArray(prodData) && prodData.length > 0 ? prodData : mockProducts);
-      } catch (err) {
-        setFeaturedProducts(mockProducts);
-      }
-
-      try {
-        const generalProdData = await apiFetch('/api/products/get-featured-general-products/');
         setFeaturedGeneralProducts(Array.isArray(generalProdData) ? generalProdData : []);
-      } catch (err) {
-        console.error('Failed to load featured general products:', err);
-      }
-
-      try {
-        const servicesData = await apiFetch('/api/interface/get-featured-services/');
         setFeaturedServices(Array.isArray(servicesData) ? servicesData : []);
-      } catch (err) {
-        console.error('Failed to load featured services:', err);
-      }
-
-      try {
-        const blogData = await apiFetch('/api/blogs/get-latest-blogs/');
-        const homeBlogs = Array.isArray(blogData) && blogData.length > 0 ? blogData : mockResources;
-        setBlogs(getRecentBlogs(homeBlogs));
-      } catch (err) {
-        setBlogs(getRecentBlogs(mockResources));
-      }
-
-      try {
-        const slideData = await apiFetch('/api/interface/get-homepage-slides/');
+        setBlogs(getRecentBlogs(Array.isArray(blogData) && blogData.length > 0 ? blogData : mockResources));
         if (Array.isArray(slideData) && slideData.length > 0) {
           setSlides(slideData);
         }
       } catch (err) {
-        console.error('Failed to load homepage slides:', err);
+        console.error('Error loading home data:', err);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     loadHomeData();
