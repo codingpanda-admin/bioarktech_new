@@ -327,6 +327,57 @@ function HomePage({ navigate, searchParams }) {
           </div>
         </section>
 
+        <section className="products-section" aria-labelledby="products-title">
+          <h2 id="products-title">Featured Products</h2>
+          <p className="section-subtitle">
+            High-performance reagents designed to accelerate your research and deliver reliable results.
+          </p>
+          <div className="products-carousel" aria-label="Featured products carousel">
+            <button
+              className="product-carousel-control product-carousel-prev"
+              type="button"
+              aria-label="Previous featured products"
+              onClick={() => rollFeaturedProducts('prev')}
+              disabled={featuredProducts.length <= 1}
+            />
+            <div className="product-carousel-viewport">
+              <div className="product-grid product-carousel-grid">
+                {visibleFeaturedProducts.map(({ product: prod, index }) => {
+                  const name = prod.product_name;
+                  const priceStr = prod.unit_price ? `$${prod.unit_price}` : '$29.00 - $129.00';
+                  const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
+                  const productId = prod.externalId || prod.external_id || prod.catalog_number || prod.product_sku;
+                  const productHref = productId ? `/product/${productId}` : `/search?q=${encodeURIComponent(name)}`;
+                  
+                  return (
+                    <article className="product-card" key={`${prod.catalog_number || prod.product_sku || name}-${index}`}>
+                      {imgUrl ? (
+                        <div style={{ height: '140px', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '20px 0' }}>
+                          <img src={imgUrl} alt={name} style={{ maxHeight: '100%', maxWidth: '100%', borderRadius: '8px' }} />
+                        </div>
+                      ) : (
+                        <ProductVisual type={prod.visual || 'bottle'} />
+                      )}
+                      <h3>{name}</h3>
+                      <p className="rating">★★★★★ <span>({prod.reviews || '45'})</span></p>
+                      <p className="price">{priceStr}</p>
+                      <a href={productHref} onClick={(e) => { e.preventDefault(); navigate(productHref); }}>View Product <span>→</span></a>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+            <button
+              className="product-carousel-control product-carousel-next"
+              type="button"
+              aria-label="Next featured products"
+              onClick={() => rollFeaturedProducts('next')}
+              disabled={featuredProducts.length <= 1}
+            />
+          </div>
+          <a className="view-all" href="#" onClick={(e) => { e.preventDefault(); navigate('/search?q='); }}>View All Products <span>→</span></a>
+        </section>
+
         {featuredGeneralProducts.length > 0 && (
           <section className="products-section" aria-labelledby="general-products-title" style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)', padding: '60px 0', borderTop: '1px solid var(--line)' }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
