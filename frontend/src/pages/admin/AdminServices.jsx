@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { apiFetch, formatAssetUrl } from '../../utils/api';
+import { ProductContentEditor } from './AdminProducts';
 
 const SERVICE_FALLBACK_CATEGORIES = [
   { id: 'genome-editing', name: 'Genome Editing' },
@@ -12,13 +13,18 @@ const SERVICE_FALLBACK_CATEGORIES = [
 
 const UNCATEGORIZED_SERVICE_CATEGORY = { id: 'uncategorized', name: 'Uncategorized' };
 
+const FilledHomeIcon = () => (
+  <svg className="admin-home-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M3 10.5 12 3l9 7.5v9A1.5 1.5 0 0 1 19.5 21H15v-6h-6v6H4.5A1.5 1.5 0 0 1 3 19.5v-9Z" />
+  </svg>
+);
+
 function AdminServices() {
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editingService, setEditingService] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
@@ -27,6 +33,7 @@ function AdminServices() {
   const [catalogRows, setCatalogRows] = useState([]);
   const [catalogSaving, setCatalogSaving] = useState(false);
   const [draggedCatalogIndex, setDraggedCatalogIndex] = useState(null);
+  const serviceContentEditorRef = useRef(null);
 
   const loadServices = useCallback(async () => {
     setLoading(true);
@@ -98,6 +105,8 @@ function AdminServices() {
   const displayCategories = [...serviceCategories, UNCATEGORIZED_SERVICE_CATEGORY];
 
   const handleCreate = () => {
+    setError('');
+    setSuccessMsg('');
     setEditingService({
       url: '',
       title: '',
@@ -107,18 +116,27 @@ function AdminServices() {
       show_on_screen: false,
     });
     setImageFile(null);
-    setIsModalOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleEdit = async (serviceId) => {
     try {
+      setError('');
+      setSuccessMsg('');
       const data = await apiFetch(`/api/admin-panel/services/${serviceId}/`);
       setEditingService(data.service || data);
       setImageFile(null);
-      setIsModalOpen(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setError(err.message);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingService(null);
+    setImageFile(null);
+    setError('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (serviceId) => {
@@ -181,7 +199,7 @@ function AdminServices() {
           show_on_screen: updatedStatus
         }
       });
-      showSuccess(updatedStatus ? 'Service is now shown on screen.' : 'Service is no longer shown on screen.');
+      showSuccess(updatedStatus ? 'Service will display on homepage.' : 'Service will not display on homepage.');
 
       // Sync silent background reload
       const servicesData = await apiFetch('/api/admin-panel/services/');
@@ -194,11 +212,12 @@ function AdminServices() {
     }
   };
 
-  const handleSave = async (e) => {
+  const handleSave = async (e, { closeAfterSave = true } = {}) => {
     e.preventDefault();
     setSaving(true);
     setError('');
     try {
+      const latestContent = serviceContentEditorRef.current?.getHtml?.() ?? editingService.content ?? '';
       const isNew = !editingService.id;
       const endpoint = isNew
         ? '/api/admin-panel/services/create/'
@@ -207,7 +226,7 @@ function AdminServices() {
       const formData = new FormData();
       formData.append('url', editingService.url);
       formData.append('title', editingService.title);
-      formData.append('content', editingService.content);
+      formData.append('content', latestContent);
       formData.append('category', editingService.category || 'uncategorized');
       formData.append('is_featured', editingService.is_featured ? 'true' : 'false');
       formData.append('show_on_screen', editingService.show_on_screen ? 'true' : 'false');
@@ -215,15 +234,23 @@ function AdminServices() {
         formData.append('image', imageFile);
       }
 
-      await apiFetch(endpoint, {
+      const saveResponse = await apiFetch(endpoint, {
         method: 'POST',
         body: formData,
       });
 
       showSuccess(isNew ? 'Service created!' : 'Service updated!');
-      setIsModalOpen(false);
-      setEditingService(null);
-      setImageFile(null);
+      if (closeAfterSave) {
+        setEditingService(null);
+        setImageFile(null);
+      } else {
+        setEditingService((prev) => ({
+          ...prev,
+          content: latestContent,
+          id: prev?.id || saveResponse?.id || saveResponse?.service?.id,
+          image: saveResponse?.image || saveResponse?.service?.image || prev?.image,
+        }));
+      }
       loadServices();
     } catch (err) {
       setError(err.message);
@@ -385,6 +412,111 @@ function AdminServices() {
     }
   };
 
+  if (editingService) {
+    const isEditingExistingService = Boolean(editingService.id);
+
+    return (
+      <div className="admin-blog-editor-page">
+        <div className="admin-editor-header">
+          <div>
+            <button type="button" className="admin-back-button" onClick={handleCancelEdit}>
+              Back to Services Catalog
+            </button>
+            <h2 id="admin-content-title">
+              {isEditingExistingService ? 'Edit Service' : 'Create Service'}
+            </h2>
+          </div>
+          <div className="admin-editor-header-actions">
+            <button type="button" className="secondary-admin-button" onClick={handleCancelEdit}>Cancel</button>
+            <button type="button" className="secondary-admin-button" disabled={saving} onClick={(e) => handleSave(e, { closeAfterSave: false })}>
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+            <button type="submit" form="admin-service-editor-form" className="primary-button" disabled={saving}>
+              {saving ? 'Saving...' : (isEditingExistingService ? 'Save & Close' : 'Create & Close')}
+            </button>
+          </div>
+        </div>
+
+        {error && <div className="admin-alert error">{error}</div>}
+
+        <form id="admin-service-editor-form" onSubmit={handleSave} className="admin-editor-panel">
+          <div className="admin-form-grid">
+            <label className="admin-form-field span-2">
+              <span>Title *</span>
+              <input type="text" value={editingService.title || ''} onChange={(e) => updateField('title', e.target.value)} required maxLength="60" />
+            </label>
+            <label className="admin-form-field">
+              <span>URL Slug *</span>
+              <input type="text" value={editingService.url || ''} onChange={(e) => updateField('url', e.target.value)} required placeholder="e.g. gene-synthesis" />
+            </label>
+            <label className="admin-form-field">
+              <span>Category *</span>
+              <select
+                value={editingService.category || ''}
+                onChange={(e) => updateField('category', e.target.value)}
+                required
+              >
+                <option value="">-- Select Category --</option>
+                {displayCategories.map(cat => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="admin-form-field span-3">
+              <span>Service Image</span>
+              <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0] || null)} />
+              {editingService.image && !imageFile && (
+                <div className="admin-current-image">
+                  <img src={formatAssetUrl(editingService.image)} alt="Current" />
+                  <span>Current image</span>
+                </div>
+              )}
+            </label>
+            <div className="admin-form-toggles span-3">
+              <label className="admin-toggle">
+                <input
+                  type="checkbox"
+                  checked={!!editingService.is_featured}
+                  onChange={(e) => updateField('is_featured', e.target.checked)}
+                />
+                <span>Featured Service</span>
+              </label>
+              <label className="admin-toggle">
+                <input
+                  type="checkbox"
+                  checked={!!editingService.show_on_screen}
+                  onChange={(e) => updateField('show_on_screen', e.target.checked)}
+                />
+                <span>Display on homepage</span>
+              </label>
+            </div>
+            <div className="admin-form-field span-3">
+              <span>Content (HTML) *</span>
+              <ProductContentEditor
+                ref={serviceContentEditorRef}
+                value={editingService.content || ''}
+                onChange={(value) => updateField('content', value)}
+                ariaLabel="Service content text"
+              />
+            </div>
+          </div>
+
+          <div className="admin-editor-footer">
+            <button type="button" className="secondary-admin-button" onClick={handleCancelEdit}>Cancel</button>
+            <button type="button" className="secondary-admin-button" disabled={saving} onClick={(e) => handleSave(e, { closeAfterSave: false })}>
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+            <button type="submit" className="primary-button" disabled={saving}>
+              {saving ? 'Saving...' : (isEditingExistingService ? 'Save & Close' : 'Create & Close')}
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="admin-section-header">
@@ -477,7 +609,7 @@ function AdminServices() {
                                 )}
                                 {service.show_on_screen && (
                                   <span className="admin-badge badge-info" style={{ background: '#0284c7', color: '#fff', marginLeft: '4px' }}>
-                                    On Screen
+                                    Homepage
                                   </span>
                                 )}
                               </div>
@@ -512,14 +644,18 @@ function AdminServices() {
                                 </button>
                                 <button
                                   type="button"
-                                  className="admin-action-btn"
+                                  className="admin-action-btn admin-homepage-action-btn"
                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleShowOnScreen(service.id, service.show_on_screen); }}
-                                  title={service.show_on_screen ? "Hide from Screen" : "Show on Screen"}
+                                  title="Display on homepage"
+                                  aria-label="Display on homepage"
                                   style={{
-                                    background: service.show_on_screen ? '#0284c7' : '#f1f5f9',
+                                    background: service.show_on_screen ? 'var(--blue)' : '#f1f5f9',
                                     color: service.show_on_screen ? '#fff' : 'var(--ink-light)',
-                                    border: '1px solid ' + (service.show_on_screen ? '#0284c7' : '#cbd5e1'),
-                                    padding: '4px 8px',
+                                    border: '1px solid ' + (service.show_on_screen ? 'var(--blue)' : '#cbd5e1'),
+                                    minWidth: '34px',
+                                    width: '34px',
+                                    height: '30px',
+                                    padding: '0',
                                     borderRadius: '4px',
                                     cursor: 'pointer',
                                     fontSize: '14px',
@@ -530,7 +666,7 @@ function AdminServices() {
                                     marginRight: '4px'
                                   }}
                                 >
-                                  👁
+                                  <FilledHomeIcon />
                                 </button>
                                 <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(service.id); }}>Edit</button>
                                 <button type="button" className="admin-action-btn delete" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(service.id); }}>Delete</button>
@@ -545,86 +681,6 @@ function AdminServices() {
               </div>
             );
           })}
-        </div>
-      )}
-
-      {isModalOpen && editingService && (
-        <div className="admin-modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="admin-modal admin-modal-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="admin-modal-header">
-              <h3>{editingService.id ? 'Edit Service' : 'Create Service'}</h3>
-              <button className="admin-modal-close" onClick={() => setIsModalOpen(false)}>x</button>
-            </div>
-            <form onSubmit={handleSave} className="admin-modal-body">
-              <div className="admin-form-grid">
-                <label className="admin-form-field span-2">
-                  <span>Title *</span>
-                  <input type="text" value={editingService.title || ''} onChange={(e) => updateField('title', e.target.value)} required maxLength="60" />
-                </label>
-                <label className="admin-form-field">
-                  <span>URL Slug *</span>
-                  <input type="text" value={editingService.url || ''} onChange={(e) => updateField('url', e.target.value)} required placeholder="e.g. gene-synthesis" />
-                </label>
-                <label className="admin-form-field">
-                  <span>Category *</span>
-                  <select
-                    value={editingService.category || ''}
-                    onChange={(e) => updateField('category', e.target.value)}
-                    required
-                  >
-                    <option value="">-- Select Category --</option>
-                    {displayCategories.map(cat => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="admin-form-field span-3">
-                  <span>Service Image</span>
-                  <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0] || null)} />
-                  {editingService.image && !imageFile && (
-                    <div className="admin-current-image">
-                      <img src={formatAssetUrl(editingService.image)} alt="Current" />
-                      <span>Current image</span>
-                    </div>
-                  )}
-                </label>
-                <div className="admin-form-field span-3" style={{ margin: '4px 0 12px 0' }}>
-                  <label className="checkbox-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                    <input
-                      type="checkbox"
-                      checked={!!editingService.is_featured}
-                      onChange={(e) => updateField('is_featured', e.target.checked)}
-                      style={{ width: '18px', height: '18px', accentColor: 'var(--blue)' }}
-                    />
-                    <span>Featured Service (display on homepage)</span>
-                  </label>
-                </div>
-                <div className="admin-form-field span-3" style={{ margin: '4px 0 12px 0' }}>
-                  <label className="checkbox-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                    <input
-                      type="checkbox"
-                      checked={!!editingService.show_on_screen}
-                      onChange={(e) => updateField('show_on_screen', e.target.checked)}
-                      style={{ width: '18px', height: '18px', accentColor: 'var(--blue)' }}
-                    />
-                    <span>Show on screen</span>
-                  </label>
-                </div>
-                <label className="admin-form-field span-3">
-                  <span>Content (HTML) *</span>
-                  <textarea rows="14" value={editingService.content || ''} onChange={(e) => updateField('content', e.target.value)} required />
-                </label>
-              </div>
-              <div className="admin-modal-footer">
-                <button type="button" className="secondary-admin-button" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                <button type="submit" className="primary-button" disabled={saving}>
-                  {saving ? 'Saving...' : (editingService.id ? 'Update Service' : 'Create Service')}
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
 

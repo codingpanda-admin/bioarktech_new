@@ -19,22 +19,38 @@ const REAGENTS_CATEGORIES = [
   { id: 'category-1780539818236', name: 'Consumables' }
 ];
 
-const ProductContentEditor = React.forwardRef(function ProductContentEditor({ value, onChange }, ref) {
+const FilledHomeIcon = () => (
+  <svg className="admin-home-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M3 10.5 12 3l9 7.5v9A1.5 1.5 0 0 1 19.5 21H15v-6h-6v6H4.5A1.5 1.5 0 0 1 3 19.5v-9Z" />
+  </svg>
+);
+
+export const ProductContentEditor = React.forwardRef(function ProductContentEditor({ value, onChange, ariaLabel = 'Product content text' }, ref) {
   const editorRef = useRef(null);
+  const lastEmittedHtmlRef = useRef(null);
 
   useEffect(() => {
-    const editorHtml = formatRichText(value || '');
+    const rawValue = value || '';
+
+    if (rawValue === lastEmittedHtmlRef.current) {
+      return;
+    }
+
+    const editorHtml = formatRichText(rawValue);
     if (editorRef.current && editorRef.current.innerHTML !== editorHtml) {
       editorRef.current.innerHTML = editorHtml;
     }
-    if ((value || '') !== editorHtml) {
+    if (rawValue !== editorHtml) {
+      lastEmittedHtmlRef.current = editorHtml;
       onChange(editorHtml);
     }
   }, [value, onChange]);
 
   const syncValue = () => {
     if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+      const nextHtml = editorRef.current.innerHTML;
+      lastEmittedHtmlRef.current = nextHtml;
+      onChange(nextHtml);
     }
   };
 
@@ -69,6 +85,25 @@ const ProductContentEditor = React.forwardRef(function ProductContentEditor({ va
     const url = window.prompt('Enter image URL');
     if (!url) return;
     runCommand('insertImage', url);
+  };
+
+  const handlePaste = (event) => {
+    const plainText = event.clipboardData?.getData('text/plain') || '';
+    const htmlText = event.clipboardData?.getData('text/html') || '';
+
+    if (!plainText || htmlText || !plainText.includes('|')) {
+      return;
+    }
+
+    const formattedHtml = formatRichText(plainText);
+    if (!formattedHtml.includes('<table')) {
+      return;
+    }
+
+    event.preventDefault();
+    focusEditor();
+    document.execCommand('insertHTML', false, formattedHtml);
+    syncValue();
   };
 
   const handleBlockChange = (event) => {
@@ -227,9 +262,10 @@ const ProductContentEditor = React.forwardRef(function ProductContentEditor({ va
         contentEditable
         role="textbox"
         aria-multiline="true"
-        aria-label="Product content text"
+        aria-label={ariaLabel}
         onInput={syncValue}
         onBlur={syncValue}
+        onPaste={handlePaste}
         suppressContentEditableWarning
       />
     </div>
@@ -320,6 +356,7 @@ function AdminProducts({ categoryFilter = null }) {
       const productData = data.product || data;
       setEditingProduct({
         ...productData,
+        content_text: productData.content_text || productData.contentText || productData.raw_detail?.contentText || '',
         product_id: productData.product_id || productData.id || productId
       });
       setIsModalOpen(false);
@@ -404,7 +441,7 @@ function AdminProducts({ categoryFilter = null }) {
           show_on_screen: updatedStatus
         }
       });
-      showSuccess(updatedStatus ? 'Product is now shown on screen.' : 'Product is no longer shown on screen.');
+      showSuccess(updatedStatus ? 'Product will display on homepage.' : 'Product will not display on homepage.');
 
       // Sync silent background reload
       const sourceType = categoryFilter === 'products' ? 'product' : 'reagent';
@@ -1044,7 +1081,7 @@ function AdminProducts({ categoryFilter = null }) {
             </label>
             <label className="admin-toggle">
               <input type="checkbox" checked={!!editingProduct.show_on_screen} onChange={(e) => updateField('show_on_screen', e.target.checked)} />
-              <span>Show on screen</span>
+              <span>Display on homepage</span>
             </label>
             <label className="admin-toggle">
               <input type="checkbox" checked={!!editingProduct.quote_only} onChange={(e) => updateField('quote_only', e.target.checked)} />
@@ -1210,7 +1247,7 @@ function AdminProducts({ categoryFilter = null }) {
                                         {product.hidden ? 'Hidden' : 'Visible'}
                                       </span>
                                       {product.is_featured && <span className="admin-badge badge-accent">Featured</span>}
-                                      {product.show_on_screen && <span className="admin-badge badge-info" style={{ background: '#0284c7', color: '#fff', marginLeft: '4px' }}>On Screen</span>}
+                                      {product.show_on_screen && <span className="admin-badge badge-info" style={{ background: '#0284c7', color: '#fff', marginLeft: '4px' }}>Homepage</span>}
                                     </td>
                                     <td>
                                       <div className="admin-row-actions">
@@ -1238,14 +1275,18 @@ function AdminProducts({ categoryFilter = null }) {
                                         </button>
                                         <button
                                           type="button"
-                                          className="admin-action-btn"
+                                          className="admin-action-btn admin-homepage-action-btn"
                                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleShowOnScreen(pId, product.show_on_screen); }}
-                                          title={product.show_on_screen ? "Hide from Screen" : "Show on Screen"}
+                                          title="Display on homepage"
+                                          aria-label="Display on homepage"
                                           style={{
-                                            background: product.show_on_screen ? '#0284c7' : '#f1f5f9',
+                                            background: product.show_on_screen ? 'var(--blue)' : '#f1f5f9',
                                             color: product.show_on_screen ? '#fff' : 'var(--ink-light)',
-                                            border: '1px solid ' + (product.show_on_screen ? '#0284c7' : '#cbd5e1'),
-                                            padding: '4px 8px',
+                                            border: '1px solid ' + (product.show_on_screen ? 'var(--blue)' : '#cbd5e1'),
+                                            minWidth: '34px',
+                                            width: '34px',
+                                            height: '30px',
+                                            padding: '0',
                                             borderRadius: '4px',
                                             cursor: 'pointer',
                                             fontSize: '14px',
@@ -1256,7 +1297,7 @@ function AdminProducts({ categoryFilter = null }) {
                                             marginRight: '4px'
                                           }}
                                         >
-                                          👁
+                                          <FilledHomeIcon />
                                         </button>
                                         <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(pId); }}>Edit</button>
                                         <button type="button" className="admin-action-btn delete" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(pId); }}>Hide</button>
@@ -1488,7 +1529,7 @@ function AdminProducts({ categoryFilter = null }) {
                 </label>
                 <label className="admin-toggle">
                   <input type="checkbox" checked={!!editingProduct.show_on_screen} onChange={(e) => updateField('show_on_screen', e.target.checked)} />
-                  <span>Show on screen</span>
+                  <span>Display on homepage</span>
                 </label>
                 <label className="admin-toggle">
                   <input type="checkbox" checked={!!editingProduct.quote_only} onChange={(e) => updateField('quote_only', e.target.checked)} />

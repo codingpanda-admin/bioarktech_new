@@ -111,6 +111,10 @@ const normalizeMarkdownImageBlocks = (value) => value.replace(
   '\n\n$1\n\n'
 );
 
+const removeLooseCodeFences = (value) => String(value)
+  .replace(/^\s*```\s*$/gm, '')
+  .replace(/\n{3,}/g, '\n\n');
+
 const normalizeInlineMarkdownStructure = (value) => String(value)
   .replace(/\s+-\s+(?=\*\*[^*]+\*\*)/g, '\n- ')
   .replace(/\s+---\s+/g, '\n\n---\n\n')
@@ -307,7 +311,7 @@ export const formatRichText = (value) => {
   if (!content) return '';
   if (hasHtmlTags(content) && !hasMarkdownSyntax(content)) return content;
 
-  const source = hasHtmlTags(content) ? htmlToRichTextSource(content) : content;
+  const source = removeLooseCodeFences(hasHtmlTags(content) ? htmlToRichTextSource(content) : content);
 
   return normalizeMarkdownImageBlocks(normalizeInlineListMarkers(normalizeInlineMarkdownStructure(compactLooseMarkdownTables(normalizeMarkdownTableBlocks(source)))))
     .replace(/\r\n?/g, '\n')

@@ -302,6 +302,7 @@ def admin_get_product(request, product_id):
             'price_range': p.price_range,
             'quote_only': p.quote_only,
             'is_featured': p.is_featured,
+            'show_on_screen': p.show_on_screen,
             'show_in_featured': p.show_in_featured,
             'show_in_gene_editing': p.show_in_gene_editing,
             'key_features': p.key_features,

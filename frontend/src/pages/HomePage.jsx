@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiFetch, mockCategories, mockProducts, mockResources, getCategoryIcon, formatAssetUrl } from '../utils/api';
+import { apiFetch, mockCategories, mockResources, getCategoryIcon, formatAssetUrl } from '../utils/api';
 import { logo } from '../utils/api';
 import IconMark from '../components/IconMark';
 import ProductVisual from '../components/ProductVisual';
@@ -95,7 +95,7 @@ function HomePage({ navigate, searchParams }) {
           slideData
         ] = await Promise.all([
           apiFetch('/api/products/load-product-categories/').catch(() => mockCategories),
-          apiFetch('/api/products/get-latest-featured-products/').catch(() => mockProducts),
+          apiFetch('/api/products/get-latest-featured-products/').catch(() => []),
           apiFetch('/api/products/get-featured-general-products/').catch(() => []),
           apiFetch('/api/interface/get-featured-services/').catch(() => []),
           apiFetch('/api/blogs/get-latest-blogs/').catch(() => mockResources),
@@ -103,7 +103,7 @@ function HomePage({ navigate, searchParams }) {
         ]);
 
         setCategories(Array.isArray(catData) && catData.length > 0 ? catData : mockCategories);
-        setFeaturedProducts(Array.isArray(prodData) && prodData.length > 0 ? prodData : mockProducts);
+        setFeaturedProducts(Array.isArray(prodData) ? prodData : []);
         setFeaturedGeneralProducts(Array.isArray(generalProdData) ? generalProdData : []);
         setFeaturedServices(Array.isArray(servicesData) ? servicesData : []);
         setBlogs(getRecentBlogs(Array.isArray(blogData) && blogData.length > 0 ? blogData : mockResources));
@@ -403,9 +403,23 @@ function HomePage({ navigate, searchParams }) {
                       const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
                       const productId = prod.externalId || prod.external_id || prod.catalog_number;
                       const productHref = productId ? `/product/${productId}` : `/search?q=${encodeURIComponent(name)}`;
+                      const openProduct = () => navigate(productHref);
 
                       return (
-                        <article className="product-card" key={`${productId}-${index}`} style={{ display: 'flex', flexDirection: 'column', height: '100%', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', border: '1px solid var(--line)', background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)' }}>
+                        <article
+                          className="product-card"
+                          key={`${productId}-${index}`}
+                          role="link"
+                          tabIndex={0}
+                          onClick={openProduct}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              openProduct();
+                            }
+                          }}
+                          style={{ display: 'flex', flexDirection: 'column', height: '100%', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', border: '1px solid var(--line)', background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)', cursor: 'pointer' }}
+                        >
                           {imgUrl ? (
                             <div style={{ height: '150px', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '10px 0 20px 0' }}>
                               <img src={imgUrl} alt={name} style={{ maxHeight: '100%', maxWidth: '100%', borderRadius: '8px', objectFit: 'contain' }} />
@@ -419,7 +433,7 @@ function HomePage({ navigate, searchParams }) {
                               <p className="rating" style={{ margin: '0 0 12px 0' }}>★★★★★ <span style={{ color: 'var(--ink-light)', fontSize: '0.85rem' }}>(4.8)</span></p>
                               <p className="price" style={{ margin: '0 0 20px 0', fontSize: '1.2rem', fontWeight: '700', color: 'var(--blue)' }}>{priceStr}</p>
                             </div>
-                            <a href={productHref} className="secondary-button" onClick={(e) => { e.preventDefault(); navigate(productHref); }} style={{ width: '100%', textAlign: 'center', display: 'block', padding: '10px 0', borderRadius: '6px', fontSize: '0.95rem', fontWeight: '600' }}>View Details</a>
+                            <a href={productHref} className="secondary-button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(productHref); }} style={{ width: '100%', textAlign: 'center', display: 'block', padding: '10px 0', borderRadius: '6px', fontSize: '0.95rem', fontWeight: '600' }}>View Details</a>
                           </div>
                         </article>
                       );
@@ -437,7 +451,7 @@ function HomePage({ navigate, searchParams }) {
               </div>
               
               <div style={{ textAlign: 'center', marginTop: '40px' }}>
-                <a className="view-all" href="#" onClick={(e) => { e.preventDefault(); navigate('/search?category=reagents'); }} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '600', color: 'var(--blue)' }}>View All Reagents & Materials <span>→</span></a>
+                <a className="view-all" href="#" onClick={(e) => { e.preventDefault(); navigate('/search?category=reagents'); }} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '600', color: '#fff' }}>View All Reagents & Materials <span>→</span></a>
               </div>
             </div>
           </section>

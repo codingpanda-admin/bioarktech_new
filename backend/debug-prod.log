@@ -8226,3 +8226,16 @@ Watching for file changes with StatReloader
 /app/api/admin_views.py changed, reloading.
 Watching for file changes with StatReloader
 Not Found: /media/BAPM2083_Prestained_Protein_Marker_├ö├á├║-1.jpg
+Watching for file changes with StatReloader
+/app/api/admin_views.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Bad Request: /api/logout/
+Unauthorized: /api/admin-panel/dashboard/
+Unauthorized: /api/admin-panel/products/
+Watching for file changes with StatReloader
+Not Found: /media/BAPM2083_Prestained_Protein_Marker_├ö├á├║-1.jpg
+Not Found: /media/BAPoly-1.png
+Watching for file changes with StatReloader
+Bad Request: /api/logout/
+Bad Request: /api/logout/

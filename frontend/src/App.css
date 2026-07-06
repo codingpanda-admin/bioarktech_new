@@ -4978,6 +4978,21 @@ label,
   background: transparent;
 }
 
+.admin-homepage-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.admin-homepage-action-btn .admin-home-icon {
+  display: block;
+  width: 15.2px;
+  height: 15.2px;
+  fill: currentColor;
+  flex: 0 0 auto;
+}
+
 .admin-action-btn.edit {
   color: var(--blue);
   border-color: #cfe0f4;
