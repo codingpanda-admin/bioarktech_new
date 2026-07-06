@@ -135,6 +135,15 @@ function AdminServices() {
   const handleToggleFeatured = async (serviceId, currentStatus) => {
     try {
       const updatedStatus = !currentStatus;
+      
+      // Optimistic local state update
+      setServices(prevServices => prevServices.map(s => {
+        if (s.id === serviceId) {
+          return { ...s, is_featured: updatedStatus };
+        }
+        return s;
+      }));
+
       await apiFetch(`/api/admin-panel/services/${serviceId}/update/`, {
         method: 'POST',
         body: {
@@ -142,15 +151,30 @@ function AdminServices() {
         }
       });
       showSuccess(updatedStatus ? 'Service is now featured.' : 'Service is no longer featured.');
-      loadServices();
+
+      // Sync silent background reload
+      const servicesData = await apiFetch('/api/admin-panel/services/');
+      setServices(servicesData.results || servicesData.services || []);
     } catch (err) {
       setError(err.message);
+      // Revert status on failure
+      const servicesData = await apiFetch('/api/admin-panel/services/');
+      setServices(servicesData.results || servicesData.services || []);
     }
   };
 
   const handleToggleShowOnScreen = async (serviceId, currentStatus) => {
     try {
       const updatedStatus = !currentStatus;
+      
+      // Optimistic local state update
+      setServices(prevServices => prevServices.map(s => {
+        if (s.id === serviceId) {
+          return { ...s, show_on_screen: updatedStatus };
+        }
+        return s;
+      }));
+
       await apiFetch(`/api/admin-panel/services/${serviceId}/update/`, {
         method: 'POST',
         body: {
@@ -158,9 +182,15 @@ function AdminServices() {
         }
       });
       showSuccess(updatedStatus ? 'Service is now shown on screen.' : 'Service is no longer shown on screen.');
-      loadServices();
+
+      // Sync silent background reload
+      const servicesData = await apiFetch('/api/admin-panel/services/');
+      setServices(servicesData.results || servicesData.services || []);
     } catch (err) {
       setError(err.message);
+      // Revert status on failure
+      const servicesData = await apiFetch('/api/admin-panel/services/');
+      setServices(servicesData.results || servicesData.services || []);
     }
   };
 
@@ -459,8 +489,9 @@ function AdminServices() {
                             <td>
                               <div className="admin-row-actions">
                                 <button
+                                  type="button"
                                   className="admin-action-btn"
-                                  onClick={() => handleToggleFeatured(service.id, service.is_featured)}
+                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleFeatured(service.id, service.is_featured); }}
                                   title={service.is_featured ? "Remove from Featured" : "Mark as Featured"}
                                   style={{
                                     background: service.is_featured ? 'var(--blue)' : '#f1f5f9',
@@ -480,8 +511,9 @@ function AdminServices() {
                                   ★
                                 </button>
                                 <button
+                                  type="button"
                                   className="admin-action-btn"
-                                  onClick={() => handleToggleShowOnScreen(service.id, service.show_on_screen)}
+                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleShowOnScreen(service.id, service.show_on_screen); }}
                                   title={service.show_on_screen ? "Hide from Screen" : "Show on Screen"}
                                   style={{
                                     background: service.show_on_screen ? '#0284c7' : '#f1f5f9',
@@ -500,8 +532,8 @@ function AdminServices() {
                                 >
                                   👁
                                 </button>
-                                <button className="admin-action-btn edit" onClick={() => handleEdit(service.id)}>Edit</button>
-                                <button className="admin-action-btn delete" onClick={() => handleDelete(service.id)}>Delete</button>
+                                <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(service.id); }}>Edit</button>
+                                <button type="button" className="admin-action-btn delete" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(service.id); }}>Delete</button>
                               </div>
                             </td>
                           </tr>

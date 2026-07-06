@@ -350,6 +350,16 @@ function AdminProducts({ categoryFilter = null }) {
   const handleToggleFeatured = async (productId, currentStatus) => {
     try {
       const updatedStatus = !currentStatus;
+      
+      // Optimistic local state update
+      setProducts(prevProducts => prevProducts.map(p => {
+        const pId = p.id || p.product_id;
+        if (pId === productId) {
+          return { ...p, is_featured: updatedStatus };
+        }
+        return p;
+      }));
+
       await apiFetch(`/api/admin-panel/products/${productId}/update/`, {
         method: 'POST',
         body: {
@@ -357,15 +367,37 @@ function AdminProducts({ categoryFilter = null }) {
         }
       });
       showSuccess(updatedStatus ? 'Product is now featured.' : 'Product is no longer featured.');
-      loadProducts();
+
+      // Sync silent background reload
+      const sourceType = categoryFilter === 'products' ? 'product' : 'reagent';
+      const url = `/api/admin-panel/products/?page_number=1&page_size=250&source_type=${sourceType}`;
+      const data = await apiFetch(url);
+      const rawList = data.results || data.products || [];
+      setProducts(rawList);
     } catch (err) {
       setError(err.message);
+      // Revert status on failure
+      const sourceType = categoryFilter === 'products' ? 'product' : 'reagent';
+      const url = `/api/admin-panel/products/?page_number=1&page_size=250&source_type=${sourceType}`;
+      const data = await apiFetch(url);
+      const rawList = data.results || data.products || [];
+      setProducts(rawList);
     }
   };
 
   const handleToggleShowOnScreen = async (productId, currentStatus) => {
     try {
       const updatedStatus = !currentStatus;
+      
+      // Optimistic local state update
+      setProducts(prevProducts => prevProducts.map(p => {
+        const pId = p.id || p.product_id;
+        if (pId === productId) {
+          return { ...p, show_on_screen: updatedStatus };
+        }
+        return p;
+      }));
+
       await apiFetch(`/api/admin-panel/products/${productId}/update/`, {
         method: 'POST',
         body: {
@@ -373,9 +405,21 @@ function AdminProducts({ categoryFilter = null }) {
         }
       });
       showSuccess(updatedStatus ? 'Product is now shown on screen.' : 'Product is no longer shown on screen.');
-      loadProducts();
+
+      // Sync silent background reload
+      const sourceType = categoryFilter === 'products' ? 'product' : 'reagent';
+      const url = `/api/admin-panel/products/?page_number=1&page_size=250&source_type=${sourceType}`;
+      const data = await apiFetch(url);
+      const rawList = data.results || data.products || [];
+      setProducts(rawList);
     } catch (err) {
       setError(err.message);
+      // Revert status on failure
+      const sourceType = categoryFilter === 'products' ? 'product' : 'reagent';
+      const url = `/api/admin-panel/products/?page_number=1&page_size=250&source_type=${sourceType}`;
+      const data = await apiFetch(url);
+      const rawList = data.results || data.products || [];
+      setProducts(rawList);
     }
   };
 
@@ -1171,8 +1215,9 @@ function AdminProducts({ categoryFilter = null }) {
                                     <td>
                                       <div className="admin-row-actions">
                                         <button
+                                          type="button"
                                           className="admin-action-btn"
-                                          onClick={() => handleToggleFeatured(pId, product.is_featured)}
+                                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleFeatured(pId, product.is_featured); }}
                                           title={product.is_featured ? "Remove from Featured" : "Mark as Featured"}
                                           style={{
                                             background: product.is_featured ? 'var(--blue)' : '#f1f5f9',
@@ -1192,8 +1237,9 @@ function AdminProducts({ categoryFilter = null }) {
                                           ★
                                         </button>
                                         <button
+                                          type="button"
                                           className="admin-action-btn"
-                                          onClick={() => handleToggleShowOnScreen(pId, product.show_on_screen)}
+                                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleShowOnScreen(pId, product.show_on_screen); }}
                                           title={product.show_on_screen ? "Hide from Screen" : "Show on Screen"}
                                           style={{
                                             background: product.show_on_screen ? '#0284c7' : '#f1f5f9',
@@ -1212,8 +1258,8 @@ function AdminProducts({ categoryFilter = null }) {
                                         >
                                           👁
                                         </button>
-                                        <button className="admin-action-btn edit" onClick={() => handleEdit(pId)}>Edit</button>
-                                        <button className="admin-action-btn delete" onClick={() => handleDelete(pId)}>Hide</button>
+                                        <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(pId); }}>Edit</button>
+                                        <button type="button" className="admin-action-btn delete" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(pId); }}>Hide</button>
                                       </div>
                                     </td>
                                   </tr>

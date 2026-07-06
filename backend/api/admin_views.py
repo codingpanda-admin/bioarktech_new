@@ -258,6 +258,7 @@ def admin_list_products(request):
                 'product_group': p.product_group,
                 'hidden': p.hidden,
                 'is_featured': p.is_featured,
+                'show_on_screen': p.show_on_screen,
                 'image_url': p.image_url,
                 'list_price': p.list_price,
                 'source_type': p.source_type,
@@ -1196,6 +1197,7 @@ def admin_list_services(request):
                 'image': request.build_absolute_uri(s.image.url) if s.image else None,
                 'category': s.category,
                 'is_featured': s.is_featured,
+                'show_on_screen': s.show_on_screen,
             })
         return Response({'results': data})
     except Exception as e:
@@ -1218,6 +1220,7 @@ def admin_get_service(request, service_id):
             'image': request.build_absolute_uri(s.image.url) if s.image else None,
             'category': s.category,
             'is_featured': s.is_featured,
+            'show_on_screen': s.show_on_screen,
         }
         return Response(data)
     except ServiceMode.DoesNotExist:
