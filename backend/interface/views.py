@@ -28,6 +28,6 @@ def get_homepage_slides(request):
 
 @api_view(['GET'])
 def get_featured_services(request):
-    services = ServiceMode.objects.filter(is_featured=True)
+    services = ServiceMode.objects.filter(show_on_screen=True)
     serializer = ServiceModeSerializer(services, many=True)
     return JsonResponse(serializer.data, safe=False)

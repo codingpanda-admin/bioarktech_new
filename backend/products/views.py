@@ -568,7 +568,7 @@ def get_latest_featured_products(request):
 
 @api_view(['GET'])
 def get_featured_general_products(request):
-    products = Product.objects.filter(is_featured=True, hidden=False).exclude(external_id__startswith='fp-').order_by(
+    products = Product.objects.filter(show_on_screen=True, hidden=False).exclude(external_id__startswith='fp-').order_by(
         F("display_order").asc(nulls_last=True),
         "product_name",
     )

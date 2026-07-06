@@ -104,6 +104,7 @@ function AdminServices() {
       content: '',
       category: selectedCategory !== 'All' ? selectedCategory : 'uncategorized',
       is_featured: false,
+      show_on_screen: false,
     });
     setImageFile(null);
     setIsModalOpen(true);
@@ -147,6 +148,22 @@ function AdminServices() {
     }
   };
 
+  const handleToggleShowOnScreen = async (serviceId, currentStatus) => {
+    try {
+      const updatedStatus = !currentStatus;
+      await apiFetch(`/api/admin-panel/services/${serviceId}/update/`, {
+        method: 'POST',
+        body: {
+          show_on_screen: updatedStatus
+        }
+      });
+      showSuccess(updatedStatus ? 'Service is now shown on screen.' : 'Service is no longer shown on screen.');
+      loadServices();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -163,6 +180,7 @@ function AdminServices() {
       formData.append('content', editingService.content);
       formData.append('category', editingService.category || 'uncategorized');
       formData.append('is_featured', editingService.is_featured ? 'true' : 'false');
+      formData.append('show_on_screen', editingService.show_on_screen ? 'true' : 'false');
       if (imageFile) {
         formData.append('image', imageFile);
       }
@@ -427,6 +445,11 @@ function AdminServices() {
                                     Featured
                                   </span>
                                 )}
+                                {service.show_on_screen && (
+                                  <span className="admin-badge badge-info" style={{ background: '#0284c7', color: '#fff', marginLeft: '4px' }}>
+                                    On Screen
+                                  </span>
+                                )}
                               </div>
                             </td>
                             <td><code>{service.url}</code></td>
@@ -450,10 +473,32 @@ function AdminServices() {
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    fontWeight: 'bold'
+                                    fontWeight: 'bold',
+                                    marginRight: '4px'
                                   }}
                                 >
                                   ★
+                                </button>
+                                <button
+                                  className="admin-action-btn"
+                                  onClick={() => handleToggleShowOnScreen(service.id, service.show_on_screen)}
+                                  title={service.show_on_screen ? "Hide from Screen" : "Show on Screen"}
+                                  style={{
+                                    background: service.show_on_screen ? '#0284c7' : '#f1f5f9',
+                                    color: service.show_on_screen ? '#fff' : 'var(--ink-light)',
+                                    border: '1px solid ' + (service.show_on_screen ? '#0284c7' : '#cbd5e1'),
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 'bold',
+                                    marginRight: '4px'
+                                  }}
+                                >
+                                  👁
                                 </button>
                                 <button className="admin-action-btn edit" onClick={() => handleEdit(service.id)}>Edit</button>
                                 <button className="admin-action-btn delete" onClick={() => handleDelete(service.id)}>Delete</button>
@@ -522,6 +567,17 @@ function AdminServices() {
                       style={{ width: '18px', height: '18px', accentColor: 'var(--blue)' }}
                     />
                     <span>Featured Service (display on homepage)</span>
+                  </label>
+                </div>
+                <div className="admin-form-field span-3" style={{ margin: '4px 0 12px 0' }}>
+                  <label className="checkbox-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                    <input
+                      type="checkbox"
+                      checked={!!editingService.show_on_screen}
+                      onChange={(e) => updateField('show_on_screen', e.target.checked)}
+                      style={{ width: '18px', height: '18px', accentColor: 'var(--blue)' }}
+                    />
+                    <span>Show on screen</span>
                   </label>
                 </div>
                 <label className="admin-form-field span-3">

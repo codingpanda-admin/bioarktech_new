@@ -227,6 +227,7 @@ class Product(models.Model):
     price_range = models.CharField(max_length=100, blank=True, null=True)
     quote_only = models.BooleanField(default=False)
     is_featured = models.BooleanField(default=False)
+    show_on_screen = models.BooleanField(default=False)
     show_in_featured = models.BooleanField(default=False)
     show_in_gene_editing = models.BooleanField(default=False)
     key_features = ArrayField(models.TextField(), default=list, blank=True)

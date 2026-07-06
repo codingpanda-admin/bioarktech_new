@@ -301,6 +301,7 @@ function AdminProducts({ categoryFilter = null }) {
       availability: '',
       hidden: false,
       is_featured: false,
+      show_on_screen: false,
       quote_only: false,
       key_features: [],
       content_text: '',
@@ -356,6 +357,22 @@ function AdminProducts({ categoryFilter = null }) {
         }
       });
       showSuccess(updatedStatus ? 'Product is now featured.' : 'Product is no longer featured.');
+      loadProducts();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleToggleShowOnScreen = async (productId, currentStatus) => {
+    try {
+      const updatedStatus = !currentStatus;
+      await apiFetch(`/api/admin-panel/products/${productId}/update/`, {
+        method: 'POST',
+        body: {
+          show_on_screen: updatedStatus
+        }
+      });
+      showSuccess(updatedStatus ? 'Product is now shown on screen.' : 'Product is no longer shown on screen.');
       loadProducts();
     } catch (err) {
       setError(err.message);
@@ -982,6 +999,10 @@ function AdminProducts({ categoryFilter = null }) {
               <span>Featured</span>
             </label>
             <label className="admin-toggle">
+              <input type="checkbox" checked={!!editingProduct.show_on_screen} onChange={(e) => updateField('show_on_screen', e.target.checked)} />
+              <span>Show on screen</span>
+            </label>
+            <label className="admin-toggle">
               <input type="checkbox" checked={!!editingProduct.quote_only} onChange={(e) => updateField('quote_only', e.target.checked)} />
               <span>Quote Only</span>
             </label>
@@ -1145,6 +1166,7 @@ function AdminProducts({ categoryFilter = null }) {
                                         {product.hidden ? 'Hidden' : 'Visible'}
                                       </span>
                                       {product.is_featured && <span className="admin-badge badge-accent">Featured</span>}
+                                      {product.show_on_screen && <span className="admin-badge badge-info" style={{ background: '#0284c7', color: '#fff', marginLeft: '4px' }}>On Screen</span>}
                                     </td>
                                     <td>
                                       <div className="admin-row-actions">
@@ -1163,10 +1185,32 @@ function AdminProducts({ categoryFilter = null }) {
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            fontWeight: 'bold'
+                                            fontWeight: 'bold',
+                                            marginRight: '4px'
                                           }}
                                         >
                                           ★
+                                        </button>
+                                        <button
+                                          className="admin-action-btn"
+                                          onClick={() => handleToggleShowOnScreen(pId, product.show_on_screen)}
+                                          title={product.show_on_screen ? "Hide from Screen" : "Show on Screen"}
+                                          style={{
+                                            background: product.show_on_screen ? '#0284c7' : '#f1f5f9',
+                                            color: product.show_on_screen ? '#fff' : 'var(--ink-light)',
+                                            border: '1px solid ' + (product.show_on_screen ? '#0284c7' : '#cbd5e1'),
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer',
+                                            fontSize: '14px',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontWeight: 'bold',
+                                            marginRight: '4px'
+                                          }}
+                                        >
+                                          👁
                                         </button>
                                         <button className="admin-action-btn edit" onClick={() => handleEdit(pId)}>Edit</button>
                                         <button className="admin-action-btn delete" onClick={() => handleDelete(pId)}>Hide</button>
@@ -1395,6 +1439,10 @@ function AdminProducts({ categoryFilter = null }) {
                 <label className="admin-toggle">
                   <input type="checkbox" checked={!!editingProduct.is_featured} onChange={(e) => updateField('is_featured', e.target.checked)} />
                   <span>Featured</span>
+                </label>
+                <label className="admin-toggle">
+                  <input type="checkbox" checked={!!editingProduct.show_on_screen} onChange={(e) => updateField('show_on_screen', e.target.checked)} />
+                  <span>Show on screen</span>
                 </label>
                 <label className="admin-toggle">
                   <input type="checkbox" checked={!!editingProduct.quote_only} onChange={(e) => updateField('quote_only', e.target.checked)} />

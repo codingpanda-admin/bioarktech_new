@@ -356,6 +356,7 @@ def admin_create_product(request):
             price_range=d.get('price_range', ''),
             quote_only=d.get('quote_only', False),
             is_featured=d.get('is_featured', False),
+            show_on_screen=d.get('show_on_screen', False),
             show_in_featured=d.get('show_in_featured', False),
             show_in_gene_editing=d.get('show_in_gene_editing', False),
             key_features=d.get('key_features', []),
@@ -393,7 +394,7 @@ def admin_update_product(request, product_id):
             'external_id', 'product_name', 'description', 'image_url',
             'product_link', 'category_external_id', 'product_group',
             'source_type', 'display_order', 'catalog_number', 'availability',
-            'list_price', 'price_range', 'quote_only', 'is_featured',
+            'list_price', 'price_range', 'quote_only', 'is_featured', 'show_on_screen',
             'show_in_featured', 'show_in_gene_editing', 'key_features',
             'options', 'option_prices', 'storage_stability', 'performance_data',
             'data_description', 'manuals', 'manual_urls', 'images',
@@ -1236,12 +1237,16 @@ def admin_create_service(request):
         is_featured_val = d.get('is_featured', False)
         if isinstance(is_featured_val, str):
             is_featured_val = is_featured_val.lower() == 'true'
+        show_on_screen_val = d.get('show_on_screen', False)
+        if isinstance(show_on_screen_val, str):
+            show_on_screen_val = show_on_screen_val.lower() == 'true'
         s = ServiceMode(
             url=d.get('url', ''),
             title=d.get('title', ''),
             content=d.get('content', ''),
             category=d.get('category', ''),
             is_featured=is_featured_val,
+            show_on_screen=show_on_screen_val,
         )
         if request.FILES.get('image'):
             s.image = request.FILES['image']
@@ -1270,6 +1275,12 @@ def admin_update_service(request, service_id):
             if isinstance(is_featured_val, str):
                 is_featured_val = is_featured_val.lower() == 'true'
             s.is_featured = is_featured_val
+
+        if 'show_on_screen' in d:
+            show_on_screen_val = d['show_on_screen']
+            if isinstance(show_on_screen_val, str):
+                show_on_screen_val = show_on_screen_val.lower() == 'true'
+            s.show_on_screen = show_on_screen_val
 
         if request.FILES.get('image'):
             s.image = request.FILES['image']

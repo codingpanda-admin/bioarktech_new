@@ -81,7 +81,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'product_link', 'category_external_id', 'product_group', 'source_type',
             'display_order', 'source_created_at_ms', 'source_created_at',
             'catalog_number', 'availability', 'list_price', 'price_range',
-            'quote_only', 'is_featured', 'show_in_featured', 'show_in_gene_editing',
+            'quote_only', 'is_featured', 'show_on_screen', 'show_in_featured', 'show_in_gene_editing',
             'key_features', 'options', 'option_prices', 'storage_stability',
             'performance_data', 'data_description', 'manuals', 'manual_urls',
             'images', 'store_link', 'content_text', 'hidden', 'raw_product', 'category_name',
@@ -125,7 +125,7 @@ class PreviewFeaturedProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['product_name', 'external_id', 'externalId', 'catalog_number', 'unit_price', 'image']
+        fields = ['product_name', 'external_id', 'externalId', 'catalog_number', 'unit_price', 'image', 'show_on_screen']
 
     def get_product_name(self, product):
         if product.external_id and product.external_id.startswith('fp-'):
