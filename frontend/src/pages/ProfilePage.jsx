@@ -18,8 +18,12 @@ const emptyProfile = {
   zipcode: '',
 };
 
-function ProfilePage({ navigate }) {
-  const [activeTab, setActiveTab] = useState('personal'); // 'personal', 'address', 'orders', 'security'
+function ProfilePage({ navigate, initialTab }) {
+  const [activeTab, setActiveTab] = useState(initialTab || 'personal'); // 'personal', 'address', 'orders', 'security'
+
+  useEffect(() => {
+    setActiveTab(initialTab || 'personal');
+  }, [initialTab]);
   const [formData, setFormData] = useState(emptyProfile);
   const [profilePicture, setProfilePicture] = useState(null);
   const [readOnlyData, setReadOnlyData] = useState({
