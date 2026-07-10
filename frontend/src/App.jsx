@@ -311,7 +311,7 @@ function App() {
       ) : isBlogsPage ? (
         <ResourcesPage navigate={navigate} />
       ) : isProfilePage ? (
-        <ProfilePage navigate={navigate} />
+        <ProfilePage navigate={navigate} initialTab={searchParams.get('tab')} />
       ) : isMyQuotesPage ? (
         <MyQuotesPage navigate={navigate} currentUser={currentUser} authChecked={authChecked} />
       ) : isDesignPage ? (

@@ -732,6 +732,9 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
                   <a href="/profile" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/profile'); }}>
                     My Profile
                   </a>
+                  <a href="/profile?tab=orders" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/profile?tab=orders'); }}>
+                    Purchase History
+                  </a>
                   <a href="/quotes" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/quotes'); }}>
                     My Quotes
                   </a>
