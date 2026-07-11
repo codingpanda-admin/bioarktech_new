@@ -1134,5 +1134,5 @@ def _calculate_shipping(cart_items, subtotal):
 def _get_frontend_url():
     """Determine the frontend URL based on environment."""
     if DEBUG and DEBUG == "True":
-        return "http://localhost:80"
+        return "http://localhost:5173"
     return "https://bioarktech.com"
