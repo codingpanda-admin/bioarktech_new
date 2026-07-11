@@ -32,6 +32,9 @@ import stripe
 from .models import *
 from users.models import Address
 from .serializers import *
+from products.models import Product, FeaturedProduct, UnitPrice, ProductsUnion
+from interface.models import ServiceMode
+from django.http import HttpResponse, JsonResponse
 
 import requests
 
@@ -534,25 +537,50 @@ def create_order_items(cart, order_obj):
 
     try:
         for item in cart:
-            unit_price = item['price']
-            item = {key: value for key, value in item.items() if key in model_fields}
-            OrderItem.objects.create(unit_price=unit_price,
-                                    order_class=get_order_class(item['product_sku']),
-                                    total_price=float(unit_price) * item['quantity'],
-                                    order=order_obj,
-                                    work_period=get_work_period(item['product_sku'], item['ready_status']),
-                                    est_delivery_date=get_est_delivery_date(item['product_sku'], item['ready_status']),
-                                    **item)
+            sku = item.get('product_sku') or item.get('sku', '')
+            unit_size = item.get('unit_size') or item.get('unitSize', '')
+            db_price = _lookup_db_price(sku, unit_size)
+            if db_price is not None and db_price > 0:
+                unit_price = db_price
+            else:
+                unit_price = float(item.get('price', 0))
 
-    except WorkSchedule.DoesNotExist or Exception:
-        for item in cart:
-            unit_price = item['price']
-            item = {key: value for key, value in item.items() if key in model_fields}
+            item_fields = {key: value for key, value in item.items() if key in model_fields}
+            # Make sure product_sku is populated in item_fields
+            if 'product_sku' not in item_fields and sku:
+                item_fields['product_sku'] = sku
+            if 'unit_size' not in item_fields and unit_size:
+                item_fields['unit_size'] = unit_size
+
             OrderItem.objects.create(unit_price=unit_price,
-                                    order_class=get_order_class(item['product_sku']),
-                                    total_price=float(unit_price) * item['quantity'],
+                                    order_class=get_order_class(item_fields['product_sku']),
+                                    total_price=float(unit_price) * int(item.get('quantity', 1)),
                                     order=order_obj,
-                                    **item)
+                                    work_period=get_work_period(item_fields['product_sku'], item.get('ready_status')),
+                                    est_delivery_date=get_est_delivery_date(item_fields['product_sku'], item.get('ready_status')),
+                                    **item_fields)
+
+    except Exception:
+        for item in cart:
+            sku = item.get('product_sku') or item.get('sku', '')
+            unit_size = item.get('unit_size') or item.get('unitSize', '')
+            db_price = _lookup_db_price(sku, unit_size)
+            if db_price is not None and db_price > 0:
+                unit_price = db_price
+            else:
+                unit_price = float(item.get('price', 0))
+
+            item_fields = {key: value for key, value in item.items() if key in model_fields}
+            if 'product_sku' not in item_fields and sku:
+                item_fields['product_sku'] = sku
+            if 'unit_size' not in item_fields and unit_size:
+                item_fields['unit_size'] = unit_size
+
+            OrderItem.objects.create(unit_price=unit_price,
+                                    order_class=get_order_class(item_fields['product_sku']),
+                                    total_price=float(unit_price) * int(item.get('quantity', 1)),
+                                    order=order_obj,
+                                    **item_fields)
 
 
 def calculate_minimum_payment(total_price):
@@ -618,9 +646,80 @@ def get_est_delivery_date(product_sku, ready_status):
     return work_period_date
 
 
-# ─── Stripe Payment Gateway ────────────────────────────────────────────────────
+def _lookup_db_price(sku, unit_size=None):
+    """
+    Look up the authentic price of a product in the database.
+    This prevents users from tampering with cart prices on the client side.
+    """
+    sku = (sku or "").strip()
+    unit_size = (unit_size or "").strip()
+    
+    if not sku:
+        return 0.0
 
-logger = logging.getLogger(__name__)
+    # 1. Check if it's a FeaturedProduct
+    featured_product = FeaturedProduct.objects.filter(catalog_number__iexact=sku).first()
+    if featured_product:
+        # Check UnitPrice
+        if featured_product.union:
+            if unit_size:
+                up = UnitPrice.objects.filter(union=featured_product.union, unit_size__iexact=unit_size).first()
+                if up:
+                    return float(up.unit_price)
+            # Fallback to the first unit price for this product
+            up = UnitPrice.objects.filter(union=featured_product.union).first()
+            if up:
+                return float(up.unit_price)
+        # Fallback to 0 if not found
+        return 0.0
+
+    # 2. Check if it's a general Product
+    product = Product.objects.filter(catalog_number__iexact=sku, hidden=False).first()
+    if not product:
+        product = Product.objects.filter(external_id__iexact=sku, hidden=False).first()
+        
+    if product:
+        # Check if there are UnitPrice records for the product's union
+        union = ProductsUnion.objects.filter(product_id__iexact=product.catalog_number).first()
+        if not union:
+            union = ProductsUnion.objects.filter(product_id__iexact=product.external_id).first()
+            
+        up = None
+        if union:
+            if unit_size:
+                up = UnitPrice.objects.filter(union=union, unit_size__iexact=unit_size).first()
+            if not up:
+                up = UnitPrice.objects.filter(union=union).first()
+                
+        if up:
+            return float(up.unit_price)
+        else:
+            # Parse list_price
+            raw_lp = product.list_price or product.price_range or ""
+            try:
+                # Remove currency symbols and formatting
+                clean_lp = "".join(c for c in raw_lp if c.isdigit() or c == '.')
+                return float(clean_lp) if clean_lp else 0.0
+            except ValueError:
+                return 0.0
+
+    # 3. Check if it's a service
+    # Services in this app have URL as their identifier (e.g. s.url)
+    service = ServiceMode.objects.filter(url__iexact=sku).first()
+    if not service:
+        # Sometimes SKU is url.upper() or has "svc-" prefix
+        clean_sku = sku
+        if sku.lower().startswith("svc-"):
+            clean_sku = sku[4:]
+        service = ServiceMode.objects.filter(url__iexact=clean_sku).first()
+        if not service:
+            # Fallback check by title
+            service = ServiceMode.objects.filter(title__iexact=sku).first()
+
+    if service:
+        return 0.0 # Services are quote-only/free to add to cart on backend until custom quoted
+
+    return None
 
 
 @api_view(['POST'])
@@ -664,11 +763,18 @@ def create_stripe_checkout_session(request):
         total_quantity = 0
 
         for item in cart_items:
-            price = float(item.get("price", 0))
             quantity = int(item.get("quantity", 1))
             name = item.get("name", "Product")
             sku = item.get("sku", "")
             unit_size = item.get("unitSize", "")
+
+            # Look up price securely in DB
+            price = _lookup_db_price(sku, unit_size)
+            if price is None or price < 0:
+                price = float(item.get("price", 0))
+            
+            # Update item price in place so downstream metadata retains verified price
+            item["price"] = price
 
             if price <= 0 or quantity <= 0:
                 continue
@@ -788,7 +894,11 @@ def stripe_webhook(request):
 
     if not STRIPE_WEBHOOK_SECRET:
         logger.warning("STRIPE_WEBHOOK_SECRET not configured; accepting webhook without verification.")
-        event_data = json.loads(payload)
+        try:
+            event_data = json.loads(payload)
+        except ValueError:
+            logger.error("Stripe webhook: invalid json payload")
+            return HttpResponse("Invalid payload", status=400)
     else:
         try:
             event_data = json.loads(payload)
@@ -798,10 +908,10 @@ def stripe_webhook(request):
             event_data = event if isinstance(event, dict) else json.loads(str(event))
         except ValueError:
             logger.error("Stripe webhook: invalid payload")
-            return Response({"error": "Invalid payload"}, status=status.HTTP_400_BAD_REQUEST)
+            return HttpResponse("Invalid payload", status=400)
         except stripe.error.SignatureVerificationError:
             logger.error("Stripe webhook: invalid signature")
-            return Response({"error": "Invalid signature"}, status=status.HTTP_400_BAD_REQUEST)
+            return HttpResponse("Invalid signature", status=400)
 
     event_type = event_data.get("type", "")
 
@@ -812,7 +922,7 @@ def stripe_webhook(request):
     elif event_type == "charge.dispute.created":
         _handle_dispute(event_data)
 
-    return Response({"status": "ok"}, status=status.HTTP_200_OK)
+    return HttpResponse("ok", status=200)
 
 
 def _handle_checkout_completed(event_data):
