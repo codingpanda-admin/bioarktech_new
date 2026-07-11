@@ -8,7 +8,8 @@ def create_quote_record(**fields):
     try:
         return Quote.objects.create(**fields)
     except IntegrityError as exc:
-        if 'null value in column "id"' not in str(exc):
+        exc_str = str(exc).lower()
+        if 'id' not in exc_str and 'pkey' not in exc_str and 'duplicate' not in exc_str and 'unique' not in exc_str and 'null' not in exc_str:
             raise
 
     with transaction.atomic():
