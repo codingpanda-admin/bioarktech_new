@@ -10,6 +10,7 @@ from rest_framework.decorators import api_view
 import os
 from dotenv import load_dotenv
 import logging
+logger = logging.getLogger(__name__)
 import json
 import secrets
 import hashlib
@@ -35,6 +36,7 @@ from .serializers import *
 from products.models import Product, FeaturedProduct, UnitPrice, ProductsUnion
 from interface.models import ServiceMode
 from django.http import HttpResponse, JsonResponse
+from django.db import transaction
 
 import requests
 
@@ -925,26 +927,41 @@ def stripe_webhook(request):
     return HttpResponse("ok", status=200)
 
 
-def _handle_checkout_completed(event_data):
-    """Process a completed checkout session and create the order."""
-    try:
-        session = event_data.get("data", {}).get("object", {})
-        payment_intent_id = session.get("payment_intent", "")
-        session_id = session.get("id", "")
+def _process_successful_checkout(session):
+    """
+    Process a completed checkout session and create the order if it does not exist.
+    Returns (success, order_obj).
+    """
+    payment_intent_id = session.get("payment_intent", "")
+    session_id = session.get("id", "")
 
-        if Order.objects.filter(payment_token=session_id).exists():
-            logger.info(f"Stripe webhook: order {session_id} already processed, skipping.")
-            return
+    # Check if order already exists first to avoid unnecessary API/DB work
+    order_qs = Order.objects.filter(payment_token=session_id)
+    if order_qs.exists():
+        logger.info(f"Stripe order processing: order {session_id} already exists, skipping creation.")
+        return True, order_qs.first()
+
+    with transaction.atomic():
+        # Re-check existence inside transaction lock
+        order_qs = Order.objects.select_for_update().filter(payment_token=session_id)
+        if order_qs.exists():
+            logger.info(f"Stripe order processing: order {session_id} already exists inside transaction, skipping.")
+            return True, order_qs.first()
 
         metadata = session.get("metadata", {})
         payment_intent_metadata = {}
 
         if payment_intent_id:
             try:
-                pi = stripe.PaymentIntent.retrieve(payment_intent_id)
+                pi = stripe.PaymentIntent.retrieve(payment_intent_id, expand=["latest_charge"])
                 payment_intent_metadata = pi.get("metadata", {}) if hasattr(pi, "get") else {}
             except Exception as e:
-                logger.warning(f"Could not retrieve payment intent metadata: {e}")
+                logger.warning(f"Could not retrieve payment intent metadata with latest_charge: {e}")
+                try:
+                    pi = stripe.PaymentIntent.retrieve(payment_intent_id)
+                    payment_intent_metadata = pi.get("metadata", {}) if hasattr(pi, "get") else {}
+                except Exception:
+                    pass
 
         effective_metadata = payment_intent_metadata or metadata
 
@@ -957,20 +974,20 @@ def _handle_checkout_completed(event_data):
         cart_json = effective_metadata.get("cart_json", "[]")
 
         if not user_id:
-            logger.error("Stripe webhook: no user_id in metadata")
-            return
+            logger.error("Stripe order processing: no user_id in metadata")
+            return False, None
 
         try:
             user = User.objects.get(id=int(user_id))
         except User.DoesNotExist:
-            logger.error(f"Stripe webhook: user {user_id} not found")
-            return
+            logger.error(f"Stripe order processing: user {user_id} not found")
+            return False, None
 
         try:
             address = Address.objects.get(id=int(address_id))
         except Address.DoesNotExist:
-            logger.error(f"Stripe webhook: address {address_id} not found")
-            return
+            logger.error(f"Stripe order processing: address {address_id} not found")
+            return False, None
 
         amount_received = session.get("amount_total", 0) / 100.0
         total_price = amount_received
@@ -980,8 +997,7 @@ def _handle_checkout_completed(event_data):
         payment_method = session.get("payment_method_types", [])
         if "card" in payment_method:
             payment_source = "Made with Stripe (Card)"
-            charges = session.get("payment_intent", {})
-            if isinstance(charges, str) and payment_intent_id:
+            if payment_intent_id:
                 try:
                     pi = stripe.PaymentIntent.retrieve(payment_intent_id, expand=["latest_charge"])
                     latest_charge = pi.get("latest_charge") if hasattr(pi, "get") else None
@@ -1018,10 +1034,17 @@ def _handle_checkout_completed(event_data):
             cart_items = json.loads(cart_json)
             create_order_items(cart_items, order_obj)
         except Exception as e:
-            logger.error(f"Stripe webhook: error creating order items: {e}")
+            logger.error(f"Stripe order processing: error creating order items: {e}")
 
-        logger.info(f"Stripe webhook: order {session_id} created for user {user_id}, total ${total_price}")
+        logger.info(f"Stripe order processing: order {session_id} created for user {user_id}, total ${total_price}")
+        return True, order_obj
 
+
+def _handle_checkout_completed(event_data):
+    """Process a completed checkout session and create the order."""
+    try:
+        session = event_data.get("data", {}).get("object", {})
+        _process_successful_checkout(session)
     except Exception as e:
         logger.error(f"Stripe webhook: error processing checkout.session.completed: {e}")
 
@@ -1059,6 +1082,9 @@ def stripe_checkout_success(request):
         session = stripe.checkout.Session.retrieve(session_id)
 
         if session.payment_status == "paid":
+            # Fallback order creation if not already created by webhook
+            _process_successful_checkout(session)
+            
             order_exists = Order.objects.filter(payment_token=session_id).exists()
             return Response({
                 "status": "success",
