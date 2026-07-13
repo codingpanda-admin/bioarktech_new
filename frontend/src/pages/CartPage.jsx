@@ -1,5 +1,17 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { formatAssetUrl, logo, apiFetch } from '../utils/api';
+
+const getCheckoutAddress = (profile) => {
+  const shippingAddress = profile?.shipping_address;
+
+  return {
+    address_line_1: shippingAddress?.address_line_1 || '',
+    apt: shippingAddress?.apt_suite || shippingAddress?.address_line_2 || '',
+    city: shippingAddress?.city || '',
+    state: shippingAddress?.state || '',
+    zipcode: shippingAddress?.zipcode || '',
+  };
+};
 
 function CartPage({
   navigate,
@@ -13,19 +25,17 @@ function CartPage({
 }) {
   const isCartEmpty = cart.length === 0;
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [address, setAddress] = useState({
-    address_line_1: '',
-    apt: '',
-    city: '',
-    state: '',
-    zipcode: '',
-  });
+  const [addressEdits, setAddressEdits] = useState({});
+  const address = {
+    ...getCheckoutAddress(currentUserProfile),
+    ...addressEdits,
+  };
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [showRulesModal, setShowRulesModal] = useState(false);
 
   const handleAddressChange = (field, value) => {
-    setAddress((prev) => ({ ...prev, [field]: value }));
+    setAddressEdits((prev) => ({ ...prev, [field]: value }));
   };
 
   const isAddressValid = () => {
@@ -524,9 +534,15 @@ function CartPage({
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px' }}>
                   <button 
                     type="button" 
-                    className="secondary-button" 
+                    className="primary-button"
                     onClick={() => navigate('/')}
-                    style={{ border: '1px solid var(--line)', background: 'transparent', padding: '10px 20px', borderRadius: '8px', fontWeight: 500 }}
+                    style={{
+                      padding: '12px 22px',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
                   >
                     ← Continue Shopping
                   </button>
