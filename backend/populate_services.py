@@ -17,22 +17,22 @@ print("Populating and categorizing services...")
 
 # 1. Update existing services
 service_mappings = {
-    'Genome Editing Services': 'genome-editing',
-    'Gene Editing Services': 'genome-editing',
+    'Genome Editing Services': 'genome-editing-services',
+    'Gene Editing Services': 'genome-editing-services',
     
-    'Synthesis & Cloning Services': 'synthesis-cloning',
-    'DNA Cloning Service': 'synthesis-cloning',
+    'Synthesis & Cloning Services': 'synthesis-cloning-services',
+    'DNA Cloning Service': 'synthesis-cloning-services',
     
-    'Lentivirus Package Services': 'virus-packaging',
-    'Lentivirus Packaging Services': 'virus-packaging',
-    'AAV Packaging Services': 'virus-packaging',
-    'Virus Packaging Overview': 'virus-packaging',
+    'Lentivirus Package Services': 'virus-packaging-services',
+    'Lentivirus Packaging Services': 'virus-packaging-services',
+    'AAV Packaging Services': 'virus-packaging-services',
+    'Virus Packaging Overview': 'virus-packaging-services',
     
     'Cell Line Services': 'cell-line-services',
     'Stable Cell Line Services': 'cell-line-services',
     
-    'Lab Supplies': 'uncategorized',
-    'Experiment Services': 'uncategorized',
+    'Lab Supplies': 'lab-supplies-services',
+    'Experiment Services': 'experiment-services',
 }
 
 for title, category in service_mappings.items():
@@ -65,21 +65,21 @@ missing_services = [
     {
         'title': 'Gene Tagging Service',
         'url': 'gene-tagging-service',
-        'category': 'genome-editing',
+        'category': 'genome-editing-services',
         'content': '<h3>Gene Tagging Service</h3><p>Advanced CRISPR-based endogenous gene tagging services to visualize and track proteins inside cells.</p>',
         'image': 'service_images/b154b10a-d7ad-46c6-b639-d44d1139f77f.jpg'
     },
     {
         'title': 'Gene Knockout Service',
         'url': 'gene-knockout-service',
-        'category': 'genome-editing',
+        'category': 'genome-editing-services',
         'content': '<h3>Gene Knockout Service</h3><p>High-efficiency CRISPR knockouts in a variety of cell lines for functional gene analysis.</p>',
         'image': None
     },
     {
         'title': 'mRNA LNP packaging Service',
         'url': 'mrna-lnp-packaging-service',
-        'category': 'ivt-mrna-services',
+        'category': 'lab-supplies-services',
         'content': '<h3>mRNA LNP packaging Service</h3><p>Custom IVT mRNA synthesis and Lipid Nanoparticle (LNP) encapsulation for robust in vitro and in vivo transfection.</p>',
         'image': 'service_images/0889bb39-7a02-4bb1-b32b-be64bb006090.jpg'
     }

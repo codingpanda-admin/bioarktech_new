@@ -255,19 +255,45 @@ def admin_list_products(request):
         paginator = Paginator(products, page_size)
         page = paginator.get_page(page_number)
 
+        # Build a cache of FeaturedProducts to avoid N+1 queries in the loop
+        featured_products_by_cat = {}
+        for fp in FeaturedProduct.objects.all():
+            if fp.catalog_number:
+                featured_products_by_cat[fp.catalog_number.upper()] = fp
+
         data = []
         for p in page:
+            fp = None
+            if p.catalog_number:
+                fp = featured_products_by_cat.get(p.catalog_number.upper())
+            if not fp and p.external_id and p.external_id.startswith('fp-'):
+                cat_num = p.external_id[3:].upper()
+                fp = featured_products_by_cat.get(cat_num)
+                
+            p_name = p.product_name
+            p_image = p.image_url
+            p_featured = p.is_featured or (fp is not None)
+            
+            if fp:
+                p_name = fp.product_name or p_name
+                # Get main display image from union
+                main_img = Image.objects.filter(union=fp.union, main_display=True).first()
+                if not main_img:
+                    main_img = Image.objects.filter(union=fp.union).first()
+                if main_img and main_img.image:
+                    p_image = main_img.image.name
+
             data.append({
                 'id': p.product_id,
-                'product_name': p.product_name,
+                'product_name': p_name,
                 'external_id': p.external_id,
                 'catalog_number': p.catalog_number,
                 'category_external_id': p.category_external_id,
                 'product_group': p.product_group,
                 'hidden': p.hidden,
-                'is_featured': p.is_featured,
+                'is_featured': p_featured,
                 'show_on_screen': p.show_on_screen,
-                'image_url': p.image_url,
+                'image_url': p_image,
                 'list_price': p.list_price,
                 'source_type': p.source_type,
                 'created_at': p.created_at,
@@ -291,6 +317,15 @@ def admin_get_product(request, product_id):
 
     try:
         p = Product.objects.get(product_id=product_id)
+        
+        # Check if there is an associated FeaturedProduct
+        featured_product = None
+        if p.catalog_number:
+            featured_product = FeaturedProduct.objects.filter(catalog_number=p.catalog_number).first()
+        elif p.external_id and p.external_id.startswith('fp-'):
+            cat_num = p.external_id[3:].upper()
+            featured_product = FeaturedProduct.objects.filter(catalog_number=cat_num).first()
+
         data = {
             'id': p.product_id,
             'external_id': p.external_id,
@@ -331,11 +366,139 @@ def admin_get_product(request, product_id):
             'created_at': p.created_at,
             'updated_at': p.updated_at,
         }
+
+        if featured_product:
+            import re
+            
+            # Extract list from featured_product.key_features HTML list
+            kf_html = featured_product.key_features or ''
+            li_contents = re.findall(r'<li>(.*?)</li>', kf_html, re.DOTALL)
+            if li_contents:
+                clean_lis = [re.sub(r'<[^>]*>', '', li).strip() for li in li_contents]
+                data['key_features'] = clean_lis
+            elif p.key_features:
+                data['key_features'] = p.key_features
+            else:
+                clean_text = re.sub(r'<[^>]*>', '', kf_html).strip()
+                data['key_features'] = [line.strip() for line in clean_text.split('\n') if line.strip()]
+
+            data['description'] = featured_product.description or p.description
+            data['performance_data'] = featured_product.performance_data or p.performance_data
+            data['storage_stability'] = featured_product.storage_info or p.storage_stability
+            
+            # Fetch Images associated with featured product's union
+            images_qs = Image.objects.filter(union=featured_product.union)
+            images_list = []
+            for img_obj in images_qs:
+                if img_obj.image:
+                    images_list.append(img_obj.image.name)
+            data['images'] = images_list if images_list else p.images
+
+            # Fetch Manuals associated with featured product's union
+            manuals_qs = ManualFile.objects.filter(union=featured_product.union)
+            manuals_list = []
+            for man_obj in manuals_qs:
+                if man_obj.manual:
+                    manuals_list.append({
+                        'name': man_obj.name,
+                        'manual': man_obj.manual.name
+                    })
+            data['manuals'] = manuals_list if manuals_list else [
+                {'name': m.split('/')[-1] if '/' in m else m, 'manual': m} for m in p.manuals
+            ]
+        else:
+            # For standard products, format manuals list as objects for frontend editor consistency
+            data['manuals'] = [
+                {'name': m.split('/')[-1] if '/' in m else m, 'manual': m} for m in p.manuals
+            ]
+
         return Response(data)
     except Product.DoesNotExist:
         return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def _sync_featured_product(p, d):
+    if p.is_featured or (p.external_id and p.external_id.startswith('fp-')):
+        featured_product = None
+        if p.catalog_number:
+            featured_product = FeaturedProduct.objects.filter(catalog_number=p.catalog_number).first()
+        elif p.external_id and p.external_id.startswith('fp-'):
+            cat_num = p.external_id[3:].upper()
+            featured_product = FeaturedProduct.objects.filter(catalog_number=cat_num).first()
+            
+        key_features_list = d.get('key_features', p.key_features) or []
+        key_features_html = '<ul>' + ''.join(f'<li>{f}</li>' for f in key_features_list) + '</ul>'
+
+        if not featured_product:
+            cat_num = p.catalog_number
+            if not cat_num and p.external_id and p.external_id.startswith('fp-'):
+                cat_num = p.external_id[3:].upper()
+            if cat_num:
+                featured_product = FeaturedProduct.objects.create(
+                    catalog_number=cat_num,
+                    product_name=p.product_name,
+                    description=p.description or '',
+                    key_features=key_features_html,
+                    performance_data=p.performance_data or '',
+                    storage_info=p.storage_stability or '',
+                    ship_info='Ship with wet ice',
+                    shelf_status=True,
+                    on_display=False,
+                    units_in_stock=100,
+                    units='pcs',
+                )
+        else:
+            if p.catalog_number and p.catalog_number != featured_product.catalog_number:
+                featured_product.catalog_number = p.catalog_number
+            featured_product.product_name = p.product_name
+            featured_product.description = p.description or ''
+            featured_product.key_features = key_features_html
+            featured_product.performance_data = p.performance_data or ''
+            featured_product.storage_info = p.storage_stability or ''
+            featured_product.save()
+
+        # Sync Images
+        if 'images' in d and featured_product:
+            new_images = d['images']
+            Image.objects.filter(union=featured_product.union).delete()
+            for idx, img_path in enumerate(new_images):
+                if img_path:
+                    clean_path = img_path
+                    if clean_path.startswith('/media/'):
+                        clean_path = clean_path[len('/media/'):]
+                    elif clean_path.startswith('media/'):
+                        clean_path = clean_path[len('media/'):]
+                    Image.objects.create(
+                        union=featured_product.union,
+                        image=clean_path,
+                        main_display=(idx == 0)
+                    )
+
+        # Sync Manuals
+        if 'manuals_original' in d and featured_product:
+            new_manuals = d['manuals_original']
+            ManualFile.objects.filter(union=featured_product.union).delete()
+            for man_item in new_manuals:
+                if isinstance(man_item, dict):
+                    name = man_item.get('name', '')
+                    manual_path = man_item.get('manual', '')
+                else:
+                    name = str(man_item).split('/')[-1] if '/' in str(man_item) else str(man_item)
+                    manual_path = str(man_item)
+                
+                if manual_path:
+                    clean_path = manual_path
+                    if clean_path.startswith('/media/'):
+                        clean_path = clean_path[len('/media/'):]
+                    elif clean_path.startswith('media/'):
+                        clean_path = clean_path[len('media/'):]
+                    ManualFile.objects.create(
+                        union=featured_product.union,
+                        name=name,
+                        manual=clean_path
+                    )
 
 
 @api_view(['POST'])
@@ -345,7 +508,20 @@ def admin_create_product(request):
         return err
 
     try:
-        d = request.data
+        d = dict(request.data)
+        if 'manuals' in d:
+            d['manuals_original'] = d['manuals']
+            normalized = []
+            for item in d['manuals']:
+                if isinstance(item, dict):
+                    path = item.get('manual', '')
+                else:
+                    path = str(item)
+                if path:
+                    normalized.append(path)
+            d['manuals'] = normalized
+            d['manual_urls'] = normalized
+
         raw_detail = d.get('raw_detail')
         if isinstance(raw_detail, dict) and 'content_text' in d:
             raw_detail = {**raw_detail, 'contentText': d.get('content_text', '')}
@@ -385,6 +561,7 @@ def admin_create_product(request):
             raw_override=d.get('raw_override'),
             raw_detail=raw_detail,
         )
+        _sync_featured_product(p, d)
         return Response({'id': p.product_id, 'message': 'Product created successfully'}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -398,7 +575,19 @@ def admin_update_product(request, product_id):
 
     try:
         p = Product.objects.get(product_id=product_id)
-        d = request.data
+        d = dict(request.data)
+        if 'manuals' in d:
+            d['manuals_original'] = d['manuals']
+            normalized = []
+            for item in d['manuals']:
+                if isinstance(item, dict):
+                    path = item.get('manual', '')
+                else:
+                    path = str(item)
+                if path:
+                    normalized.append(path)
+            d['manuals'] = normalized
+            d['manual_urls'] = normalized
 
         updatable_fields = [
             'external_id', 'product_name', 'description', 'image_url',
@@ -420,6 +609,7 @@ def admin_update_product(request, product_id):
             p.raw_detail = {**p.raw_detail, 'contentText': p.content_text or ''}
 
         p.save()
+        _sync_featured_product(p, d)
         return Response({'message': 'Product updated successfully'})
     except Product.DoesNotExist:
         return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -455,9 +645,13 @@ def admin_upload_product_image(request):
         if not image_file:
             return Response({'error': 'No image file provided'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Determine subfolder based on file extension
+        ext = image_file.name.split('.')[-1].lower() if '.' in image_file.name else ''
+        subfolder = 'manual_files' if ext in ['pdf', 'doc', 'docx', 'xls', 'xlsx'] else 'product_images'
+
         from django.core.files.storage import default_storage
-        # Save file under media/product_images/
-        file_path = f"product_images/{image_file.name}"
+        # Save file under media/<subfolder>/
+        file_path = f"{subfolder}/{image_file.name}"
         saved_path = default_storage.save(file_path, image_file)
         
         # The database expects a path like "media/product_images/xxx.png"
@@ -466,10 +660,11 @@ def admin_upload_product_image(request):
         return Response({
             'image_path': relative_url,
             'url': request.build_absolute_uri(default_storage.url(saved_path)),
-            'message': 'Image uploaded successfully'
+            'message': 'File uploaded successfully'
         }, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
