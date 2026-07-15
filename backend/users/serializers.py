@@ -6,8 +6,14 @@ class AddressSerializer(serializers.ModelSerializer):
         model = Address
         fields = '__all__'
 
+class CustomerShippingAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerShippingAddress
+        fields = '__all__'
+
 class UserSerializer(serializers.ModelSerializer):
     shipping_address = AddressSerializer()
+    shipping_addresses = CustomerShippingAddressSerializer(many=True, read_only=True)
     isAdmin = serializers.BooleanField(source='is_admin', read_only=True)
     externalId = serializers.SerializerMethodField()
 
@@ -25,6 +31,7 @@ class UserSerializer(serializers.ModelSerializer):
             'mobile',
             'telephone',
             'shipping_address',
+            'shipping_addresses',
             'is_admin',
             'isAdmin',
             'profile_picture',
@@ -33,4 +40,5 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_externalId(self, obj):
         return getattr(obj, 'external_id', None)
+
 

@@ -11,7 +11,9 @@ from django.core.paginator import Paginator
 
 from orders.models import *
 from orders.serializers import *
-from users.serializers import UserSerializer
+from users.serializers import UserSerializer, CustomerShippingAddressSerializer
+from users.models import User, Address, CustomerShippingAddress
+
 
 
 @api_view(['GET'])
@@ -237,3 +239,201 @@ def upload_profile_picture(request):
 
     serializer = UserSerializer(user)
     return Response({'success': True, 'user': serializer.data})
+
+
+def sync_default_shipping_address_to_user(user):
+    default_addr = user.shipping_addresses.filter(is_default=True).first()
+    if not default_addr:
+        default_addr = user.shipping_addresses.order_by('-created_at').first()
+    
+    if default_addr:
+        # Ensure it is marked default in DB
+        if not default_addr.is_default:
+            default_addr.is_default = True
+            default_addr.save()
+        
+        # If there are other default addresses, remove default flag from them
+        user.shipping_addresses.exclude(id=default_addr.id).update(is_default=False)
+        
+        # Sync to User.shipping_address
+        if not user.shipping_address:
+            user.shipping_address = Address.objects.create()
+        
+        user.shipping_address.address_line_1 = default_addr.address_line_1
+        user.shipping_address.address_line_2 = default_addr.address_line_2
+        user.shipping_address.city = default_addr.city
+        user.shipping_address.state = default_addr.state
+        user.shipping_address.zipcode = default_addr.postal_code
+        user.shipping_address.save()
+        user.save()
+    else:
+        # If no addresses remain, we don't clear User.shipping_address to prevent breaking, but could clear it if appropriate
+        pass
+
+
+@api_view(['GET'])
+def list_shipping_addresses(request):
+    if not request.user.is_authenticated:
+        return Response({'detail': 'User is not authenticated.'}, status=401)
+    
+    addresses = CustomerShippingAddress.objects.filter(user=request.user)
+    serializer = CustomerShippingAddressSerializer(addresses, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+def create_shipping_address(request):
+    if not request.user.is_authenticated:
+        return Response({'detail': 'User is not authenticated.'}, status=401)
+    
+    data = request.data
+    nickname = data.get('nickname')
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
+    company_name = data.get('company_name', '')
+    address_line_1 = data.get('address_line_1')
+    address_line_2 = data.get('address_line_2', '')
+    city = data.get('city')
+    state = data.get('state')
+    postal_code = data.get('postal_code')
+    is_default = data.get('is_default', False)
+    
+    if not all([nickname, first_name, last_name, address_line_1, city, state, postal_code]):
+        return Response({'detail': 'Required fields are missing.'}, status=400)
+    
+    # If this is the first address, make it default regardless of is_default sent
+    has_addresses = CustomerShippingAddress.objects.filter(user=request.user).exists()
+    if not has_addresses:
+        is_default = True
+    elif is_default:
+        # Clear other default flags first
+        CustomerShippingAddress.objects.filter(user=request.user).update(is_default=False)
+        
+    addr = CustomerShippingAddress.objects.create(
+        user=request.user,
+        nickname=nickname,
+        first_name=first_name,
+        last_name=last_name,
+        company_name=company_name,
+        address_line_1=address_line_1,
+        address_line_2=address_line_2,
+        city=city,
+        state=state,
+        postal_code=postal_code,
+        is_default=is_default
+    )
+    
+    sync_default_shipping_address_to_user(request.user)
+    
+    # Return user profile and full list of addresses
+    user = User.objects.get(id=request.user.id)
+    user_serializer = UserSerializer(user)
+    return Response({
+        'success': True,
+        'address': CustomerShippingAddressSerializer(addr).data,
+        'user': user_serializer.data
+    })
+
+
+@api_view(['POST', 'PUT'])
+def update_shipping_address(request, pk):
+    if not request.user.is_authenticated:
+        return Response({'detail': 'User is not authenticated.'}, status=401)
+    
+    try:
+        addr = CustomerShippingAddress.objects.get(id=pk, user=request.user)
+    except CustomerShippingAddress.DoesNotExist:
+        return Response({'detail': 'Shipping address not found.'}, status=404)
+        
+    data = request.data
+    addr.nickname = data.get('nickname', addr.nickname)
+    addr.first_name = data.get('first_name', addr.first_name)
+    addr.last_name = data.get('last_name', addr.last_name)
+    addr.company_name = data.get('company_name', addr.company_name)
+    addr.address_line_1 = data.get('address_line_1', addr.address_line_1)
+    addr.address_line_2 = data.get('address_line_2', addr.address_line_2)
+    addr.city = data.get('city', addr.city)
+    addr.state = data.get('state', addr.state)
+    addr.postal_code = data.get('postal_code', addr.postal_code)
+    
+    is_default = data.get('is_default', addr.is_default)
+    if is_default:
+        # Clear other default flags first
+        CustomerShippingAddress.objects.filter(user=request.user).exclude(id=addr.id).update(is_default=False)
+        addr.is_default = True
+    else:
+        # If this was default and is now being unset, we need to make sure some address is default
+        if addr.is_default:
+            other = CustomerShippingAddress.objects.filter(user=request.user).exclude(id=addr.id).first()
+            if other:
+                other.is_default = True
+                other.save()
+            else:
+                # If it's the only address, it must remain default
+                addr.is_default = True
+        
+    addr.save()
+    sync_default_shipping_address_to_user(request.user)
+    
+    user = User.objects.get(id=request.user.id)
+    user_serializer = UserSerializer(user)
+    return Response({
+        'success': True,
+        'address': CustomerShippingAddressSerializer(addr).data,
+        'user': user_serializer.data
+    })
+
+
+@api_view(['DELETE'])
+def delete_shipping_address(request, pk):
+    if not request.user.is_authenticated:
+        return Response({'detail': 'User is not authenticated.'}, status=401)
+        
+    try:
+        addr = CustomerShippingAddress.objects.get(id=pk, user=request.user)
+    except CustomerShippingAddress.DoesNotExist:
+        return Response({'detail': 'Shipping address not found.'}, status=404)
+        
+    was_default = addr.is_default
+    addr.delete()
+    
+    if was_default:
+        # Choose another address as default
+        other = CustomerShippingAddress.objects.filter(user=request.user).first()
+        if other:
+            other.is_default = True
+            other.save()
+            
+    sync_default_shipping_address_to_user(request.user)
+    
+    user = User.objects.get(id=request.user.id)
+    user_serializer = UserSerializer(user)
+    return Response({
+        'success': True,
+        'user': user_serializer.data
+    })
+
+
+@api_view(['POST'])
+def set_default_shipping_address(request, pk):
+    if not request.user.is_authenticated:
+        return Response({'detail': 'User is not authenticated.'}, status=401)
+        
+    try:
+        addr = CustomerShippingAddress.objects.get(id=pk, user=request.user)
+    except CustomerShippingAddress.DoesNotExist:
+        return Response({'detail': 'Shipping address not found.'}, status=404)
+        
+    CustomerShippingAddress.objects.filter(user=request.user).update(is_default=False)
+    addr.is_default = True
+    addr.save()
+    
+    sync_default_shipping_address_to_user(request.user)
+    
+    user = User.objects.get(id=request.user.id)
+    user_serializer = UserSerializer(user)
+    return Response({
+        'success': True,
+        'user': user_serializer.data
+    })
+

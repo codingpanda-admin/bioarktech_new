@@ -821,6 +821,40 @@ def create_stripe_checkout_session(request):
             zipcode=address["zipcode"]
         )
 
+        save_to_profile = address.get("save_to_profile", False)
+        if save_to_profile:
+            try:
+                from users.models import CustomerShippingAddress
+                # Find if this exact address already exists for the user to avoid duplicates
+                exists = CustomerShippingAddress.objects.filter(
+                    user=request.user,
+                    address_line_1=address["address_line_1"],
+                    address_line_2=address.get("apt", ""),
+                    city=address["city"],
+                    state=address["state"],
+                    postal_code=address["zipcode"]
+                ).exists()
+                if not exists:
+                    CustomerShippingAddress.objects.create(
+                        user=request.user,
+                        nickname=address.get("nickname", "New Address"),
+                        first_name=address.get("first_name", request.user.first_name or "Customer"),
+                        last_name=address.get("last_name", request.user.last_name or ""),
+                        company_name=address.get("company_name", ""),
+                        address_line_1=address["address_line_1"],
+                        address_line_2=address.get("apt", ""),
+                        city=address["city"],
+                        state=address["state"],
+                        postal_code=address["zipcode"],
+                        is_default=False
+                    )
+            except Exception as e:
+                # Log the error but don't fail checkout
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error saving checkout address to profile: {e}")
+
+
         session_metadata = {
             "user_id": str(request.user.id),
             "user_email": request.user.email,

@@ -13,4 +13,10 @@ urlpatterns = [
     path('reset-user-email/', views.reset_user_email),
     path('reset-user-password/', views.reset_user_password),
     path('upload-profile-picture/', views.upload_profile_picture),
+    path('shipping-addresses/', views.list_shipping_addresses),
+    path('shipping-addresses/create/', views.create_shipping_address),
+    path('shipping-addresses/<int:pk>/update/', views.update_shipping_address),
+    path('shipping-addresses/<int:pk>/delete/', views.delete_shipping_address),
+    path('shipping-addresses/<int:pk>/set-default/', views.set_default_shipping_address),
 ]
+

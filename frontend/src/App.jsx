@@ -188,6 +188,16 @@ function App() {
     }
   };
 
+  const refreshUserProfile = async () => {
+    try {
+      const profile = await apiFetch('/api/users/view-user-info/');
+      setCurrentUserProfile(profile);
+      return profile;
+    } catch (err) {
+      console.error('Error refreshing profile:', err);
+    }
+  };
+
   const isRequestQuotePage = currentPath === '/request-quote';
   const isAdminPage = currentPath === '/admin';
   const isSearchPage = currentPath === '/search';
@@ -298,6 +308,7 @@ function App() {
           currentUser={currentUser}
           currentUserProfile={currentUserProfile}
           onOpenAuth={handleOpenAuth}
+          onRefreshProfile={refreshUserProfile}
         />
       ) : isCheckoutSuccess ? (
         <CheckoutSuccessPage
@@ -311,7 +322,7 @@ function App() {
       ) : isBlogsPage ? (
         <ResourcesPage navigate={navigate} />
       ) : isProfilePage ? (
-        <ProfilePage navigate={navigate} initialTab={searchParams.get('tab')} />
+        <ProfilePage navigate={navigate} initialTab={searchParams.get('tab')} onRefreshProfile={refreshUserProfile} />
       ) : isMyQuotesPage ? (
         <MyQuotesPage navigate={navigate} currentUser={currentUser} authChecked={authChecked} />
       ) : isDesignPage ? (

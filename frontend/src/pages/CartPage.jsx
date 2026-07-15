@@ -24,12 +24,25 @@ function CartPage({
   onOpenAuth
 }) {
   const isCartEmpty = cart.length === 0;
+
+  const savedAddresses = currentUserProfile?.shipping_addresses || [];
+  const defaultAddress = savedAddresses.find(a => a.is_default) || savedAddresses[0];
+
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [addressEdits, setAddressEdits] = useState({});
-  const address = {
-    ...getCheckoutAddress(currentUserProfile),
-    ...addressEdits,
-  };
+  const [selectedAddressId, setSelectedAddressId] = useState(defaultAddress ? String(defaultAddress.id) : 'new');
+  const [addressEdits, setAddressEdits] = useState({
+    nickname: '',
+    first_name: currentUserProfile?.first_name || '',
+    last_name: currentUserProfile?.last_name || '',
+    company_name: currentUserProfile?.company || '',
+    address_line_1: '',
+    apt: '',
+    city: '',
+    state: '',
+    zipcode: '',
+    save_to_profile: true,
+  });
+
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [showRulesModal, setShowRulesModal] = useState(false);
@@ -38,11 +51,43 @@ function CartPage({
     setAddressEdits((prev) => ({ ...prev, [field]: value }));
   };
 
+  let activeAddress = {};
+  if (selectedAddressId === 'new') {
+    activeAddress = {
+      first_name: addressEdits.first_name || '',
+      last_name: addressEdits.last_name || '',
+      company_name: addressEdits.company_name || '',
+      address_line_1: addressEdits.address_line_1 || '',
+      apt: addressEdits.apt || '',
+      city: addressEdits.city || '',
+      state: addressEdits.state || '',
+      zipcode: addressEdits.zipcode || '',
+      nickname: addressEdits.nickname || 'New Address',
+      save_to_profile: addressEdits.save_to_profile ?? true,
+    };
+  } else {
+    const matched = savedAddresses.find(a => String(a.id) === selectedAddressId);
+    if (matched) {
+      activeAddress = {
+        first_name: matched.first_name || '',
+        last_name: matched.last_name || '',
+        company_name: matched.company_name || '',
+        address_line_1: matched.address_line_1 || '',
+        apt: matched.address_line_2 || '',
+        city: matched.city || '',
+        state: matched.state || '',
+        zipcode: matched.postal_code || '',
+        nickname: matched.nickname || '',
+        save_to_profile: false,
+      };
+    }
+  }
+
   const isAddressValid = () => {
-    return address.address_line_1.trim() !== '' &&
-           address.city.trim() !== '' &&
-           address.state.trim() !== '' &&
-           address.zipcode.trim() !== '';
+    return activeAddress.address_line_1?.trim() !== '' &&
+           activeAddress.city?.trim() !== '' &&
+           activeAddress.state?.trim() !== '' &&
+           activeAddress.zipcode?.trim() !== '';
   };
 
   const handleStripeCheckout = async () => {
@@ -72,7 +117,7 @@ function CartPage({
             quantity: item.quantity,
             shippingCost: item.shippingCost,
           })),
-          address: address,
+          address: activeAddress,
         },
       });
 
@@ -87,6 +132,7 @@ function CartPage({
       setCheckoutLoading(false);
     }
   };
+
 
   // 1. Classify Items
   const consumableItems = cart.filter((item) => item.shippingCost === 100);
@@ -678,65 +724,166 @@ function CartPage({
                         </div>
                       )}
 
-                      <div style={{ display: 'grid', gap: '10px' }}>
-                        <input
-                          type="text"
-                          placeholder="Street Address *"
-                          value={address.address_line_1}
-                          onChange={(e) => handleAddressChange('address_line_1', e.target.value)}
-                          style={{
-                            width: '100%', padding: '10px 12px', borderRadius: '8px',
-                            border: '1px solid var(--line)', fontSize: '14px',
-                            outline: 'none', boxSizing: 'border-box',
-                          }}
-                        />
-                        <input
-                          type="text"
-                          placeholder="Apt / Suite (optional)"
-                          value={address.apt}
-                          onChange={(e) => handleAddressChange('apt', e.target.value)}
-                          style={{
-                            width: '100%', padding: '10px 12px', borderRadius: '8px',
-                            border: '1px solid var(--line)', fontSize: '14px',
-                            outline: 'none', boxSizing: 'border-box',
-                          }}
-                        />
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                          <input
-                            type="text"
-                            placeholder="City *"
-                            value={address.city}
-                            onChange={(e) => handleAddressChange('city', e.target.value)}
+                      {/* Saved Addresses Dropdown */}
+                      {savedAddresses.length > 0 && (
+                        <div style={{ marginBottom: '14px' }}>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--muted)' }}>
+                            Choose a saved address:
+                          </label>
+                          <select
+                            value={selectedAddressId}
+                            onChange={(e) => setSelectedAddressId(e.target.value)}
                             style={{
                               width: '100%', padding: '10px 12px', borderRadius: '8px',
                               border: '1px solid var(--line)', fontSize: '14px',
-                              outline: 'none', boxSizing: 'border-box',
+                              outline: 'none', background: '#fff', cursor: 'pointer'
                             }}
-                          />
-                          <input
-                            type="text"
-                            placeholder="State *"
-                            value={address.state}
-                            onChange={(e) => handleAddressChange('state', e.target.value)}
-                            style={{
-                              width: '100%', padding: '10px 12px', borderRadius: '8px',
-                              border: '1px solid var(--line)', fontSize: '14px',
-                              outline: 'none', boxSizing: 'border-box',
-                            }}
-                          />
-                          <input
-                            type="text"
-                            placeholder="ZIP *"
-                            value={address.zipcode}
-                            onChange={(e) => handleAddressChange('zipcode', e.target.value)}
-                            style={{
-                              width: '100%', padding: '10px 12px', borderRadius: '8px',
-                              border: '1px solid var(--line)', fontSize: '14px',
-                              outline: 'none', boxSizing: 'border-box',
-                            }}
-                          />
+                          >
+                            {savedAddresses.map((addr) => (
+                              <option key={addr.id} value={String(addr.id)}>
+                                {addr.nickname} ({addr.first_name} {addr.last_name} - {addr.address_line_1})
+                              </option>
+                            ))}
+                            <option value="new">+ Enter a new address...</option>
+                          </select>
                         </div>
-                      </div>
+                      )}
+
+                      {/* Saved Address Preview */}
+                      {selectedAddressId !== 'new' && (
+                        <div style={{
+                          background: '#fff', border: '1px solid var(--line)',
+                          borderRadius: '8px', padding: '12px', fontSize: '13px',
+                          color: 'var(--muted)', lineHeight: '1.4', marginBottom: '10px'
+                        }}>
+                          <div style={{ fontWeight: 600, color: 'var(--ink)', marginBottom: '4px' }}>
+                            {activeAddress.first_name} {activeAddress.last_name}
+                          </div>
+                          {activeAddress.company_name && (
+                            <div style={{ marginBottom: '4px' }}>{activeAddress.company_name}</div>
+                          )}
+                          <div>{activeAddress.address_line_1}</div>
+                          {activeAddress.apt && <div>{activeAddress.apt}</div>}
+                          <div>{activeAddress.city}, {activeAddress.state} {activeAddress.zipcode}</div>
+                        </div>
+                      )}
+
+                      {/* New Address Form Fields */}
+                      {selectedAddressId === 'new' && (
+                        <div style={{ display: 'grid', gap: '10px' }}>
+                          <input
+                            type="text"
+                            placeholder="Address Nickname (e.g. Lab, Home) *"
+                            value={addressEdits.nickname}
+                            onChange={(e) => handleAddressChange('nickname', e.target.value)}
+                            style={{
+                              width: '100%', padding: '10px 12px', borderRadius: '8px',
+                              border: '1px solid var(--line)', fontSize: '14px',
+                              outline: 'none', boxSizing: 'border-box',
+                            }}
+                          />
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <input
+                              type="text"
+                              placeholder="First Name *"
+                              value={addressEdits.first_name}
+                              onChange={(e) => handleAddressChange('first_name', e.target.value)}
+                              style={{
+                                width: '100%', padding: '10px 12px', borderRadius: '8px',
+                                border: '1px solid var(--line)', fontSize: '14px',
+                                outline: 'none', boxSizing: 'border-box',
+                              }}
+                            />
+                            <input
+                              type="text"
+                              placeholder="Last Name *"
+                              value={addressEdits.last_name}
+                              onChange={(e) => handleAddressChange('last_name', e.target.value)}
+                              style={{
+                                width: '100%', padding: '10px 12px', borderRadius: '8px',
+                                border: '1px solid var(--line)', fontSize: '14px',
+                                outline: 'none', boxSizing: 'border-box',
+                              }}
+                            />
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Company Name (optional)"
+                            value={addressEdits.company_name}
+                            onChange={(e) => handleAddressChange('company_name', e.target.value)}
+                            style={{
+                              width: '100%', padding: '10px 12px', borderRadius: '8px',
+                              border: '1px solid var(--line)', fontSize: '14px',
+                              outline: 'none', boxSizing: 'border-box',
+                            }}
+                          />
+                          <input
+                            type="text"
+                            placeholder="Street Address *"
+                            value={addressEdits.address_line_1}
+                            onChange={(e) => handleAddressChange('address_line_1', e.target.value)}
+                            style={{
+                              width: '100%', padding: '10px 12px', borderRadius: '8px',
+                              border: '1px solid var(--line)', fontSize: '14px',
+                              outline: 'none', boxSizing: 'border-box',
+                            }}
+                          />
+                          <input
+                            type="text"
+                            placeholder="Apt / Suite (optional)"
+                            value={addressEdits.apt}
+                            onChange={(e) => handleAddressChange('apt', e.target.value)}
+                            style={{
+                              width: '100%', padding: '10px 12px', borderRadius: '8px',
+                              border: '1px solid var(--line)', fontSize: '14px',
+                              outline: 'none', boxSizing: 'border-box',
+                            }}
+                          />
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                            <input
+                              type="text"
+                              placeholder="City *"
+                              value={addressEdits.city}
+                              onChange={(e) => handleAddressChange('city', e.target.value)}
+                              style={{
+                                width: '100%', padding: '10px 12px', borderRadius: '8px',
+                                border: '1px solid var(--line)', fontSize: '14px',
+                                outline: 'none', boxSizing: 'border-box',
+                              }}
+                            />
+                            <input
+                              type="text"
+                              placeholder="State *"
+                              value={addressEdits.state}
+                              onChange={(e) => handleAddressChange('state', e.target.value)}
+                              style={{
+                                width: '100%', padding: '10px 12px', borderRadius: '8px',
+                                border: '1px solid var(--line)', fontSize: '14px',
+                                outline: 'none', boxSizing: 'border-box',
+                              }}
+                            />
+                            <input
+                              type="text"
+                              placeholder="ZIP *"
+                              value={addressEdits.zipcode}
+                              onChange={(e) => handleAddressChange('zipcode', e.target.value)}
+                              style={{
+                                width: '100%', padding: '10px 12px', borderRadius: '8px',
+                                border: '1px solid var(--line)', fontSize: '14px',
+                                outline: 'none', boxSizing: 'border-box',
+                              }}
+                            />
+                          </div>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', marginTop: '6px', color: 'var(--ink)' }}>
+                            <input
+                              type="checkbox"
+                              checked={addressEdits.save_to_profile}
+                              onChange={(e) => handleAddressChange('save_to_profile', e.target.checked)}
+                            />
+                            Save this address to my profile
+                          </label>
+                        </div>
+                      )}
 
                       <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                         <button

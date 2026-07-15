@@ -24,13 +24,10 @@ services:
       dockerfile: Dockerfile
     container_name: bioark_backend
     restart: always
+    env_file:
+      - .env
     environment:
       DB_HOST: db
-      DB_PASSWORD: postgres
-      DEBUG_FLAG: "True"
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
-      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
     ports:
       - "8000:8000"
     volumes:

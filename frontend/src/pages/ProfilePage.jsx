@@ -18,7 +18,7 @@ const emptyProfile = {
   zipcode: '',
 };
 
-function ProfilePage({ navigate, initialTab }) {
+function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
   const [activeTab, setActiveTab] = useState(initialTab || 'personal'); // 'personal', 'address', 'orders', 'security'
 
   useEffect(() => {
@@ -45,6 +45,23 @@ function ProfilePage({ navigate, initialTab }) {
   // Order history state
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+
+  // Shipping addresses state
+  const [shippingAddresses, setShippingAddresses] = useState([]);
+  const [editingAddress, setEditingAddress] = useState(null);
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [addressFormData, setAddressFormData] = useState({
+    nickname: '',
+    first_name: '',
+    last_name: '',
+    company_name: '',
+    address_line_1: '',
+    address_line_2: '',
+    city: '',
+    state: '',
+    postal_code: '',
+    is_default: false,
+  });
 
   // Load profile data on mount
   useEffect(() => {
@@ -78,6 +95,7 @@ function ProfilePage({ navigate, initialTab }) {
         });
 
         setProfilePicture(user.profile_picture || null);
+        setShippingAddresses(user.shipping_addresses || []);
       } catch (err) {
         setStatus({ type: 'error', message: err.message || 'Failed to load profile.' });
       } finally {
@@ -87,6 +105,7 @@ function ProfilePage({ navigate, initialTab }) {
 
     loadProfile();
   }, []);
+
 
   // Fetch orders when orders tab is active
   useEffect(() => {
@@ -148,6 +167,9 @@ function ProfilePage({ navigate, initialTab }) {
           zipcode: address.zipcode || '',
         }));
         setProfilePicture(response.user.profile_picture || null);
+        if (onRefreshProfile) {
+          onRefreshProfile();
+        }
       }
 
       setStatus({ type: 'success', message: 'Profile updated successfully.' });
@@ -179,6 +201,9 @@ function ProfilePage({ navigate, initialTab }) {
       if (response.user) {
         setProfilePicture(response.user.profile_picture);
         setStatus({ type: 'success', message: 'Profile picture updated successfully.' });
+        if (onRefreshProfile) {
+          onRefreshProfile();
+        }
       }
     } catch (err) {
       setStatus({ type: 'error', message: err.message || 'Failed to upload profile picture.' });
@@ -215,6 +240,144 @@ function ProfilePage({ navigate, initialTab }) {
       setPasswordStatus({ type: 'error', message: err.message || 'Failed to update password.' });
     } finally {
       setPasswordSaving(false);
+    }
+  };
+
+  // Shipping Address CRUD Handlers
+  const handleAddressFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setAddressFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  const handleEditAddressClick = (addr) => {
+    setEditingAddress(addr);
+    setIsAddingNew(false);
+    setAddressFormData({
+      nickname: addr.nickname || '',
+      first_name: addr.first_name || '',
+      last_name: addr.last_name || '',
+      company_name: addr.company_name || '',
+      address_line_1: addr.address_line_1 || '',
+      address_line_2: addr.address_line_2 || '',
+      city: addr.city || '',
+      state: addr.state || '',
+      postal_code: addr.postal_code || '',
+      is_default: addr.is_default || false,
+    });
+  };
+
+  const handleAddNewAddressClick = () => {
+    setEditingAddress(null);
+    setIsAddingNew(true);
+    setAddressFormData({
+      nickname: '',
+      first_name: formData.firstName || '',
+      last_name: formData.lastName || '',
+      company_name: formData.company || '',
+      address_line_1: '',
+      address_line_2: '',
+      city: '',
+      state: '',
+      postal_code: '',
+      is_default: shippingAddresses.length === 0,
+    });
+  };
+
+  const handleCancelAddressEdit = () => {
+    setEditingAddress(null);
+    setIsAddingNew(false);
+  };
+
+  const handleSaveAddress = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setStatus({ type: '', message: '' });
+
+    try {
+      let response;
+      if (isAddingNew) {
+        response = await apiFetch('/api/users/shipping-addresses/create/', {
+          method: 'POST',
+          body: addressFormData,
+        });
+      } else {
+        response = await apiFetch(`/api/users/shipping-addresses/${editingAddress.id}/update/`, {
+          method: 'POST',
+          body: addressFormData,
+        });
+      }
+
+      if (response.user) {
+        setShippingAddresses(response.user.shipping_addresses || []);
+        if (onRefreshProfile) {
+          onRefreshProfile();
+        }
+      }
+      
+      setStatus({ 
+        type: 'success', 
+        message: isAddingNew ? 'Shipping address added successfully.' : 'Shipping address updated successfully.' 
+      });
+      
+      setEditingAddress(null);
+      setIsAddingNew(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      setStatus({ type: 'error', message: err.message || 'Failed to save shipping address.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteAddress = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this shipping address?')) return;
+    setSaving(true);
+    setStatus({ type: '', message: '' });
+
+    try {
+      const response = await apiFetch(`/api/users/shipping-addresses/${id}/delete/`, {
+        method: 'DELETE',
+      });
+
+      if (response.user) {
+        setShippingAddresses(response.user.shipping_addresses || []);
+        if (onRefreshProfile) {
+          onRefreshProfile();
+        }
+      }
+      
+      setStatus({ type: 'success', message: 'Shipping address deleted successfully.' });
+    } catch (err) {
+      setStatus({ type: 'error', message: err.message || 'Failed to delete shipping address.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSetDefaultAddress = async (id) => {
+    setSaving(true);
+    setStatus({ type: '', message: '' });
+
+    try {
+      const response = await apiFetch(`/api/users/shipping-addresses/${id}/set-default/`, {
+        method: 'POST',
+      });
+
+      if (response.user) {
+        setShippingAddresses(response.user.shipping_addresses || []);
+        if (onRefreshProfile) {
+          onRefreshProfile();
+        }
+      }
+      
+      setStatus({ type: 'success', message: 'Default shipping address updated.' });
+    } catch (err) {
+      setStatus({ type: 'error', message: err.message || 'Failed to set default address.' });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -407,7 +570,128 @@ function ProfilePage({ navigate, initialTab }) {
           background: rgba(244, 63, 94, 0.1);
           color: #e11d48;
         }
+        
+        /* Shipping Addresses Styles */
+        .address-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 20px;
+          margin-top: 20px;
+        }
+        .address-card {
+          border: 1px solid var(--line);
+          border-radius: 12px;
+          padding: 20px;
+          background: #fff;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          position: relative;
+          transition: all 0.3s ease;
+        }
+        .address-card:hover {
+          border-color: var(--blue);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .address-card.default {
+          border-color: var(--blue);
+          background: rgba(59, 130, 246, 0.02);
+        }
+        .address-header-badge {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+        .address-nickname-badge {
+          background: var(--panel);
+          color: var(--ink);
+          font-size: 11px;
+          font-weight: 700;
+          padding: 4px 8px;
+          border-radius: 6px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .address-card.default .address-nickname-badge {
+          background: rgba(59, 130, 246, 0.1);
+          color: var(--blue);
+        }
+        .address-default-badge {
+          background: rgba(16, 185, 129, 0.1);
+          color: #059669;
+          font-size: 10px;
+          font-weight: 600;
+          padding: 2px 6px;
+          border-radius: 4px;
+        }
+        .address-name {
+          font-weight: 600;
+          font-size: 15px;
+          color: var(--ink);
+          margin-bottom: 4px;
+        }
+        .address-company {
+          font-size: 13px;
+          color: var(--muted);
+          margin-bottom: 8px;
+        }
+        .address-details {
+          font-size: 14px;
+          line-height: 1.45;
+          color: var(--muted);
+        }
+        .address-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin-top: 16px;
+          border-top: 1px solid var(--line);
+          padding-top: 12px;
+          font-size: 13px;
+        }
+        .address-action-btn {
+          background: none;
+          border: none;
+          color: var(--blue);
+          font-weight: 600;
+          cursor: pointer;
+          padding: 0;
+          transition: opacity 0.2s;
+        }
+        .address-action-btn:hover {
+          text-decoration: underline;
+          opacity: 0.8;
+        }
+        .address-action-btn.delete {
+          color: #e11d48;
+        }
+        .address-add-card {
+          border: 2px dashed var(--line);
+          border-radius: 12px;
+          padding: 20px;
+          background: transparent;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          min-height: 180px;
+          transition: all 0.3s ease;
+          gap: 8px;
+          color: var(--muted);
+        }
+        .address-add-card:hover {
+          border-color: var(--blue);
+          color: var(--blue);
+          background: rgba(59, 130, 246, 0.02);
+        }
+        .address-add-icon {
+          font-size: 28px;
+          font-weight: 300;
+        }
       `}</style>
+
 
       <section className="profile-header" style={{ width: 'min(1200px, calc(100% - 48px))', margin: '40px auto 0' }}>
         <div>
@@ -532,44 +816,199 @@ function ProfilePage({ navigate, initialTab }) {
 
           {/* TAB 2: SHIPPING ADDRESS */}
           {activeTab === 'address' && (
-            <form onSubmit={handleSubmit}>
-              <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '20px', borderBottom: '1px solid var(--line)', paddingBottom: '10px' }}>
-                Shipping Address
-              </h2>
-              <div className="profile-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                <label className="full-span" style={{ gridColumn: 'span 2' }}>
-                  Address Line 1
-                  <input type="text" name="addressLine1" value={formData.addressLine1} onChange={handleInputChange} />
-                </label>
-                <label className="full-span" style={{ gridColumn: 'span 2' }}>
-                  Address Line 2
-                  <input type="text" name="addressLine2" value={formData.addressLine2} onChange={handleInputChange} />
-                </label>
-                <label>
-                  Apt / Suite / Dept
-                  <input type="text" name="aptSuite" value={formData.aptSuite} onChange={handleInputChange} />
-                </label>
-                <label>
-                  City
-                  <input type="text" name="city" value={formData.city} onChange={handleInputChange} />
-                </label>
-                <label>
-                  State / Province
-                  <input type="text" name="state" value={formData.state} onChange={handleInputChange} />
-                </label>
-                <label>
-                  Country
-                  <input type="text" name="country" value={formData.country} onChange={handleInputChange} />
-                </label>
-                <label>
-                  ZIP / Postal Code
-                  <input type="text" name="zipcode" value={formData.zipcode} onChange={handleInputChange} />
-                </label>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--line)', paddingBottom: '10px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0 }}>
+                  Shipping Addresses
+                </h2>
+                {!isAddingNew && !editingAddress && (
+                  <button 
+                    type="button" 
+                    className="primary-button" 
+                    onClick={handleAddNewAddressClick} 
+                    style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px' }}
+                  >
+                    + Add New Address
+                  </button>
+                )}
               </div>
-              <button type="submit" className="primary-button" disabled={saving} style={{ marginTop: '24px', padding: '12px 24px', borderRadius: '8px' }}>
-                {saving ? 'Saving...' : 'Save Shipping Address'}
-              </button>
-            </form>
+
+              {isAddingNew || editingAddress ? (
+                <form onSubmit={handleSaveAddress}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px' }}>
+                    {isAddingNew ? 'Add New Shipping Address' : 'Edit Shipping Address'}
+                  </h3>
+                  <div className="profile-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <label className="full-span" style={{ gridColumn: 'span 2' }}>
+                      Address Nickname / Label (e.g. Home, Lab, Main Office) *
+                      <input 
+                        type="text" 
+                        name="nickname" 
+                        value={addressFormData.nickname} 
+                        onChange={handleAddressFormChange} 
+                        required 
+                        placeholder="e.g. Lab, Main Office, Home"
+                      />
+                    </label>
+                    <label>
+                      Customer First Name *
+                      <input 
+                        type="text" 
+                        name="first_name" 
+                        value={addressFormData.first_name} 
+                        onChange={handleAddressFormChange} 
+                        required 
+                      />
+                    </label>
+                    <label>
+                      Customer Last Name *
+                      <input 
+                        type="text" 
+                        name="last_name" 
+                        value={addressFormData.last_name} 
+                        onChange={handleAddressFormChange} 
+                        required 
+                      />
+                    </label>
+                    <label className="full-span" style={{ gridColumn: 'span 2' }}>
+                      Company Name (Optional)
+                      <input 
+                        type="text" 
+                        name="company_name" 
+                        value={addressFormData.company_name} 
+                        onChange={handleAddressFormChange} 
+                      />
+                    </label>
+                    <label className="full-span" style={{ gridColumn: 'span 2' }}>
+                      Address Line 1 *
+                      <input 
+                        type="text" 
+                        name="address_line_1" 
+                        value={addressFormData.address_line_1} 
+                        onChange={handleAddressFormChange} 
+                        required 
+                      />
+                    </label>
+                    <label className="full-span" style={{ gridColumn: 'span 2' }}>
+                      Address Line 2 (Optional)
+                      <input 
+                        type="text" 
+                        name="address_line_2" 
+                        value={addressFormData.address_line_2} 
+                        onChange={handleAddressFormChange} 
+                      />
+                    </label>
+                    <label>
+                      City *
+                      <input 
+                        type="text" 
+                        name="city" 
+                        value={addressFormData.city} 
+                        onChange={handleAddressFormChange} 
+                        required 
+                      />
+                    </label>
+                    <label>
+                      State / Province *
+                      <input 
+                        type="text" 
+                        name="state" 
+                        value={addressFormData.state} 
+                        onChange={handleAddressFormChange} 
+                        required 
+                      />
+                    </label>
+                    <label>
+                      Postal Code *
+                      <input 
+                        type="text" 
+                        name="postal_code" 
+                        value={addressFormData.postal_code} 
+                        onChange={handleAddressFormChange} 
+                        required 
+                      />
+                    </label>
+                    
+                    <label className="full-span" style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '10px' }}>
+                      <input 
+                        type="checkbox" 
+                        name="is_default" 
+                        checked={addressFormData.is_default} 
+                        onChange={handleAddressFormChange} 
+                        disabled={!isAddingNew && editingAddress?.is_default}
+                      />
+                      Set as default shipping address
+                    </label>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                    <button type="submit" className="primary-button" disabled={saving} style={{ padding: '12px 24px', borderRadius: '8px' }}>
+                      {saving ? 'Saving...' : 'Save Address'}
+                    </button>
+                    <button type="button" className="secondary-button" onClick={handleCancelAddressEdit} style={{ padding: '12px 24px', borderRadius: '8px' }}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div>
+                  <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '20px' }}>
+                    Select or manage the addresses you want to use for shipping and billing.
+                  </p>
+                  
+                  <div className="address-grid">
+                    {shippingAddresses.map((addr) => (
+                      <div key={addr.id} className={`address-card ${addr.is_default ? 'default' : ''}`}>
+                        <div>
+                          <div className="address-header-badge">
+                            <span className="address-nickname-badge">{addr.nickname}</span>
+                            {addr.is_default && <span className="address-default-badge">Default</span>}
+                          </div>
+                          <div className="address-name">{addr.first_name} {addr.last_name}</div>
+                          {addr.company_name && <div className="address-company">{addr.company_name}</div>}
+                          <div className="address-details">
+                            <div>{addr.address_line_1}</div>
+                            {addr.address_line_2 && <div>{addr.address_line_2}</div>}
+                            <div>{addr.city}, {addr.state} {addr.postal_code}</div>
+                          </div>
+                        </div>
+                        
+                        <div className="address-actions">
+                          <button 
+                            type="button" 
+                            className="address-action-btn" 
+                            onClick={() => handleEditAddressClick(addr)}
+                          >
+                            Edit
+                          </button>
+                          {!addr.is_default && (
+                            <button 
+                              type="button" 
+                              className="address-action-btn" 
+                              onClick={() => handleSetDefaultAddress(addr.id)}
+                            >
+                              Set as Default
+                            </button>
+                          )}
+                          <button 
+                            type="button" 
+                            className="address-action-btn delete" 
+                            onClick={() => handleDeleteAddress(addr.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <div className="address-add-card" onClick={handleAddNewAddressClick}>
+                      <span className="address-add-icon">+</span>
+                      <span>Add New Address</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {/* TAB 3: ORDER HISTORY */}
