@@ -237,12 +237,20 @@ def admin_list_products(request):
         page_number = int(request.GET.get('page_number', 1))
         page_size = int(request.GET.get('page_size', 25))
         source_type = request.GET.get('source_type', None)
+        hidden = request.GET.get('hidden')
 
         products = Product.objects.all().order_by('display_order', '-created_at')
         if source_type == 'reagent':
             products = products.filter(source_type='reagent')
         elif source_type == 'product':
             products = products.exclude(source_type='reagent')
+
+        if hidden is not None:
+            normalized_hidden = hidden.strip().lower()
+            if normalized_hidden in ('true', '1'):
+                products = products.filter(hidden=True)
+            elif normalized_hidden in ('false', '0'):
+                products = products.filter(hidden=False)
 
         paginator = Paginator(products, page_size)
         page = paginator.get_page(page_number)
@@ -429,7 +437,7 @@ def admin_delete_product(request, product_id):
         p = Product.objects.get(product_id=product_id)
         p.hidden = True
         p.save()
-        return Response({'message': 'Product deleted (hidden) successfully'})
+        return Response({'message': 'Product deactivated successfully'})
     except Product.DoesNotExist:
         return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
@@ -905,8 +913,16 @@ def admin_list_all_users(request):
     try:
         page_number = int(request.GET.get('page_number', 1))
         page_size = int(request.GET.get('page_size', 25))
+        is_active = request.GET.get('is_active')
 
         users = User.objects.all().order_by('-date_joined')
+        if is_active is not None:
+            normalized_is_active = is_active.strip().lower()
+            if normalized_is_active in ('true', '1'):
+                users = users.filter(is_active=True)
+            elif normalized_is_active in ('false', '0'):
+                users = users.filter(is_active=False)
+
         paginator = Paginator(users, page_size)
         page = paginator.get_page(page_number)
 
@@ -1031,6 +1047,11 @@ def admin_update_user(request, user_id):
             if field in d:
                 setattr(u, field, d[field])
 
+        if not u.is_active:
+            u.is_admin = False
+            u.is_staff = False
+            u.is_superuser = False
+
         u.save()
         return Response({'message': 'User updated successfully'})
     except User.DoesNotExist:
@@ -1048,7 +1069,10 @@ def admin_delete_user(request, user_id):
     try:
         u = User.objects.get(id=user_id)
         u.is_active = False
-        u.save()
+        u.is_admin = False
+        u.is_staff = False
+        u.is_superuser = False
+        u.save(update_fields=['is_active', 'is_admin', 'is_staff', 'is_superuser'])
         return Response({'message': 'User deactivated successfully'})
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -1064,6 +1088,11 @@ def admin_toggle_admin(request, user_id):
 
     try:
         u = User.objects.get(id=user_id)
+        if not u.is_active:
+            return Response(
+                {'error': 'A deactivated user cannot be granted admin access'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         u.is_admin = not u.is_admin
         u.save()
         return Response({'message': f'User admin status set to {u.is_admin}', 'is_admin': u.is_admin})

@@ -82,6 +82,7 @@ class CustomerShippingAddress(models.Model):
     city = models.CharField(max_length=255)
     state = models.CharField(max_length=255)
     postal_code = models.CharField(max_length=50)
+    country = models.CharField(max_length=2, default='US')
     is_default = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

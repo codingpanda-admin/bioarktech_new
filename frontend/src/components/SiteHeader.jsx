@@ -583,6 +583,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
               key={cat.external_id}
               className={`catalog-category-btn ${activeCategory === cat.external_id ? 'is-active' : ''}`}
               type="button"
+              title={cat.category_name}
               onMouseEnter={() => setActiveCategory(cat.external_id)}
               onClick={(e) => {
                 e.preventDefault();

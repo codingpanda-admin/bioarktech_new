@@ -3,6 +3,7 @@ import logging
 import os
 
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.password_validation import validate_password
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.middleware.csrf import get_token
@@ -47,7 +48,7 @@ def get_csrf(request):
 @require_POST
 def signup_view(request):
     data = json.loads(request.body)
-    email = data.get('email').lower()
+    email = (data.get('email') or '').strip().lower()
     password = data.get('password')
     first_name = data.get('firstName', '')
     last_name = data.get('lastName', '')
@@ -70,6 +71,29 @@ def signup_view(request):
         validate_email(email)
     except ValidationError:
         return JsonResponse({'detail': 'Invalid email address.'}, status=400)
+
+    if password:
+        has_required_characters = (
+            len(password) >= 8
+            and any(char.islower() for char in password)
+            and any(char.isupper() for char in password)
+            and any(char.isdigit() for char in password)
+            and any(not char.isalnum() for char in password)
+        )
+        if not has_required_characters:
+            return JsonResponse({
+                'detail': 'Create a stronger password with at least 8 characters, including uppercase, lowercase, a number, and a special character.'
+            }, status=400)
+
+        password_user = User(
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+        )
+        try:
+            validate_password(password, user=password_user)
+        except ValidationError as exc:
+            return JsonResponse({'detail': ' '.join(exc.messages)}, status=400)
     
     # Create user
     try:
@@ -130,11 +154,15 @@ def signup_view(request):
 @require_POST
 def login_view(request):
     data = json.loads(request.body)
-    email = data.get('email').lower()
+    email = (data.get('email') or '').strip().lower()
     password = data.get('password')
 
-    if email is None or password is None:
+    if not email or password is None:
         return JsonResponse({'detail': 'Please provide email and password.'}, status=400)
+
+    existing_user = User.objects.filter(email=email).only('is_active').first()
+    if existing_user and not existing_user.is_active:
+        return JsonResponse({'detail': 'This account has been deactivated.'}, status=403)
 
     user = authenticate(email=email, password=password)
 
@@ -677,8 +705,11 @@ def google_login(request):
         
         # Check if user already exists
         user = User.objects.filter(email=email).first()
-        
+
         if user:
+            if not user.is_active:
+                return JsonResponse({'detail': 'This account has been deactivated.'}, status=403)
+
             # Connect accounts seamlessly since email is verified by Google
             if not user.profile_picture and picture:
                 try:
@@ -689,9 +720,6 @@ def google_login(request):
                 except Exception as img_err:
                     logger.error(f"Failed to save Google profile picture: {img_err}")
             
-            if not user.is_active:
-                user.is_active = True
-                user.save()
         else:
             # Create new user
             user = User.objects.create_user(

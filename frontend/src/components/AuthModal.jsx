@@ -21,6 +21,16 @@ function AuthModal({ onClose, onLoginSuccess, isPopupPage = false }) {
   const [error, setError] = useState('');
   const [messageType, setMessageType] = useState('error');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const isStrongPassword = (password) => (
+    password.length >= 8
+    && /[a-z]/.test(password)
+    && /[A-Z]/.test(password)
+    && /\d/.test(password)
+    && /[^A-Za-z0-9]/.test(password)
+  );
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -84,10 +94,18 @@ function AuthModal({ onClose, onLoginSuccess, isPopupPage = false }) {
     setError('');
     setMessageType('error');
 
-    if (authMode === 'register' && formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match.');
-      setLoading(false);
-      return;
+    if (authMode === 'register') {
+      if (!isStrongPassword(formData.password)) {
+        setError('Create a stronger password with at least 8 characters, including uppercase, lowercase, a number, and a special character.');
+        setLoading(false);
+        return;
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        setError('Passwords do not match.');
+        setLoading(false);
+        return;
+      }
     }
 
     try {
@@ -193,44 +211,84 @@ function AuthModal({ onClose, onLoginSuccess, isPopupPage = false }) {
                   Email Address *
                   <input type="email" name="email" value={formData.email} onChange={handleInputChange} required />
                 </label>
-                <label style={{ margin: 0, fontWeight: 500, fontSize: '13px' }}>
+                <label className="auth-password-field" style={{ margin: 0, fontWeight: 500, fontSize: '13px' }}>
                   Password *
-                  <input type="password" name="password" value={formData.password} onChange={handleInputChange} required placeholder="At least 8 characters" />
+                  <div className="auth-password-input-wrap">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      required
+                      minLength={8}
+                      autoComplete="new-password"
+                      aria-describedby="registration-password-requirements"
+                    />
+                    <button
+                      type="button"
+                      className="auth-password-toggle"
+                      onClick={() => setShowPassword((visible) => !visible)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
                 </label>
-                <label style={{ margin: 0, fontWeight: 500, fontSize: '13px' }}>
+                <label className="auth-password-field" style={{ margin: 0, fontWeight: 500, fontSize: '13px' }}>
                   Confirm Password *
-                  <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleInputChange} required />
+                  <div className="auth-password-input-wrap">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      required
+                      minLength={8}
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="auth-password-toggle"
+                      onClick={() => setShowConfirmPassword((visible) => !visible)}
+                      aria-label={showConfirmPassword ? 'Hide password confirmation' : 'Show password confirmation'}
+                    >
+                      {showConfirmPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
                 </label>
+                <p id="registration-password-requirements" className="auth-password-requirements">
+                  Create a strong password with at least 8 characters, including uppercase, lowercase, a number, and a special character.
+                </p>
               </div>
             </div>
 
             <div style={{ borderTop: '1px solid var(--line)', paddingTop: '16px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--blue)', marginBottom: '4px' }}>🚚 Shipping Address</h3>
-              <p style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '12px' }}>This address is used to calculate shipping fees in real-time.</p>
+              <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--blue)', marginBottom: '4px' }}>🚚 Shipping Address (Optional)</h3>
+              <p style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '12px' }}>You can leave this blank and add a shipping address later.</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <label style={{ margin: 0, gridColumn: 'span 2', fontWeight: 500, fontSize: '13px' }}>
-                  Street Address *
-                  <input type="text" name="addressLine1" value={formData.addressLine1} onChange={handleInputChange} required placeholder="e.g. 123 Main St" />
+                  Street Address
+                  <input type="text" name="addressLine1" value={formData.addressLine1} onChange={handleInputChange} placeholder="e.g. 123 Main St" />
                 </label>
                 <label style={{ margin: 0, fontWeight: 500, fontSize: '13px' }}>
                   Apt / Suite / Suite
                   <input type="text" name="aptSuite" value={formData.aptSuite} onChange={handleInputChange} placeholder="e.g. Suite 400" />
                 </label>
                 <label style={{ margin: 0, fontWeight: 500, fontSize: '13px' }}>
-                  City *
-                  <input type="text" name="city" value={formData.city} onChange={handleInputChange} required />
+                  City
+                  <input type="text" name="city" value={formData.city} onChange={handleInputChange} />
                 </label>
                 <label style={{ margin: 0, fontWeight: 500, fontSize: '13px' }}>
-                  State / Province *
-                  <input type="text" name="state" value={formData.state} onChange={handleInputChange} required />
+                  State / Province
+                  <input type="text" name="state" value={formData.state} onChange={handleInputChange} />
                 </label>
                 <label style={{ margin: 0, fontWeight: 500, fontSize: '13px' }}>
-                  ZIP / Postal Code *
-                  <input type="text" name="zipcode" value={formData.zipcode} onChange={handleInputChange} required />
+                  ZIP / Postal Code
+                  <input type="text" name="zipcode" value={formData.zipcode} onChange={handleInputChange} />
                 </label>
                 <label style={{ margin: 0, gridColumn: 'span 2', fontWeight: 500, fontSize: '13px' }}>
-                  Country *
-                  <input type="text" name="country" value={formData.country} onChange={handleInputChange} required />
+                  Country
+                  <input type="text" name="country" value={formData.country} onChange={handleInputChange} />
                 </label>
               </div>
             </div>

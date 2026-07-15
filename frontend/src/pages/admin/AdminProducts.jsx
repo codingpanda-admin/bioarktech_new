@@ -281,6 +281,7 @@ function AdminProducts({ categoryFilter = null }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [catalogStatus, setCatalogStatus] = useState('active');
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
@@ -288,7 +289,15 @@ function AdminProducts({ categoryFilter = null }) {
   const [catalogSaving, setCatalogSaving] = useState(false);
   const [draggedCatalogIndex, setDraggedCatalogIndex] = useState(null);
   const [collapsedCatalogs, setCollapsedCatalogs] = useState(() => new Set());
+  const [optionRows, setOptionRows] = useState([]);
   const productContentEditorRef = useRef(null);
+  const optionRowIdRef = useRef(0);
+
+  const getProductsListUrl = useCallback(() => {
+    const sourceType = categoryFilter === 'products' ? 'product' : 'reagent';
+    const hiddenFilter = `&hidden=${catalogStatus === 'deactivated' ? 'true' : 'false'}`;
+    return `/api/admin-panel/products/?page_number=1&page_size=250&source_type=${sourceType}${hiddenFilter}`;
+  }, [categoryFilter, catalogStatus]);
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -299,9 +308,7 @@ function AdminProducts({ categoryFilter = null }) {
       setCategories(catsData || []);
 
       // 2. Fetch products
-      const sourceType = categoryFilter === 'products' ? 'product' : 'reagent';
-      const url = `/api/admin-panel/products/?page_number=1&page_size=250&source_type=${sourceType}`;
-      const data = await apiFetch(url);
+      const data = await apiFetch(getProductsListUrl());
       
       const rawList = data.results || data.products || [];
       setProducts(rawList);
@@ -310,7 +317,7 @@ function AdminProducts({ categoryFilter = null }) {
     } finally {
       setLoading(false);
     }
-  }, [categoryFilter]);
+  }, [getProductsListUrl]);
 
   useEffect(() => {
     loadProducts();
@@ -322,7 +329,39 @@ function AdminProducts({ categoryFilter = null }) {
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
+  const createOptionRows = (options = [], optionPrices = {}) => {
+    const optionNames = Array.isArray(options) ? options : [];
+    const priceMap = optionPrices && typeof optionPrices === 'object' && !Array.isArray(optionPrices)
+      ? optionPrices
+      : {};
+    const names = [...new Set([...optionNames, ...Object.keys(priceMap)])];
+
+    return names.map((name) => ({
+      id: `option-row-${++optionRowIdRef.current}`,
+      name,
+      price: priceMap[name] ?? '',
+    }));
+  };
+
+  const updateOptionRow = (rowId, field, value) => {
+    setOptionRows((rows) => rows.map((row) => (
+      row.id === rowId ? { ...row, [field]: value } : row
+    )));
+  };
+
+  const addOptionRow = () => {
+    setOptionRows((rows) => [
+      ...rows,
+      { id: `option-row-${++optionRowIdRef.current}`, name: '', price: '' },
+    ]);
+  };
+
+  const removeOptionRow = (rowId) => {
+    setOptionRows((rows) => rows.filter((row) => row.id !== rowId));
+  };
+
   const handleCreate = () => {
+    setOptionRows([]);
     setEditingProduct({
       product_name: '',
       external_id: '',
@@ -354,6 +393,7 @@ function AdminProducts({ categoryFilter = null }) {
       setSuccessMsg('');
       const data = await apiFetch(`/api/admin-panel/products/${productId}/`);
       const productData = data.product || data;
+      setOptionRows(createOptionRows(productData.options, productData.option_prices));
       setEditingProduct({
         ...productData,
         content_text: productData.content_text || productData.contentText || productData.raw_detail?.contentText || '',
@@ -368,16 +408,33 @@ function AdminProducts({ categoryFilter = null }) {
 
   const handleCancelEdit = () => {
     setEditingProduct(null);
+    setOptionRows([]);
     setIsModalOpen(false);
     setError('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = async (productId) => {
-    if (!confirm('Are you sure you want to hide this product?')) return;
+  const handleDeactivate = async (productId) => {
+    const itemLabel = categoryFilter === 'products' ? 'product' : 'reagent';
+    if (!confirm(`Are you sure you want to deactivate this ${itemLabel}?`)) return;
     try {
       await apiFetch(`/api/admin-panel/products/${productId}/delete/`, { method: 'POST' });
-      showSuccess('Product hidden successfully.');
+      showSuccess(`${itemLabel === 'product' ? 'Product' : 'Reagent'} deactivated successfully.`);
+      loadProducts();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleActivate = async (productId) => {
+    const itemLabel = categoryFilter === 'products' ? 'product' : 'reagent';
+    if (!confirm(`Are you sure you want to activate this ${itemLabel}?`)) return;
+    try {
+      await apiFetch(`/api/admin-panel/products/${productId}/update/`, {
+        method: 'POST',
+        body: { hidden: false }
+      });
+      showSuccess(`${itemLabel === 'product' ? 'Product' : 'Reagent'} activated successfully.`);
       loadProducts();
     } catch (err) {
       setError(err.message);
@@ -406,17 +463,13 @@ function AdminProducts({ categoryFilter = null }) {
       showSuccess(updatedStatus ? 'Product is now featured.' : 'Product is no longer featured.');
 
       // Sync silent background reload
-      const sourceType = categoryFilter === 'products' ? 'product' : 'reagent';
-      const url = `/api/admin-panel/products/?page_number=1&page_size=250&source_type=${sourceType}`;
-      const data = await apiFetch(url);
+      const data = await apiFetch(getProductsListUrl());
       const rawList = data.results || data.products || [];
       setProducts(rawList);
     } catch (err) {
       setError(err.message);
       // Revert status on failure
-      const sourceType = categoryFilter === 'products' ? 'product' : 'reagent';
-      const url = `/api/admin-panel/products/?page_number=1&page_size=250&source_type=${sourceType}`;
-      const data = await apiFetch(url);
+      const data = await apiFetch(getProductsListUrl());
       const rawList = data.results || data.products || [];
       setProducts(rawList);
     }
@@ -444,17 +497,13 @@ function AdminProducts({ categoryFilter = null }) {
       showSuccess(updatedStatus ? 'Product will display on homepage.' : 'Product will not display on homepage.');
 
       // Sync silent background reload
-      const sourceType = categoryFilter === 'products' ? 'product' : 'reagent';
-      const url = `/api/admin-panel/products/?page_number=1&page_size=250&source_type=${sourceType}`;
-      const data = await apiFetch(url);
+      const data = await apiFetch(getProductsListUrl());
       const rawList = data.results || data.products || [];
       setProducts(rawList);
     } catch (err) {
       setError(err.message);
       // Revert status on failure
-      const sourceType = categoryFilter === 'products' ? 'product' : 'reagent';
-      const url = `/api/admin-panel/products/?page_number=1&page_size=250&source_type=${sourceType}`;
-      const data = await apiFetch(url);
+      const data = await apiFetch(getProductsListUrl());
       const rawList = data.results || data.products || [];
       setProducts(rawList);
     }
@@ -476,12 +525,32 @@ function AdminProducts({ categoryFilter = null }) {
       const endpoint = isNew
         ? '/api/admin-panel/products/create/'
         : `/api/admin-panel/products/${editingProduct.product_id}/update/`;
+
+      const normalizedOptionRows = optionRows
+        .map((row) => ({
+          name: String(row.name || '').trim(),
+          price: String(row.price ?? '').trim(),
+        }))
+        .filter((row) => row.name || row.price);
+      const unnamedOption = normalizedOptionRows.find((row) => !row.name);
+      if (unnamedOption) {
+        throw new Error('Each option price must have an option name.');
+      }
+      const normalizedOptions = normalizedOptionRows.map((row) => row.name);
+      if (new Set(normalizedOptions).size !== normalizedOptions.length) {
+        throw new Error('Option names must be unique.');
+      }
+      const normalizedOptionPrices = Object.fromEntries(
+        normalizedOptionRows.map((row) => [row.name, row.price])
+      );
       
       // Map 'uncategorized' option back to null or empty string for DB submission
       const payload = {
         ...editingProduct,
         content_text: latestContentText,
         key_features: normalizeKeyFeaturesForSave(editingProduct.key_features),
+        options: normalizedOptions,
+        option_prices: normalizedOptionPrices,
         raw_detail: updatedRawDetail,
         category_external_id: editingProduct.category_external_id === 'uncategorized' ? '' : editingProduct.category_external_id
       };
@@ -494,7 +563,9 @@ function AdminProducts({ categoryFilter = null }) {
       setIsModalOpen(false);
       if (closeAfterSave) {
         setEditingProduct(null);
+        setOptionRows([]);
       } else if (isNew) {
+        setOptionRows(createOptionRows(normalizedOptions, normalizedOptionPrices));
         setEditingProduct((prev) => ({
           ...prev,
           ...payload,
@@ -502,6 +573,7 @@ function AdminProducts({ categoryFilter = null }) {
           id: saveResponse?.id,
         }));
       } else {
+        setOptionRows(createOptionRows(normalizedOptions, normalizedOptionPrices));
         setEditingProduct((prev) => ({
           ...prev,
           ...payload,
@@ -917,6 +989,56 @@ function AdminProducts({ categoryFilter = null }) {
               <input type="text" value={editingProduct.list_price || ''} onChange={(e) => updateField('list_price', e.target.value)} />
             </label>
 
+            <div className="admin-form-field span-3 admin-options-editor">
+              <div className="admin-options-editor-header">
+                <div>
+                  <h3>Options &amp; Option Prices</h3>
+                  <p>Manage the selectable sizes, packages, or configurations for this item.</p>
+                </div>
+                <button type="button" className="secondary-admin-button" onClick={addOptionRow}>
+                  + Add Option
+                </button>
+              </div>
+
+              {optionRows.length === 0 ? (
+                <div className="admin-options-empty">No options have been added.</div>
+              ) : (
+                <div className="admin-options-list">
+                  <div className="admin-option-row admin-option-row-heading" aria-hidden="true">
+                    <span>Option</span>
+                    <span>Price</span>
+                    <span>Action</span>
+                  </div>
+                  {optionRows.map((row, index) => (
+                    <div className="admin-option-row" key={row.id}>
+                      <input
+                        type="text"
+                        value={row.name}
+                        onChange={(e) => updateOptionRow(row.id, 'name', e.target.value)}
+                        placeholder="e.g. 500 µL"
+                        aria-label={`Option ${index + 1} name`}
+                      />
+                      <input
+                        type="text"
+                        value={row.price}
+                        onChange={(e) => updateOptionRow(row.id, 'price', e.target.value)}
+                        placeholder="e.g. $39.00"
+                        aria-label={`Option ${index + 1} price`}
+                      />
+                      <button
+                        type="button"
+                        className="admin-action-btn delete"
+                        onClick={() => removeOptionRow(row.id)}
+                        aria-label={`Remove option ${index + 1}`}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="admin-form-field span-2" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <span style={{ fontWeight: '500', color: 'var(--ink)' }}>Main Image</span>
               <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
@@ -1073,7 +1195,7 @@ function AdminProducts({ categoryFilter = null }) {
           <div className="admin-form-toggles">
             <label className="admin-toggle">
               <input type="checkbox" checked={!!editingProduct.hidden} onChange={(e) => updateField('hidden', e.target.checked)} />
-              <span>Hidden</span>
+              <span>Deactivated</span>
             </label>
             <label className="admin-toggle">
               <input type="checkbox" checked={!!editingProduct.is_featured} onChange={(e) => updateField('is_featured', e.target.checked)} />
@@ -1125,6 +1247,31 @@ function AdminProducts({ categoryFilter = null }) {
             + Add {categoryFilter === 'products' ? 'Product' : 'Reagent'}
           </button>
         </div>
+      </div>
+
+      <div
+        className="admin-tabs"
+        role="tablist"
+        aria-label={`${categoryFilter === 'products' ? 'Product' : 'Reagent'} status`}
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={catalogStatus === 'active'}
+          className={catalogStatus === 'active' ? 'is-active' : ''}
+          onClick={() => setCatalogStatus('active')}
+        >
+          Active {categoryFilter === 'products' ? 'Products' : 'Reagents'}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={catalogStatus === 'deactivated'}
+          className={catalogStatus === 'deactivated' ? 'is-active' : ''}
+          onClick={() => setCatalogStatus('deactivated')}
+        >
+          Deactivated {categoryFilter === 'products' ? 'Products' : 'Reagents'}
+        </button>
       </div>
 
       {/* Category Pills Filter */}
@@ -1244,7 +1391,7 @@ function AdminProducts({ categoryFilter = null }) {
                                     <td>{product.list_price || '—'}</td>
                                     <td>
                                       <span className={`admin-badge ${product.hidden ? 'badge-muted' : 'badge-success'}`}>
-                                        {product.hidden ? 'Hidden' : 'Visible'}
+                                        {product.hidden ? 'Deactivated' : 'Active'}
                                       </span>
                                       {product.is_featured && <span className="admin-badge badge-accent">Featured</span>}
                                       {product.show_on_screen && <span className="admin-badge badge-info" style={{ background: '#0284c7', color: '#fff', marginLeft: '4px' }}>Homepage</span>}
@@ -1300,7 +1447,11 @@ function AdminProducts({ categoryFilter = null }) {
                                           <FilledHomeIcon />
                                         </button>
                                         <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(pId); }}>Edit</button>
-                                        <button type="button" className="admin-action-btn delete" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(pId); }}>Hide</button>
+                                        {product.hidden ? (
+                                          <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleActivate(pId); }}>Activate</button>
+                                        ) : (
+                                          <button type="button" className="admin-action-btn delete" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeactivate(pId); }}>Deactivate</button>
+                                        )}
                                       </div>
                                     </td>
                                   </tr>
@@ -1521,7 +1672,7 @@ function AdminProducts({ categoryFilter = null }) {
               <div className="admin-form-toggles">
                 <label className="admin-toggle">
                   <input type="checkbox" checked={!!editingProduct.hidden} onChange={(e) => updateField('hidden', e.target.checked)} />
-                  <span>Hidden</span>
+                  <span>Deactivated</span>
                 </label>
                 <label className="admin-toggle">
                   <input type="checkbox" checked={!!editingProduct.is_featured} onChange={(e) => updateField('is_featured', e.target.checked)} />

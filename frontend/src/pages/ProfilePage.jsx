@@ -18,6 +18,30 @@ const emptyProfile = {
   zipcode: '',
 };
 
+const US_STATES = [
+  ['AL', 'Alabama'], ['AK', 'Alaska'], ['AZ', 'Arizona'], ['AR', 'Arkansas'],
+  ['CA', 'California'], ['CO', 'Colorado'], ['CT', 'Connecticut'], ['DE', 'Delaware'],
+  ['FL', 'Florida'], ['GA', 'Georgia'], ['HI', 'Hawaii'], ['ID', 'Idaho'],
+  ['IL', 'Illinois'], ['IN', 'Indiana'], ['IA', 'Iowa'], ['KS', 'Kansas'],
+  ['KY', 'Kentucky'], ['LA', 'Louisiana'], ['ME', 'Maine'], ['MD', 'Maryland'],
+  ['MA', 'Massachusetts'], ['MI', 'Michigan'], ['MN', 'Minnesota'], ['MS', 'Mississippi'],
+  ['MO', 'Missouri'], ['MT', 'Montana'], ['NE', 'Nebraska'], ['NV', 'Nevada'],
+  ['NH', 'New Hampshire'], ['NJ', 'New Jersey'], ['NM', 'New Mexico'], ['NY', 'New York'],
+  ['NC', 'North Carolina'], ['ND', 'North Dakota'], ['OH', 'Ohio'], ['OK', 'Oklahoma'],
+  ['OR', 'Oregon'], ['PA', 'Pennsylvania'], ['RI', 'Rhode Island'], ['SC', 'South Carolina'],
+  ['SD', 'South Dakota'], ['TN', 'Tennessee'], ['TX', 'Texas'], ['UT', 'Utah'],
+  ['VT', 'Vermont'], ['VA', 'Virginia'], ['WA', 'Washington'], ['WV', 'West Virginia'],
+  ['WI', 'Wisconsin'], ['WY', 'Wyoming'],
+];
+
+const normalizeUsState = (state) => {
+  const normalized = (state || '').trim().toLowerCase();
+  const match = US_STATES.find(([code, name]) => (
+    code.toLowerCase() === normalized || name.toLowerCase() === normalized
+  ));
+  return match ? match[0] : '';
+};
+
 function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
   const [activeTab, setActiveTab] = useState(initialTab || 'personal'); // 'personal', 'address', 'orders', 'security'
 
@@ -60,6 +84,7 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
     city: '',
     state: '',
     postal_code: '',
+    country: 'US',
     is_default: false,
   });
 
@@ -263,8 +288,9 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
       address_line_1: addr.address_line_1 || '',
       address_line_2: addr.address_line_2 || '',
       city: addr.city || '',
-      state: addr.state || '',
+      state: normalizeUsState(addr.state),
       postal_code: addr.postal_code || '',
+      country: addr.country || 'US',
       is_default: addr.is_default || false,
     });
   };
@@ -282,6 +308,7 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
       city: '',
       state: '',
       postal_code: '',
+      country: 'US',
       is_default: shippingAddresses.length === 0,
     });
   };
@@ -909,14 +936,18 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
                       />
                     </label>
                     <label>
-                      State / Province *
-                      <input 
-                        type="text" 
+                      State *
+                      <select
                         name="state" 
                         value={addressFormData.state} 
                         onChange={handleAddressFormChange} 
                         required 
-                      />
+                      >
+                        <option value="">Select a state</option>
+                        {US_STATES.map(([code, name]) => (
+                          <option key={code} value={code}>{name}</option>
+                        ))}
+                      </select>
                     </label>
                     <label>
                       Postal Code *
@@ -928,8 +959,19 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
                         required 
                       />
                     </label>
-                    
-                    <label className="full-span" style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '10px' }}>
+                    <label>
+                      Country *
+                      <select
+                        name="country"
+                        value={addressFormData.country}
+                        onChange={handleAddressFormChange}
+                        required
+                      >
+                        <option value="US">United States (US)</option>
+                      </select>
+                    </label>
+
+                    <label className="full-span profile-default-address-checkbox" style={{ gridColumn: 'span 2' }}>
                       <input 
                         type="checkbox" 
                         name="is_default" 

@@ -508,6 +508,17 @@ def load_product_by_external_id(request, external_id):
             data['availability'] = source_product.availability
             data['content_text'] = source_product.content_text
             data['raw_detail'] = source_product.raw_detail
+            data['options'] = source_product.options or []
+            data['option_prices'] = source_product.option_prices or {}
+
+            # FeaturedProduct unit-size rows come from a legacy table whose text
+            # can contain mojibake. The canonical Product options are maintained
+            # in the admin console, so use their labels while preserving the
+            # legacy row IDs and numeric pricing fields.
+            unit_prices = data.get('unit_prices') or []
+            for index, option_name in enumerate(data['options']):
+                if index < len(unit_prices):
+                    unit_prices[index]['unit_size'] = option_name
         return Response(data)
 
     # 2. If not featured, fall back to standard Product

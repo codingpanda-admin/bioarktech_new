@@ -264,6 +264,7 @@ def sync_default_shipping_address_to_user(user):
         user.shipping_address.city = default_addr.city
         user.shipping_address.state = default_addr.state
         user.shipping_address.zipcode = default_addr.postal_code
+        user.shipping_address.country = default_addr.country or 'US'
         user.shipping_address.save()
         user.save()
     else:
@@ -296,6 +297,7 @@ def create_shipping_address(request):
     city = data.get('city')
     state = data.get('state')
     postal_code = data.get('postal_code')
+    country = data.get('country') or 'US'
     is_default = data.get('is_default', False)
     
     if not all([nickname, first_name, last_name, address_line_1, city, state, postal_code]):
@@ -320,6 +322,7 @@ def create_shipping_address(request):
         city=city,
         state=state,
         postal_code=postal_code,
+        country=country,
         is_default=is_default
     )
     
@@ -355,6 +358,7 @@ def update_shipping_address(request, pk):
     addr.city = data.get('city', addr.city)
     addr.state = data.get('state', addr.state)
     addr.postal_code = data.get('postal_code', addr.postal_code)
+    addr.country = data.get('country', addr.country) or 'US'
     
     is_default = data.get('is_default', addr.is_default)
     if is_default:

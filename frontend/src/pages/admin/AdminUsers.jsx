@@ -11,6 +11,7 @@ function AdminUsers() {
   const [successMsg, setSuccessMsg] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('all');
+  const [userStatus, setUserStatus] = useState('active');
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -22,7 +23,8 @@ function AdminUsers() {
     setLoading(true);
     setError('');
     try {
-      const url = `/api/admin-panel/users/?page_number=${page}&page_size=${pageSize}`;
+      const isActive = userStatus === 'active' ? 'true' : 'false';
+      const url = `/api/admin-panel/users/?page_number=${page}&page_size=${pageSize}&is_active=${isActive}`;
       const data = await apiFetch(url);
       setUsers(data.results || data.users || []);
       setTotalPages(data.pages || 1);
@@ -32,7 +34,7 @@ function AdminUsers() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, userStatus]);
 
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
@@ -84,6 +86,25 @@ function AdminUsers() {
     } catch (err) {
       setError(err.message);
     }
+  };
+
+  const handleActivate = async (userId) => {
+    if (!confirm('Are you sure you want to activate this user?')) return;
+    try {
+      await apiFetch(`/api/admin-panel/users/${userId}/update/`, {
+        method: 'POST',
+        body: { is_active: true },
+      });
+      showSuccess('User activated.');
+      loadUsers();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const selectUserStatus = (status) => {
+    setUserStatus(status);
+    setPage(1);
   };
 
   const handleSave = async (e) => {
@@ -165,6 +186,27 @@ function AdminUsers() {
         </div>
       </div>
 
+      <div className="admin-tabs" role="tablist" aria-label="User status">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={userStatus === 'active'}
+          className={userStatus === 'active' ? 'is-active' : ''}
+          onClick={() => selectUserStatus('active')}
+        >
+          Active Users
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={userStatus === 'deactivated'}
+          className={userStatus === 'deactivated' ? 'is-active' : ''}
+          onClick={() => selectUserStatus('deactivated')}
+        >
+          Deactivated Users
+        </button>
+      </div>
+
       {successMsg && <div className="admin-alert success">{successMsg}</div>}
       {error && <div className="admin-alert error">{error}</div>}
 
@@ -205,17 +247,23 @@ function AdminUsers() {
                       </td>
                       <td>
                         <span className={`admin-badge ${user.is_active ? 'badge-success' : 'badge-muted'}`}>
-                          {user.is_active ? 'Active' : 'Inactive'}
+                          {user.is_active ? 'Active' : 'Deactivated'}
                         </span>
                       </td>
                       <td>{formatDate(user.date_joined)}</td>
                       <td>
                         <div className="admin-row-actions">
                           <button className="admin-action-btn edit" onClick={() => handleEdit(user.id)}>Edit</button>
-                          <button className="admin-action-btn toggle" onClick={() => handleToggleAdmin(user.id)}>
-                            {user.is_admin ? 'Remove Admin' : 'Make Admin'}
-                          </button>
-                          <button className="admin-action-btn delete" onClick={() => handleDeactivate(user.id)}>Deactivate</button>
+                          {user.is_active && (
+                            <button className="admin-action-btn toggle" onClick={() => handleToggleAdmin(user.id)}>
+                              {user.is_admin ? 'Remove Admin' : 'Make Admin'}
+                            </button>
+                          )}
+                          {user.is_active ? (
+                            <button className="admin-action-btn delete" onClick={() => handleDeactivate(user.id)}>Deactivate</button>
+                          ) : (
+                            <button className="admin-action-btn edit" onClick={() => handleActivate(user.id)}>Activate</button>
+                          )}
                         </div>
                       </td>
                     </tr>
