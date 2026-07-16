@@ -369,22 +369,29 @@ def admin_get_product(request, product_id):
 
         if featured_product:
             import re
-            
-            # Extract list from featured_product.key_features HTML list
-            kf_html = featured_product.key_features or ''
-            li_contents = re.findall(r'<li>(.*?)</li>', kf_html, re.DOTALL)
-            if li_contents:
-                clean_lis = [re.sub(r'<[^>]*>', '', li).strip() for li in li_contents]
-                data['key_features'] = clean_lis
-            elif p.key_features:
-                data['key_features'] = p.key_features
-            else:
-                clean_text = re.sub(r'<[^>]*>', '', kf_html).strip()
-                data['key_features'] = [line.strip() for line in clean_text.split('\n') if line.strip()]
 
-            data['description'] = featured_product.description or p.description
-            data['performance_data'] = featured_product.performance_data or p.performance_data
-            data['storage_stability'] = featured_product.storage_info or p.storage_stability
+            # Reagent rich text is maintained on the canonical Product record.
+            # Other featured products retain the legacy FeaturedProduct values.
+            if p.source_type == 'reagent':
+                data['description'] = p.description or featured_product.description
+                data['key_features'] = p.key_features or ([featured_product.key_features] if featured_product.key_features else [])
+                data['performance_data'] = p.performance_data or featured_product.performance_data
+                data['storage_stability'] = p.storage_stability or featured_product.storage_info
+            else:
+                kf_html = featured_product.key_features or ''
+                li_contents = re.findall(r'<li>(.*?)</li>', kf_html, re.DOTALL)
+                if li_contents:
+                    clean_lis = [re.sub(r'<[^>]*>', '', li).strip() for li in li_contents]
+                    data['key_features'] = clean_lis
+                elif p.key_features:
+                    data['key_features'] = p.key_features
+                else:
+                    clean_text = re.sub(r'<[^>]*>', '', kf_html).strip()
+                    data['key_features'] = [line.strip() for line in clean_text.split('\n') if line.strip()]
+
+                data['description'] = featured_product.description or p.description
+                data['performance_data'] = featured_product.performance_data or p.performance_data
+                data['storage_stability'] = featured_product.storage_info or p.storage_stability
             
             # Fetch Images associated with featured product's union
             images_qs = Image.objects.filter(union=featured_product.union)
@@ -429,7 +436,10 @@ def _sync_featured_product(p, d):
             featured_product = FeaturedProduct.objects.filter(catalog_number=cat_num).first()
             
         key_features_list = d.get('key_features', p.key_features) or []
-        key_features_html = '<ul>' + ''.join(f'<li>{f}</li>' for f in key_features_list) + '</ul>'
+        if p.source_type == 'reagent':
+            key_features_html = ''.join(key_features_list) if isinstance(key_features_list, list) else str(key_features_list)
+        else:
+            key_features_html = '<ul>' + ''.join(f'<li>{f}</li>' for f in key_features_list) + '</ul>'
 
         if not featured_product:
             cat_num = p.catalog_number

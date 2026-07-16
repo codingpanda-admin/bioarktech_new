@@ -29,25 +29,46 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
   const editorRef = useRef(null);
   const lastEmittedHtmlRef = useRef(null);
 
+  const ensureTableWrappers = () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    editor.querySelectorAll('table').forEach((table) => {
+      if (table.parentElement?.classList.contains('rich-table-wrap')) return;
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'rich-table-wrap';
+      table.parentNode?.insertBefore(wrapper, table);
+      wrapper.appendChild(table);
+    });
+  };
+
   useEffect(() => {
     const rawValue = value || '';
+    const editorHtml = formatRichText(rawValue);
 
-    if (rawValue === lastEmittedHtmlRef.current) {
+    if (
+      rawValue === lastEmittedHtmlRef.current
+      && editorRef.current?.innerHTML === editorHtml
+    ) {
       return;
     }
 
-    const editorHtml = formatRichText(rawValue);
     if (editorRef.current && editorRef.current.innerHTML !== editorHtml) {
       editorRef.current.innerHTML = editorHtml;
     }
+    ensureTableWrappers();
     if (rawValue !== editorHtml) {
       lastEmittedHtmlRef.current = editorHtml;
       onChange(editorHtml);
+    } else {
+      lastEmittedHtmlRef.current = editorHtml;
     }
   }, [value, onChange]);
 
   const syncValue = () => {
     if (editorRef.current) {
+      ensureTableWrappers();
       const nextHtml = editorRef.current.innerHTML;
       lastEmittedHtmlRef.current = nextHtml;
       onChange(nextHtml);
@@ -126,15 +147,17 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
   const insertTable = () => {
     focusEditor();
     const tableHtml = `
-      <table>
-        <thead>
-          <tr><th>Header 1</th><th>Header 2</th><th>Header 3</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Cell</td><td>Cell</td><td>Cell</td></tr>
-          <tr><td>Cell</td><td>Cell</td><td>Cell</td></tr>
-        </tbody>
-      </table>
+      <div class="rich-table-wrap">
+        <table>
+          <thead>
+            <tr><th>Header 1</th><th>Header 2</th><th>Header 3</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Cell</td><td>Cell</td><td>Cell</td></tr>
+            <tr><td>Cell</td><td>Cell</td><td>Cell</td></tr>
+          </tbody>
+        </table>
+      </div>
       <p><br></p>
     `;
     document.execCommand('insertHTML', false, tableHtml);
@@ -291,6 +314,10 @@ function AdminProducts({ categoryFilter = null }) {
   const [collapsedCatalogs, setCollapsedCatalogs] = useState(() => new Set());
   const [optionRows, setOptionRows] = useState([]);
   const productContentEditorRef = useRef(null);
+  const descriptionEditorRef = useRef(null);
+  const keyFeaturesEditorRef = useRef(null);
+  const storageStabilityEditorRef = useRef(null);
+  const performanceDataEditorRef = useRef(null);
   const optionRowIdRef = useRef(0);
 
   const getProductsListUrl = useCallback(() => {
@@ -513,7 +540,21 @@ function AdminProducts({ categoryFilter = null }) {
     e.preventDefault();
     setSaving(true);
     try {
-      const latestContentText = productContentEditorRef.current?.getHtml?.() ?? editingProduct.content_text ?? '';
+      const editorContentText = productContentEditorRef.current?.getHtml?.() ?? editingProduct.content_text ?? '';
+      const latestContentText = formatRichText(editorContentText);
+      const isReagentCatalog = categoryFilter === 'reagents';
+      const latestDescription = isReagentCatalog
+        ? descriptionEditorRef.current?.getHtml?.() ?? editingProduct.description ?? ''
+        : editingProduct.description;
+      const latestKeyFeatures = isReagentCatalog
+        ? keyFeaturesEditorRef.current?.getHtml?.() ?? formatKeyFeaturesForRichText(editingProduct.key_features)
+        : editingProduct.key_features;
+      const latestStorageStability = isReagentCatalog
+        ? storageStabilityEditorRef.current?.getHtml?.() ?? editingProduct.storage_stability ?? ''
+        : editingProduct.storage_stability;
+      const latestPerformanceData = isReagentCatalog
+        ? performanceDataEditorRef.current?.getHtml?.() ?? editingProduct.performance_data ?? ''
+        : editingProduct.performance_data;
       const updatedRawDetail = (
         editingProduct.raw_detail &&
         typeof editingProduct.raw_detail === 'object' &&
@@ -547,8 +588,13 @@ function AdminProducts({ categoryFilter = null }) {
       // Map 'uncategorized' option back to null or empty string for DB submission
       const payload = {
         ...editingProduct,
+        description: latestDescription,
         content_text: latestContentText,
-        key_features: normalizeKeyFeaturesForSave(editingProduct.key_features),
+        key_features: isReagentCatalog
+          ? (String(latestKeyFeatures || '').trim() ? [latestKeyFeatures] : [])
+          : normalizeKeyFeaturesForSave(latestKeyFeatures),
+        storage_stability: latestStorageStability,
+        performance_data: latestPerformanceData,
         options: normalizedOptions,
         option_prices: normalizedOptionPrices,
         manuals: (editingProduct.manuals || []).filter(man => man.name && man.manual),
@@ -597,6 +643,20 @@ function AdminProducts({ categoryFilter = null }) {
       return value.join('\n');
     }
     return value || '';
+  };
+
+  const escapeHtml = (value) => String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+
+  const formatKeyFeaturesForRichText = (value) => {
+    if (!Array.isArray(value)) return value || '';
+    if (value.length === 1 && /<[^>]+>/.test(value[0] || '')) return value[0];
+    if (value.length === 0) return '';
+    return `<ul>${value.map((feature) => `<li>${escapeHtml(feature)}</li>`).join('')}</ul>`;
   };
 
   const updateKeyFeatures = (value) => {
@@ -1272,27 +1332,70 @@ function AdminProducts({ categoryFilter = null }) {
               </div>
             </div>
 
-            <label className="admin-form-field span-3">
-              <span>Description</span>
-              <textarea rows="4" value={editingProduct.description || ''} onChange={(e) => updateField('description', e.target.value)} />
-            </label>
-            <label className="admin-form-field span-3">
-              <span>Key Features</span>
-              <textarea
-                rows="5"
-                value={formatKeyFeaturesForEdit(editingProduct.key_features)}
-                onChange={(e) => updateKeyFeatures(e.target.value)}
-                placeholder="Enter one key feature per line"
-              />
-            </label>
-            <label className="admin-form-field span-3">
-              <span>Storage &amp; Stability</span>
-              <textarea rows="4" value={editingProduct.storage_stability || ''} onChange={(e) => updateField('storage_stability', e.target.value)} />
-            </label>
-            <label className="admin-form-field span-3">
-              <span>Performance Data</span>
-              <textarea rows="4" value={editingProduct.performance_data || ''} onChange={(e) => updateField('performance_data', e.target.value)} />
-            </label>
+            {categoryFilter === 'reagents' ? (
+              <>
+                <div className="admin-form-field span-3">
+                  <span>Description</span>
+                  <ProductContentEditor
+                    ref={descriptionEditorRef}
+                    value={editingProduct.description || ''}
+                    onChange={(value) => updateField('description', value)}
+                    ariaLabel="Reagent description"
+                  />
+                </div>
+                <div className="admin-form-field span-3">
+                  <span>Key Features</span>
+                  <ProductContentEditor
+                    ref={keyFeaturesEditorRef}
+                    value={formatKeyFeaturesForRichText(editingProduct.key_features)}
+                    onChange={(value) => updateKeyFeatures(value)}
+                    ariaLabel="Reagent key features"
+                  />
+                </div>
+                <div className="admin-form-field span-3">
+                  <span>Storage &amp; Stability</span>
+                  <ProductContentEditor
+                    ref={storageStabilityEditorRef}
+                    value={editingProduct.storage_stability || ''}
+                    onChange={(value) => updateField('storage_stability', value)}
+                    ariaLabel="Reagent storage and stability"
+                  />
+                </div>
+                <div className="admin-form-field span-3">
+                  <span>Performance Data</span>
+                  <ProductContentEditor
+                    ref={performanceDataEditorRef}
+                    value={editingProduct.performance_data || ''}
+                    onChange={(value) => updateField('performance_data', value)}
+                    ariaLabel="Reagent performance data"
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <label className="admin-form-field span-3">
+                  <span>Description</span>
+                  <textarea rows="4" value={editingProduct.description || ''} onChange={(e) => updateField('description', e.target.value)} />
+                </label>
+                <label className="admin-form-field span-3">
+                  <span>Key Features</span>
+                  <textarea
+                    rows="5"
+                    value={formatKeyFeaturesForEdit(editingProduct.key_features)}
+                    onChange={(e) => updateKeyFeatures(e.target.value)}
+                    placeholder="Enter one key feature per line"
+                  />
+                </label>
+                <label className="admin-form-field span-3">
+                  <span>Storage &amp; Stability</span>
+                  <textarea rows="4" value={editingProduct.storage_stability || ''} onChange={(e) => updateField('storage_stability', e.target.value)} />
+                </label>
+                <label className="admin-form-field span-3">
+                  <span>Performance Data</span>
+                  <textarea rows="4" value={editingProduct.performance_data || ''} onChange={(e) => updateField('performance_data', e.target.value)} />
+                </label>
+              </>
+            )}
             <div className="admin-form-field span-3">
               <span>Content Text</span>
               <ProductContentEditor ref={productContentEditorRef} value={editingProduct.content_text || ''} onChange={(value) => updateField('content_text', value)} />

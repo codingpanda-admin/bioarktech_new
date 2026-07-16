@@ -37,6 +37,7 @@ function AdminServices() {
   const [catalogRows, setCatalogRows] = useState([]);
   const [catalogSaving, setCatalogSaving] = useState(false);
   const [draggedCatalogIndex, setDraggedCatalogIndex] = useState(null);
+  const [collapsedCatalogs, setCollapsedCatalogs] = useState(() => new Set());
   const serviceContentEditorRef = useRef(null);
 
   const loadServices = useCallback(async () => {
@@ -416,6 +417,18 @@ function AdminServices() {
     }
   };
 
+  const toggleCatalogCollapse = (catalogId) => {
+    setCollapsedCatalogs((prev) => {
+      const next = new Set(prev);
+      if (next.has(catalogId)) {
+        next.delete(catalogId);
+      } else {
+        next.add(catalogId);
+      }
+      return next;
+    });
+  };
+
   if (editingService) {
     const isEditingExistingService = Boolean(editingService.id);
 
@@ -571,19 +584,34 @@ function AdminServices() {
               return null;
             }
 
+            const isCollapsed = collapsedCatalogs.has(cat.id);
+
             return (
-              <div key={cat.id} className="admin-category-group">
+              <div key={cat.id} className={`admin-category-group ${isCollapsed ? 'is-collapsed' : ''}`}>
                 <h3 className="admin-category-title">
-                  <span>{cat.name}</span>
+                  <button
+                    className="admin-category-toggle"
+                    type="button"
+                    aria-expanded={!isCollapsed}
+                    aria-controls={`service-catalog-panel-${cat.id}`}
+                    onClick={() => toggleCatalogCollapse(cat.id)}
+                  >
+                    <span className="admin-category-toggle-icon" aria-hidden="true">
+                      {isCollapsed ? '+' : '-'}
+                    </span>
+                    <span>{cat.name}</span>
+                  </button>
                   <span className="admin-category-badge">{groupList.length} services</span>
                 </h3>
 
-                {groupList.length === 0 ? (
-                  <div className="admin-empty-table" style={{ minHeight: '80px', background: '#fcfdfd' }}>
-                    No services in this category.
-                  </div>
-                ) : (
-                  <div className="admin-data-table-wrap">
+                {!isCollapsed && (
+                  <div id={`service-catalog-panel-${cat.id}`} className="admin-category-panel">
+                    {groupList.length === 0 ? (
+                      <div className="admin-empty-table" style={{ minHeight: '80px', background: '#fcfdfd' }}>
+                        No services in this category.
+                      </div>
+                    ) : (
+                      <div className="admin-data-table-wrap">
                     <table className="admin-data-table">
                       <thead>
                         <tr>
@@ -680,6 +708,8 @@ function AdminServices() {
                         ))}
                       </tbody>
                     </table>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

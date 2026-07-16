@@ -5740,22 +5740,52 @@ label,
   border-radius: 6px;
 }
 
-.admin-rich-text-editor table {
+.admin-rich-text-editor .rich-table-wrap {
   width: 100%;
-  border-collapse: collapse;
   margin: 16px 0;
+  overflow-x: auto;
+  border: 1px solid #cfdbea;
+  border-radius: 8px;
   background: #fff;
 }
 
-.admin-rich-text-editor th,
-.admin-rich-text-editor td {
-  min-width: 90px;
-  border: 1px solid #cfdbea;
-  padding: 8px 10px;
-  vertical-align: top;
+.admin-product-rich-text .admin-rich-text-editor table {
+  display: table !important;
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin: 0;
+  background: #fff;
+  table-layout: auto;
 }
 
-.admin-rich-text-editor th {
+.admin-product-rich-text .admin-rich-text-editor thead {
+  display: table-header-group !important;
+}
+
+.admin-product-rich-text .admin-rich-text-editor tbody {
+  display: table-row-group !important;
+}
+
+.admin-product-rich-text .admin-rich-text-editor tr {
+  display: table-row !important;
+}
+
+.admin-product-rich-text .admin-rich-text-editor th,
+.admin-product-rich-text .admin-rich-text-editor td {
+  display: table-cell !important;
+  min-width: 120px;
+  max-width: 340px;
+  border: 1px solid #cfdbea !important;
+  padding: 10px 12px !important;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.admin-product-rich-text .admin-rich-text-editor th {
   background: #f7fbff;
   font-weight: 700;
 }

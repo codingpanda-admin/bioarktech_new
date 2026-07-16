@@ -237,9 +237,28 @@ const formatBlock = (block) => {
   const headingLinePattern = /^\s{0,3}(#{1,4})\s*(.+)$/;
   const firstUnorderedListIndex = lines.findIndex((line) => /^\s*[-*+]\s+/.test(line));
   const firstOrderedListIndex = lines.findIndex((line) => /^\s*\d+[.)]\s+/.test(line));
+  const firstTableLineIndex = lines.findIndex(isTableLine);
 
   if (!text) return '';
   if (/^(-{3,}|\*{3,}|_{3,})$/.test(text)) return '<hr />';
+
+  if (firstTableLineIndex >= 0) {
+    let tableEndIndex = firstTableLineIndex;
+    while (tableEndIndex < lines.length && isTableLine(lines[tableEndIndex])) {
+      tableEndIndex += 1;
+    }
+
+    const tableLines = lines.slice(firstTableLineIndex, tableEndIndex);
+    if (tableLines.length >= 2 && tableLines.some(isTableDivider)) {
+      const beforeTable = lines.slice(0, firstTableLineIndex).join('\n');
+      const afterTable = lines.slice(tableEndIndex).join('\n');
+      return [
+        beforeTable ? formatBlock(beforeTable) : '',
+        formatTableBlock(tableLines),
+        afterTable ? formatBlock(afterTable) : '',
+      ].join('');
+    }
+  }
 
   if (lines.every(isTableLine)) {
     return formatTableBlock(lines);
@@ -304,19 +323,46 @@ const formatBlock = (block) => {
   return `<p>${formatInlineMarkdown(text).replace(/\n/g, '<br />')}</p>`;
 };
 
+const formatRichTextSource = (source) => (
+  normalizeMarkdownImageBlocks(normalizeInlineListMarkers(normalizeInlineMarkdownStructure(compactLooseMarkdownTables(normalizeMarkdownTableBlocks(removeLooseCodeFences(source))))))
+    .replace(/\r\n?/g, '\n')
+    .split(/\n{2,}/)
+    .map(formatBlock)
+    .filter(Boolean)
+    .join('')
+);
+
+const formatEmbeddedMarkdownTables = (value) => {
+  let convertedTable = false;
+  const html = String(value).replace(
+    /<(p|div)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/gi,
+    (fullBlock, _tagName, innerHtml) => {
+      const source = htmlToRichTextSource(innerHtml);
+      if (!source.includes('|') || !hasMarkdownSyntax(source)) return fullBlock;
+
+      const formatted = formatRichTextSource(source);
+      if (!formatted.includes('<table>')) return fullBlock;
+
+      convertedTable = true;
+      return formatted;
+    },
+  );
+
+  return { html, convertedTable };
+};
+
 export const formatRichText = (value) => {
   if (!value) return '';
 
   const content = String(value).trim();
   if (!content) return '';
-  if (hasHtmlTags(content) && !hasMarkdownSyntax(content)) return content;
+  if (hasHtmlTags(content)) {
+    const embeddedTables = formatEmbeddedMarkdownTables(content);
+    if (embeddedTables.convertedTable) return embeddedTables.html;
+  }
 
-  const source = removeLooseCodeFences(hasHtmlTags(content) ? htmlToRichTextSource(content) : content);
+  const richTextSource = hasHtmlTags(content) ? htmlToRichTextSource(content) : content;
+  if (hasHtmlTags(content) && !hasMarkdownSyntax(content) && !hasMarkdownSyntax(richTextSource)) return content;
 
-  return normalizeMarkdownImageBlocks(normalizeInlineListMarkers(normalizeInlineMarkdownStructure(compactLooseMarkdownTables(normalizeMarkdownTableBlocks(source)))))
-    .replace(/\r\n?/g, '\n')
-    .split(/\n{2,}/)
-    .map(formatBlock)
-    .filter(Boolean)
-    .join('');
+  return formatRichTextSource(richTextSource);
 };

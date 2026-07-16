@@ -97,6 +97,12 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   if (!product) return null;
 
   const isFeatured = product && Array.isArray(product.unit_prices);
+  const isReagent = String(product.source_type || '').toLowerCase() === 'reagent';
+  const reagentKeyFeatures = isReagent && Array.isArray(product.key_features)
+    ? (product.key_features.length === 1
+      ? product.key_features[0]
+      : product.key_features.map((feature) => `- ${feature}`).join('\n'))
+    : '';
   const name = product.product_name || product.externalId || product.external_id;
   const categoryLabel = product.category_name || product.categoryName || product.product_category || product.category_external_id;
   const availabilityLabel = product.availability;
@@ -451,7 +457,11 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                     {product.description && (
                       <tr>
                         <td>Description</td>
-                        <td>{product.description}</td>
+                        {isReagent ? (
+                          <td dangerouslySetInnerHTML={{ __html: formatRichText(product.description) }} />
+                        ) : (
+                          <td>{product.description}</td>
+                        )}
                       </tr>
                     )}
                     {categoryLabel && (
@@ -475,25 +485,37 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                     {product.key_features && product.key_features.length > 0 && (
                       <tr>
                         <td>Key Features</td>
-                        <td>
-                          <ul>
-                            {product.key_features.map((feature, idx) => (
-                              <li key={idx}>{feature}</li>
-                            ))}
-                          </ul>
-                        </td>
+                        {isReagent ? (
+                          <td dangerouslySetInnerHTML={{ __html: formatRichText(reagentKeyFeatures) }} />
+                        ) : (
+                          <td>
+                            <ul>
+                              {product.key_features.map((feature, idx) => (
+                                <li key={idx}>{feature}</li>
+                              ))}
+                            </ul>
+                          </td>
+                        )}
                       </tr>
                     )}
                     {product.storage_stability && (
                       <tr>
                         <td>Storage & Stability</td>
-                        <td>{product.storage_stability}</td>
+                        {isReagent ? (
+                          <td dangerouslySetInnerHTML={{ __html: formatRichText(product.storage_stability) }} />
+                        ) : (
+                          <td>{product.storage_stability}</td>
+                        )}
                       </tr>
                     )}
                     {product.performance_data && (
                       <tr>
                         <td>Performance Data</td>
-                        <td>{product.performance_data}</td>
+                        {isReagent ? (
+                          <td dangerouslySetInnerHTML={{ __html: formatRichText(product.performance_data) }} />
+                        ) : (
+                          <td>{product.performance_data}</td>
+                        )}
                       </tr>
                     )}
                   </>

@@ -503,6 +503,7 @@ def load_product_by_external_id(request, external_id):
                 data['external_id'] = featured_product.catalog_number
                 data['externalId'] = featured_product.catalog_number
         if source_product:
+            data['product_name'] = source_product.product_name
             data['category_external_id'] = source_product.category_external_id
             data['category_name'] = get_product_category_name(source_product)
             data['availability'] = source_product.availability
