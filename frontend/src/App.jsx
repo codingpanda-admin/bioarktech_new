@@ -320,7 +320,7 @@ function App() {
       ) : isResetPasswordPage ? (
         <ResetPasswordPage navigate={navigate} token={currentPath.split('/reset-password/')[1]?.split('?')[0] || ''} />
       ) : isBlogsPage ? (
-        <ResourcesPage navigate={navigate} />
+        <ResourcesPage navigate={navigate} searchParams={searchParams} />
       ) : isProfilePage ? (
         <ProfilePage navigate={navigate} initialTab={searchParams.get('tab')} onRefreshProfile={refreshUserProfile} />
       ) : isMyQuotesPage ? (

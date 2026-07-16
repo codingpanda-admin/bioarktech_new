@@ -17,10 +17,10 @@ const inferBlogCategory = (blog) => {
   return 'Biotech Outlook';
 };
 
-function ResourcesPage({ navigate }) {
+function ResourcesPage({ navigate, searchParams }) {
   const [blogs, setBlogs] = useState([]);
   const [resources, setResources] = useState([]);
-  const [activeTab, setActiveTab] = useState('blogs');
+  const [activeTab, setActiveTab] = useState(searchParams?.get('tab') === 'documents' ? 'documents' : 'blogs');
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -46,6 +46,15 @@ function ResourcesPage({ navigate }) {
 
     loadData();
   }, []);
+
+  useEffect(() => {
+    const tabParam = searchParams?.get('tab');
+    if (tabParam === 'documents') {
+      setActiveTab('documents');
+    } else if (tabParam === 'blogs') {
+      setActiveTab('blogs');
+    }
+  }, [searchParams]);
 
   // Reset category and search term when changing tabs
   useEffect(() => {
@@ -279,7 +288,10 @@ function ResourcesPage({ navigate }) {
       >
         <button 
           className={`tab-btn ${activeTab === 'blogs' ? 'active' : ''}`}
-          onClick={() => setActiveTab('blogs')}
+          onClick={() => {
+            setActiveTab('blogs');
+            navigate('/blogs');
+          }}
           type="button"
           style={{
             padding: '12px 28px',
@@ -298,7 +310,10 @@ function ResourcesPage({ navigate }) {
         </button>
         <button 
           className={`tab-btn ${activeTab === 'documents' ? 'active' : ''}`}
-          onClick={() => setActiveTab('documents')}
+          onClick={() => {
+            setActiveTab('documents');
+            navigate('/blogs?tab=documents');
+          }}
           type="button"
           style={{
             padding: '12px 28px',
