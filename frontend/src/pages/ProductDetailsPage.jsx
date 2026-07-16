@@ -407,12 +407,15 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 </a>
               </li>
             )}
-            {isFeatured && product.manuals && product.manuals.length > 0 && (
+            {product.manuals && product.manuals.length > 0 && (
               <li className="nav-item">
                 <a
-                  className={`nav-link ${activeTab === 'manuals' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('manuals')}
-                  style={{ display: 'block', padding: '12px 0', fontWeight: 500, cursor: 'pointer', borderBottom: activeTab === 'manuals' ? '2px solid var(--blue)' : 'none', color: activeTab === 'manuals' ? 'var(--blue)' : 'var(--muted)' }}
+                  className="nav-link"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate('/blogs?tab=documents');
+                  }}
+                  style={{ display: 'block', padding: '12px 0', fontWeight: 500, cursor: 'pointer', color: 'var(--muted)' }}
                 >
                   Manuals
                 </a>
@@ -557,7 +560,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
         )}
 
         {/* Manuals Tab */}
-        {activeTab === 'manuals' && isFeatured && (
+        {activeTab === 'manuals' && (
           <div style={{ marginTop: '24px' }}>
             <div className="tab-header" style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Manuals</div>
             <div className="manual-table">
@@ -565,10 +568,11 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 {product.manuals.map((man, idx) => (
                   <li key={idx}>
                     <a
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      href={formatAssetUrl(man.manual)}
-                      style={{ color: 'var(--blue)', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500 }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate('/blogs?tab=documents');
+                      }}
+                      style={{ color: 'var(--blue)', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500, cursor: 'pointer' }}
                     >
                       Document: {man.name}
                     </a>
