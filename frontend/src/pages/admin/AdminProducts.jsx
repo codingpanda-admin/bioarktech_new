@@ -551,6 +551,7 @@ function AdminProducts({ categoryFilter = null }) {
         key_features: normalizeKeyFeaturesForSave(editingProduct.key_features),
         options: normalizedOptions,
         option_prices: normalizedOptionPrices,
+        manuals: (editingProduct.manuals || []).filter(man => man.name && man.manual),
         raw_detail: updatedRawDetail,
         category_external_id: editingProduct.category_external_id === 'uncategorized' ? '' : editingProduct.category_external_id
       };
@@ -659,6 +660,56 @@ function AdminProducts({ categoryFilter = null }) {
       setError(err.message || 'Image upload failed.');
     }
   };
+
+  const handleManualUpload = async (e, idx) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      let csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+
+      if (!csrfToken) {
+        const csrfRes = await fetch(`${API_URL}/api/csrf/`, { credentials: 'include' });
+        const csrfData = await csrfRes.json();
+        csrfToken = csrfData.csrftoken;
+      }
+
+      const response = await fetch(`${API_URL}/api/admin-panel/products/upload-image/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRFToken': csrfToken },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to upload manual.');
+      }
+
+      const data = await response.json();
+      const newPath = data.image_path;
+
+      const newManuals = [...(editingProduct.manuals || [])];
+      const defaultName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+      newManuals[idx] = {
+        ...newManuals[idx],
+        name: newManuals[idx]?.name || defaultName,
+        manual: newPath
+      };
+      updateField('manuals', newManuals);
+      showSuccess('Manual uploaded successfully.');
+    } catch (err) {
+      setError(err.message || 'Manual upload failed.');
+    }
+  };
+
 
   const fallbackCategories = categoryFilter === 'products' ? PRODUCTS_CATEGORIES : REAGENTS_CATEGORIES;
   const fallbackCategoryIds = fallbackCategories.map((cat) => cat.id);
@@ -1153,6 +1204,74 @@ function AdminProducts({ categoryFilter = null }) {
               </div>
             </div>
 
+            <div className="admin-form-field span-3" style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--line)', paddingTop: '15px', marginTop: '10px' }}>
+              <span style={{ fontWeight: '600', color: 'var(--ink)' }}>Product Manuals (PDFs)</span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px', marginTop: '5px' }}>
+                {(editingProduct.manuals || []).map((man, idx) => (
+                  <div key={idx} style={{ position: 'relative', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <input
+                      type="text"
+                      value={man.name || ''}
+                      onChange={(e) => {
+                        const newManuals = [...(editingProduct.manuals || [])];
+                        newManuals[idx] = { ...newManuals[idx], name: e.target.value };
+                        updateField('manuals', newManuals);
+                      }}
+                      placeholder="Manual Name (e.g. Protocol Guide)"
+                      style={{ fontSize: '12px', padding: '6px', border: '1px solid var(--line)', borderRadius: '4px' }}
+                    />
+                    <input
+                      type="text"
+                      value={man.manual || ''}
+                      onChange={(e) => {
+                        const newManuals = [...(editingProduct.manuals || [])];
+                        newManuals[idx] = { ...newManuals[idx], manual: e.target.value };
+                        updateField('manuals', newManuals);
+                      }}
+                      placeholder="File Path (e.g. manual_files/...)"
+                      style={{ fontSize: '12px', padding: '6px', border: '1px solid var(--line)', borderRadius: '4px' }}
+                    />
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '4px' }}>
+                      <label className="secondary-admin-button" style={{ fontSize: '11px', padding: '4px 8px', cursor: 'pointer', margin: 0, display: 'inline-block' }}>
+                        Upload PDF
+                        <input
+                          type="file"
+                          accept=".pdf"
+                          onChange={(e) => handleManualUpload(e, idx)}
+                          style={{ display: 'none' }}
+                        />
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newManuals = (editingProduct.manuals || []).filter((_, i) => i !== idx);
+                        updateField('manuals', newManuals);
+                      }}
+                      style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(244, 67, 54, 0.9)', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                      title="Remove manual"
+                    >
+                      x
+                    </button>
+                  </div>
+                ))}
+                
+                <div style={{ minHeight: '110px', border: '1px dashed var(--line)', borderRadius: '6px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#fcfdfd', padding: '10px' }}>
+                  <button
+                    type="button"
+                    className="secondary-admin-button"
+                    onClick={() => {
+                      const newManuals = [...(editingProduct.manuals || []), { name: '', manual: '' }];
+                      updateField('manuals', newManuals);
+                    }}
+                    style={{ fontSize: '12px', padding: '6px 10px', width: '100%' }}
+                  >
+                    + Add Manual
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <label className="admin-form-field span-3">
               <span>Description</span>
               <textarea rows="4" value={editingProduct.description || ''} onChange={(e) => updateField('description', e.target.value)} />
@@ -1631,6 +1750,75 @@ function AdminProducts({ categoryFilter = null }) {
                     </div>
                   </div>
                 </div>
+
+                <div className="admin-form-field span-3" style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--line)', paddingTop: '15px', marginTop: '10px' }}>
+                  <span style={{ fontWeight: '600', color: 'var(--ink)' }}>Product Manuals (PDFs)</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px', marginTop: '5px' }}>
+                    {(editingProduct.manuals || []).map((man, idx) => (
+                      <div key={idx} style={{ position: 'relative', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <input
+                          type="text"
+                          value={man.name || ''}
+                          onChange={(e) => {
+                            const newManuals = [...(editingProduct.manuals || [])];
+                            newManuals[idx] = { ...newManuals[idx], name: e.target.value };
+                            updateField('manuals', newManuals);
+                          }}
+                          placeholder="Manual Name (e.g. Protocol Guide)"
+                          style={{ fontSize: '12px', padding: '6px', border: '1px solid var(--line)', borderRadius: '4px' }}
+                        />
+                        <input
+                          type="text"
+                          value={man.manual || ''}
+                          onChange={(e) => {
+                            const newManuals = [...(editingProduct.manuals || [])];
+                            newManuals[idx] = { ...newManuals[idx], manual: e.target.value };
+                            updateField('manuals', newManuals);
+                          }}
+                          placeholder="File Path (e.g. manual_files/...)"
+                          style={{ fontSize: '12px', padding: '6px', border: '1px solid var(--line)', borderRadius: '4px' }}
+                        />
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '4px' }}>
+                          <label className="secondary-admin-button" style={{ fontSize: '11px', padding: '4px 8px', cursor: 'pointer', margin: 0, display: 'inline-block' }}>
+                            Upload PDF
+                            <input
+                              type="file"
+                              accept=".pdf"
+                              onChange={(e) => handleManualUpload(e, idx)}
+                              style={{ display: 'none' }}
+                            />
+                          </label>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newManuals = (editingProduct.manuals || []).filter((_, i) => i !== idx);
+                            updateField('manuals', newManuals);
+                          }}
+                          style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(244, 67, 54, 0.9)', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                          title="Remove manual"
+                        >
+                          x
+                        </button>
+                      </div>
+                    ))}
+                    
+                    <div style={{ minHeight: '110px', border: '1px dashed var(--line)', borderRadius: '6px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#fcfdfd', padding: '10px' }}>
+                      <button
+                        type="button"
+                        className="secondary-admin-button"
+                        onClick={() => {
+                          const newManuals = [...(editingProduct.manuals || []), { name: '', manual: '' }];
+                          updateField('manuals', newManuals);
+                        }}
+                        style={{ fontSize: '12px', padding: '6px 10px', width: '100%' }}
+                      >
+                        + Add Manual
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <label className="admin-form-field span-3">
                   <span>Description</span>
                   <textarea rows="4" value={editingProduct.description || ''} onChange={(e) => updateField('description', e.target.value)} />

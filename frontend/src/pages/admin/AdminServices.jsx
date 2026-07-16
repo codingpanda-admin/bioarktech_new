@@ -3,12 +3,16 @@ import { apiFetch, formatAssetUrl } from '../../utils/api';
 import { ProductContentEditor } from './AdminProducts';
 
 const SERVICE_FALLBACK_CATEGORIES = [
-  { id: 'genome-editing', name: 'Genome Editing' },
-  { id: 'synthesis-cloning', name: 'Synthesis & Cloning' },
-  { id: 'ivt-mrna-services', name: 'IVT mRNA Services' },
-  { id: 'protein-purification', name: 'Protein Purification' },
-  { id: 'virus-packaging', name: 'Virus Packaging' },
-  { id: 'cell-line-services', name: 'Cell Line Services' }
+  { id: 'genome-editing-services', name: 'Genome Editing Services' },
+  { id: 'synthesis-cloning-services', name: 'Custom Cloning Services' },
+  { id: 'cell-line-services', name: 'Stable Cell Line Services' },
+  { id: 'virus-packaging-services', name: 'Lentivirus Package Services' },
+  { id: 'vector-construction-services', name: 'Vector Construction Support' },
+  { id: 'functional-testing-services', name: 'Functional Testing' },
+  { id: 'experiment-services', name: 'Experiment Services' },
+  { id: 'lab-supplies-services', name: 'Lab Supplies' },
+  { id: 'project-consultation-services', name: 'Project Consultation' },
+  { id: 'protein-purification-services', name: 'Protein Purification' }
 ];
 
 const UNCATEGORIZED_SERVICE_CATEGORY = { id: 'uncategorized', name: 'Uncategorized' };
