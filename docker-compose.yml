@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/bioarktech.sql:/docker-entrypoint-initdb.d/init.sql
@@ -29,7 +29,7 @@ services:
     environment:
       DB_HOST: db
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - ./media:/var/www/django/media
       - ./db-conversion:/app/db-conversion
@@ -51,11 +51,11 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://93.127.217.163:8000
+        VITE_API_URL: http://93.127.217.163:8001
     container_name: bioark_frontend
     restart: always
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       - backend
 
