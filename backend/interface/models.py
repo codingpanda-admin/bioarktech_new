@@ -17,6 +17,7 @@ class ServiceMode(models.Model):
     content = HTMLField()
     image = models.ImageField(blank=True, null=True)
     category = models.CharField(max_length=100, blank=True, null=True)
+    service_group = models.CharField(max_length=100, blank=True, null=True)
     is_featured = models.BooleanField(default=False)
     show_on_screen = models.BooleanField(default=False)
 

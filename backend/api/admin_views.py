@@ -1431,6 +1431,7 @@ def admin_list_services(request):
                 'content': s.content,
                 'image': request.build_absolute_uri(s.image.url) if s.image else None,
                 'category': s.category,
+                'service_group': s.service_group,
                 'is_featured': s.is_featured,
                 'show_on_screen': s.show_on_screen,
             })
@@ -1454,6 +1455,7 @@ def admin_get_service(request, service_id):
             'content': s.content,
             'image': request.build_absolute_uri(s.image.url) if s.image else None,
             'category': s.category,
+            'service_group': s.service_group,
             'is_featured': s.is_featured,
             'show_on_screen': s.show_on_screen,
         }
@@ -1483,6 +1485,7 @@ def admin_create_service(request):
             title=d.get('title', ''),
             content=d.get('content', ''),
             category=d.get('category', ''),
+            service_group=d.get('service_group', ''),
             is_featured=is_featured_val,
             show_on_screen=show_on_screen_val,
         )
@@ -1504,7 +1507,7 @@ def admin_update_service(request, service_id):
         s = ServiceMode.objects.get(id=service_id)
         d = request.data
 
-        for field in ['url', 'title', 'content', 'category']:
+        for field in ['url', 'title', 'content', 'category', 'service_group']:
             if field in d:
                 setattr(s, field, d[field])
 

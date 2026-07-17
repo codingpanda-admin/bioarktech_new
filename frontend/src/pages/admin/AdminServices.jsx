@@ -117,6 +117,7 @@ function AdminServices() {
       title: '',
       content: '',
       category: selectedCategory !== 'All' ? selectedCategory : 'uncategorized',
+      service_group: '',
       is_featured: false,
       show_on_screen: false,
     });
@@ -233,6 +234,7 @@ function AdminServices() {
       formData.append('title', editingService.title);
       formData.append('content', latestContent);
       formData.append('category', editingService.category || 'uncategorized');
+      formData.append('service_group', editingService.service_group || '');
       formData.append('is_featured', editingService.is_featured ? 'true' : 'false');
       formData.append('show_on_screen', editingService.show_on_screen ? 'true' : 'false');
       if (imageFile) {
@@ -481,6 +483,15 @@ function AdminServices() {
                 ))}
               </select>
             </label>
+            <label className="admin-form-field">
+              <span>Service Group</span>
+              <input
+                type="text"
+                value={editingService.service_group || ''}
+                onChange={(e) => updateField('service_group', e.target.value)}
+                placeholder="e.g. Gene Engineering"
+              />
+            </label>
             <label className="admin-form-field span-3">
               <span>Service Image</span>
               <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0] || null)} />
@@ -617,6 +628,7 @@ function AdminServices() {
                         <tr>
                           <th>Title</th>
                           <th>URL Slug</th>
+                          <th>Service Group</th>
                           <th>Content Preview</th>
                           <th>Actions</th>
                         </tr>
@@ -647,6 +659,7 @@ function AdminServices() {
                               </div>
                             </td>
                             <td><code>{service.url}</code></td>
+                            <td>{service.service_group || '-'}</td>
                             <td className="admin-cell-truncate">
                               {service.content ? service.content.replace(/<[^>]*>/g, '').substring(0, 120) + '...' : '-'}
                             </td>

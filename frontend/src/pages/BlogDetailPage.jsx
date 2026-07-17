@@ -72,6 +72,12 @@ function BlogDetailPage({ blogId, navigate }) {
       </button>
 
       <article className="blog-detail-article">
+        {imageUrl ? (
+          <img className="blog-detail-image" src={imageUrl} alt="" />
+        ) : (
+          <div className="blog-detail-image blog-detail-fallback" aria-hidden="true">BIOARK</div>
+        )}
+
         <header className="blog-detail-header">
           <p className="blog-detail-kicker">BioArkTech Blog</p>
           <h1>{title}</h1>
@@ -81,12 +87,6 @@ function BlogDetailPage({ blogId, navigate }) {
             <span>5 min read</span>
           </div>
         </header>
-
-        {imageUrl ? (
-          <img className="blog-detail-image" src={imageUrl} alt="" />
-        ) : (
-          <div className="blog-detail-image blog-detail-fallback" aria-hidden="true">BIOARK</div>
-        )}
 
         <div
           className="blog-detail-content"

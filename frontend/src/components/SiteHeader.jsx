@@ -736,7 +736,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
                   <a href="/profile?tab=orders" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/profile?tab=orders'); }}>
                     My Purchases
                   </a>
-                  <a href="/quotes" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/quotes'); }}>
+                  <a href="/profile?tab=quotes" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/profile?tab=quotes'); }}>
                     My Quotes
                   </a>
                   {isAdminUser && (

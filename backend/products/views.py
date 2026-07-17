@@ -473,6 +473,60 @@ def load_featured_product_page(request, catalog_number):
     return Response(serializer.data)
 
 
+def _get_product_documents(product=None, featured_product=None):
+    """Return every product-linked manual/document in one predictable shape."""
+    import os
+    from urllib.parse import unquote, urlparse
+
+    documents = []
+    seen = set()
+
+    def file_name(value):
+        path = urlparse(str(value or '')).path
+        return unquote(os.path.basename(path)) or 'Product document'
+
+    def add_document(name, url, document_type='Product Document'):
+        normalized_name = str(name or '').strip() or file_name(url)
+        normalized_url = str(url or '').strip()
+        key = (
+            'url', normalized_url.lower().removeprefix('/media/')
+        ) if normalized_url else ('name', normalized_name.lower())
+        if key in seen:
+            return
+        seen.add(key)
+        documents.append({
+            'name': normalized_name,
+            'url': normalized_url or None,
+            'type': document_type,
+        })
+
+    if featured_product and featured_product.union:
+        for manual_file in ManualFile.objects.filter(union=featured_product.union):
+            manual_url = manual_file.manual.url if manual_file.manual else ''
+            add_document(manual_file.name, manual_url, 'Product Manual')
+
+    if product:
+        manual_names = list(product.manuals or [])
+        manual_urls = list(product.manual_urls or [])
+        for index in range(max(len(manual_names), len(manual_urls))):
+            manual_value = manual_names[index] if index < len(manual_names) else ''
+            manual_url = manual_urls[index] if index < len(manual_urls) else ''
+
+            # Newer records can store the file path in both arrays, while
+            # imported records keep a display name and URL in parallel arrays.
+            if not manual_url and manual_value:
+                value_text = str(manual_value)
+                if '/' in value_text or '\\' in value_text or value_text.lower().endswith('.pdf'):
+                    manual_url = value_text
+
+            manual_name = manual_value
+            if manual_url and str(manual_value).strip() == str(manual_url).strip():
+                manual_name = file_name(manual_url)
+            add_document(manual_name, manual_url, 'Product Document')
+
+    return documents
+
+
 @api_view(['GET'])
 def load_product_by_external_id(request, external_id):
     # 1. Check if there is a FeaturedProduct associated with this external_id or catalog_number
@@ -520,12 +574,15 @@ def load_product_by_external_id(request, external_id):
             for index, option_name in enumerate(data['options']):
                 if index < len(unit_prices):
                     unit_prices[index]['unit_size'] = option_name
+        data['documents'] = _get_product_documents(source_product, featured_product)
         return Response(data)
 
     # 2. If not featured, fall back to standard Product
     if product:
         serializer = ProductSerializer(product)
-        return Response(serializer.data)
+        data = dict(serializer.data)
+        data['documents'] = _get_product_documents(product=product)
+        return Response(data)
 
     # 3. Fall back to ServiceMode (services)
     from interface.models import ServiceMode
@@ -554,6 +611,7 @@ def load_product_by_external_id(request, external_id):
             'image_url': f"/media/{service.image.name}" if service.image else None,
             'category_name': cat_name,
             'category_external_id': cat_ext_id,
+            'product_group': service.service_group,
             'availability': 'Quote Required',
             'quote_only': True,
             'quoteOnly': True,

@@ -548,6 +548,7 @@ def search_product(request):
                 service_query |= Q(url__icontains=keyword)
                 service_query |= Q(content__icontains=keyword)
                 service_query |= Q(category__icontains=keyword)
+                service_query |= Q(service_group__icontains=keyword)
             services = ServiceMode.objects.filter(service_query)
         else:
             services = ServiceMode.objects.all()
@@ -569,7 +570,7 @@ def search_product(request):
                 svc_cat = 'vector-construction-services'
             elif svc_cat == 'functional-testing':
                 svc_cat = 'functional-testing-services'
-            
+
             combined_results.append({
                 'product_id': f"svc-{s.id}",
                 'product_sku': s.url.upper(),
@@ -583,7 +584,7 @@ def search_product(request):
                 'image': f"/media/{s.image.name}" if s.image else None,
                 'category': 'Services',
                 'category_external_id': svc_cat,
-                'product_group': 'Services',
+                'product_group': s.service_group or None,
                 'shipping_cost': 0.0,
                 'is_featured': False
             })
