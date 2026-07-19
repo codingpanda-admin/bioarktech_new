@@ -43,7 +43,10 @@ def get_product_category_name(product):
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductCategory
-        fields = ['category_id', 'category_name', 'description', 'priority', 'external_id', 'product_type']
+        fields = [
+            'category_id', 'category_name', 'description', 'priority',
+            'external_id', 'product_type', 'show_on_homepage', 'homepage_image',
+        ]
 
 class FunctionCategorySerializer(serializers.ModelSerializer):
     class Meta:

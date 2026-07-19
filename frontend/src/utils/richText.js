@@ -20,7 +20,30 @@ const decodeHtmlEntities = (value) => String(value)
   .replace(/&#39;/g, "'")
   .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)));
 
-const htmlToRichTextSource = (value) => decodeHtmlEntities(value)
+const preserveHtmlImageAsMarkdown = (_fullImage, attributes) => {
+  const getAttribute = (name) => {
+    const match = String(attributes || '').match(
+      new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, 'i'),
+    );
+    return match?.[1] || match?.[2] || match?.[3] || '';
+  };
+
+  const src = getAttribute('src').trim();
+  if (!src) return '';
+
+  const alt = getAttribute('alt').replace(/\[|\]/g, '').trim();
+  const styleWidth = /(?:^|;)\s*width\s*:\s*((?:100|[1-9]?\d)(?:\.\d+)?%)/i.exec(getAttribute('style'))?.[1];
+  const attributeWidth = /^(?:100|[1-9]?\d)(?:\.\d+)?%$/.test(getAttribute('width'))
+    ? getAttribute('width')
+    : '';
+  const imageWidth = styleWidth || attributeWidth;
+  const widthMetadata = imageWidth ? ` "@@IMAGE_WIDTH:${imageWidth}@@"` : '';
+  return `\n\n![${alt}](${src}${widthMetadata})\n\n`;
+};
+
+const htmlToRichTextSource = (value) => decodeHtmlEntities(
+  String(value).replace(/<img\b([^>]*)>/gi, preserveHtmlImageAsMarkdown),
+)
   .replace(/<br\s*\/?>/gi, '\n')
   .replace(/<li[^>]*>/gi, '\n- ')
   .replace(/<\/li>/gi, '\n')
@@ -55,9 +78,11 @@ const formatInlineMarkdown = (value) => {
   });
 
   output = output
-    .replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+&quot;[^&]*&quot;)?\)/g, (_, alt, url) => {
+    .replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+&quot;([^&]*)&quot;)?\)/g, (_, alt, url, title) => {
       const href = escapeHtml(formatAssetUrl(url));
-      return `<img src="${href}" alt="${alt}" />`;
+      const imageWidth = /^@@IMAGE_WIDTH:((?:100|[1-9]?\d)(?:\.\d+)?%)@@$/.exec(title || '')?.[1];
+      const sizeStyle = imageWidth ? ` style="width: ${imageWidth}; height: auto;"` : '';
+      return `<img src="${href}" alt="${alt}"${sizeStyle} />`;
     })
     .replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+&quot;[^&]*&quot;)?\)/g, (_, label, url) => {
       const href = escapeHtml(toSafeHref(url));

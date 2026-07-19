@@ -92,6 +92,8 @@ def _serialize_product_category(category):
         'priority': category.priority,
         'external_id': category.external_id,
         'product_type': category.product_type,
+        'show_on_homepage': category.show_on_homepage,
+        'homepage_image': category.homepage_image,
         'product_count': service_count if category.product_type == 'service' else product_count,
         'service_count': service_count,
     }
@@ -141,6 +143,8 @@ def admin_create_product_category(request):
             description=d.get('description') or '',
             priority=d.get('priority') or max_priority + 1,
             product_type=d.get('product_type') or 'product',
+            show_on_homepage=str(d.get('show_on_homepage', 'false')).lower() == 'true',
+            homepage_image=(d.get('homepage_image') or '').strip(),
         )
         return Response(_serialize_product_category(category), status=status.HTTP_201_CREATED)
     except Exception as e:
@@ -171,6 +175,13 @@ def admin_update_product_category(request, category_id):
 
         if 'product_type' in d:
             category.product_type = d.get('product_type') or category.product_type
+
+        if 'show_on_homepage' in d:
+            value = d.get('show_on_homepage')
+            category.show_on_homepage = value if isinstance(value, bool) else str(value).lower() == 'true'
+
+        if 'homepage_image' in d:
+            category.homepage_image = (d.get('homepage_image') or '').strip()
 
         category.save()
         return Response(_serialize_product_category(category))
@@ -272,7 +283,10 @@ def admin_list_products(request):
                 
             p_name = p.product_name
             p_image = p.image_url
-            p_featured = p.is_featured or (fp is not None)
+            # FeaturedProduct stores legacy detail assets and may continue to exist
+            # after a product is unfeatured. The Product flag is the source of truth
+            # for whether the admin toggle and homepage featured list are active.
+            p_featured = p.is_featured
             
             if fp:
                 p_name = fp.product_name or p_name
@@ -1427,7 +1441,9 @@ def admin_list_services(request):
             data.append({
                 'id': s.id,
                 'url': s.url,
+                'external_id': s.url,
                 'title': s.title,
+                'catalog_number': s.catalog_number,
                 'content': s.content,
                 'image': request.build_absolute_uri(s.image.url) if s.image else None,
                 'category': s.category,
@@ -1451,7 +1467,9 @@ def admin_get_service(request, service_id):
         data = {
             'id': s.id,
             'url': s.url,
+            'external_id': s.url,
             'title': s.title,
+            'catalog_number': s.catalog_number,
             'content': s.content,
             'image': request.build_absolute_uri(s.image.url) if s.image else None,
             'category': s.category,
@@ -1483,6 +1501,7 @@ def admin_create_service(request):
         s = ServiceMode(
             url=d.get('url', ''),
             title=d.get('title', ''),
+            catalog_number=d.get('catalog_number', ''),
             content=d.get('content', ''),
             category=d.get('category', ''),
             service_group=d.get('service_group', ''),
@@ -1492,7 +1511,11 @@ def admin_create_service(request):
         if request.FILES.get('image'):
             s.image = request.FILES['image']
         s.save()
-        return Response({'id': s.id, 'message': 'Service created successfully'}, status=status.HTTP_201_CREATED)
+        return Response({
+            'id': s.id,
+            'image': request.build_absolute_uri(s.image.url) if s.image else None,
+            'message': 'Service created successfully',
+        }, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1507,7 +1530,7 @@ def admin_update_service(request, service_id):
         s = ServiceMode.objects.get(id=service_id)
         d = request.data
 
-        for field in ['url', 'title', 'content', 'category', 'service_group']:
+        for field in ['url', 'title', 'catalog_number', 'content', 'category', 'service_group']:
             if field in d:
                 setattr(s, field, d[field])
 
@@ -1523,11 +1546,22 @@ def admin_update_service(request, service_id):
                 show_on_screen_val = show_on_screen_val.lower() == 'true'
             s.show_on_screen = show_on_screen_val
 
-        if request.FILES.get('image'):
+        remove_image_val = d.get('remove_image', False)
+        if isinstance(remove_image_val, str):
+            remove_image_val = remove_image_val.lower() == 'true'
+
+        if remove_image_val:
+            if s.image:
+                s.image.delete(save=False)
+            s.image = None
+        elif request.FILES.get('image'):
             s.image = request.FILES['image']
 
         s.save()
-        return Response({'message': 'Service updated successfully'})
+        return Response({
+            'image': request.build_absolute_uri(s.image.url) if s.image else None,
+            'message': 'Service updated successfully',
+        })
     except ServiceMode.DoesNotExist:
         return Response({'error': 'Service not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:

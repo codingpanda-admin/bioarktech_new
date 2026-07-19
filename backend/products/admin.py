@@ -71,7 +71,7 @@ class FunctionTypeAdmin(admin.ModelAdmin):
 
 @admin.register(ProductCategory)
 class ProductCategoryAdmin(admin.ModelAdmin):
-    list_display = ('category_name', 'description')
+    list_display = ('category_name', 'product_type', 'show_on_homepage', 'homepage_image')
 
 @admin.register(StructureType)
 class StructureTypeAdmin(admin.ModelAdmin):

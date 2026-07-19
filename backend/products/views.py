@@ -119,8 +119,15 @@ def normalize_name(name):
 @api_view(['GET'])
 def get_nav_catalog(request):
     try:
+        from interface.models import ServiceMode
+
         # 1. Fetch categories from DB
         db_categories = ProductCategory.objects.all().order_by("priority", "category_id")
+        active_service_category_ids = set(
+            ServiceMode.objects.exclude(category__isnull=True)
+            .exclude(category='')
+            .values_list('category', flat=True)
+        )
         
         # 2. Fetch all products to group them by category and product group
         # Exclude hidden products
@@ -195,6 +202,7 @@ def get_nav_catalog(request):
                     'product_name': p.product_name,
                     'external_id': p.catalog_number or p.external_id,
                     'externalId': p.catalog_number or p.external_id,
+                    'sort_external_id': p.external_id,
                     'catalog_number': p.catalog_number,
                 })
                 
@@ -210,6 +218,8 @@ def get_nav_catalog(request):
                 'externalId': cat_id,
                 'product_count': len(cat_products),
                 'product_type': final_type,
+                'show_on_homepage': cat.show_on_homepage,
+                'homepage_image': cat.homepage_image,
                 'subcategories': subcategories,
             }
 
@@ -218,6 +228,16 @@ def get_nav_catalog(request):
             ext_id = cat['external_id']
             if ext_id not in merged_map:
                 cat_products = products_by_category.get(ext_id, [])
+                has_services = (
+                    cat.get('product_type') == 'service'
+                    and ext_id in active_service_category_ids
+                )
+
+                # Defaults are labels for catalog data that actually exists,
+                # not permanent categories. Otherwise an empty category that
+                # an administrator deletes immediately reappears in navigation.
+                if not cat_products and not has_services:
+                    continue
                 
                 subcategories_map = {}
                 for p in cat_products:
@@ -229,6 +249,7 @@ def get_nav_catalog(request):
                         'product_name': p.product_name,
                         'external_id': p.catalog_number or p.external_id,
                         'externalId': p.catalog_number or p.external_id,
+                        'sort_external_id': p.external_id,
                         'catalog_number': p.catalog_number,
                     })
                     
@@ -241,6 +262,8 @@ def get_nav_catalog(request):
                     'externalId': ext_id,
                     'product_count': len(cat_products),
                     'product_type': cat['product_type'],
+                    'show_on_homepage': False,
+                    'homepage_image': None,
                     'subcategories': subcategories,
                 }
                 
@@ -263,6 +286,7 @@ def get_nav_catalog(request):
                     'product_name': p.product_name,
                     'external_id': p.catalog_number or p.external_id,
                     'externalId': p.catalog_number or p.external_id,
+                    'sort_external_id': p.external_id,
                     'catalog_number': p.catalog_number,
                 })
                 

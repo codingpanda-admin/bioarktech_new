@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback, useRef, useImperativeHandle } from 'react';
 import { apiFetch, API_URL, formatAssetUrl } from '../../utils/api';
 import { formatRichText } from '../../utils/richText';
+import { ProductContentEditor as BlogContentEditor } from './AdminProducts';
 
-const BlogContentEditor = React.forwardRef(function BlogContentEditor({ value, onChange }, ref) {
+const LegacyBlogContentEditor = React.forwardRef(function LegacyBlogContentEditor({ value, onChange }, ref) {
   const editorRef = useRef(null);
 
   useEffect(() => {
@@ -42,12 +43,6 @@ const BlogContentEditor = React.forwardRef(function BlogContentEditor({ value, o
     const url = window.prompt('Enter link URL');
     if (!url) return;
     runCommand('createLink', url);
-  };
-
-  const handleImage = () => {
-    const url = window.prompt('Enter image URL');
-    if (!url) return;
-    runCommand('insertImage', url);
   };
 
   const handleBlockChange = (event) => {
@@ -193,7 +188,6 @@ const BlogContentEditor = React.forwardRef(function BlogContentEditor({ value, o
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertUnorderedList')}>Bullet List</button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertOrderedList')}>Numbered List</button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={handleLink}>Link</button>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={handleImage}>Image</button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('unlink')}>Unlink</button>
         <span className="admin-rich-text-divider" aria-hidden="true" />
         <button type="button" onMouseDown={preventFocusLoss} onClick={insertTable}>Insert Table</button>

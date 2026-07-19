@@ -19,6 +19,28 @@ const REAGENTS_CATEGORIES = [
   { id: 'category-1780539818236', name: 'Consumables' }
 ];
 
+const richTextToPlainText = (value) => {
+  const source = String(value || '');
+  if (!/<[^>]+>/.test(source)) return source;
+
+  const withLineBreaks = source
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(?:p|div|li|h[1-6]|blockquote)>/gi, '\n');
+  const decoder = document.createElement('div');
+  decoder.innerHTML = withLineBreaks;
+  return (decoder.textContent || '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
+const reagentKeyFeaturesToPlainText = (value) => (
+  (Array.isArray(value) ? value : [value])
+    .map(richTextToPlainText)
+    .filter(Boolean)
+    .join('\n')
+);
+
 const FilledHomeIcon = () => (
   <svg className="admin-home-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path d="M3 10.5 12 3l9 7.5v9A1.5 1.5 0 0 1 19.5 21H15v-6h-6v6H4.5A1.5 1.5 0 0 1 3 19.5v-9Z" />
@@ -28,6 +50,11 @@ const FilledHomeIcon = () => (
 export const ProductContentEditor = React.forwardRef(function ProductContentEditor({ value, onChange, ariaLabel = 'Product content text' }, ref) {
   const editorRef = useRef(null);
   const lastEmittedHtmlRef = useRef(null);
+  const selectedImageRef = useRef(null);
+  const [isImageDragActive, setIsImageDragActive] = useState(false);
+  const [imageUploadsInProgress, setImageUploadsInProgress] = useState(0);
+  const [imageUploadError, setImageUploadError] = useState('');
+  const [selectedImageWidth, setSelectedImageWidth] = useState(null);
 
   const ensureTableWrappers = () => {
     const editor = editorRef.current;
@@ -45,16 +72,17 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
 
   useEffect(() => {
     const rawValue = value || '';
-    const editorHtml = formatRichText(rawValue);
 
-    if (
-      rawValue === lastEmittedHtmlRef.current
-      && editorRef.current?.innerHTML === editorHtml
-    ) {
+    // The editor owns its DOM while the user is typing. Rewriting innerHTML for
+    // a value that originated here resets both the caret and native undo stack.
+    if (rawValue === lastEmittedHtmlRef.current) {
       return;
     }
 
+    const editorHtml = formatRichText(rawValue);
     if (editorRef.current && editorRef.current.innerHTML !== editorHtml) {
+      selectedImageRef.current = null;
+      setSelectedImageWidth(null);
       editorRef.current.innerHTML = editorHtml;
     }
     ensureTableWrappers();
@@ -69,16 +97,83 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
   const syncValue = () => {
     if (editorRef.current) {
       ensureTableWrappers();
-      const nextHtml = editorRef.current.innerHTML;
+      if (selectedImageRef.current && !editorRef.current.contains(selectedImageRef.current)) {
+        selectedImageRef.current = null;
+        setSelectedImageWidth(null);
+      }
+
+      // Editor-only selection decoration must never be stored in catalog HTML.
+      const cleanEditor = editorRef.current.cloneNode(true);
+      cleanEditor.querySelectorAll('.is-rich-image-selected').forEach((image) => {
+        image.classList.remove('is-rich-image-selected');
+        if (!image.className) image.removeAttribute('class');
+      });
+      const nextHtml = cleanEditor.innerHTML;
       lastEmittedHtmlRef.current = nextHtml;
       onChange(nextHtml);
     }
   };
 
   useImperativeHandle(ref, () => ({
-    getHtml: () => editorRef.current?.innerHTML || '',
+    getHtml: () => {
+      if (!editorRef.current) return '';
+      const cleanEditor = editorRef.current.cloneNode(true);
+      cleanEditor.querySelectorAll('.is-rich-image-selected').forEach((image) => {
+        image.classList.remove('is-rich-image-selected');
+        if (!image.className) image.removeAttribute('class');
+      });
+      return cleanEditor.innerHTML;
+    },
     sync: () => syncValue(),
   }));
+
+  const clearSelectedImage = () => {
+    selectedImageRef.current?.classList.remove('is-rich-image-selected');
+    selectedImageRef.current = null;
+    setSelectedImageWidth(null);
+  };
+
+  const selectEditorImage = (image) => {
+    const editor = editorRef.current;
+    if (!editor || !image || !editor.contains(image)) return;
+
+    selectedImageRef.current?.classList.remove('is-rich-image-selected');
+    selectedImageRef.current = image;
+    image.classList.add('is-rich-image-selected');
+
+    const percentageWidth = /^\s*(\d+(?:\.\d+)?)%\s*$/.exec(image.style.width || '');
+    const renderedPercentage = editor.clientWidth > 0
+      ? (image.getBoundingClientRect().width / editor.clientWidth) * 100
+      : 100;
+    const width = percentageWidth ? Number(percentageWidth[1]) : renderedPercentage;
+    setSelectedImageWidth(Math.max(10, Math.min(100, Math.round(width / 5) * 5)));
+  };
+
+  const resizeSelectedImage = (nextWidth) => {
+    const image = selectedImageRef.current;
+    const editor = editorRef.current;
+    if (!image || !editor?.contains(image)) {
+      clearSelectedImage();
+      return;
+    }
+
+    const width = Math.max(10, Math.min(100, Number(nextWidth) || 100));
+    image.style.width = `${width}%`;
+    image.style.height = 'auto';
+    image.removeAttribute('width');
+    image.removeAttribute('height');
+    setSelectedImageWidth(width);
+    syncValue();
+  };
+
+  const handleEditorClick = (event) => {
+    const image = event.target?.closest?.('img');
+    if (image && editorRef.current?.contains(image)) {
+      selectEditorImage(image);
+    } else {
+      clearSelectedImage();
+    }
+  };
 
   const preventFocusLoss = (event) => {
     event.preventDefault();
@@ -102,13 +197,115 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
     runCommand('createLink', url);
   };
 
-  const handleImage = () => {
-    const url = window.prompt('Enter image URL');
-    if (!url) return;
-    runCommand('insertImage', url);
+  const getEditorSelectionRange = () => {
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    if (!editor || !selection || selection.rangeCount === 0) return null;
+
+    const range = selection.getRangeAt(0);
+    const container = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
+      ? range.commonAncestorContainer.parentElement
+      : range.commonAncestorContainer;
+    return editor.contains(container) ? range.cloneRange() : null;
+  };
+
+  const getDropRange = (event) => {
+    let range = null;
+    if (document.caretRangeFromPoint) {
+      range = document.caretRangeFromPoint(event.clientX, event.clientY);
+    } else if (document.caretPositionFromPoint) {
+      const position = document.caretPositionFromPoint(event.clientX, event.clientY);
+      if (position) {
+        range = document.createRange();
+        range.setStart(position.offsetNode, position.offset);
+        range.collapse(true);
+      }
+    }
+
+    const editor = editorRef.current;
+    const container = range?.commonAncestorContainer?.nodeType === Node.TEXT_NODE
+      ? range.commonAncestorContainer.parentElement
+      : range?.commonAncestorContainer;
+    return editor && container && editor.contains(container) ? range.cloneRange() : null;
+  };
+
+  const getEditorEndRange = () => {
+    const editor = editorRef.current;
+    if (!editor) return null;
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    range.collapse(false);
+    return range;
+  };
+
+  const insertUploadedImage = (imageUrl, fileName, requestedRange) => {
+    const editor = editorRef.current;
+    if (!editor) return null;
+
+    const range = requestedRange || getEditorSelectionRange() || getEditorEndRange();
+    if (!range) return null;
+
+    const image = document.createElement('img');
+    image.src = imageUrl;
+    image.alt = fileName || 'Uploaded image';
+
+    const lineBreak = document.createElement('br');
+    range.deleteContents();
+    range.insertNode(image);
+    image.after(lineBreak);
+
+    const nextRange = document.createRange();
+    nextRange.setStartAfter(lineBreak);
+    nextRange.collapse(true);
+
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(nextRange);
+    editor.focus();
+    selectEditorImage(image);
+    syncValue();
+    return nextRange.cloneRange();
+  };
+
+  const uploadAndInsertImages = async (files, requestedRange) => {
+    const imageFiles = files.filter((file) => file?.type?.startsWith('image/'));
+    if (imageFiles.length === 0) return;
+
+    setImageUploadError('');
+    setImageUploadsInProgress((count) => count + imageFiles.length);
+    let insertionRange = requestedRange || getEditorSelectionRange() || getEditorEndRange();
+
+    for (const file of imageFiles) {
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+        const response = await apiFetch('/api/admin-panel/products/upload-image/', {
+          method: 'POST',
+          body: formData,
+        });
+        const imageUrl = response.url || formatAssetUrl(response.image_path);
+        if (!imageUrl) throw new Error('The uploaded image URL was not returned.');
+        insertionRange = insertUploadedImage(imageUrl, file.name, insertionRange) || insertionRange;
+      } catch (error) {
+        setImageUploadError(error.message || `Failed to upload ${file.name}.`);
+      } finally {
+        setImageUploadsInProgress((count) => Math.max(0, count - 1));
+      }
+    }
   };
 
   const handlePaste = (event) => {
+    const imageFiles = Array.from(event.clipboardData?.items || [])
+      .filter((item) => item.kind === 'file' && item.type.startsWith('image/'))
+      .map((item) => item.getAsFile())
+      .filter(Boolean);
+
+    if (imageFiles.length > 0) {
+      event.preventDefault();
+      void uploadAndInsertImages(imageFiles, getEditorSelectionRange());
+      return;
+    }
+
     const plainText = event.clipboardData?.getData('text/plain') || '';
     const htmlText = event.clipboardData?.getData('text/html') || '';
 
@@ -125,6 +322,38 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
     focusEditor();
     document.execCommand('insertHTML', false, formattedHtml);
     syncValue();
+  };
+
+  const handleImageDragOver = (event) => {
+    const dragTypes = Array.from(event.dataTransfer?.types || []);
+    const hasFiles = dragTypes.includes('Files') || Array.from(event.dataTransfer?.items || [])
+      .some((item) => item.kind === 'file');
+    if (!hasFiles) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    setIsImageDragActive(true);
+  };
+
+  const handleImageDragLeave = (event) => {
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+      setIsImageDragActive(false);
+    }
+  };
+
+  const handleImageDrop = (event) => {
+    const droppedFiles = Array.from(event.dataTransfer?.files || []);
+    if (droppedFiles.length === 0) return;
+
+    event.preventDefault();
+    const imageFiles = droppedFiles
+      .filter((file) => file.type.startsWith('image/'));
+    setIsImageDragActive(false);
+    if (imageFiles.length === 0) {
+      setImageUploadError('Only image files can be dropped into this field.');
+      return;
+    }
+
+    void uploadAndInsertImages(imageFiles, getDropRange(event));
   };
 
   const handleBlockChange = (event) => {
@@ -221,6 +450,19 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
     syncValue();
   };
 
+  const deleteTable = () => {
+    const cell = getSelectedTableCell();
+    const table = cell?.closest('table');
+    if (!table) return;
+
+    const wrapper = table.parentElement?.classList.contains('rich-table-wrap')
+      ? table.parentElement
+      : null;
+    (wrapper || table).remove();
+    syncValue();
+    focusEditor();
+  };
+
   const mergeCellRight = () => {
     const cell = getSelectedTableCell();
     const nextCell = cell?.nextElementSibling;
@@ -268,29 +510,71 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertUnorderedList')}>Bullet List</button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertOrderedList')}>Numbered List</button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={handleLink}>Link</button>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={handleImage}>Image</button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('unlink')}>Unlink</button>
         <span className="admin-rich-text-divider" aria-hidden="true" />
-        <button type="button" onMouseDown={preventFocusLoss} onClick={insertTable}>Insert Table</button>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={addTableRow}>Add Row</button>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={addTableColumn}>Add Column</button>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={mergeCellRight}>Merge Right</button>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={mergeCellDown}>Merge Down</button>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={deleteTableRow}>Delete Row</button>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={deleteTableColumn}>Delete Column</button>
+        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={insertTable}>Insert Table</button>
+        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={addTableRow}>Add Row</button>
+        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={addTableColumn}>Add Column</button>
+        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={mergeCellRight}>Merge Right</button>
+        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={mergeCellDown}>Merge Down</button>
+        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={deleteTableRow}>Delete Row</button>
+        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={deleteTableColumn}>Delete Column</button>
+        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={deleteTable}>Delete Table</button>
+      </div>
+      <div
+        className={`admin-rich-text-image-hint ${imageUploadError ? 'has-error' : ''}`}
+        role="status"
+        aria-live="polite"
+      >
+        {imageUploadsInProgress > 0
+          ? `Uploading ${imageUploadsInProgress} image${imageUploadsInProgress === 1 ? '' : 's'}...`
+          : imageUploadError || 'Paste an image or drag and drop it into the text field.'}
       </div>
       <div
         ref={editorRef}
-        className="admin-rich-text-editor"
+        className={`admin-rich-text-editor ${isImageDragActive ? 'is-image-drag-active' : ''}`}
         contentEditable
         role="textbox"
         aria-multiline="true"
         aria-label={ariaLabel}
         onInput={syncValue}
         onBlur={syncValue}
+        onClick={handleEditorClick}
         onPaste={handlePaste}
+        onDragEnter={handleImageDragOver}
+        onDragOver={handleImageDragOver}
+        onDragLeave={handleImageDragLeave}
+        onDrop={handleImageDrop}
         suppressContentEditableWarning
       />
+      {selectedImageWidth !== null && (
+        <div className="admin-rich-image-resize" role="group" aria-label="Selected image size">
+          <span className="admin-rich-image-resize-label">Image size</span>
+          <input
+            type="range"
+            min="10"
+            max="100"
+            step="5"
+            value={selectedImageWidth}
+            aria-label="Image width percentage"
+            onChange={(event) => resizeSelectedImage(event.target.value)}
+          />
+          <output>{selectedImageWidth}%</output>
+          <div className="admin-rich-image-size-presets" aria-label="Image size presets">
+            {[25, 50, 75, 100].map((width) => (
+              <button
+                key={width}
+                type="button"
+                className={selectedImageWidth === width ? 'is-active' : ''}
+                onMouseDown={preventFocusLoss}
+                onClick={() => resizeSelectedImage(width)}
+              >
+                {width}%
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 });
@@ -310,13 +594,12 @@ function AdminProducts({ categoryFilter = null }) {
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
   const [catalogRows, setCatalogRows] = useState([]);
   const [catalogSaving, setCatalogSaving] = useState(false);
+  const [catalogImageUploading, setCatalogImageUploading] = useState({});
   const [draggedCatalogIndex, setDraggedCatalogIndex] = useState(null);
   const [collapsedCatalogs, setCollapsedCatalogs] = useState(() => new Set());
+  const [subgroupSorts, setSubgroupSorts] = useState({});
   const [optionRows, setOptionRows] = useState([]);
   const productContentEditorRef = useRef(null);
-  const descriptionEditorRef = useRef(null);
-  const keyFeaturesEditorRef = useRef(null);
-  const storageStabilityEditorRef = useRef(null);
   const performanceDataEditorRef = useRef(null);
   const optionRowIdRef = useRef(0);
 
@@ -420,9 +703,17 @@ function AdminProducts({ categoryFilter = null }) {
       setSuccessMsg('');
       const data = await apiFetch(`/api/admin-panel/products/${productId}/`);
       const productData = data.product || data;
+      const reagentPlainTextFields = categoryFilter === 'reagents'
+        ? {
+            description: richTextToPlainText(productData.description),
+            key_features: reagentKeyFeaturesToPlainText(productData.key_features),
+            storage_stability: richTextToPlainText(productData.storage_stability),
+          }
+        : {};
       setOptionRows(createOptionRows(productData.options, productData.option_prices));
       setEditingProduct({
         ...productData,
+        ...reagentPlainTextFields,
         content_text: productData.content_text || productData.contentText || productData.raw_detail?.contentText || '',
         product_id: productData.product_id || productData.id || productId
       });
@@ -541,20 +832,14 @@ function AdminProducts({ categoryFilter = null }) {
     setSaving(true);
     try {
       const editorContentText = productContentEditorRef.current?.getHtml?.() ?? editingProduct.content_text ?? '';
-      const latestContentText = formatRichText(editorContentText);
-      const isReagentCatalog = categoryFilter === 'reagents';
-      const latestDescription = isReagentCatalog
-        ? descriptionEditorRef.current?.getHtml?.() ?? editingProduct.description ?? ''
-        : editingProduct.description;
-      const latestKeyFeatures = isReagentCatalog
-        ? keyFeaturesEditorRef.current?.getHtml?.() ?? formatKeyFeaturesForRichText(editingProduct.key_features)
-        : editingProduct.key_features;
-      const latestStorageStability = isReagentCatalog
-        ? storageStabilityEditorRef.current?.getHtml?.() ?? editingProduct.storage_stability ?? ''
-        : editingProduct.storage_stability;
-      const latestPerformanceData = isReagentCatalog
-        ? performanceDataEditorRef.current?.getHtml?.() ?? editingProduct.performance_data ?? ''
-        : editingProduct.performance_data;
+      // Content emitted by the rich-text editor is already canonical HTML.
+      // Re-running it through the Markdown converter can strip embedded images
+      // and flatten tables when surrounding text resembles Markdown syntax.
+      const latestContentText = editorContentText;
+      const latestDescription = editingProduct.description;
+      const latestKeyFeatures = editingProduct.key_features;
+      const latestStorageStability = editingProduct.storage_stability;
+      const latestPerformanceData = performanceDataEditorRef.current?.getHtml?.() ?? editingProduct.performance_data ?? '';
       const updatedRawDetail = (
         editingProduct.raw_detail &&
         typeof editingProduct.raw_detail === 'object' &&
@@ -590,9 +875,7 @@ function AdminProducts({ categoryFilter = null }) {
         ...editingProduct,
         description: latestDescription,
         content_text: latestContentText,
-        key_features: isReagentCatalog
-          ? (String(latestKeyFeatures || '').trim() ? [latestKeyFeatures] : [])
-          : normalizeKeyFeaturesForSave(latestKeyFeatures),
+        key_features: normalizeKeyFeaturesForSave(latestKeyFeatures),
         storage_stability: latestStorageStability,
         performance_data: latestPerformanceData,
         options: normalizedOptions,
@@ -643,20 +926,6 @@ function AdminProducts({ categoryFilter = null }) {
       return value.join('\n');
     }
     return value || '';
-  };
-
-  const escapeHtml = (value) => String(value || '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-
-  const formatKeyFeaturesForRichText = (value) => {
-    if (!Array.isArray(value)) return value || '';
-    if (value.length === 1 && /<[^>]+>/.test(value[0] || '')) return value[0];
-    if (value.length === 0) return '';
-    return `<ul>${value.map((feature) => `<li>${escapeHtml(feature)}</li>`).join('')}</ul>`;
   };
 
   const updateKeyFeatures = (value) => {
@@ -780,6 +1049,8 @@ function AdminProducts({ categoryFilter = null }) {
     category_id: cat.category_id || cat.id,
     priority: cat.priority || 1,
     product_type: cat.product_type || currentProductType,
+    show_on_homepage: !!cat.show_on_homepage,
+    homepage_image: cat.homepage_image || '',
     product_count: cat.product_count ?? products.filter(p => p.category_external_id === (cat.external_id || cat.externalId || cat.id)).length,
     isFallback: !cat.category_id,
   });
@@ -806,6 +1077,8 @@ function AdminProducts({ categoryFilter = null }) {
       external_id: cat.id,
       priority: cat.priority || index + 1,
       product_type: currentProductType,
+      show_on_homepage: !!cat.show_on_homepage,
+      homepage_image: cat.homepage_image || '',
       product_count: products.filter(p => p.category_external_id === cat.id).length,
       isNew: false,
     })));
@@ -816,6 +1089,51 @@ function AdminProducts({ categoryFilter = null }) {
     setCatalogRows((prev) => prev.map((row, rowIndex) => (
       rowIndex === index ? { ...row, [field]: value } : row
     )));
+  };
+
+  const handleCatalogImageUpload = async (event, index) => {
+    const fileInput = event.currentTarget;
+    const file = fileInput.files?.[0];
+    if (!file) return;
+
+    setError('');
+    setCatalogImageUploading((current) => ({ ...current, [index]: true }));
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      let csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+
+      if (!csrfToken) {
+        const csrfResponse = await fetch(`${API_URL}/api/csrf/`, { credentials: 'include' });
+        const csrfData = await csrfResponse.json();
+        csrfToken = csrfData.csrftoken;
+      }
+
+      const response = await fetch(`${API_URL}/api/admin-panel/products/upload-image/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRFToken': csrfToken },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to upload homepage image.');
+      }
+
+      const data = await response.json();
+      updateCatalogRow(index, 'homepage_image', data.image_path || data.url || '');
+      showSuccess('Homepage category image uploaded. Save the catalog to apply it.');
+    } catch (err) {
+      setError(err.message || 'Homepage image upload failed.');
+    } finally {
+      setCatalogImageUploading((current) => ({ ...current, [index]: false }));
+      fileInput.value = '';
+    }
   };
 
   const moveCatalogRow = (index, direction) => {
@@ -873,6 +1191,8 @@ function AdminProducts({ categoryFilter = null }) {
         external_id: '',
         priority: prev.length + 1,
         product_type: currentProductType,
+        show_on_homepage: false,
+        homepage_image: '',
         product_count: 0,
         isNew: true,
       },
@@ -911,6 +1231,8 @@ function AdminProducts({ categoryFilter = null }) {
           external_id: row.external_id,
           priority: row.priority,
           product_type: currentProductType,
+          show_on_homepage: !!row.show_on_homepage,
+          homepage_image: row.homepage_image || '',
         };
 
         if (row.isNew || !row.category_id) {
@@ -1021,6 +1343,81 @@ function AdminProducts({ categoryFilter = null }) {
   };
 
   const groupedData = getGroupedData();
+
+  const getSubgroupSortKey = (categoryId, subgroupName) => (
+    `${categoryFilter}:${catalogStatus}:${categoryId}:${subgroupName || 'General'}`
+  );
+
+  const getSubgroupSort = (sortKey) => (
+    subgroupSorts[sortKey] || { field: 'catalog_number', direction: 'asc' }
+  );
+
+  const updateSubgroupSort = (sortKey, field) => {
+    setSubgroupSorts((currentSorts) => {
+      const current = currentSorts[sortKey] || { field: 'catalog_number', direction: 'asc' };
+      return {
+        ...currentSorts,
+        [sortKey]: {
+          field,
+          direction: current.field === field && current.direction === 'asc' ? 'desc' : 'asc',
+        },
+      };
+    });
+  };
+
+  const getPriceSortValue = (value) => {
+    const match = String(value || '').replaceAll(',', '').match(/-?\d+(?:\.\d+)?/);
+    return match ? Number(match[0]) : null;
+  };
+
+  const sortSubgroupProducts = (items, sortConfig) => (
+    items
+      .map((item, index) => ({ item, index }))
+      .sort((left, right) => {
+        const leftValue = sortConfig.field === 'price'
+          ? getPriceSortValue(left.item.list_price)
+          : String(left.item[sortConfig.field] || '').trim();
+        const rightValue = sortConfig.field === 'price'
+          ? getPriceSortValue(right.item.list_price)
+          : String(right.item[sortConfig.field] || '').trim();
+        const leftMissing = leftValue === null || leftValue === '';
+        const rightMissing = rightValue === null || rightValue === '';
+
+        if (leftMissing !== rightMissing) return leftMissing ? 1 : -1;
+        if (leftMissing && rightMissing) return left.index - right.index;
+
+        const comparison = sortConfig.field === 'price'
+          ? leftValue - rightValue
+          : leftValue.localeCompare(rightValue, undefined, { numeric: true, sensitivity: 'base' });
+        return comparison === 0
+          ? left.index - right.index
+          : comparison * (sortConfig.direction === 'asc' ? 1 : -1);
+      })
+      .map(({ item }) => item)
+  );
+
+  const SortableHeader = ({ label, field, sortKey, sortConfig }) => {
+    const isActive = sortConfig.field === field;
+    return (
+      <th aria-sort={isActive ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
+        <button
+          type="button"
+          className={`admin-table-sort-button ${isActive ? 'is-active' : ''}`}
+          onClick={() => updateSubgroupSort(sortKey, field)}
+          aria-label={`Sort by ${label}${isActive ? `, currently ${sortConfig.direction === 'asc' ? 'ascending' : 'descending'}` : ''}`}
+        >
+          <span>{label}</span>
+          {isActive && (
+            <span
+              className="admin-table-sort-direction"
+              data-direction={sortConfig.direction}
+              aria-hidden="true"
+            />
+          )}
+        </button>
+      </th>
+    );
+  };
 
   const toggleCatalogCollapse = (catalogId) => {
     setCollapsedCatalogs((prev) => {
@@ -1332,35 +1729,29 @@ function AdminProducts({ categoryFilter = null }) {
               </div>
             </div>
 
+            <div className="admin-form-field span-3">
+              <span>{categoryFilter === 'products' ? 'Product Detail' : 'Reagent Detail'}</span>
+              <ProductContentEditor ref={productContentEditorRef} value={editingProduct.content_text || ''} onChange={(value) => updateField('content_text', value)} />
+            </div>
             {categoryFilter === 'reagents' ? (
               <>
-                <div className="admin-form-field span-3">
+                <label className="admin-form-field span-3">
                   <span>Description</span>
-                  <ProductContentEditor
-                    ref={descriptionEditorRef}
-                    value={editingProduct.description || ''}
-                    onChange={(value) => updateField('description', value)}
-                    ariaLabel="Reagent description"
-                  />
-                </div>
-                <div className="admin-form-field span-3">
+                  <textarea rows="4" value={editingProduct.description || ''} onChange={(e) => updateField('description', e.target.value)} />
+                </label>
+                <label className="admin-form-field span-3">
                   <span>Key Features</span>
-                  <ProductContentEditor
-                    ref={keyFeaturesEditorRef}
-                    value={formatKeyFeaturesForRichText(editingProduct.key_features)}
-                    onChange={(value) => updateKeyFeatures(value)}
-                    ariaLabel="Reagent key features"
+                  <textarea
+                    rows="5"
+                    value={formatKeyFeaturesForEdit(editingProduct.key_features)}
+                    onChange={(e) => updateKeyFeatures(e.target.value)}
+                    placeholder="Enter one key feature per line"
                   />
-                </div>
-                <div className="admin-form-field span-3">
+                </label>
+                <label className="admin-form-field span-3">
                   <span>Storage &amp; Stability</span>
-                  <ProductContentEditor
-                    ref={storageStabilityEditorRef}
-                    value={editingProduct.storage_stability || ''}
-                    onChange={(value) => updateField('storage_stability', value)}
-                    ariaLabel="Reagent storage and stability"
-                  />
-                </div>
+                  <textarea rows="4" value={editingProduct.storage_stability || ''} onChange={(e) => updateField('storage_stability', e.target.value)} />
+                </label>
                 <div className="admin-form-field span-3">
                   <span>Performance Data</span>
                   <ProductContentEditor
@@ -1390,16 +1781,17 @@ function AdminProducts({ categoryFilter = null }) {
                   <span>Storage &amp; Stability</span>
                   <textarea rows="4" value={editingProduct.storage_stability || ''} onChange={(e) => updateField('storage_stability', e.target.value)} />
                 </label>
-                <label className="admin-form-field span-3">
+                <div className="admin-form-field span-3">
                   <span>Performance Data</span>
-                  <textarea rows="4" value={editingProduct.performance_data || ''} onChange={(e) => updateField('performance_data', e.target.value)} />
-                </label>
+                  <ProductContentEditor
+                    ref={performanceDataEditorRef}
+                    value={editingProduct.performance_data || ''}
+                    onChange={(value) => updateField('performance_data', value)}
+                    ariaLabel="Product performance data"
+                  />
+                </div>
               </>
             )}
-            <div className="admin-form-field span-3">
-              <span>Content Text</span>
-              <ProductContentEditor ref={productContentEditorRef} value={editingProduct.content_text || ''} onChange={(value) => updateField('content_text', value)} />
-            </div>
             <label className="admin-form-field">
               <span>Availability</span>
               <input type="text" value={editingProduct.availability || ''} onChange={(e) => updateField('availability', e.target.value)} />
@@ -1570,6 +1962,9 @@ function AdminProducts({ categoryFilter = null }) {
                     ) : (
                       Object.keys(subGroups).map((subGroupName) => {
                         const productsList = subGroups[subGroupName];
+                        const sortKey = getSubgroupSortKey(catalogId, subGroupName);
+                        const sortConfig = getSubgroupSort(sortKey);
+                        const sortedProductsList = sortSubgroupProducts(productsList, sortConfig);
                         return (
                           <div key={subGroupName} className="admin-subgroup-group">
                         <h4 className="admin-subgroup-title">
@@ -1579,18 +1974,16 @@ function AdminProducts({ categoryFilter = null }) {
                           <table className="admin-data-table">
                             <thead>
                               <tr>
-                                <th>Name</th>
-                                <th>External ID</th>
-                                <th>Catalog #</th>
-                                <th>Category ID</th>
-                                <th>Group</th>
-                                <th>Price</th>
-                                <th>Status</th>
+                                <SortableHeader label="Name" field="product_name" sortKey={sortKey} sortConfig={sortConfig} />
+                                <SortableHeader label="External ID" field="external_id" sortKey={sortKey} sortConfig={sortConfig} />
+                                <SortableHeader label="Catalog #" field="catalog_number" sortKey={sortKey} sortConfig={sortConfig} />
+                                <SortableHeader label="Price" field="price" sortKey={sortKey} sortConfig={sortConfig} />
+                                {catalogStatus === 'deactivated' && <th>Status</th>}
                                 <th>Actions</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {productsList.map((product) => {
+                              {sortedProductsList.map((product) => {
                                 const pId = product.id || product.product_id;
                                 return (
                                   <tr key={pId}>
@@ -1608,18 +2001,16 @@ function AdminProducts({ categoryFilter = null }) {
                                     </td>
                                     <td><code>{product.external_id}</code></td>
                                     <td>{product.catalog_number || '—'}</td>
-                                    <td>{product.category_external_id || '—'}</td>
-                                    <td>{product.product_group || '—'}</td>
                                     <td>{product.list_price || '—'}</td>
-                                    <td>
-                                      <span className={`admin-badge ${product.hidden ? 'badge-muted' : 'badge-success'}`}>
-                                        {product.hidden ? 'Deactivated' : 'Active'}
-                                      </span>
-                                      {product.is_featured && <span className="admin-badge badge-accent">Featured</span>}
-                                      {product.show_on_screen && <span className="admin-badge badge-info" style={{ background: '#0284c7', color: '#fff', marginLeft: '4px' }}>Homepage</span>}
-                                    </td>
+                                    {catalogStatus === 'deactivated' && (
+                                      <td>
+                                        <span className="admin-badge badge-muted">Deactivated</span>
+                                      </td>
+                                    )}
                                     <td>
                                       <div className="admin-row-actions">
+                                        {catalogStatus !== 'deactivated' && (
+                                          <>
                                         <button
                                           type="button"
                                           className="admin-action-btn"
@@ -1668,6 +2059,8 @@ function AdminProducts({ categoryFilter = null }) {
                                         >
                                           <FilledHomeIcon />
                                         </button>
+                                          </>
+                                        )}
                                         <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(pId); }}>Edit</button>
                                         {product.hidden ? (
                                           <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleActivate(pId); }}>Activate</button>
@@ -1922,6 +2315,10 @@ function AdminProducts({ categoryFilter = null }) {
                   </div>
                 </div>
 
+                <div className="admin-form-field span-3">
+                  <span>{categoryFilter === 'products' ? 'Product Detail' : 'Reagent Detail'}</span>
+                  <ProductContentEditor ref={productContentEditorRef} value={editingProduct.content_text || ''} onChange={(value) => updateField('content_text', value)} />
+                </div>
                 <label className="admin-form-field span-3">
                   <span>Description</span>
                   <textarea rows="4" value={editingProduct.description || ''} onChange={(e) => updateField('description', e.target.value)} />
@@ -1939,13 +2336,14 @@ function AdminProducts({ categoryFilter = null }) {
                   <span>Storage &amp; Stability</span>
                   <textarea rows="4" value={editingProduct.storage_stability || ''} onChange={(e) => updateField('storage_stability', e.target.value)} />
                 </label>
-                <label className="admin-form-field span-3">
-                  <span>Performance Data</span>
-                  <textarea rows="4" value={editingProduct.performance_data || ''} onChange={(e) => updateField('performance_data', e.target.value)} />
-                </label>
                 <div className="admin-form-field span-3">
-                  <span>Content Text</span>
-                  <ProductContentEditor value={editingProduct.content_text || ''} onChange={(value) => updateField('content_text', value)} />
+                  <span>Performance Data</span>
+                  <ProductContentEditor
+                    ref={performanceDataEditorRef}
+                    value={editingProduct.performance_data || ''}
+                    onChange={(value) => updateField('performance_data', value)}
+                    ariaLabel={`${categoryFilter === 'products' ? 'Product' : 'Reagent'} performance data`}
+                  />
                 </div>
                 <label className="admin-form-field">
                   <span>Availability</span>
@@ -1991,7 +2389,7 @@ function AdminProducts({ categoryFilter = null }) {
 
       {isCatalogModalOpen && (
         <div className="admin-modal-overlay" onClick={() => setIsCatalogModalOpen(false)}>
-          <div className="admin-modal admin-modal-lg" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-modal admin-modal-lg admin-catalog-modal" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <h3>Edit Catalog</h3>
               <button className="admin-modal-close" onClick={() => setIsCatalogModalOpen(false)}>×</button>
@@ -2007,6 +2405,8 @@ function AdminProducts({ categoryFilter = null }) {
                       <th>Priority</th>
                       <th>Catalog Name</th>
                       <th>External ID</th>
+                      <th>Popular</th>
+                      <th>Homepage Image</th>
                       <th>Products</th>
                       <th>Reorder</th>
                       <th>Actions</th>
@@ -2034,6 +2434,50 @@ function AdminProducts({ categoryFilter = null }) {
                           />
                         </td>
                         <td><code>{row.external_id || 'Auto-generated on save'}</code></td>
+                        <td>
+                          <label className="admin-toggle" style={{ justifyContent: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={!!row.show_on_homepage}
+                              onChange={(e) => updateCatalogRow(index, 'show_on_homepage', e.target.checked)}
+                              aria-label={`Display ${row.category_name || 'category'} on homepage`}
+                            />
+                            <span>Show</span>
+                          </label>
+                        </td>
+                        <td>
+                          <div className="admin-catalog-image-editor">
+                            <div className="admin-catalog-image-thumbnail">
+                              {row.homepage_image ? (
+                                <img src={formatAssetUrl(row.homepage_image)} alt={`${row.category_name || 'Category'} homepage`} />
+                              ) : (
+                                <span>No image</span>
+                              )}
+                            </div>
+                            <div className="admin-catalog-image-actions">
+                              <label className="admin-action-btn edit">
+                                {catalogImageUploading[index]
+                                  ? 'Uploading...'
+                                  : row.homepage_image ? 'Replace' : 'Upload'}
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  disabled={!!catalogImageUploading[index]}
+                                  onChange={(event) => handleCatalogImageUpload(event, index)}
+                                />
+                              </label>
+                              {row.homepage_image && (
+                                <button
+                                  type="button"
+                                  className="admin-action-btn delete"
+                                  onClick={() => updateCatalogRow(index, 'homepage_image', '')}
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </td>
                         <td>{row.product_count || 0}</td>
                         <td>
                           <div className="admin-row-actions">

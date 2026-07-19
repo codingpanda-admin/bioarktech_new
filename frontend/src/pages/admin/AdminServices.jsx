@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { apiFetch, formatAssetUrl } from '../../utils/api';
+import { apiFetch, API_URL, formatAssetUrl } from '../../utils/api';
 import { ProductContentEditor } from './AdminProducts';
 
 const SERVICE_FALLBACK_CATEGORIES = [
@@ -33,12 +33,16 @@ function AdminServices() {
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [imageFile, setImageFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+  const [removeImage, setRemoveImage] = useState(false);
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
   const [catalogRows, setCatalogRows] = useState([]);
   const [catalogSaving, setCatalogSaving] = useState(false);
+  const [catalogImageUploading, setCatalogImageUploading] = useState({});
   const [draggedCatalogIndex, setDraggedCatalogIndex] = useState(null);
   const [collapsedCatalogs, setCollapsedCatalogs] = useState(() => new Set());
   const serviceContentEditorRef = useRef(null);
+  const imagePreviewRequestRef = useRef(0);
 
   const loadServices = useCallback(async () => {
     setLoading(true);
@@ -72,6 +76,8 @@ function AdminServices() {
       category_id: cat.category_id || null,
       priority: cat.priority || index + 1,
       product_type: cat.product_type || 'service',
+      show_on_homepage: !!cat.show_on_homepage,
+      homepage_image: cat.homepage_image || '',
       service_count: cat.service_count ?? cat.product_count ?? services.filter(s => (s.category || 'uncategorized') === id).length,
       isFallback: !cat.category_id,
     };
@@ -86,18 +92,16 @@ function AdminServices() {
       })
   );
 
-  SERVICE_FALLBACK_CATEGORIES.forEach((cat, index) => {
-    if (!categoryMap.has(cat.id)) {
-      categoryMap.set(cat.id, normalizeCategory({ ...cat, priority: index + 1 }, index));
-    }
-  });
+  const fallbackCategoryNames = new Map(
+    SERVICE_FALLBACK_CATEGORIES.map((cat) => [cat.id, cat.name])
+  );
 
   services.forEach((service) => {
     const serviceCategory = service.category || 'uncategorized';
     if (serviceCategory !== 'uncategorized' && !categoryMap.has(serviceCategory)) {
       categoryMap.set(serviceCategory, normalizeCategory({
         id: serviceCategory,
-        name: serviceCategory,
+        name: fallbackCategoryNames.get(serviceCategory) || serviceCategory,
         priority: categoryMap.size + 1,
       }));
     }
@@ -115,6 +119,7 @@ function AdminServices() {
     setEditingService({
       url: '',
       title: '',
+      catalog_number: '',
       content: '',
       category: selectedCategory !== 'All' ? selectedCategory : 'uncategorized',
       service_group: '',
@@ -122,6 +127,9 @@ function AdminServices() {
       show_on_screen: false,
     });
     setImageFile(null);
+    setImagePreviewUrl('');
+    imagePreviewRequestRef.current += 1;
+    setRemoveImage(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -132,6 +140,9 @@ function AdminServices() {
       const data = await apiFetch(`/api/admin-panel/services/${serviceId}/`);
       setEditingService(data.service || data);
       setImageFile(null);
+      setImagePreviewUrl('');
+      imagePreviewRequestRef.current += 1;
+      setRemoveImage(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setError(err.message);
@@ -141,6 +152,9 @@ function AdminServices() {
   const handleCancelEdit = () => {
     setEditingService(null);
     setImageFile(null);
+    setImagePreviewUrl('');
+    imagePreviewRequestRef.current += 1;
+    setRemoveImage(false);
     setError('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -232,6 +246,7 @@ function AdminServices() {
       const formData = new FormData();
       formData.append('url', editingService.url);
       formData.append('title', editingService.title);
+      formData.append('catalog_number', editingService.catalog_number || '');
       formData.append('content', latestContent);
       formData.append('category', editingService.category || 'uncategorized');
       formData.append('service_group', editingService.service_group || '');
@@ -240,6 +255,9 @@ function AdminServices() {
       if (imageFile) {
         formData.append('image', imageFile);
       }
+      if (removeImage) {
+        formData.append('remove_image', 'true');
+      }
 
       const saveResponse = await apiFetch(endpoint, {
         method: 'POST',
@@ -247,15 +265,18 @@ function AdminServices() {
       });
 
       showSuccess(isNew ? 'Service created!' : 'Service updated!');
+      setImageFile(null);
+      setImagePreviewUrl('');
+      imagePreviewRequestRef.current += 1;
+      setRemoveImage(false);
       if (closeAfterSave) {
         setEditingService(null);
-        setImageFile(null);
       } else {
         setEditingService((prev) => ({
           ...prev,
           content: latestContent,
           id: prev?.id || saveResponse?.id || saveResponse?.service?.id,
-          image: saveResponse?.image || saveResponse?.service?.image || prev?.image,
+          image: saveResponse?.image ?? saveResponse?.service?.image ?? (removeImage ? null : prev?.image),
         }));
       }
       loadServices();
@@ -270,6 +291,40 @@ function AdminServices() {
     setEditingService(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleServiceImageChange = (event) => {
+    const file = event.target.files?.[0] || null;
+    const previewRequest = imagePreviewRequestRef.current + 1;
+    imagePreviewRequestRef.current = previewRequest;
+    setImageFile(file);
+    setImagePreviewUrl('');
+    setRemoveImage(false);
+
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (imagePreviewRequestRef.current === previewRequest) {
+        setImagePreviewUrl(typeof reader.result === 'string' ? reader.result : '');
+      }
+    };
+    reader.onerror = () => {
+      if (imagePreviewRequestRef.current === previewRequest) {
+        setImagePreviewUrl('');
+        setError('The selected service image could not be previewed. Please choose another image.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveServiceImage = () => {
+    if (!window.confirm('Delete the current service image when this service is saved?')) return;
+    setImageFile(null);
+    setImagePreviewUrl('');
+    imagePreviewRequestRef.current += 1;
+    setRemoveImage(true);
+    setEditingService((prev) => ({ ...prev, image: null }));
+  };
+
   const openCatalogEditor = () => {
     setCatalogRows(serviceCategories.map((cat, index) => ({
       category_id: cat.isFallback ? null : cat.category_id,
@@ -277,6 +332,8 @@ function AdminServices() {
       external_id: cat.id,
       priority: cat.priority || index + 1,
       product_type: 'service',
+      show_on_homepage: !!cat.show_on_homepage,
+      homepage_image: cat.homepage_image || '',
       service_count: services.filter(s => (s.category || 'uncategorized') === cat.id).length,
       isNew: false,
     })));
@@ -287,6 +344,51 @@ function AdminServices() {
     setCatalogRows((prev) => prev.map((row, rowIndex) => (
       rowIndex === index ? { ...row, [field]: value } : row
     )));
+  };
+
+  const handleCatalogImageUpload = async (event, index) => {
+    const fileInput = event.currentTarget;
+    const file = fileInput.files?.[0];
+    if (!file) return;
+
+    setError('');
+    setCatalogImageUploading((current) => ({ ...current, [index]: true }));
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      let csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+
+      if (!csrfToken) {
+        const csrfResponse = await fetch(`${API_URL}/api/csrf/`, { credentials: 'include' });
+        const csrfData = await csrfResponse.json();
+        csrfToken = csrfData.csrftoken;
+      }
+
+      const response = await fetch(`${API_URL}/api/admin-panel/products/upload-image/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRFToken': csrfToken },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to upload homepage image.');
+      }
+
+      const data = await response.json();
+      updateCatalogRow(index, 'homepage_image', data.image_path || data.url || '');
+      showSuccess('Homepage category image uploaded. Save the catalog to apply it.');
+    } catch (err) {
+      setError(err.message || 'Homepage image upload failed.');
+    } finally {
+      setCatalogImageUploading((current) => ({ ...current, [index]: false }));
+      fileInput.value = '';
+    }
   };
 
   const moveCatalogRow = (index, direction) => {
@@ -344,6 +446,8 @@ function AdminServices() {
         external_id: '',
         priority: prev.length + 1,
         product_type: 'service',
+        show_on_homepage: false,
+        homepage_image: '',
         service_count: 0,
         isNew: true,
       },
@@ -382,6 +486,8 @@ function AdminServices() {
           external_id: row.external_id,
           priority: row.priority,
           product_type: 'service',
+          show_on_homepage: !!row.show_on_homepage,
+          homepage_image: row.homepage_image || '',
         };
 
         if (row.isNew || !row.category_id) {
@@ -469,6 +575,15 @@ function AdminServices() {
               <input type="text" value={editingService.url || ''} onChange={(e) => updateField('url', e.target.value)} required placeholder="e.g. gene-synthesis" />
             </label>
             <label className="admin-form-field">
+              <span>Catalog #</span>
+              <input
+                type="text"
+                value={editingService.catalog_number || ''}
+                onChange={(e) => updateField('catalog_number', e.target.value)}
+                placeholder="e.g. GEDT-012"
+              />
+            </label>
+            <label className="admin-form-field">
               <span>Category *</span>
               <select
                 value={editingService.category || ''}
@@ -492,16 +607,35 @@ function AdminServices() {
                 placeholder="e.g. Gene Engineering"
               />
             </label>
-            <label className="admin-form-field span-3">
+            <div className="admin-form-field span-3">
               <span>Service Image</span>
-              <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0] || null)} />
-              {editingService.image && !imageFile && (
-                <div className="admin-current-image">
-                  <img src={formatAssetUrl(editingService.image)} alt="Current" />
-                  <span>Current image</span>
+              <input
+                key={editingService.image || 'empty-service-image'}
+                type="file"
+                accept="image/*"
+                onChange={handleServiceImageChange}
+              />
+              {imageFile && imagePreviewUrl && (
+                <div className="admin-service-current-image">
+                  <span className="admin-service-current-image-label">Selected Image Preview</span>
+                  <img src={imagePreviewUrl} alt={`${editingService.title || 'Service'} selected preview`} />
                 </div>
               )}
-            </label>
+              {editingService.image && !imageFile && (
+                <div className="admin-service-current-image">
+                  <span className="admin-service-current-image-label">Current Image</span>
+                  <img src={formatAssetUrl(editingService.image)} alt={`${editingService.title || 'Service'} current`} />
+                  <button type="button" className="admin-action-btn delete admin-service-image-delete" onClick={handleRemoveServiceImage}>
+                    Delete Service Image
+                  </button>
+                </div>
+              )}
+              {removeImage && (
+                <span className="admin-service-image-removal-note" role="status">
+                  The current image will be deleted when you save this service.
+                </span>
+              )}
+            </div>
             <div className="admin-form-toggles span-3">
               <label className="admin-toggle">
                 <input
@@ -521,7 +655,7 @@ function AdminServices() {
               </label>
             </div>
             <div className="admin-form-field span-3">
-              <span>Content (HTML) *</span>
+              <span>Service Detail</span>
               <ProductContentEditor
                 ref={serviceContentEditorRef}
                 value={editingService.content || ''}
@@ -590,7 +724,29 @@ function AdminServices() {
               return null;
             }
 
-            const groupList = services.filter(s => (s.category || 'uncategorized') === cat.id);
+            const groupList = services
+              .filter(s => (s.category || 'uncategorized') === cat.id)
+              .map((service, index) => ({ service, index }))
+              .sort((left, right) => {
+                const leftCatalog = String(left.service.catalog_number || '').trim();
+                const rightCatalog = String(right.service.catalog_number || '').trim();
+                if (!leftCatalog && rightCatalog) return 1;
+                if (leftCatalog && !rightCatalog) return -1;
+
+                const catalogComparison = leftCatalog.localeCompare(rightCatalog, undefined, {
+                  numeric: true,
+                  sensitivity: 'base',
+                });
+                if (catalogComparison !== 0) return catalogComparison;
+
+                const titleComparison = String(left.service.title || '').localeCompare(
+                  String(right.service.title || ''),
+                  undefined,
+                  { numeric: true, sensitivity: 'base' },
+                );
+                return titleComparison || left.index - right.index;
+              })
+              .map(({ service }) => service);
             if (selectedCategory === 'All' && groupList.length === 0) {
               return null;
             }
@@ -627,7 +783,8 @@ function AdminServices() {
                       <thead>
                         <tr>
                           <th>Title</th>
-                          <th>URL Slug</th>
+                          <th>Catalog #</th>
+                          <th>External ID</th>
                           <th>Service Group</th>
                           <th>Content Preview</th>
                           <th>Actions</th>
@@ -658,7 +815,8 @@ function AdminServices() {
                                 )}
                               </div>
                             </td>
-                            <td><code>{service.url}</code></td>
+                            <td><code>{service.catalog_number || '—'}</code></td>
+                            <td><code>{service.external_id || service.url}</code></td>
                             <td>{service.service_group || '-'}</td>
                             <td className="admin-cell-truncate">
                               {service.content ? service.content.replace(/<[^>]*>/g, '').substring(0, 120) + '...' : '-'}
@@ -733,7 +891,7 @@ function AdminServices() {
 
       {isCatalogModalOpen && (
         <div className="admin-modal-overlay" onClick={() => setIsCatalogModalOpen(false)}>
-          <div className="admin-modal admin-modal-lg" onClick={(e) => e.stopPropagation()}>
+          <div className="admin-modal admin-modal-lg admin-catalog-modal" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <h3>Edit Service Catalog</h3>
               <button className="admin-modal-close" onClick={() => setIsCatalogModalOpen(false)}>x</button>
@@ -749,6 +907,8 @@ function AdminServices() {
                       <th>Priority</th>
                       <th>Catalog Name</th>
                       <th>External ID</th>
+                      <th>Popular</th>
+                      <th>Homepage Image</th>
                       <th>Services</th>
                       <th>Reorder</th>
                       <th>Actions</th>
@@ -776,6 +936,50 @@ function AdminServices() {
                           />
                         </td>
                         <td><code>{row.external_id || 'Auto-generated on save'}</code></td>
+                        <td>
+                          <label className="admin-toggle" style={{ justifyContent: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={!!row.show_on_homepage}
+                              onChange={(e) => updateCatalogRow(index, 'show_on_homepage', e.target.checked)}
+                              aria-label={`Display ${row.category_name || 'category'} on homepage`}
+                            />
+                            <span>Show</span>
+                          </label>
+                        </td>
+                        <td>
+                          <div className="admin-catalog-image-editor">
+                            <div className="admin-catalog-image-thumbnail">
+                              {row.homepage_image ? (
+                                <img src={formatAssetUrl(row.homepage_image)} alt={`${row.category_name || 'Category'} homepage`} />
+                              ) : (
+                                <span>No image</span>
+                              )}
+                            </div>
+                            <div className="admin-catalog-image-actions">
+                              <label className="admin-action-btn edit">
+                                {catalogImageUploading[index]
+                                  ? 'Uploading...'
+                                  : row.homepage_image ? 'Replace' : 'Upload'}
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  disabled={!!catalogImageUploading[index]}
+                                  onChange={(event) => handleCatalogImageUpload(event, index)}
+                                />
+                              </label>
+                              {row.homepage_image && (
+                                <button
+                                  type="button"
+                                  className="admin-action-btn delete"
+                                  onClick={() => updateCatalogRow(index, 'homepage_image', '')}
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </td>
                         <td>{row.service_count || 0}</td>
                         <td>
                           <div className="admin-row-actions">

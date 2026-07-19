@@ -122,6 +122,8 @@ class ProductCategory(models.Model):
     priority = models.IntegerField(default=1)
     external_id = models.CharField(blank=True, null=True)
     product_type = models.CharField(blank=True, null=True)
+    show_on_homepage = models.BooleanField(default=False)
+    homepage_image = models.TextField(blank=True, null=True)
 
     class Meta:
         db_table = 'product_category'

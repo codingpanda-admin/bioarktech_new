@@ -78,6 +78,29 @@ const getSlideImageUrl = (url) => {
   return formatAssetUrl(url);
 };
 
+const getCategoryImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('/images/') || url.startsWith('/img/')) return url;
+  return formatAssetUrl(url);
+};
+
+const getCategoryHref = (category) => {
+  const categoryId = category?.external_id || category?.externalId || category?.id;
+  const categoryName = category?.category_name || category?.name || '';
+  if (!categoryId) return `/search?q=${encodeURIComponent(categoryName)}`;
+
+  const productType = String(category?.product_type || 'product').toLowerCase();
+  const searchCategory = productType === 'service'
+    ? 'services'
+    : productType === 'reagent'
+      ? 'reagents'
+      : productType === 'consumable'
+        ? 'consumables'
+        : 'products';
+
+  return `/search?category=${searchCategory}&cat=${encodeURIComponent(categoryId)}`;
+};
+
 function HomePage({ navigate, searchParams }) {
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -156,6 +179,7 @@ function HomePage({ navigate, searchParams }) {
       activeBlogCategory === 'All' || blog.homeCategory === activeBlogCategory
     ))
   );
+  const popularCategories = categories.filter((category) => category.show_on_homepage);
 
   const handlePrevSlide = () => {
     setActiveSlideIndex((prev) => (prev - 1 + activeSlides.length) % activeSlides.length);
@@ -348,12 +372,25 @@ function HomePage({ navigate, searchParams }) {
         <section className="categories-section" aria-labelledby="categories-title">
           <h2 id="categories-title">Explore Popular Categories</h2>
           <div className="category-row">
-            {categories.map((cat, idx) => {
+            {popularCategories.map((cat, idx) => {
               const name = cat.category_name;
               const icon = cat.icon || getCategoryIcon(name);
+              const imageUrl = getCategoryImageUrl(cat.homepage_image);
+              const categoryHref = getCategoryHref(cat);
               return (
-                <a className="category-item" href="#" key={idx} onClick={(e) => { e.preventDefault(); navigate(`/search?q=${encodeURIComponent(name)}`); }}>
-                  <IconMark type={icon} />
+                <a
+                  className="category-item"
+                  href={categoryHref}
+                  key={cat.category_id || cat.external_id || `${name}-${idx}`}
+                  onClick={(e) => { e.preventDefault(); navigate(categoryHref); }}
+                >
+                  {imageUrl ? (
+                    <span className="category-home-image">
+                      <img src={imageUrl} alt="" />
+                    </span>
+                  ) : (
+                    <IconMark type={icon} />
+                  )}
                   <span>{name}<small>{cat.description || 'BioArk Category'}</small></span>
                 </a>
               );
@@ -395,7 +432,7 @@ function HomePage({ navigate, searchParams }) {
                       <h3>{name}</h3>
                       <p className="rating">★★★★★ <span>({prod.reviews || '45'})</span></p>
                       <p className="price">{priceStr}</p>
-                      <a href={productHref} onClick={(e) => { e.preventDefault(); navigate(productHref); }}>View Product <span>→</span></a>
+                      <a className="product-card-action" href={productHref} onClick={(e) => { e.preventDefault(); navigate(productHref); }}>View Product <span>→</span></a>
                     </article>
                   );
                 })}
@@ -413,7 +450,7 @@ function HomePage({ navigate, searchParams }) {
         </section>
 
         {featuredGeneralProducts.length > 0 && (
-          <section className="products-section" aria-labelledby="general-products-title" style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)', padding: '60px 0', borderTop: '1px solid var(--line)' }}>
+          <section className="products-section" aria-labelledby="general-products-title" style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)', borderTop: '1px solid var(--line)' }}>
             <div className="home-section-inner" style={{ margin: '0 auto', padding: '0 20px' }}>
               <h2 id="general-products-title" style={{ textAlign: 'center', marginBottom: '10px', fontSize: '2.2rem', color: 'var(--blue-dark)' }}>Products</h2>
               <p className="section-subtitle" style={{ textAlign: 'center', marginBottom: '40px', color: 'var(--ink-light)', maxWidth: '1100px', margin: '0 auto 45px auto' }}>
@@ -467,7 +504,7 @@ function HomePage({ navigate, searchParams }) {
                               <p className="rating" style={{ margin: '0 0 12px 0' }}>★★★★★ <span style={{ color: 'var(--ink-light)', fontSize: '0.85rem' }}>(4.8)</span></p>
                               <p className="price" style={{ margin: '0 0 20px 0', fontSize: '1.2rem', fontWeight: '700', color: 'var(--blue)' }}>{priceStr}</p>
                             </div>
-                            <a href={productHref} className="secondary-button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(productHref); }} style={{ width: '100%', textAlign: 'center', display: 'block', padding: '10px 0', borderRadius: '6px', fontSize: '0.95rem', fontWeight: '600' }}>View Details</a>
+                            <a className="product-card-action" href={productHref} onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(productHref); }}>View Details <span>→</span></a>
                           </div>
                         </article>
                       );
@@ -492,7 +529,7 @@ function HomePage({ navigate, searchParams }) {
         )}
 
         {featuredServices.length > 0 && (
-          <section className="services-section" aria-labelledby="featured-services-title" style={{ background: '#f8fafc', padding: '60px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
+          <section className="services-section" aria-labelledby="featured-services-title" style={{ background: '#f8fafc', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
             <div className="home-section-inner" style={{ margin: '0 auto', padding: '0 20px' }}>
               <h2 id="featured-services-title" style={{ textAlign: 'center', marginBottom: '10px', fontSize: '2.2rem', color: 'var(--blue-dark)' }}>Services</h2>
               <p className="section-subtitle" style={{ textAlign: 'center', marginBottom: '45px', color: 'var(--ink-light)', maxWidth: '1100px', margin: '0 auto 45px auto' }}>
@@ -540,7 +577,7 @@ function HomePage({ navigate, searchParams }) {
                               <p style={{ fontSize: '0.95rem', color: 'var(--ink-light)', lineHeight: '1.6', margin: '0 0 24px 0' }}>{cleanText}</p>
                             </div>
                             <div style={{ display: 'flex', gap: '12px' }}>
-                              <a href={serviceHref} className="primary-button" onClick={(e) => { e.preventDefault(); navigate(serviceHref); }} style={{ flex: 1, textAlign: 'center', padding: '10px 0', fontSize: '0.95rem', fontWeight: '600' }}>Explore Service</a>
+                              <a href={serviceHref} className="product-card-action" onClick={(e) => { e.preventDefault(); navigate(serviceHref); }}>Explore Service <span>→</span></a>
                               <a href="/request-quote" className="secondary-button" onClick={(e) => { e.preventDefault(); navigate(`/request-quote?service=${encodeURIComponent(name)}`); }} style={{ flex: 1, textAlign: 'center', padding: '10px 0', fontSize: '0.95rem', fontWeight: '600' }}>Get Quote</a>
                             </div>
                           </div>
