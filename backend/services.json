@@ -1,1195 +1,1165 @@
 {
-  "overrides": {
-    "svc-01": {
-      "name": "Synthesis & Cloning Services",
-      "description": "End-to-end plasmid design, cloning, synthesis, and delivery with collaborative web-based design.",
-      "link": "/services/custom-cloning",
-      "category": "synthesis-cloning",
-      "imageUrl": "/content-api/uploads/originals/fd95c1eb-6489-4a85-9c4b-4138296a9dcb.jpg",
-      "longDescription": "Comprehensive plasmid construction services with collaborative design to fit your exact research needs.",
-      "keyBenefits": [
-        "Custom plasmid design tailored to your research",
-        "Advanced cloning technologies and expert team",
-        "Streamlined, efficient workflows",
-        "Web platform for collaborative design review"
-      ],
-      "processOverview": [
-        {
-          "step": "Project Intake",
-          "description": "We align on goals, vector backbones, promoters, tags, and constraints."
+    "overrides": {
+        "svc-01": {
+            "name": "Synthesis & Cloning Services",
+            "description": "End-to-end plasmid design, cloning, synthesis, and delivery with collaborative web-based design.",
+            "link": "/services/custom-cloning",
+            "category": "synthesis-cloning",
+            "imageUrl": "/content-api/uploads/originals/fd95c1eb-6489-4a85-9c4b-4138296a9dcb.jpg",
+            "longDescription": "Comprehensive plasmid construction services with collaborative design to fit your exact research needs.",
+            "keyBenefits": [
+                "Custom plasmid design tailored to your research",
+                "Advanced cloning technologies and expert team",
+                "Streamlined, efficient workflows",
+                "Web platform for collaborative design review"
+            ],
+            "processOverview": [
+                {
+                    "step": "Project Intake",
+                    "description": "We align on goals, vector backbones, promoters, tags, and constraints."
+                },
+                {
+                    "step": "Design & Review",
+                    "description": "In-silico design and web-based review/approval."
+                },
+                {
+                    "step": "Build & QC",
+                    "description": "Fragment synthesis/subcloning, assembly, and quality control."
+                },
+                {
+                    "step": "Delivery",
+                    "description": "Plasmid preparation, optional endotoxin-free prep, normalization, and shipment."
+                }
+            ],
+            "relatedProducts": [
+                {
+                    "name": "Product 1",
+                    "link": "/products/test-product-1"
+                },
+                {
+                    "name": "Product 2",
+                    "link": "/products/test-product-2"
+                }
+            ],
+            "caseStudies": [
+                {
+                    "title": "Case Study 1",
+                    "link": "/blog/test-case-1"
+                },
+                {
+                    "title": "Case Study 2",
+                    "link": "https://example.com/case-study"
+                }
+            ],
+            "markdown": "At BioArk Technologies, we offer comprehensive plasmid construction services designed for molecular biology and genetics research. Our intuitive web platform lets you collaborate in real time to ensure vectors fit your exact specifications.\n\n## Why Choose Our Vector Cloning Service?\n- Custom Plasmid Design — Tailored to your specific research needs\n- Advanced Technologies — Leveraging technical expertise and innovative solutions\n- Efficient Process — Streamlined for fast and reliable results\n- Customer Collaboration — Web-based platform for seamless design involvement\n\nContact us: support@bioarktech.com\n\n\n\n![/content-api/uploads/originals/a0b892b9-7048-41b4-acbd-bbc1f3aa088a.png](/content-api/uploads/originals/a0b892b9-7048-41b4-acbd-bbc1f3aa088a.png)\n\n\n\n## Service Offerings\n### Comprehensive Project Support\nAssist in vector design (backbone, promoter, insertion sites, tags) tailored to your project.\n\n### Subcloning Service\nAdapt your vector to viral systems (lentivirus, dual promoter, inducible, CRISPR platforms).\n\n### Fragment Synthesis and Cloning\nHigh-quality fragment synthesis at competitive prices; we clone into custom or BioArk vectors.\n\n### Plasmid Delivery and Expression\nDownstream services including lentivirus packaging and stable cell line development.\n\n## Plasmid Construction Services — Pricing\n| Service | Catalog Number | Price | Time |\n| --- | --- | --- | --- |\n| Subcloning Services | PCSVC02 | $199 | 2 weeks |\n| Fragment synthesis & Cloning | PCSVC03 | Pricing Policy Details Below | 2–3 weeks |\n| Custom Cloning Project | PCSVC04 | Above pricing + Project Fee ($200–$1000) | > 3 weeks |\n\n## Synthesis & Cloning Pricing\n| Synthesis & Cloning | <60bp | 60bp–0.5kb | 0.5kb–3kb | 3kb–5kb |\n| --- | --- | --- | --- | --- |\n| BioArk Vectors | $150/seq | $200/seq | $0.2/bp | $0.24/bp |\n| Custom Vector | $150/seq | $200/seq | $0.24/bp | $0.28/bp |\n\n## Plasmid Services\n| Scale | 2 µg – 10 µg | 10 µg–50 µg | 50 µg–300 µg | 300 µg–1 mg |\n| --- | --- | --- | --- | --- |\n| Plasmid Scale | Included | $30.00/seq | $90.00/seq | $150.00/seq |\n| Endotoxin Free (<0.1 EU/µg) | - | $20.00 per seq | $50.00 per seq | $50.00 per seq |\n| DNA Normalization | $15.00 per seq | $15.00 per seq | $15.00 per seq | $15.00 per seq |\n| Glycerol Stock | $10.00 per seq | $10.00 per seq | $10.00 per seq | $10.00 per seq |\n",
+            "showInHomepageServices": false,
+            "order": 0,
+            "hidden": true
         },
-        {
-          "step": "Design & Review",
-          "description": "In-silico design and web-based review/approval."
+        "svc-05": {
+            "name": "Stable Cell Pool Service Overview",
+            "description": "From vector design to monoclonal selection, validation, and banking.",
+            "link": "/services/cell-line-generation",
+            "category": "cell-line-services",
+            "imageUrl": "/content-api/uploads/originals/0a5f4fe1-7860-4f0b-8eba-2b3235da7392.jpg",
+            "longDescription": "Comprehensive stable cell line generation from vector design and construction to fully validated monoclonal cell lines.",
+            "keyBenefits": [
+                "Guaranteed expression levels",
+                "Comprehensive validation and QC reports",
+                "Royalty-free for commercial use",
+                "Fast turnaround times"
+            ],
+            "processOverview": [
+                {
+                    "step": "Consultation & Design",
+                    "description": "Optimal vector design for your gene of interest."
+                },
+                {
+                    "step": "Transfection & Selection",
+                    "description": "High-efficiency delivery followed by antibiotic/metabolic selection."
+                },
+                {
+                    "step": "Monoclonal Isolation",
+                    "description": "Single-cell cloning via limiting dilution or FACS."
+                },
+                {
+                    "step": "Validation & Banking",
+                    "description": "Expression/stability validation and cell banking."
+                }
+            ],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "\nAt **BioArk Technologies**, we specialize in constructing **stable cell lines** tailored to meet your specific research needs.  \nWhether you’re working with **cancer cell lines** or **adherent cell lines**, we offer a range of services including **gene overexpression**, **knockout**, **knock-in**, and **deletion**.  \n\nOur **affordable**, **reliable**, and **high-quality solutions** accelerate your research and deliver the results you need.  \nPartner with us to drive innovation in your projects today!\n\n---\n\n## Service Content\n\n## 1. Vector Construction\nWe offer comprehensive **design and construction of plasmid vectors** tailored to your genetic modification needs, with selectable markers for efficient screening.  \n\nOur vector construction services include:\n- **Gene Overexpression**\n- **Targeted Gene Overexpression** at *AAVS1* or other safe harbor sites  \n- **Inducible Gene Overexpression**\n- **Gene Knockout** via **CRISPR**\n- **Gene Deletion** using double **CRISPR cut sites**\n- **Gene Tagging Services**\n\n---\n\n## 2. Cell Line Transfection\nWe provide various **transfection methods** to suit different cell types and experimental requirements, including:\n- **Lipofection** – ideal for adherent cells  \n- **Electroporation** – for difficult-to-transfect cell types  \n- **Viral Transduction** – leveraging **lentiviruses** or **AAVs** to efficiently deliver genetic material into target cells  \n\n---\n\n## 3. Cell Line Pool\nOur services include the **development of stable cell lines**, customized to meet the unique needs of your project.  \nWe work with a wide variety of cell types, ensuring **functional characteristics** that align with your research goals.\n\n---\n\n## 4. Selection and Expansion\nWe apply **selective pressure**, such as **antibiotic selection**, to isolate successfully transfected cells.  \nSelected clones are **expanded in controlled environments** to ensure **consistency** and **stability**.\n\n---\n\n## 5. Validation of Stable Cell Lines\nWe provide **thorough characterization** of generated cell lines, including:\n\n- **Genomic Analysis**: Verification of gene integration through **PCR** or **sequencing**  \n- **Expression Analysis**: Evaluation of target gene expression using techniques such as **qPCR**, **Western blotting**, or **flow cytometry**\n",
+            "showInHomepageServices": true
         },
-        {
-          "step": "Build & QC",
-          "description": "Fragment synthesis/subcloning, assembly, and quality control."
+        "svc-02": {
+            "name": "CRISPR Services Overview (GEDT)",
+            "description": "CRISPR overexpression, knockout, RNA knockdown, and ready-to-use kits for streamlined editing.",
+            "link": "/services/genome-editing",
+            "category": "genome-editing-service",
+            "imageUrl": "/content-api/uploads/originals/4bbb795d-8216-4baa-8755-6a15aad7a6e5.jpeg",
+            "longDescription": "Comprehensive genome editing solutions including targeted overexpression, CRISPR knock-out, RNA knockdown, and turnkey kits with delivery options.",
+            "keyBenefits": [
+                "Precise knock-in at safe harbor or locus-specific sites",
+                "High-efficiency CRISPR knock-out with minimized off-targets",
+                "CRISPR-based RNA knockdown for superior specificity",
+                "Kits with success guarantee and rapid turnaround"
+            ],
+            "processOverview": [
+                {
+                    "step": "Consultation",
+                    "description": "Discuss goals, targets, and editing strategy (overexpression/KO/RNA KD)."
+                },
+                {
+                    "step": "Design",
+                    "description": "gRNA, donor template, and vector design optimized for your cell line."
+                },
+                {
+                    "step": "Build & QC",
+                    "description": "Construct assembly, validation, and functional checks."
+                },
+                {
+                    "step": "Delivery",
+                    "description": "Plasmid or lentivirus delivery with documentation and support."
+                }
+            ],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "## Targeted Overexpression with CRISPR\nOur targeted overexpression service allows for the precise and controlled expression of your gene of interest at specific genomic loci, including safe harbor sites like AAVS1. Compared with Lentivirus induced overexpression, targeted overexpression can provide more precision regulation and more safety and controllable knock-in effects. This service is ideal for:\n\n- Inducible or constitutive overexpression of target genes\n- Ensuring high-level, stable expression in your cell line\n- Requiring more accurate regulations, including inducible promoters.\n\n## CRISPR Knock-Out\nWe employ an optimized CRISPR-Cas9 system along with precisely designed guide RNAs (gRNAs) to achieve high knockout efficiency in both adherent and cancer cell lines. Our tailored knockout strategies are customized to meet your specific experimental requirements, ensuring reliable and reproducible results. Our services target a broad range of genomic loci, from exonic regions to safe harbor sites, minimizing off-target effects. We also provide thorough validation of knockout efficiency through genomic and expression analyses, including PCR, sequencing, and Western blotting.\n\n**Available in two formats:** lentivirus and standard plasmids  \n**Custom-designed guide RNAs (gRNAs)** for maximum knockout efficiency  \n**Ideal for** functional genomics and pathway analysis\n\n## CRISPR RNA Knockdown\nWe offer CRISPR-based RNA knockdown services that specifically target and degrade RNA transcripts, effectively reducing the expression of your gene of interest at the transcriptional level. Compared to traditional RNA interference (RNAi), CRISPR RNA technologies generally provide more efficient knockdown and greater target specificity.\n\n- Efficient RNA degradation using CRISPR/Cas13 technology\n- Ideal for high-throughput screening and gene function analysis\n- Offers a more dynamic and precise approach to gene silencing than conventional methods\n\n## Genome Editing Kits\n\n### Targeted Overexpression Plasmid Kit\n\nCatalog: (CDS-P011k) — $899 — 2–3 weeks\n\nTransform your research with our innovative tool to integrate your interest genes into the safe harbor site AAVS1. Our targeted overexpression kit is optimized for use in various cancer cell lines, achieving a remarkable success rate in establishing stable cell lines.\n\n**Your Success is Our Commitment!**  \nWe guarantee that our kit will successfully generate stable overexpression clones in your transfectable cell lines. If it doesn’t work, you’ll receive a full refund.\n\nFor additional services related to stable cell lines, please reach out to us at support@BioArkTech.com.\n\n### CRISPR Knock-Out Plasmid Kit\n\nCatalog: (COT-P031k) — $790 — 2–3 weeks\n\nOur knockout kit offers a fast and efficient solution to disrupt target genes in various cell lines, facilitating the creation of stable cell lines. It includes three all-in-one plasmids featuring optimized Cas9, gRNA structures, and selection markers for improved gene knockout efficiency.\n\n**Guaranteed Success!**  \nWe guarantee that our kit will successfully generate stable knockout clones in your transfectable cell lines. If it doesn’t work, you’ll receive a full refund.\n\nFor additional services related to stable cell lines, please get in touch with us at support@BioArkTech.com.\n\n### CRISPR Knock-Out Lentivirus Kit\n\nCatalog: (COM-P032k) — $1,499 — 2–3 weeks\n\nOur knockout lentivirus kit harnesses advanced lentivirus technology to deliver all-in-one CRISPR knockout functional cassettes, expanding your applications across a broader range of cell lines. The kit includes a single tube of virus with three mixed gRNA sequences, streamlining your experimental process.\n\n**Guaranteed Results!**  \nWe guarantee that our kit will successfully generate stable knockout clones in your transfectable cell lines. If it doesn’t work, you’ll receive a full refund.\n\nFor additional services related to stable cell lines, please contact us at support@BioArkTech.com.\n\n### CRISPR RNA Knock-Down Plasmid Kit\n\nCatalog: (CRT-P051k) — $790 — 2–3 weeks\n\nOur CRISPR RNA knockdown kits offer a highly specific and powerful alternative to traditional RNAi methods for reducing RNA expression levels. Achieve effective inhibition of target gene RNA levels by over 70% across a wide range of applications.\n\n**Guaranteed Efficiency!**  \nWe stand by our promise: our kit will efficiently inhibit your target genes in transfectable cell lines. If it doesn’t work, you’ll receive a full refund.\n\nFor any inquiries, please contact us at support@BioArkTech.com.\n",
+            "showInHomepageServices": true,
+            "order": 0
         },
-        {
-          "step": "Delivery",
-          "description": "Plasmid preparation, optional endotoxin-free prep, normalization, and shipment."
+        "svc-09": {
+            "name": "Plasmid Cloning Service Overview",
+            "description": "Professional DNA cloning services for your research needs.",
+            "link": "/services/dna-cloning-service",
+            "imageUrl": "/content-api/uploads/originals/99fa2ec1-247f-49fd-af65-7b2a3dbf64e1.png",
+            "longDescription": "Comprehensive DNA cloning services tailored to your research requirements.",
+            "keyBenefits": [
+                "Expert cloning services",
+                "Fast turnaround times",
+                "High-quality results"
+            ],
+            "processOverview": [
+                {
+                    "step": "Consultation",
+                    "description": "Discuss your DNA cloning requirements."
+                },
+                {
+                    "step": "Design & Cloning",
+                    "description": "Vector design and DNA cloning."
+                },
+                {
+                    "step": "Validation",
+                    "description": "Quality control and validation."
+                },
+                {
+                    "step": "Delivery",
+                    "description": "Delivery with documentation."
+                }
+            ],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "BioArk provides comprehensive gene cloning solutions for researchers requiring DNA fragment synthesis, vector construction, gene expression plasmids, RNAi vectors, CRISPR vectors, inducible expression systems, and custom plasmid engineering. Our services range from standard cloning into common laboratory vectors to advanced custom-designed constructs with complex genetic architectures.\n\nAll cloning projects include sequence verification and delivery of purified plasmid DNA (2–10 μg).\n\n---\n\n# Service Categories\n\n## 1. Standard Cloning\n\n### Description\n\nStandard Cloning is designed for routine molecular cloning projects using BioArk's standard laboratory cloning vectors. Customers provide the DNA sequence, and BioArk synthesizes and clones the fragment into a standard cloning vector.\n\n### Ideal For\n\n* Gene synthesis and storage\n* Sequence verification\n* Routine plasmid construction\n* DNA fragment archiving\n* Downstream subcloning applications\n\n### Deliverables\n\n* Sequence-verified plasmid\n* 2–10 μg purified plasmid DNA\n\n### Turnaround Time\n\n2–3 weeks\n\n| Cat. No. | Insert Size  | Price    |\n| -------- | ------------ | -------- |\n| PCST-060 | < 60 bp      | $150     |\n| PCST-1kb | 60 bp – 1 kb | $200     |\n| PCST-3kb | 1 kb – 3 kb  | $0.20/bp |\n| PCST-5kb | 3 kb – 5 kb  | $0.24/bp |\n\n---\n\n## 2. Custom Cloning\n\n### Description\n\nCustom Cloning is intended for projects requiring insertion of DNA fragments into customer-provided plasmid vectors. BioArk performs cloning, sequence verification, and plasmid preparation using the vector supplied by the customer.\n\n### Ideal For\n\n* Existing laboratory vectors\n* Customized expression systems\n* Reporter vectors\n* Proprietary plasmids\n* Research-specific constructs\n\n### Deliverables\n\n* Sequence-verified recombinant plasmid\n* 2–10 μg purified plasmid DNA\n\n### Turnaround Time\n\n2–3 weeks\n\n| Cat. No. | Insert Size  | Price    |\n| -------- | ------------ | -------- |\n| PCCT-060 | < 60 bp      | $180     |\n| PCCT-1kb | 60 bp – 1 kb | $240     |\n| PCCT-3kb | 1 kb – 3 kb  | $0.24/bp |\n| PCCT-5kb | 3 kb – 5 kb  | $0.28/bp |\n\n---\n\n## 3. BioArk Cloning\n\n### Description\n\nBioArk Cloning utilizes BioArk's validated vector platforms, including:\n\n* RNAi NonViral Template Vectors\n* CRISPR Gene Editing Vectors\n* OverExpression Vectors\n* Inducible Expression Vectors\n\nThis service includes insertion of the customer's target sequence into an existing BioArk vector backbone without modification of the vector architecture.\n\n### Ideal For\n\n* shRNA construction\n* sgRNA construction\n* Gene overexpression\n* Inducible gene expression\n* CRISPR knockout studies\n* Functional genomics research\n\n### Deliverables\n\n* Sequence-verified recombinant plasmid\n* 2–10 μg purified plasmid DNA\n\n### Turnaround Time\n\n2–3 weeks\n\n| Cat. No. | Insert Size  | Price           |\n| -------- | ------------ | --------------- |\n| PCBA-060 | < 60 bp      | $450            |\n| PCBA-1kb | 60 bp – 1 kb | $500            |\n| PCBA-3kb | 1 kb – 3 kb  | $0.20/bp + $300 |\n| PCBA-5kb | 3 kb – 5 kb  | $0.24/bp + $300 |\n\n---\n\n## 4. BioArk Complex Cloning\n\n### Description\n\nBioArk Complex Cloning is designed for advanced plasmid engineering projects requiring customized vector architecture, multiple genetic elements, vector redesign, multi-fragment assembly, promoter replacement, fusion protein construction, or sophisticated expression systems.\n\nProjects are individually reviewed and optimized by BioArk molecular biology specialists.\n\n### Ideal For\n\n* Multi-gene vectors\n* Complex CRISPR systems\n* Dual-expression plasmids\n* Custom inducible systems\n* Fusion protein vectors\n* Reporter-expression combinations\n* Synthetic biology applications\n* Advanced vector engineering\n\n### Deliverables\n\n* Custom-designed and sequence-verified plasmid\n* 2–10 μg purified plasmid DNA\n* Cloning design consultation\n\n### Turnaround Time\n\n2–3 weeks\n\n| Cat. No. | Insert Size  | Price           |\n| -------- | ------------ | --------------- |\n| PCBC-060 | < 60 bp      | $650            |\n| PCBC-1kb | 60 bp – 1 kb | $700            |\n| PCBC-3kb | 1 kb – 3 kb  | $0.20/bp + $500 |\n| PCBC-5kb | 3 kb – 5 kb  | $0.24/bp + $500 |\n\n---\n\n## Key Features\n\n* Sequence-verified constructs\n* Multiple cloning service levels available\n* Support for standard and custom vectors\n* BioArk proprietary vector platforms\n* CRISPR, RNAi, overexpression, and inducible systems\n* Fast 2–3 week turnaround\n* Expert cloning design support\n* Delivered as purified plasmid DNA (2–10 μg)\n* Suitable for academic, biotech, and pharmaceutical research\n\n---\n\n## Research Use Only (RUO)\n\nBioArk Gene Cloning Services are intended for research use only and are not for diagnostic, therapeutic, or clinical applications.\n",
+            "showInHomepageServices": true,
+            "order": 0,
+            "category": "synthesis-cloning"
+        },
+        "svc-04": {
+            "hidden": true
+        },
+        "svc-06": {
+            "hidden": true
+        },
+        "svc-07": {
+            "hidden": true
+        },
+        "svc-08": {
+            "hidden": true
+        },
+        "svc-10": {
+            "category": "virus-packaging",
+            "hidden": true
+        },
+        "svc-12": {
+            "name": "CRISPR Knockout Service (GEDT-011)",
+            "description": "Professional gene knockout services using advanced CRISPR technology.",
+            "link": "/services/gene-knockout-service",
+            "imageUrl": "",
+            "longDescription": "Comprehensive gene knockout services using CRISPR-Cas9 technology for precise gene disruption.",
+            "keyBenefits": [
+                "High-efficiency knockout",
+                "Validated results",
+                "Multiple cell line support"
+            ],
+            "processOverview": [
+                {
+                    "step": "Consultation",
+                    "description": "Discuss your gene knockout targets and requirements."
+                },
+                {
+                    "step": "gRNA Design",
+                    "description": "Design optimized guide RNAs for target genes."
+                },
+                {
+                    "step": "Knockout",
+                    "description": "CRISPR-mediated gene knockout."
+                },
+                {
+                    "step": "Validation",
+                    "description": "Knockout validation and QC."
+                }
+            ],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "BioArk's CRISPR Gene Knockout (KO) Service utilizes the CRISPR-Cas9 gene-editing system to generate targeted gene disruptions through double-strand DNA cleavage followed by endogenous Non-Homologous End Joining (NHEJ) repair. This approach is one of the most widely used methods for creating loss-of-function cell models and studying gene function.\n\nThe CRISPR-Cas9 complex introduces a targeted double-strand break (DSB) at the desired genomic locus. During cellular repair, the NHEJ pathway rejoins the DNA ends in an error-prone manner, frequently generating small insertions or deletions (indels). These indels often cause frameshift mutations, premature stop codons, or disruption of critical coding regions, resulting in functional knockout of the target gene.\n\nBioArk provides both complete CRISPR knockout cell line services and customized CRISPR knockout vector kits to support a wide range of gene-editing projects.\n\n---\n\n## CRISPR Knockout Mechanism\n\n### Step 1: Target Recognition\nA single guide RNA (sgRNA) directs the Cas9 nuclease to a specific genomic sequence adjacent to a PAM site.\n\n### Step 2: Double-Strand DNA Cleavage\nCas9 introduces a targeted double-strand break at the genomic target locus.\n\n### Step 3: NHEJ-Mediated DNA Repair\nThe cell repairs the DNA break through the Non-Homologous End Joining (NHEJ) pathway, which often introduces random insertions or deletions (indels).\n\n### Step 4: Functional Gene Disruption\nFrameshift mutations or coding sequence disruption lead to loss of gene function, creating a knockout cell population or knockout clone.\n\n---\n\n## BioArk CRISPR Knockout Service\n\nBioArk's CRISPR Knockout Service provides end-to-end project support, including:\n\n- Target gene analysis\n- sgRNA design and optimization\n- CRISPR vector construction\n- Cell transfection or transduction\n- Antibiotic selection\n- Stable pool generation\n- Single-cell cloning\n- Genotyping and sequencing validation\n- Knockout efficiency assessment\n\n### Applications\n\n- Functional genomics\n- Target validation\n- Cancer research\n- Drug discovery\n- Signal transduction studies\n- Disease model generation\n- Gene function characterization\n\n---\n\n## Service Options\n\n### CRISPR Knockout Stable Cell Pool\n\n**Cat. No.: GEDT-011c**\n\nGenerate a stable mixed cell population containing CRISPR-induced knockout events.\n\n**Deliverables**\n\n- CRISPR-edited stable cell pool\n- ≥1 × 10⁶ cells\n- Sequencing validation\n\n| Cat. No. | Service | Deliverable | Price | Turnaround Time |\n|-----------|-----------|-----------|-----------|-----------|\n| GEDT-011c | CRISPR KO Stable Cell Pool | 1 × 10⁶ cells | $3,200 | 6–8 Weeks |\n\n---\n\n### CRISPR Knockout Single Clone (293T)\n\n**Cat. No.: GEDT-011p**\n\nIsolation and validation of a single knockout clone derived from HEK293T cells.\n\n**Deliverables**\n\n- Single-cell-derived knockout clone\n- ≥1 × 10⁶ cells\n- Sequencing validation report\n\n| Cat. No. | Service | Deliverable | Price | Turnaround Time |\n|-----------|-----------|-----------|-----------|-----------|\n| GEDT-011p | CRISPR KO Single Clone (293T) | 1 × 10⁶ cells | $6,500 | 12–16 Weeks |\n\n---\n\n## BioArk CRISPR Knockout Kit\n\n### CRISPR Knockout Vector Kit\n\n**Cat. No.: GEDT-011k**\n\nBioArk's CRISPR Knockout Kit is designed for researchers who prefer to perform gene editing in-house. Based on the customer's target gene information, BioArk designs optimized sgRNAs and constructs customized CRISPR knockout vectors ready for experimental use.\n\n### Kit Includes\n\n- Three independent CRISPR knockout vectors\n- Optimized sgRNA designs\n- Target sequence analysis\n- Vector maps\n- Sequence verification\n- Technical support\n\n### Advantages\n\n- Multiple sgRNA designs increase knockout success rate\n- Minimized off-target risk through bioinformatic screening\n- Ready-to-use plasmid constructs\n- Compatible with standard mammalian cell transfection workflows\n- Suitable for generating stable knockout cell lines\n\n### Deliverables\n\n| Cat. No. | Product | Deliverable | Price | Turnaround Time |\n|-----------|-----------|-----------|-----------|-----------|\n| GEDT-011k | CRISPR KO Kit | 3 sequence-verified vectors (5 μg each) | $1,080 | 2–3 Weeks |\n\n---\n\n## Key Features\n\n- CRISPR-Cas9 gene knockout via NHEJ-mediated indel formation\n- Optimized sgRNA design\n- Sequence-verified CRISPR vectors\n- Stable pool and single-clone services available\n- Customized knockout kit for customer-selected genes\n- Sequencing-based validation\n- Suitable for academic and industrial research\n- Fast turnaround and expert technical support\n\n---\n\n## Research Use Only (RUO)\n\nFor research use only. Not intended for diagnostic, therapeutic, or clinical applications.",
+            "showInHomepageServices": false,
+            "order": 1,
+            "hidden": false,
+            "category": "genome-editing-service"
+        },
+        "svc-11": {
+            "name": "CRISPR GeneTagging Service (GEDT-014)",
+            "description": "Professional gene tagging services for protein expression and tracking.",
+            "link": "/services/gene-tagging-service",
+            "imageUrl": "",
+            "longDescription": "Comprehensive gene tagging services for protein expression, tracking, and purification.",
+            "keyBenefits": [
+                "Multiple tag options",
+                "Precise gene integration",
+                "Validated expression"
+            ],
+            "processOverview": [
+                {
+                    "step": "Consultation",
+                    "description": "Discuss your gene tagging requirements and tag selection."
+                },
+                {
+                    "step": "Vector Design",
+                    "description": "Design tagging vectors optimized for your gene."
+                },
+                {
+                    "step": "Integration",
+                    "description": "Gene tagging and integration."
+                },
+                {
+                    "step": "Validation",
+                    "description": "Expression validation and QC."
+                }
+            ],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "showInHomepageServices": false,
+            "order": 4,
+            "hidden": false,
+            "category": "genome-editing-service"
         }
-      ],
-      "relatedProducts": [
+    },
+    "custom": [
         {
-          "name": "Product 1",
-          "link": "/products/test-product-1"
+            "id": "svc-custom-1782072955168",
+            "name": "Standard Cloning Service (PCST)",
+            "description": "BioArk Standard Cloning Service provides professional gene synthesis and cloning into BioArk's standard cloning vectors. This service is ideal for routine gene cloning, sequence verification, plasmid storage, and downstream molecular biology applications. All projects include sequence verification and delivery of 2–10 μg purified plasmid DNA with a typical turnaround time of 2–3 weeks.",
+            "link": "/services/standard-cloning-service-pcst",
+            "imageUrl": "",
+            "icon": "",
+            "category": "synthesis-cloning",
+            "groupName": "Cloning",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "BioArk Standard Cloning Service (PCST) provides a fast, reliable, and cost-effective solution for routine gene cloning projects. Customers provide the target DNA sequence, and BioArk performs gene synthesis, cloning into a standard BioArk cloning vector, sequence verification, and plasmid preparation.\n\nThis service is ideal for researchers requiring gene synthesis, DNA fragment storage, sequence verification, plasmid archiving, or downstream subcloning applications. Standard Cloning utilizes BioArk's validated cloning vectors and optimized workflows to ensure high cloning success rates and rapid project completion.\n\nAll completed projects are delivered as sequence-verified recombinant plasmids with 2–10 μg purified plasmid DNA, ready for downstream molecular biology applications.\n\n## Key Benefits\n\n- Cost-effective cloning solution\n- Utilizes BioArk standard cloning vectors\n- No customer vector required\n- Sequence-verified recombinant plasmids\n- High cloning success rate\n- Fast turnaround time (2–3 weeks)\n- Delivered as purified plasmid DNA (2–10 μg)\n- Ideal for gene storage and downstream subcloning\n\n## Typical Applications\n\n- Gene synthesis and cloning\n- DNA fragment archiving\n- Sequence verification\n- Gene storage and repository construction\n- Template preparation for downstream cloning\n- Molecular biology research\n- Synthetic biology projects\n\n## Pricing\n\n| Cat. No. | Insert Size | Deliverable | Price | Turnaround Time |\n|-----------|------------|-------------|--------|----------------|\n| PCST-060 | < 60 bp | 2–10 μg plasmid DNA | $150 | 2–3 Weeks |\n| PCST-1kb | 60 bp – 1 kb | 2–10 μg plasmid DNA | $200 | 2–3 Weeks |\n| PCST-3kb | 1 kb – 3 kb | 2–10 μg plasmid DNA | $0.20/bp | 2–3 Weeks |\n| PCST-5kb | 3 kb – 5 kb | 2–10 μg plasmid DNA | $0.24/bp | 2–3 Weeks |\n\n## Deliverables\n\n- Sequence-verified recombinant plasmid\n- 2–10 μg purified plasmid DNA\n- Sequencing report\n\n## Research Use Only (RUO)\n\nFor research use only. Not intended for diagnostic, therapeutic, or clinical applications.",
+            "createdAt": 1782072955168,
+            "order": 2,
+            "showInHomepageServices": false
         },
         {
-          "name": "Product 2",
-          "link": "/products/test-product-2"
+            "id": "svc-custom-1781935294369",
+            "name": "CHO Antibody Protein Purification",
+            "description": "",
+            "link": "/services/cho-antibody-protein-purification",
+            "imageUrl": "",
+            "icon": "",
+            "category": "category-1764976659245",
+            "groupName": "3-Mammalian Cell",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781935294369
+        },
+        {
+            "id": "svc-custom-1781935204903",
+            "name": "293T Antigen Protein Purification",
+            "description": "",
+            "link": "/services/293t-antigen-protein-purification",
+            "imageUrl": "",
+            "icon": "",
+            "category": "category-1764976659245",
+            "groupName": "3-Mammalian Cell",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781935204903
+        },
+        {
+            "id": "svc-custom-1781935162950",
+            "name": "Ecoil Protein Purification",
+            "description": "",
+            "link": "/services/ecoil-protein-purification",
+            "imageUrl": "",
+            "icon": "",
+            "category": "category-1764976659245",
+            "groupName": "1-Prokaryotic Cell",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781935162950
+        },
+        {
+            "id": "svc-custom-1781935103462",
+            "name": "Sf9 Protein Purification",
+            "description": "",
+            "link": "/services/sf9-cell-protein-purification",
+            "imageUrl": "",
+            "icon": "",
+            "category": "category-1764976659245",
+            "groupName": "2-Insect Cells",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781935103462,
+            "showInHomepageServices": false
+        },
+        {
+            "id": "svc-custom-1781932238625",
+            "name": "RNA Editing Overview (RNET)",
+            "description": "",
+            "link": "/services/rna-editing-overview-rnet",
+            "imageUrl": "",
+            "icon": "",
+            "category": "genome-editing-service",
+            "groupName": "RNA Editing",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781932238625,
+            "order": 0
+        },
+        {
+            "id": "svc-custom-1781931104355",
+            "name": "Plasmid Preparation Service (PPMX)",
+            "description": "BioArk Plasmid Preparation Service provides high-quality plasmid DNA purification for standard-copy and low-copy plasmids. Available in Mini, Midi, and Maxi preparation formats, this service delivers reliable yields and concentrations suitable for cloning, transfection, CRISPR gene editing, virus packaging, protein expression, and other molecular biology applications.",
+            "link": "/services/plasmid-preparation-service",
+            "imageUrl": "",
+            "icon": "",
+            "category": "synthesis-cloning",
+            "groupName": "Plasmid Prep",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "BioArk Plasmid Preparation Service provides high-quality plasmid DNA purification for research applications, including cloning, transfection, CRISPR gene editing, virus packaging, protein expression, and molecular biology studies. Our service offers both standard-copy and low-copy plasmid preparation options to accommodate a wide range of plasmid constructs and experimental requirements.\n\nUsing optimized bacterial culture and plasmid purification workflows, BioArk delivers highly concentrated plasmid DNA with reliable yield and purity. All plasmid preparations are supplied in nuclease-free buffer and are suitable for downstream applications in academic, biotechnology, and pharmaceutical research.\n\n## Service Options\n\n### Standard-Copy Plasmid Preparation\n\nDesigned for routine plasmid vectors with standard replication origins and typical bacterial copy numbers.\n\n**Available Formats**\n- Miniprep\n- Midiprep\n- Maxiprep\n\n### Low-Copy Plasmid Preparation\n\nDesigned for plasmids containing low-copy origins, large constructs, unstable sequences, lentiviral vectors, AAV vectors, BAC-derived plasmids, or other difficult-to-propagate constructs.\n\n**Available Formats**\n- Miniprep\n- Midiprep\n- Maxiprep\n\n## Key Features\n\n- High-quality plasmid DNA purification\n- Available for standard-copy and low-copy plasmids\n- Suitable for cloning, transfection, and gene editing applications\n- Reliable DNA yield and concentration\n- Nuclease-free preparation\n- Fast turnaround time\n- Delivered ready for downstream research applications\n- Compatible with CRISPR, RNAi, viral vector, and protein expression workflows\n\n## Pricing\n\n### Standard-Copy Plasmid Preparation\n\n| Cat. No. | Service | Typical Concentration | Typical Yield | Price | Turnaround Time |\n|-----------|-----------|-----------|-----------|-----------|-----------|\n| PPMN | Miniprep-Standard | >50 ng/μL | >5 μg | $35 | ~1 Week |\n| PPMD | Midiprep-Standard | >100 ng/μL | >50 μg | $82 | ~1 Week |\n| PPMX | Maxiprep-Standard | >100 ng/μL | >500 μg | $180 | ~1 Week |\n\n### Low-Copy Plasmid Preparation\n\n| Cat. No. | Service | Typical Concentration | Typical Yield | Price | Turnaround Time |\n|-----------|-----------|-----------|-----------|-----------|-----------|\n| PPMN-L | Miniprep-Low Copy | >50 ng/μL | >5 μg | $45 | ~1 Week |\n| PPMD-L | Midiprep-Low Copy | >100 ng/μL | >50 μg | $100 | ~1 Week |\n| PPMX-L | Maxiprep-Low Copy | >100 ng/μL | >500 μg | $230 | ~1 Week |\n\n## Applications\n\n- Molecular cloning\n- CRISPR gene editing\n- RNAi studies\n- Mammalian cell transfection\n- Lentiviral vector production\n- AAV vector production\n- Protein expression\n- Stable cell line development\n- Functional genomics research\n\n## Deliverables\n\n- Purified plasmid DNA\n- Concentration and yield information\n- Delivered in nuclease-free buffer\n\n## Research Use Only (RUO)\n\nFor research use only. Not intended for diagnostic, therapeutic, or clinical applications.",
+            "createdAt": 1781931104355,
+            "showInHomepageServices": false
+        },
+        {
+            "id": "svc-custom-1781930839047",
+            "name": "Plasmid Mutagenesis Service (PLMU)",
+            "description": "BioArk Plasmid Mutagenesis Service provides precise introduction of single or multiple mutations into existing plasmid constructs. Whether you require point mutations, amino acid substitutions, insertions, deletions, or complex multi-site modifications, our team delivers sequence-verified mutant plasmids with fast turnaround times and high accuracy, ready for downstream research applications.",
+            "link": "/services/mutagenesis-service-plmu",
+            "imageUrl": "",
+            "icon": "",
+            "category": "synthesis-cloning",
+            "groupName": "Mutagenesis",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "BioArk Plasmid Mutagenesis Service provides fast and reliable introduction of targeted mutations into existing plasmid constructs. Our experienced molecular biology team utilizes optimized mutagenesis strategies to generate precise sequence modifications while maintaining plasmid integrity and functionality.\n\nThe service supports single-site mutations, multiple-site mutations, amino acid substitutions, insertions, deletions, promoter modifications, epitope tag insertion, and other custom sequence alterations. All completed constructs are sequence-verified and delivered as purified plasmid DNA ready for downstream applications.\n\n## Service Options\n\n### Single Mutant (PLMU-S)\n\nDesigned for introducing a single nucleotide or amino acid mutation into an existing plasmid construct.\n\n**Typical Applications**\n- Point mutation\n- Amino acid substitution\n- Functional residue analysis\n- Protein structure-function studies\n\n### Multiple Mutant – Simple (PLMU-M)\n\nSuitable for introducing multiple mutations simultaneously when mutation sites are relatively close together or can be generated through a straightforward mutagenesis strategy.\n\n**Typical Applications**\n- Multi-site amino acid substitutions\n- Phosphorylation site mutations\n- Protein domain modification\n- Functional screening studies\n\n### Multiple Mutant – Complex (PLMU-C)\n\nDesigned for advanced mutagenesis projects involving numerous mutation sites, difficult sequence contexts, large-scale sequence modifications, insertions, deletions, or complex construct redesign.\n\n**Typical Applications**\n- Multi-domain engineering\n- Extensive protein engineering\n- Large-scale sequence optimization\n- Complex promoter or regulatory element modification\n\n## Key Features\n\n- High-accuracy mutagenesis design\n- Sequence-verified mutant constructs\n- Supports substitution, insertion, and deletion mutations\n- Single-site and multi-site mutagenesis options\n- Fast turnaround time\n- Delivered as purified plasmid DNA (2–10 μg)\n- Suitable for academic, biotechnology, and pharmaceutical research\n\n## Pricing\n\n| Cat. No. | Service Type | Deliverable | Price | Turnaround Time |\n|-----------|-------------|-------------|--------|----------------|\n| PLMU-S | Single Mutant | 2–10 μg plasmid DNA | $156 | ~2 Weeks |\n| PLMU-M | Multiple Mutant – Simple | 2–10 μg plasmid DNA | $240 | 2–3 Weeks |\n| PLMU-C | Multiple Mutant – Complex | 2–10 μg plasmid DNA | $300 | 2–3 Weeks |\n\n## Deliverables\n\n- Sequence-verified mutant plasmid\n- 2–10 μg purified plasmid DNA\n- Sequencing report\n\n## Research Use Only (RUO)\n\nFor research use only. Not intended for diagnostic, therapeutic, or clinical applications.",
+            "createdAt": 1781930839047,
+            "showInHomepageServices": false
+        },
+        {
+            "id": "svc-custom-1781930762953",
+            "name": "BioArk Complex Cloning Sevice (PCBC)",
+            "description": "BioArk Complex Cloning Service provides custom plasmid engineering solutions for advanced research applications, including multi-gene constructs, CRISPR systems, fusion proteins, inducible expression vectors, and synthetic biology projects. Our scientists design and build sequence-verified recombinant plasmids tailored to your specific requirements, delivering ready-to-use constructs for complex genetic engineering studies.",
+            "link": "/services/bioark-complex-cloning-sevice-pcbc",
+            "imageUrl": "",
+            "icon": "",
+            "category": "synthesis-cloning",
+            "groupName": "Cloning",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "BioArk Complex Cloning Service (PCBC) is designed for advanced plasmid engineering projects that require customized vector architecture, multi-fragment assembly, genetic element optimization, or sophisticated construct design beyond standard cloning workflows. Customers provide their project requirements and target sequences, while BioArk's molecular biology team designs, constructs, verifies, and delivers a fully customized recombinant plasmid.\n\nThis service is ideal for projects involving complex CRISPR systems, multi-gene expression vectors, fusion protein constructs, inducible expression systems, reporter-expression combinations, promoter replacement, synthetic biology applications, and other advanced genetic engineering requirements. BioArk scientists work closely with customers to optimize construct design and cloning strategies to maximize project success.\n\nAll completed projects are delivered as sequence-verified recombinant plasmids with 2–10 μg purified plasmid DNA, ready for downstream research applications.\n\n## Key Benefits\n\n- Fully customized plasmid design and construction\n- Expert cloning strategy and vector design support\n- Multi-fragment DNA assembly capabilities\n- Support for complex CRISPR, RNAi, and expression systems\n- Suitable for synthetic biology and advanced vector engineering\n- Sequence-verified recombinant plasmids\n- Fast turnaround time (2–3 weeks)\n- Delivered as purified plasmid DNA (2–10 μg)\n\n## Typical Applications\n\n- Multi-gene expression vectors\n- Dual-expression constructs\n- Fusion protein vectors\n- Complex CRISPR systems\n- Inducible gene expression systems\n- Promoter replacement and engineering\n- Reporter-expression combinations\n- Synthetic biology projects\n- Advanced vector optimization\n\n## Pricing\n\n| Cat. No. | Insert Size | Deliverable | Price | Turnaround Time |\n|-----------|------------|-------------|--------|----------------|\n| PCBC-060 | < 60 bp | 2–10 μg plasmid DNA | $650 | 2–3 Weeks |\n| PCBC-1kb | 60 bp – 1 kb | 2–10 μg plasmid DNA | $700 | 2–3 Weeks |\n| PCBC-3kb | 1 kb – 3 kb | 2–10 μg plasmid DNA | $0.20/bp + $500 | 2–3 Weeks |\n| PCBC-5kb | 3 kb – 5 kb | 2–10 μg plasmid DNA | $0.24/bp + $500 | 2–3 Weeks |\n\n## Deliverables\n\n- Custom-designed recombinant plasmid\n- Sequence verification report\n- 2–10 μg purified plasmid DNA\n- Project design consultation and cloning support\n\n## Research Use Only (RUO)\n\nFor research use only. Not intended for diagnostic, therapeutic, or clinical applications.",
+            "createdAt": 1781930762953,
+            "showInHomepageServices": false,
+            "order": 5
+        },
+        {
+            "id": "svc-custom-1781930684357",
+            "name": "BioArk Vector Cloning Service (PCBA)",
+            "description": "BioArk Vector Cloning Service provides professional cloning of customer target sequences into BioArk's validated vector platforms, including RNAi, CRISPR, OverExpression, and Inducible expression vectors. This service eliminates the need for customers to provide a destination vector and delivers sequence-verified recombinant plasmids ready for gene expression, gene editing, gene silencing, and functional genomics research applications.",
+            "link": "/services/bioark-vector-cloning-services",
+            "imageUrl": "",
+            "icon": "",
+            "category": "synthesis-cloning",
+            "groupName": "Cloning",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "BioArk Vector Cloning Service (PCBA) is designed for researchers who wish to clone their target sequences into BioArk's pre-validated vector platforms. Customers provide the target DNA sequence, and BioArk performs gene synthesis, vector construction, sequence verification, and plasmid preparation using one of BioArk's proprietary vector backbones.\n\nAvailable BioArk vector platforms include:\n\n- RNAi NonViral Template Vectors\n- CRISPR Gene Editing Vectors\n- OverExpression Vectors\n- Inducible Expression Vectors\n\nThis service is ideal for researchers seeking a ready-to-use functional vector without the need to supply a destination plasmid. The vector backbone architecture remains unchanged, while the customer's target sequence is inserted into the appropriate cloning site. All vectors have been optimized and validated for their intended applications, helping to reduce project risk and accelerate research progress.\n\nAll completed projects are delivered as sequence-verified recombinant plasmids with 2–10 μg purified plasmid DNA, ready for transfection, gene expression, RNAi, CRISPR gene editing, or inducible expression studies.\n\n## Key Benefits\n\n- Utilizes BioArk's validated vector platforms\n- No customer vector required\n- Available for RNAi, CRISPR, OverExpression, and Inducible applications\n- Sequence-verified recombinant plasmids\n- Reduced cloning design complexity\n- Fast turnaround time (2–3 weeks)\n- Delivered as purified plasmid DNA (2–10 μg)\n\n## Pricing\n\n| Cat. No. | Insert Size | Deliverable | Price | Turnaround Time |\n|-----------|------------|-------------|--------|----------------|\n| PCBA-060 | < 60 bp | 2–10 μg plasmid DNA | $450 | 2–3 Weeks |\n| PCBA-1kb | 60 bp – 1 kb | 2–10 μg plasmid DNA | $500 | 2–3 Weeks |\n| PCBA-3kb | 1 kb – 3 kb | 2–10 μg plasmid DNA | $0.20/bp + $300 | 2–3 Weeks |\n| PCBA-5kb | 3 kb – 5 kb | 2–10 μg plasmid DNA | $0.24/bp + $300 | 2–3 Weeks |\n\n## Deliverables\n\n- Sequence-verified recombinant plasmid\n- 2–10 μg purified plasmid DNA\n- Sequencing report\n\n## Research Use Only (RUO)\n\nFor research use only. Not intended for diagnostic, therapeutic, or clinical applications.",
+            "createdAt": 1781930684357,
+            "showInHomepageServices": false,
+            "order": 4
+        },
+        {
+            "id": "svc-custom-1781930558612",
+            "name": "Custom Cloning Service (PCCT)",
+            "description": "BioArk's Custom Cloning Service provides professional cloning of customer-supplied DNA sequences into customer-provided plasmid vectors. This service is ideal for researchers requiring customized expression, CRISPR, RNAi, reporter, or proprietary vector constructs. All projects include sequence verification and delivery of 2–10 μg purified plasmid DNA, with a typical turnaround time of 2–3 weeks.",
+            "link": "/services/custom-cloning-pcct",
+            "imageUrl": "",
+            "icon": "",
+            "category": "synthesis-cloning",
+            "groupName": "Cloning",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "\nBioArk's Custom Cloning Service (PCCT) is designed for researchers who require insertion of a DNA fragment into a customer-provided plasmid vector. Customers provide the target DNA sequence and destination vector, and BioArk performs professional cloning, plasmid construction, sequence verification, and plasmid preparation.\n\nThis service is ideal for projects involving proprietary vectors, customized expression systems, reporter plasmids, CRISPR vectors, RNAi vectors, gene overexpression constructs, and other specialized research applications. Our experienced molecular biology team utilizes optimized cloning strategies to ensure accurate construct generation and a high project success rate.\n\nAll completed projects are delivered as sequence-verified recombinant plasmids with 2–10 μg purified plasmid DNA, ready for downstream research applications.\n\n## Key Benefits\n\n- Compatible with customer-supplied vectors\n- Sequence-verified recombinant plasmids\n- Suitable for expression, CRISPR, RNAi, and reporter vector construction\n- High cloning success rate\n- Fast turnaround time (2–3 weeks)\n- Delivered as purified plasmid DNA (2–10 μg)\n\n## Pricing\n\n| Cat. No. | Insert Size | Deliverable | Price | Turnaround Time |\n|-----------|------------|-------------|--------|----------------|\n| PCCT-060 | < 60 bp | 2–10 μg plasmid DNA | $180 | 2–3 Weeks |\n| PCCT-1kb | 60 bp – 1 kb | 2–10 μg plasmid DNA | $240 | 2–3 Weeks |\n| PCCT-3kb | 1 kb – 3 kb | 2–10 μg plasmid DNA | $0.24/bp | 2–3 Weeks |\n| PCCT-5kb | 3 kb – 5 kb | 2–10 μg plasmid DNA | $0.28/bp | 2–3 Weeks |\n\n## Deliverables\n\n- Sequence-verified recombinant plasmid\n- 2–10 μg purified plasmid DNA\n- Sequencing report\n\n## Research Use Only (RUO)\n\nFor research use only. Not intended for diagnostic, therapeutic, or clinical applications.",
+            "createdAt": 1781930558612,
+            "showInHomepageServices": false,
+            "order": 3
+        },
+        {
+            "id": "svc-custom-1781930181444",
+            "name": "Subcloning Services (PCSC)",
+            "description": "BioArk Subcloning Service provides professional plasmid construction and DNA cloning solutions for research applications. Whether you need routine gene insertion, vector modification, or complex plasmid engineering, our experienced molecular biology team delivers sequence-verified recombinant plasmids with fast turnaround times and competitive pricing. Suitable for gene expression, CRISPR, RNAi, viral vector construction, and other molecular biology workflows.",
+            "link": "/services/subcloning-services-pcsc",
+            "imageUrl": "",
+            "icon": "",
+            "category": "synthesis-cloning",
+            "groupName": "Cloning",
+            "longDescription": "BioArk provides reliable and cost-effective molecular cloning services for researchers requiring DNA fragment insertion, vector construction, plasmid modification, and recombinant plasmid generation. Our experienced molecular biology team utilizes proven cloning strategies to deliver high-quality plasmid constructs suitable for downstream applications, including protein expression, gene overexpression, gene editing, viral vector construction, and functional studies.\nAll constructs undergo sequence verification prior to delivery to ensure cloning accuracy and project success.",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "BioArk provides reliable and cost-effective molecular cloning services for researchers requiring DNA fragment insertion, vector construction, plasmid modification, and recombinant plasmid generation. Our experienced molecular biology team utilizes proven cloning strategies to deliver high-quality plasmid constructs suitable for downstream applications, including protein expression, gene overexpression, gene editing, viral vector construction, and functional studies.\n\nAll constructs undergo sequence verification prior to delivery to ensure cloning accuracy and project success.\n\n---\n\n## Service Options\n\n| Class | Service | Cat. No. | Description | Deliverable | Turnaround Time | Price |\n|---------|---------|---------|---------|---------|---------|---------|\n| Subcloning | Simple Subcloning | PCSC-A | Standard cloning projects involving straightforward DNA fragment insertion into common plasmid vectors | 2–10 μg sequence-verified plasmid DNA | ~2 Weeks | $180 |\n| Subcloning | Complex Subcloning | PCSC-B | Advanced cloning projects involving large inserts, multiple fragments, vector modifications, or complex assembly strategies | 2–10 μg sequence-verified plasmid DNA | ~2 Weeks | $240 |\n\n---\n\n## Service Details\n\n### PCSC-A – Simple Subcloning\n\nSuitable for routine cloning projects, including:\n\n- PCR fragment cloning\n- Gene insertion into expression vectors\n- Restriction enzyme-based cloning\n- Vector-to-vector subcloning\n- Standard recombinant plasmid construction\n\n**Deliverables**\n\n- Sequence-verified recombinant plasmid\n- 2–10 μg purified plasmid DNA\n- Sequencing report\n\n---\n\n### PCSC-B – Complex Subcloning\n\nSuitable for advanced cloning projects, including:\n\n- Multi-fragment assembly\n- Large gene cloning\n- Promoter replacement\n- Site-directed modifications\n- Custom vector engineering\n- Complex plasmid construction\n\n**Deliverables**\n\n- Sequence-verified recombinant plasmid\n- 2–10 μg purified plasmid DNA\n- Sequencing report\n\n---\n\n## Key Features\n\n- Sequence-verified plasmid constructs\n- High cloning success rate\n- Experienced molecular cloning specialists\n- Support for custom vectors and cloning strategies\n- Fast turnaround time\n- Competitive pricing\n- Detailed project communication\n- Suitable for academic, biotechnology, and pharmaceutical research\n- Optional plasmid preparation upgrades available\n\n---\n\n## Applications\n\n- Gene overexpression studies\n- CRISPR vector construction\n- RNAi and shRNA vector generation\n- Protein expression projects\n- Lentiviral vector construction\n- AAV vector construction\n- Reporter plasmid development\n- Functional genomics research\n- Synthetic biology applications\n\n---\n\n## Ordering Information\n\n| Cat. No. | Service | Turnaround Time | Price |\n|-----------|-----------|-----------|-----------|\n| PCSC-A | Simple Subcloning | ~2 Weeks | $180 |\n| PCSC-B | Complex Subcloning | ~2 Weeks | $240 |\n\n---\n\n### Research Use Only (RUO)\n\nBioArk Subcloning Services are intended for research use only and are not for diagnostic, therapeutic, or clinical applications.",
+            "createdAt": 1781930181444,
+            "showInHomepageServices": false,
+            "order": 1
+        },
+        {
+            "id": "svc-custom-1781929676236",
+            "name": "CRISPR Targeting Inducible Expression Service (IDCB-021)",
+            "description": "",
+            "link": "/services/crispr-targeting-inducible-expression-service",
+            "imageUrl": "",
+            "icon": "",
+            "category": "genome-editing-service",
+            "groupName": "Inducible Exp",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781929676236,
+            "showInHomepageServices": false
+        },
+        {
+            "id": "svc-custom-1781929583649",
+            "name": "Classical Inducible Expression Service (IDCB-011)",
+            "description": "",
+            "link": "/services/classical-inducible-expression-service",
+            "imageUrl": "",
+            "icon": "",
+            "category": "genome-editing-service",
+            "groupName": "Inducible Exp",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781929583650,
+            "showInHomepageServices": false
+        },
+        {
+            "id": "svc-custom-1781929492404",
+            "name": "CRISPR Targeting OverExp Service (ORFX-021)",
+            "description": "",
+            "link": "/services/crispr-targeting-overexp-service",
+            "imageUrl": "",
+            "icon": "",
+            "category": "genome-editing-service",
+            "groupName": "OverExp",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781929492404,
+            "showInHomepageServices": false
+        },
+        {
+            "id": "svc-custom-1781929439926",
+            "name": "Classical OverExpression Service (ORFX-011)",
+            "description": "",
+            "link": "/services/classical-overexpression-service",
+            "imageUrl": "",
+            "icon": "",
+            "category": "genome-editing-service",
+            "groupName": "OverExp",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781929439926,
+            "showInHomepageServices": false
+        },
+        {
+            "id": "svc-custom-1781929272318",
+            "name": "Classical miRNA service (RNET-012)",
+            "description": "",
+            "link": "/services/classical-mirna-service",
+            "imageUrl": "",
+            "icon": "",
+            "category": "genome-editing-service",
+            "groupName": "RNAi",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781929272318,
+            "showInHomepageServices": false,
+            "order": 2
+        },
+        {
+            "id": "svc-custom-1781929250196",
+            "name": "CRISPR RNAi Service (RNET-021)",
+            "description": "",
+            "link": "/services/crispr-rnai-service",
+            "imageUrl": "",
+            "icon": "",
+            "category": "genome-editing-service",
+            "groupName": "RNAi",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781929250196,
+            "order": 3,
+            "showInHomepageServices": false
+        },
+        {
+            "id": "svc-custom-1781929207896",
+            "name": "Classical RNAi Service (RNET-011)",
+            "description": "",
+            "link": "/services/classical-rnai-service",
+            "imageUrl": "",
+            "icon": "",
+            "category": "genome-editing-service",
+            "groupName": "RNAi",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781929207896,
+            "showInHomepageServices": false,
+            "order": 1
+        },
+        {
+            "id": "svc-custom-1781929165744",
+            "name": "CRISPR Imaging Service (GEDT-023)",
+            "description": "",
+            "link": "/services/crispr-imaging-service-gedt-033",
+            "imageUrl": "",
+            "icon": "",
+            "category": "genome-editing-service",
+            "groupName": "CRISPR",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781929165744,
+            "order": 7
+        },
+        {
+            "id": "svc-custom-1781929139136",
+            "name": "CRISPR Inhibition Service (GEDT-022)",
+            "description": "",
+            "link": "/services/crispr-inhibition-service-gedt-022",
+            "imageUrl": "",
+            "icon": "",
+            "category": "genome-editing-service",
+            "groupName": "CRISPR",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781929139136,
+            "order": 6
+        },
+        {
+            "id": "svc-custom-1781929111008",
+            "name": "CRISPR Activation Service (GEDT-021)",
+            "description": "",
+            "link": "/services/crispr-activation-service-gedt-021",
+            "imageUrl": "",
+            "icon": "",
+            "category": "genome-editing-service",
+            "groupName": "CRISPR",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781929111008,
+            "order": 5
+        },
+        {
+            "id": "svc-custom-1781929077288",
+            "name": "CRISPR Primer Editing (GEDT-033)",
+            "description": "",
+            "link": "/services/crispr-primer-editing-cbe-033",
+            "imageUrl": "",
+            "icon": "",
+            "category": "genome-editing-service",
+            "groupName": "CRISPR",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781929077288,
+            "showInHomepageServices": false,
+            "order": 9
+        },
+        {
+            "id": "svc-custom-1781929007026",
+            "name": "CRISPR ABE/CBE Editing (GEDT-031)",
+            "description": "",
+            "link": "/services/crispr-abe-editing-gedt-031",
+            "imageUrl": "",
+            "icon": "",
+            "category": "genome-editing-service",
+            "groupName": "CRISPR",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781929007026,
+            "showInHomepageServices": false,
+            "order": 8
+        },
+        {
+            "id": "svc-custom-1781928830040",
+            "name": "CRISPR Targeting KnockIn (GEDT-013)",
+            "description": "",
+            "link": "/services/crispr-targeting-knockin-service-gedt-013",
+            "imageUrl": "",
+            "icon": "",
+            "category": "genome-editing-service",
+            "groupName": "CRISPR",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781928830040,
+            "order": 3,
+            "showInHomepageServices": false
+        },
+        {
+            "id": "svc-custom-1781928419819",
+            "name": "CRISPR Deletion Service (GEDT-012)",
+            "description": "",
+            "link": "/services/crispr-knockout",
+            "imageUrl": "",
+            "icon": "",
+            "category": "genome-editing-service",
+            "groupName": "CRISPR",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781928419819,
+            "showInHomepageServices": false,
+            "order": 2
+        },
+        {
+            "id": "svc-custom-1781927675325",
+            "name": "Inducible Stable Clone",
+            "description": "",
+            "link": "/services/inducible-stable-clone",
+            "imageUrl": "",
+            "icon": "",
+            "category": "cell-line-services",
+            "groupName": "Stable Single Clone",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781927675325,
+            "order": 4
+        },
+        {
+            "id": "svc-custom-1781927623823",
+            "name": "Overexpression Stable Clone",
+            "description": "",
+            "link": "/services/overexpression-stable-clone",
+            "imageUrl": "",
+            "icon": "",
+            "category": "cell-line-services",
+            "groupName": "Stable Cell Clone",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781927623823,
+            "order": 3
+        },
+        {
+            "id": "svc-custom-1781927590685",
+            "name": "RNAi Stable Clone",
+            "description": "",
+            "link": "/services/rnai-stable-clone",
+            "imageUrl": "",
+            "icon": "",
+            "category": "cell-line-services",
+            "groupName": "Stable Single Clone",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781927590685,
+            "order": 2
+        },
+        {
+            "id": "svc-custom-1781927518013",
+            "name": "CRISPR Stable Clone",
+            "description": "",
+            "link": "/services/crispr-stable-clone",
+            "imageUrl": "",
+            "icon": "",
+            "category": "cell-line-services",
+            "groupName": "Stable Cell Clone",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781927518013,
+            "order": 1
+        },
+        {
+            "id": "svc-custom-1781927453296",
+            "name": "Inducible Expression Service",
+            "description": "",
+            "link": "/services/inducible-expression-service",
+            "imageUrl": "",
+            "icon": "",
+            "category": "cell-line-services",
+            "groupName": "Cell Exp Service",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781927453296,
+            "order": 4
+        },
+        {
+            "id": "svc-custom-1781927395025",
+            "name": "OverExpression Service",
+            "description": "",
+            "link": "/services/overexpression-service-2",
+            "imageUrl": "",
+            "icon": "",
+            "category": "cell-line-services",
+            "groupName": "Cell Exp Service",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781927395025,
+            "order": 3
+        },
+        {
+            "id": "svc-custom-1781927281199",
+            "name": "RNAi Exp Service",
+            "description": "",
+            "link": "/services/rnai-service",
+            "imageUrl": "",
+            "icon": "",
+            "category": "cell-line-services",
+            "groupName": "Cell Exp Service",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781927281199,
+            "order": 2,
+            "showInHomepageServices": false
+        },
+        {
+            "id": "svc-custom-1781927260141",
+            "name": "CRISPR Exp Service",
+            "description": "",
+            "link": "/services/crispr-exp-service",
+            "imageUrl": "",
+            "icon": "",
+            "category": "cell-line-services",
+            "groupName": "Cell Exp Service",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781927260141,
+            "order": 1
+        },
+        {
+            "id": "svc-custom-1781927176761",
+            "name": "Inducible Cell Pool",
+            "description": "",
+            "link": "/services/inducible-cell-pool",
+            "imageUrl": "",
+            "icon": "",
+            "category": "cell-line-services",
+            "groupName": "Stable Cell Pool",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781927176761
+        },
+        {
+            "id": "svc-custom-1781927152119",
+            "name": "OverExpression Cell Pool",
+            "description": "",
+            "link": "/services/overexpression-cell-pool",
+            "imageUrl": "",
+            "icon": "",
+            "category": "cell-line-services",
+            "groupName": "Stable Cell Pool",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781927152119
+        },
+        {
+            "id": "svc-custom-1781927082345",
+            "name": "RNAi Cell Pool",
+            "description": "",
+            "link": "/services/rnai-cell-pool",
+            "imageUrl": "",
+            "icon": "",
+            "category": "cell-line-services",
+            "groupName": "Stable Cell Pool",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781927082345
+        },
+        {
+            "id": "svc-custom-1781927021493",
+            "name": "CRISPR Cell Pool",
+            "description": "",
+            "link": "/services/crispr-cell-pool",
+            "imageUrl": "",
+            "icon": "",
+            "category": "cell-line-services",
+            "groupName": "Stable Cell Pool",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781927021493
+        },
+        {
+            "id": "svc-custom-1781926955655",
+            "name": "Cell Research Service Overview",
+            "description": "",
+            "link": "/services/cell-research-service-overview",
+            "imageUrl": "",
+            "icon": "",
+            "category": "cell-line-services",
+            "groupName": "Cell Exp Service",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781926955655,
+            "order": 0
+        },
+        {
+            "id": "svc-custom-1781926857295",
+            "name": "Stable Single Clone Overview",
+            "description": "",
+            "link": "/services/stable-single-clone-overview",
+            "imageUrl": "",
+            "icon": "",
+            "category": "cell-line-services",
+            "groupName": "Stable Single Clone",
+            "longDescription": "",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "",
+            "createdAt": 1781926857295,
+            "order": 0
+        },
+        {
+            "id": "svc-custom-1766633756918",
+            "name": "Virus Packaging Overview",
+            "description": "Comprehensive viral packaging services, including AAV, Lentivirus, Retroviral (MLV), and Adenovirus systems.",
+            "link": "/services/virus-packaging-overview",
+            "imageUrl": "/content-api/uploads/originals/ff457910-f5b0-44b4-bcbc-920a8f51aa77.png",
+            "icon": "",
+            "category": "virus-packaging",
+            "groupName": "Others",
+            "longDescription": "We offer comprehensive viral packaging services, including AAV, Lentivirus, Retroviral (MLV), and Adenovirus systems. Each high-titer, ready-to-use viral particle is produced under stringent quality control (QC) standards and can be supplemented with optional functional testing to ensure exceptional performance and reliability.",
+            "keyBenefits": [
+                "High transduction efficiency with low cytotoxicity",
+                "Batch-to-batch consistency and comprehensive QC",
+                "Optional functional assays for tagged/untagged proteins",
+                "Broad serotype variety and flexible vector design options"
+            ],
+            "processOverview": [
+                {
+                    "step": "System Selection",
+                    "description": "Choose the optimal viral system (AAV, Lentivirus, Retrovirus, or Adenovirus) for your application."
+                },
+                {
+                    "step": "Vector Design",
+                    "description": "Customize promoters, tags, selection markers, and fluorescent reporters."
+                },
+                {
+                    "step": "Packaging & QC",
+                    "description": "Optimized production with titer, purity, and functionality checks."
+                },
+                {
+                    "step": "Delivery",
+                    "description": "Shipped on dry ice with comprehensive documentation."
+                }
+            ],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "At **BioArk Technologies**, we provide **end-to-end viral packaging services** encompassing **AAV**, **Lentivirus**, **Retrovirus (MLV)**, and **Adenovirus** systems.  \nEach viral vector is produced as a **high-titer, ready-to-use formulation**, manufactured under **stringent quality control (QC)** pipelines and optionally validated through **functional assays** to ensure **outstanding performance**, **reproducibility**, and **reliability**.\n\nOur **viral packaging platform** supports payload delivery for:\n- **Gene expression**\n- **RNA interference (knockdown)**\n- **CRISPR/Cas-based genome editing**\n\nWe also offer **flexible vector design options**, including a variety of **promoters**, **tags**, **selection markers**, and **fluorescent reporters**, tailored to your experimental needs.\n\nOur system is optimized to provide:\n- ✅ **High transduction efficiency**\n- ✅ **Low cytotoxicity**\n- ✅ **Batch-to-batch consistency**\n- ✅ **Broad host tropism** (effective in both dividing and non-dividing cells)\n\n---\n\n## Service Categories\n\n### AAV Packaging Services\nHigh-quality AAV packaging with ≥80% full particles, ≥95% purity, and guaranteed titers (≥1×10¹³ vg/mL) to support precise gene delivery and CRISPR applications.\n\n### Lenti Packaging Services\nHigh-titer, ready-to-use lentiviral vectors with full QC and optional functional testing for gene expression, knockdown, and CRISPR editing.\n\n---\n\n📩 **Contact:** [support@bioarktech.com](mailto:support@bioarktech.com)",
+            "createdAt": 1766633756918,
+            "showInHomepageServices": true
+        },
+        {
+            "id": "svc-custom-1766633494933",
+            "name": "AAV Packaging Services (AAVP)",
+            "description": "BioArk provides high-titer recombinant AAV (rAAV) production for gene expression, CRISPR gene editing, RNAi, and in vivo research applications. Available in Research Grade and Animal Grade formats, our service supports multiple serotypes, flexible production volumes, and fast turnaround times, delivering reliable viral vectors for both cell-based and animal studies.",
+            "link": "/services/aav-packaging-services",
+            "imageUrl": "",
+            "icon": "",
+            "category": "virus-packaging",
+            "groupName": "AAV",
+            "longDescription": "BioArk's AAV Packaging Service provides fast, high-titer recombinant adeno-associated virus (rAAV) production for gene delivery, gene overexpression, CRISPR gene editing, RNAi, and in vivo research applications. Available in both Research Grade (0.5–1 × 10¹³ vg/mL) and Animal Grade (1–5 × 10¹³ vg/mL) formats, our service supports multiple AAV serotypes, flexible production scales from 200 μL to 50 mL, and rapid turnaround times of 1–2 weeks. BioArk offers end-to-end support, from vector design and cloning to viral production, helping researchers accelerate cell-based and animal studies with reliable, high-quality AAV vectors.",
+            "keyBenefits": [],
+            "processOverview": [],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "BioArk's AAV Packaging Service provides fast, reliable, and cost-effective production of recombinant adeno-associated virus (rAAV) vectors for gene delivery, gene expression, CRISPR gene editing, RNA interference, and in vivo research applications. Utilizing optimized triple-transfection packaging workflows and rigorous quality control procedures, BioArk delivers high-titer AAV preparations suitable for both in vitro and animal studies.\n\nOur experienced viral vector team supports a wide range of research applications, including gene overexpression, gene knockdown, CRISPR-mediated genome editing, reporter gene expression, disease model development, and preclinical proof-of-concept studies. BioArk offers both Research Grade and Animal Grade AAV production services, allowing researchers to select the appropriate quality level for their experimental needs.\n\nMultiple serotypes are available upon request, including AAV2, AAV5, AAV6, AAV8, AAV9, AAV-DJ, and other commonly used capsids. Customer-provided plasmids or BioArk vector platforms may be used for packaging projects.\n\n---\n\n## Key Features\n\n- Fast turnaround time (1–2 weeks)\n- High-titer AAV production\n- Research Grade and Animal Grade options available\n- Multiple AAV serotypes supported\n- Suitable for gene overexpression, CRISPR, RNAi, and reporter applications\n- Endotoxin-controlled production workflow\n- Sequence-verified transfer plasmids\n- Flexible production volumes from 200 μL to 50 mL\n- Compatible with customer-supplied or BioArk vectors\n- Experienced technical support and project consultation\n\n---\n\n## Applications\n\n- Gene overexpression\n- CRISPR gene editing\n- Gene knockout studies\n- RNA interference (RNAi)\n- Functional genomics\n- Cell lineage tracing\n- Reporter gene expression\n- Neuroscience research\n- Cardiovascular research\n- Cancer biology\n- In vivo animal studies\n- Disease model development\n\n---\n\n# Research Grade AAV Packaging\n\nResearch Grade AAV is optimized for routine laboratory experiments, cell culture studies, proof-of-concept research, and exploratory in vivo studies.\n\n### Specifications\n\n- Typical Titer: **0.5–1 × 10¹³ vg/mL**\n- Recommended Use: In vitro studies and exploratory animal research\n- Turnaround Time: 1–2 weeks\n\n| Cat. No. | Volume | Typical Titer | Price |\n|-----------|---------|---------|---------|\n| AAVP-200ul-B | 2 × 100 μL | 0.5–1 × 10¹³ vg/mL | $935 |\n| AAVP-500ul-B | 2 × 250 μL | 0.5–1 × 10¹³ vg/mL | $1,182 |\n| AAVP-01ml-B | 2 × 500 μL | 0.5–1 × 10¹³ vg/mL | $1,768 |\n| AAVP-05ml-B | 5 × 1,000 μL | 0.5–1 × 10¹³ vg/mL | $5,763 |\n| AAVP-10ml-B | 10 × 1,000 μL | 0.5–1 × 10¹³ vg/mL | $8,721 |\n| AAVP-50ml-B | 10 × 5,000 μL | 0.5–1 × 10¹³ vg/mL | $30,150 |\n\n---\n\n# Animal Grade AAV Packaging\n\nAnimal Grade AAV is manufactured using enhanced purification and quality control procedures to support demanding in vivo applications requiring higher viral concentrations.\n\n### Specifications\n\n- Typical Titer: **1–5 × 10¹³ vg/mL**\n- Recommended Use: Animal studies and preclinical research\n- Turnaround Time: 2 weeks\n\n| Cat. No. | Volume | Typical Titer | Price |\n|-----------|---------|---------|---------|\n| AAVP-200ul-C | 2 × 100 μL | 1–5 × 10¹³ vg/mL | $1,267 |\n| AAVP-500ul-C | 2 × 250 μL | 1–5 × 10¹³ vg/mL | $1,515 |\n| AAVP-01ml-C | 2 × 500 μL | 1–5 × 10¹³ vg/mL | $2,335 |\n| AAVP-05ml-C | 5 × 1,000 μL | 1–5 × 10¹³ vg/mL | $7,788 |\n| AAVP-10ml-C | 10 × 1,000 μL | 1–5 × 10¹³ vg/mL | $11,789 |\n| AAVP-50ml-C | 10 × 5,000 μL | 1–5 × 10¹³ vg/mL | $41,790 |\n\n---\n\n## Available Serotypes\n\nBioArk currently supports packaging of commonly used serotypes, including:\n\n- AAV2\n- AAV5\n- AAV6\n- AAV8\n- AAV9\n- AAV-DJ\n- Additional serotypes available upon request\n\n---\n\n## Optional Services\n\n- Transfer plasmid construction\n- Custom AAV vector design\n- CRISPR AAV vector development\n- RNAi AAV vector development\n- Gene synthesis\n- Sequencing verification\n- Stable cell line generation\n- In vivo experimental consultation\n\n---\n\n## Why Choose BioArk?\n\n- Competitive pricing compared with major CRO providers\n- Fast turnaround times\n- Flexible project customization\n- Integration with BioArk cloning, CRISPR, RNAi, and cell engineering services\n- End-to-end support from vector design through viral production\n- Dedicated technical support from experienced molecular biologists\n\n---\n\n## Deliverables\n\n- Purified recombinant AAV\n- Viral genome titer report (vg/mL)\n- Product delivered in sterile formulation buffer\n- Technical support documentation\n\n---\n\n## Research Use Only (RUO)\n\nBioArk AAV Packaging Services are intended for research use only and are not for diagnostic, therapeutic, or clinical applications.",
+            "createdAt": 1766633494933,
+            "showInHomepageServices": false
+        },
+        {
+            "id": "svc-custom-1759768141509",
+            "name": "Lentivirus Packaging Services",
+            "description": "High-titer, ready-to-use lentiviral vectors with full QC and optional functional testing.",
+            "link": "/services/lentivirus-packaging-services",
+            "category": "virus-packaging",
+            "imageUrl": "",
+            "icon": "",
+            "longDescription": "High-titer, ready-to-use lentiviral vectors with full QC and optional functional testing.",
+            "keyBenefits": [
+                "High transduction efficiency with low cytotoxicity",
+                "Batch-to-batch consistency and comprehensive QC",
+                "Optional functional assays for tagged/untagged proteins"
+            ],
+            "processOverview": [
+                {
+                    "step": "System Selection",
+                    "description": "Choose 2nd-gen (3-plasmid) or 3rd-gen (4-plasmid) systems."
+                },
+                {
+                    "step": "Subcloning",
+                    "description": "MiniGFP (~330 bp) tags or selection markers (Puro/BSD/Neo, etc.)."
+                },
+                {
+                    "step": "Packaging & QC",
+                    "description": "Optimized production with titer, purity, and functionality checks."
+                },
+                {
+                    "step": "Delivery",
+                    "description": "Shipped on dry ice with documentation."
+                }
+            ],
+            "relatedProducts": [],
+            "caseStudies": [],
+            "markdown": "### Technology Background\n**2nd Generation (Three-Plasmid):** Transfer, Packaging (Gag/Pol/Rev), Envelope.  \n**3rd Generation (Four-Plasmid):** Transfer, Gag/Pol, Rev, Envelope — safer but typically lower titer (default).\n\n### Service Offerings\n1. Project Support — System selection and construct customization.  \n2. Lentivirus Subcloning — MiniGFP (~330 bp) or selection markers (Puro/BSD/Neo, custom).  \n3. Lentivirus Packaging — Optimized yield and purity; full QC.  \n4. Functional Testing — qPCR, fluorescence, immunofluorescence, Western blot (custom).\n\n### Pricing\n| Catalog Number | Minimum Titer | Volume | 1st Tube Price | 2nd Tube Price | Turnaround |\n| --- | --- | --- | --- | --- | --- |\n| LPSVC-mini | >10^7 TU/ml | 200 µl | $199 | $199 | 2–3 weeks |\n| LPSVC-midi | >10^8 TU/ml | 200 µl | $399 | $399 | 2–3 weeks |\n| LPSVC-maxi | >10^9 TU/ml | 200 µl | $699 | $699 | 2–3 weeks |\n\n### Functional Services (Add-ons)\n| Titer and Functional Service | Price | Note |\n| --- | --- | --- |\n| qPCR | - | Optimized RT‑qPCR quantifies lentiviral RNA |\n| Fluorescent Tag Analysis | +$50 | HEK293T infection and imaging (GFP/RFP/BFP, etc.) |\n| Protein Tag Analysis (IF) | +$70 | Immunofluorescence for Myc/His/Flag or custom tags |\n| Customized Testing (WB) | +$120 | Western blot; customer provides primary antibody |\n\n### Subcloning & Analysis\n| Service | Price | Note |\n| --- | --- | --- |\n| Lenti‑miniGFP Subcloning & Fluorescence | +$199 | Transfer gene to miniGFP construct; HEK293T infection/analysis |\n| Lenti Selection Subcloning | +$189 | Transfer to selection constructs (Puro/BSD/Neo or custom) |\n\nContact: support@bioarktech.com\n",
+            "createdAt": 1759768141509
         }
-      ],
-      "caseStudies": [
-        {
-          "title": "Case Study 1",
-          "link": "/blog/test-case-1"
-        },
-        {
-          "title": "Case Study 2",
-          "link": "https://example.com/case-study"
-        }
-      ],
-      "markdown": "At BioArk Technologies, we offer comprehensive plasmid construction services designed for molecular biology and genetics research. Our intuitive web platform lets you collaborate in real time to ensure vectors fit your exact specifications.\n\n## Why Choose Our Vector Cloning Service?\n- Custom Plasmid Design — Tailored to your specific research needs\n- Advanced Technologies — Leveraging technical expertise and innovative solutions\n- Efficient Process — Streamlined for fast and reliable results\n- Customer Collaboration — Web-based platform for seamless design involvement\n\nContact us: support@bioarktech.com\n\n\n\n![/content-api/uploads/originals/a0b892b9-7048-41b4-acbd-bbc1f3aa088a.png](/content-api/uploads/originals/a0b892b9-7048-41b4-acbd-bbc1f3aa088a.png)\n\n\n\n## Service Offerings\n### Comprehensive Project Support\nAssist in vector design (backbone, promoter, insertion sites, tags) tailored to your project.\n\n### Subcloning Service\nAdapt your vector to viral systems (lentivirus, dual promoter, inducible, CRISPR platforms).\n\n### Fragment Synthesis and Cloning\nHigh-quality fragment synthesis at competitive prices; we clone into custom or BioArk vectors.\n\n### Plasmid Delivery and Expression\nDownstream services including lentivirus packaging and stable cell line development.\n\n## Plasmid Construction Services — Pricing\n| Service | Catalog Number | Price | Time |\n| --- | --- | --- | --- |\n| Subcloning Services | PCSVC02 | $199 | 2 weeks |\n| Fragment synthesis & Cloning | PCSVC03 | Pricing Policy Details Below | 2–3 weeks |\n| Custom Cloning Project | PCSVC04 | Above pricing + Project Fee ($200–$1000) | > 3 weeks |\n\n## Synthesis & Cloning Pricing\n| Synthesis & Cloning | <60bp | 60bp–0.5kb | 0.5kb–3kb | 3kb–5kb |\n| --- | --- | --- | --- | --- |\n| BioArk Vectors | $150/seq | $200/seq | $0.2/bp | $0.24/bp |\n| Custom Vector | $150/seq | $200/seq | $0.24/bp | $0.28/bp |\n\n## Plasmid Services\n| Scale | 2 µg – 10 µg | 10 µg–50 µg | 50 µg–300 µg | 300 µg–1 mg |\n| --- | --- | --- | --- | --- |\n| Plasmid Scale | Included | $30.00/seq | $90.00/seq | $150.00/seq |\n| Endotoxin Free (<0.1 EU/µg) | - | $20.00 per seq | $50.00 per seq | $50.00 per seq |\n| DNA Normalization | $15.00 per seq | $15.00 per seq | $15.00 per seq | $15.00 per seq |\n| Glycerol Stock | $10.00 per seq | $10.00 per seq | $10.00 per seq | $10.00 per seq |\n",
-      "showInHomepageServices": false,
-      "order": 0,
-      "hidden": true
+    ],
+    "categoriesConfig": {
+        "categories": [
+            {
+                "id": "synthesis-cloning",
+                "name": "Synthesis & Cloning",
+                "order": 2
+            },
+            {
+                "id": "genome-editing-service",
+                "name": "Genome Editing",
+                "order": 1
+            },
+            {
+                "id": "virus-packaging",
+                "name": "Virus Packaging",
+                "order": 4
+            },
+            {
+                "id": "cell-line-services",
+                "name": "Cell Line Services",
+                "order": 5
+            },
+            {
+                "id": "category-1764976659245",
+                "name": "Protein Purification ",
+                "order": 3
+            }
+        ]
     },
-    "svc-05": {
-      "name": "Stable Cell Pool Service Overview",
-      "description": "From vector design to monoclonal selection, validation, and banking.",
-      "link": "/services/cell-line-generation",
-      "category": "cell-line-services",
-      "imageUrl": "/content-api/uploads/originals/0a5f4fe1-7860-4f0b-8eba-2b3235da7392.jpg",
-      "longDescription": "Comprehensive stable cell line generation from vector design and construction to fully validated monoclonal cell lines.",
-      "keyBenefits": [
-        "Guaranteed expression levels",
-        "Comprehensive validation and QC reports",
-        "Royalty-free for commercial use",
-        "Fast turnaround times"
-      ],
-      "processOverview": [
-        {
-          "step": "Consultation & Design",
-          "description": "Optimal vector design for your gene of interest."
-        },
-        {
-          "step": "Transfection & Selection",
-          "description": "High-efficiency delivery followed by antibiotic/metabolic selection."
-        },
-        {
-          "step": "Monoclonal Isolation",
-          "description": "Single-cell cloning via limiting dilution or FACS."
-        },
-        {
-          "step": "Validation & Banking",
-          "description": "Expression/stability validation and cell banking."
-        }
-      ],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "\nAt **BioArk Technologies**, we specialize in constructing **stable cell lines** tailored to meet your specific research needs.  \nWhether you’re working with **cancer cell lines** or **adherent cell lines**, we offer a range of services including **gene overexpression**, **knockout**, **knock-in**, and **deletion**.  \n\nOur **affordable**, **reliable**, and **high-quality solutions** accelerate your research and deliver the results you need.  \nPartner with us to drive innovation in your projects today!\n\n---\n\n## Service Content\n\n## 1. Vector Construction\nWe offer comprehensive **design and construction of plasmid vectors** tailored to your genetic modification needs, with selectable markers for efficient screening.  \n\nOur vector construction services include:\n- **Gene Overexpression**\n- **Targeted Gene Overexpression** at *AAVS1* or other safe harbor sites  \n- **Inducible Gene Overexpression**\n- **Gene Knockout** via **CRISPR**\n- **Gene Deletion** using double **CRISPR cut sites**\n- **Gene Tagging Services**\n\n---\n\n## 2. Cell Line Transfection\nWe provide various **transfection methods** to suit different cell types and experimental requirements, including:\n- **Lipofection** – ideal for adherent cells  \n- **Electroporation** – for difficult-to-transfect cell types  \n- **Viral Transduction** – leveraging **lentiviruses** or **AAVs** to efficiently deliver genetic material into target cells  \n\n---\n\n## 3. Cell Line Pool\nOur services include the **development of stable cell lines**, customized to meet the unique needs of your project.  \nWe work with a wide variety of cell types, ensuring **functional characteristics** that align with your research goals.\n\n---\n\n## 4. Selection and Expansion\nWe apply **selective pressure**, such as **antibiotic selection**, to isolate successfully transfected cells.  \nSelected clones are **expanded in controlled environments** to ensure **consistency** and **stability**.\n\n---\n\n## 5. Validation of Stable Cell Lines\nWe provide **thorough characterization** of generated cell lines, including:\n\n- **Genomic Analysis**: Verification of gene integration through **PCR** or **sequencing**  \n- **Expression Analysis**: Evaluation of target gene expression using techniques such as **qPCR**, **Western blotting**, or **flow cytometry**\n",
-      "showInHomepageServices": true
-    },
-    "svc-02": {
-      "name": "CRISPR Services Overview (GEDT)",
-      "description": "CRISPR overexpression, knockout, RNA knockdown, and ready-to-use kits for streamlined editing.",
-      "link": "/services/genome-editing",
-      "category": "genome-editing-service",
-      "imageUrl": "/content-api/uploads/originals/4bbb795d-8216-4baa-8755-6a15aad7a6e5.jpeg",
-      "longDescription": "Comprehensive genome editing solutions including targeted overexpression, CRISPR knock-out, RNA knockdown, and turnkey kits with delivery options.",
-      "keyBenefits": [
-        "Precise knock-in at safe harbor or locus-specific sites",
-        "High-efficiency CRISPR knock-out with minimized off-targets",
-        "CRISPR-based RNA knockdown for superior specificity",
-        "Kits with success guarantee and rapid turnaround"
-      ],
-      "processOverview": [
-        {
-          "step": "Consultation",
-          "description": "Discuss goals, targets, and editing strategy (overexpression/KO/RNA KD)."
-        },
-        {
-          "step": "Design",
-          "description": "gRNA, donor template, and vector design optimized for your cell line."
-        },
-        {
-          "step": "Build & QC",
-          "description": "Construct assembly, validation, and functional checks."
-        },
-        {
-          "step": "Delivery",
-          "description": "Plasmid or lentivirus delivery with documentation and support."
-        }
-      ],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "## Targeted Overexpression with CRISPR\nOur targeted overexpression service allows for the precise and controlled expression of your gene of interest at specific genomic loci, including safe harbor sites like AAVS1. Compared with Lentivirus induced overexpression, targeted overexpression can provide more precision regulation and more safety and controllable knock-in effects. This service is ideal for:\n\n- Inducible or constitutive overexpression of target genes\n- Ensuring high-level, stable expression in your cell line\n- Requiring more accurate regulations, including inducible promoters.\n\n## CRISPR Knock-Out\nWe employ an optimized CRISPR-Cas9 system along with precisely designed guide RNAs (gRNAs) to achieve high knockout efficiency in both adherent and cancer cell lines. Our tailored knockout strategies are customized to meet your specific experimental requirements, ensuring reliable and reproducible results. Our services target a broad range of genomic loci, from exonic regions to safe harbor sites, minimizing off-target effects. We also provide thorough validation of knockout efficiency through genomic and expression analyses, including PCR, sequencing, and Western blotting.\n\n**Available in two formats:** lentivirus and standard plasmids  \n**Custom-designed guide RNAs (gRNAs)** for maximum knockout efficiency  \n**Ideal for** functional genomics and pathway analysis\n\n## CRISPR RNA Knockdown\nWe offer CRISPR-based RNA knockdown services that specifically target and degrade RNA transcripts, effectively reducing the expression of your gene of interest at the transcriptional level. Compared to traditional RNA interference (RNAi), CRISPR RNA technologies generally provide more efficient knockdown and greater target specificity.\n\n- Efficient RNA degradation using CRISPR/Cas13 technology\n- Ideal for high-throughput screening and gene function analysis\n- Offers a more dynamic and precise approach to gene silencing than conventional methods\n\n## Genome Editing Kits\n\n### Targeted Overexpression Plasmid Kit\n\nCatalog: (CDS-P011k) — $899 — 2–3 weeks\n\nTransform your research with our innovative tool to integrate your interest genes into the safe harbor site AAVS1. Our targeted overexpression kit is optimized for use in various cancer cell lines, achieving a remarkable success rate in establishing stable cell lines.\n\n**Your Success is Our Commitment!**  \nWe guarantee that our kit will successfully generate stable overexpression clones in your transfectable cell lines. If it doesn’t work, you’ll receive a full refund.\n\nFor additional services related to stable cell lines, please reach out to us at support@BioArkTech.com.\n\n### CRISPR Knock-Out Plasmid Kit\n\nCatalog: (COT-P031k) — $790 — 2–3 weeks\n\nOur knockout kit offers a fast and efficient solution to disrupt target genes in various cell lines, facilitating the creation of stable cell lines. It includes three all-in-one plasmids featuring optimized Cas9, gRNA structures, and selection markers for improved gene knockout efficiency.\n\n**Guaranteed Success!**  \nWe guarantee that our kit will successfully generate stable knockout clones in your transfectable cell lines. If it doesn’t work, you’ll receive a full refund.\n\nFor additional services related to stable cell lines, please get in touch with us at support@BioArkTech.com.\n\n### CRISPR Knock-Out Lentivirus Kit\n\nCatalog: (COM-P032k) — $1,499 — 2–3 weeks\n\nOur knockout lentivirus kit harnesses advanced lentivirus technology to deliver all-in-one CRISPR knockout functional cassettes, expanding your applications across a broader range of cell lines. The kit includes a single tube of virus with three mixed gRNA sequences, streamlining your experimental process.\n\n**Guaranteed Results!**  \nWe guarantee that our kit will successfully generate stable knockout clones in your transfectable cell lines. If it doesn’t work, you’ll receive a full refund.\n\nFor additional services related to stable cell lines, please contact us at support@BioArkTech.com.\n\n### CRISPR RNA Knock-Down Plasmid Kit\n\nCatalog: (CRT-P051k) — $790 — 2–3 weeks\n\nOur CRISPR RNA knockdown kits offer a highly specific and powerful alternative to traditional RNAi methods for reducing RNA expression levels. Achieve effective inhibition of target gene RNA levels by over 70% across a wide range of applications.\n\n**Guaranteed Efficiency!**  \nWe stand by our promise: our kit will efficiently inhibit your target genes in transfectable cell lines. If it doesn’t work, you’ll receive a full refund.\n\nFor any inquiries, please contact us at support@BioArkTech.com.\n",
-      "showInHomepageServices": true,
-      "order": 0
-    },
-    "svc-09": {
-      "name": "Plasmid Cloning Service Overview",
-      "description": "Professional DNA cloning services for your research needs.",
-      "link": "/services/dna-cloning-service",
-      "imageUrl": "/content-api/uploads/originals/99fa2ec1-247f-49fd-af65-7b2a3dbf64e1.png",
-      "longDescription": "Comprehensive DNA cloning services tailored to your research requirements.",
-      "keyBenefits": [
-        "Expert cloning services",
-        "Fast turnaround times",
-        "High-quality results"
-      ],
-      "processOverview": [
-        {
-          "step": "Consultation",
-          "description": "Discuss your DNA cloning requirements."
-        },
-        {
-          "step": "Design & Cloning",
-          "description": "Vector design and DNA cloning."
-        },
-        {
-          "step": "Validation",
-          "description": "Quality control and validation."
-        },
-        {
-          "step": "Delivery",
-          "description": "Delivery with documentation."
-        }
-      ],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "BioArk provides comprehensive gene cloning solutions for researchers requiring DNA fragment synthesis, vector construction, gene expression plasmids, RNAi vectors, CRISPR vectors, inducible expression systems, and custom plasmid engineering. Our services range from standard cloning into common laboratory vectors to advanced custom-designed constructs with complex genetic architectures.\n\nAll cloning projects include sequence verification and delivery of purified plasmid DNA (2–10 μg).\n\n---\n\n# Service Categories\n\n## 1. Standard Cloning\n\n### Description\n\nStandard Cloning is designed for routine molecular cloning projects using BioArk's standard laboratory cloning vectors. Customers provide the DNA sequence, and BioArk synthesizes and clones the fragment into a standard cloning vector.\n\n### Ideal For\n\n* Gene synthesis and storage\n* Sequence verification\n* Routine plasmid construction\n* DNA fragment archiving\n* Downstream subcloning applications\n\n### Deliverables\n\n* Sequence-verified plasmid\n* 2–10 μg purified plasmid DNA\n\n### Turnaround Time\n\n2–3 weeks\n\n| Cat. No. | Insert Size  | Price    |\n| -------- | ------------ | -------- |\n| PCST-060 | < 60 bp      | $150     |\n| PCST-1kb | 60 bp – 1 kb | $200     |\n| PCST-3kb | 1 kb – 3 kb  | $0.20/bp |\n| PCST-5kb | 3 kb – 5 kb  | $0.24/bp |\n\n---\n\n## 2. Custom Cloning\n\n### Description\n\nCustom Cloning is intended for projects requiring insertion of DNA fragments into customer-provided plasmid vectors. BioArk performs cloning, sequence verification, and plasmid preparation using the vector supplied by the customer.\n\n### Ideal For\n\n* Existing laboratory vectors\n* Customized expression systems\n* Reporter vectors\n* Proprietary plasmids\n* Research-specific constructs\n\n### Deliverables\n\n* Sequence-verified recombinant plasmid\n* 2–10 μg purified plasmid DNA\n\n### Turnaround Time\n\n2–3 weeks\n\n| Cat. No. | Insert Size  | Price    |\n| -------- | ------------ | -------- |\n| PCCT-060 | < 60 bp      | $180     |\n| PCCT-1kb | 60 bp – 1 kb | $240     |\n| PCCT-3kb | 1 kb – 3 kb  | $0.24/bp |\n| PCCT-5kb | 3 kb – 5 kb  | $0.28/bp |\n\n---\n\n## 3. BioArk Cloning\n\n### Description\n\nBioArk Cloning utilizes BioArk's validated vector platforms, including:\n\n* RNAi NonViral Template Vectors\n* CRISPR Gene Editing Vectors\n* OverExpression Vectors\n* Inducible Expression Vectors\n\nThis service includes insertion of the customer's target sequence into an existing BioArk vector backbone without modification of the vector architecture.\n\n### Ideal For\n\n* shRNA construction\n* sgRNA construction\n* Gene overexpression\n* Inducible gene expression\n* CRISPR knockout studies\n* Functional genomics research\n\n### Deliverables\n\n* Sequence-verified recombinant plasmid\n* 2–10 μg purified plasmid DNA\n\n### Turnaround Time\n\n2–3 weeks\n\n| Cat. No. | Insert Size  | Price           |\n| -------- | ------------ | --------------- |\n| PCBA-060 | < 60 bp      | $450            |\n| PCBA-1kb | 60 bp – 1 kb | $500            |\n| PCBA-3kb | 1 kb – 3 kb  | $0.20/bp + $300 |\n| PCBA-5kb | 3 kb – 5 kb  | $0.24/bp + $300 |\n\n---\n\n## 4. BioArk Complex Cloning\n\n### Description\n\nBioArk Complex Cloning is designed for advanced plasmid engineering projects requiring customized vector architecture, multiple genetic elements, vector redesign, multi-fragment assembly, promoter replacement, fusion protein construction, or sophisticated expression systems.\n\nProjects are individually reviewed and optimized by BioArk molecular biology specialists.\n\n### Ideal For\n\n* Multi-gene vectors\n* Complex CRISPR systems\n* Dual-expression plasmids\n* Custom inducible systems\n* Fusion protein vectors\n* Reporter-expression combinations\n* Synthetic biology applications\n* Advanced vector engineering\n\n### Deliverables\n\n* Custom-designed and sequence-verified plasmid\n* 2–10 μg purified plasmid DNA\n* Cloning design consultation\n\n### Turnaround Time\n\n2–3 weeks\n\n| Cat. No. | Insert Size  | Price           |\n| -------- | ------------ | --------------- |\n| PCBC-060 | < 60 bp      | $650            |\n| PCBC-1kb | 60 bp – 1 kb | $700            |\n| PCBC-3kb | 1 kb – 3 kb  | $0.20/bp + $500 |\n| PCBC-5kb | 3 kb – 5 kb  | $0.24/bp + $500 |\n\n---\n\n## Key Features\n\n* Sequence-verified constructs\n* Multiple cloning service levels available\n* Support for standard and custom vectors\n* BioArk proprietary vector platforms\n* CRISPR, RNAi, overexpression, and inducible systems\n* Fast 2–3 week turnaround\n* Expert cloning design support\n* Delivered as purified plasmid DNA (2–10 μg)\n* Suitable for academic, biotech, and pharmaceutical research\n\n---\n\n## Research Use Only (RUO)\n\nBioArk Gene Cloning Services are intended for research use only and are not for diagnostic, therapeutic, or clinical applications.\n",
-      "showInHomepageServices": true,
-      "order": 0,
-      "category": "synthesis-cloning"
-    },
-    "svc-04": {
-      "hidden": true
-    },
-    "svc-06": {
-      "hidden": true
-    },
-    "svc-07": {
-      "hidden": true
-    },
-    "svc-08": {
-      "hidden": true
-    },
-    "svc-10": {
-      "category": "virus-packaging",
-      "hidden": true
-    },
-    "svc-12": {
-      "name": "CRISPR Knockout Service (GEDT-011)",
-      "description": "Professional gene knockout services using advanced CRISPR technology.",
-      "link": "/services/gene-knockout-service",
-      "imageUrl": "",
-      "longDescription": "Comprehensive gene knockout services using CRISPR-Cas9 technology for precise gene disruption.",
-      "keyBenefits": [
-        "High-efficiency knockout",
-        "Validated results",
-        "Multiple cell line support"
-      ],
-      "processOverview": [
-        {
-          "step": "Consultation",
-          "description": "Discuss your gene knockout targets and requirements."
-        },
-        {
-          "step": "gRNA Design",
-          "description": "Design optimized guide RNAs for target genes."
-        },
-        {
-          "step": "Knockout",
-          "description": "CRISPR-mediated gene knockout."
-        },
-        {
-          "step": "Validation",
-          "description": "Knockout validation and QC."
-        }
-      ],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "BioArk's CRISPR Gene Knockout (KO) Service utilizes the CRISPR-Cas9 gene-editing system to generate targeted gene disruptions through double-strand DNA cleavage followed by endogenous Non-Homologous End Joining (NHEJ) repair. This approach is one of the most widely used methods for creating loss-of-function cell models and studying gene function.\n\nThe CRISPR-Cas9 complex introduces a targeted double-strand break (DSB) at the desired genomic locus. During cellular repair, the NHEJ pathway rejoins the DNA ends in an error-prone manner, frequently generating small insertions or deletions (indels). These indels often cause frameshift mutations, premature stop codons, or disruption of critical coding regions, resulting in functional knockout of the target gene.\n\nBioArk provides both complete CRISPR knockout cell line services and customized CRISPR knockout vector kits to support a wide range of gene-editing projects.\n\n---\n\n## CRISPR Knockout Mechanism\n\n### Step 1: Target Recognition\nA single guide RNA (sgRNA) directs the Cas9 nuclease to a specific genomic sequence adjacent to a PAM site.\n\n### Step 2: Double-Strand DNA Cleavage\nCas9 introduces a targeted double-strand break at the genomic target locus.\n\n### Step 3: NHEJ-Mediated DNA Repair\nThe cell repairs the DNA break through the Non-Homologous End Joining (NHEJ) pathway, which often introduces random insertions or deletions (indels).\n\n### Step 4: Functional Gene Disruption\nFrameshift mutations or coding sequence disruption lead to loss of gene function, creating a knockout cell population or knockout clone.\n\n---\n\n## BioArk CRISPR Knockout Service\n\nBioArk's CRISPR Knockout Service provides end-to-end project support, including:\n\n- Target gene analysis\n- sgRNA design and optimization\n- CRISPR vector construction\n- Cell transfection or transduction\n- Antibiotic selection\n- Stable pool generation\n- Single-cell cloning\n- Genotyping and sequencing validation\n- Knockout efficiency assessment\n\n### Applications\n\n- Functional genomics\n- Target validation\n- Cancer research\n- Drug discovery\n- Signal transduction studies\n- Disease model generation\n- Gene function characterization\n\n---\n\n## Service Options\n\n### CRISPR Knockout Stable Cell Pool\n\n**Cat. No.: GEDT-011c**\n\nGenerate a stable mixed cell population containing CRISPR-induced knockout events.\n\n**Deliverables**\n\n- CRISPR-edited stable cell pool\n- ≥1 × 10⁶ cells\n- Sequencing validation\n\n| Cat. No. | Service | Deliverable | Price | Turnaround Time |\n|-----------|-----------|-----------|-----------|-----------|\n| GEDT-011c | CRISPR KO Stable Cell Pool | 1 × 10⁶ cells | $3,200 | 6–8 Weeks |\n\n---\n\n### CRISPR Knockout Single Clone (293T)\n\n**Cat. No.: GEDT-011p**\n\nIsolation and validation of a single knockout clone derived from HEK293T cells.\n\n**Deliverables**\n\n- Single-cell-derived knockout clone\n- ≥1 × 10⁶ cells\n- Sequencing validation report\n\n| Cat. No. | Service | Deliverable | Price | Turnaround Time |\n|-----------|-----------|-----------|-----------|-----------|\n| GEDT-011p | CRISPR KO Single Clone (293T) | 1 × 10⁶ cells | $6,500 | 12–16 Weeks |\n\n---\n\n## BioArk CRISPR Knockout Kit\n\n### CRISPR Knockout Vector Kit\n\n**Cat. No.: GEDT-011k**\n\nBioArk's CRISPR Knockout Kit is designed for researchers who prefer to perform gene editing in-house. Based on the customer's target gene information, BioArk designs optimized sgRNAs and constructs customized CRISPR knockout vectors ready for experimental use.\n\n### Kit Includes\n\n- Three independent CRISPR knockout vectors\n- Optimized sgRNA designs\n- Target sequence analysis\n- Vector maps\n- Sequence verification\n- Technical support\n\n### Advantages\n\n- Multiple sgRNA designs increase knockout success rate\n- Minimized off-target risk through bioinformatic screening\n- Ready-to-use plasmid constructs\n- Compatible with standard mammalian cell transfection workflows\n- Suitable for generating stable knockout cell lines\n\n### Deliverables\n\n| Cat. No. | Product | Deliverable | Price | Turnaround Time |\n|-----------|-----------|-----------|-----------|-----------|\n| GEDT-011k | CRISPR KO Kit | 3 sequence-verified vectors (5 μg each) | $1,080 | 2–3 Weeks |\n\n---\n\n## Key Features\n\n- CRISPR-Cas9 gene knockout via NHEJ-mediated indel formation\n- Optimized sgRNA design\n- Sequence-verified CRISPR vectors\n- Stable pool and single-clone services available\n- Customized knockout kit for customer-selected genes\n- Sequencing-based validation\n- Suitable for academic and industrial research\n- Fast turnaround and expert technical support\n\n---\n\n## Research Use Only (RUO)\n\nFor research use only. Not intended for diagnostic, therapeutic, or clinical applications.",
-      "showInHomepageServices": false,
-      "order": 1,
-      "hidden": false,
-      "category": "genome-editing-service"
-    },
-    "svc-11": {
-      "name": "CRISPR GeneTagging Service (GEDT-014)",
-      "description": "Professional gene tagging services for protein expression and tracking.",
-      "link": "/services/gene-tagging-service",
-      "imageUrl": "",
-      "longDescription": "Comprehensive gene tagging services for protein expression, tracking, and purification.",
-      "keyBenefits": [
-        "Multiple tag options",
-        "Precise gene integration",
-        "Validated expression"
-      ],
-      "processOverview": [
-        {
-          "step": "Consultation",
-          "description": "Discuss your gene tagging requirements and tag selection."
-        },
-        {
-          "step": "Vector Design",
-          "description": "Design tagging vectors optimized for your gene."
-        },
-        {
-          "step": "Integration",
-          "description": "Gene tagging and integration."
-        },
-        {
-          "step": "Validation",
-          "description": "Expression validation and QC."
-        }
-      ],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "showInHomepageServices": false,
-      "order": 4,
-      "hidden": false,
-      "category": "genome-editing-service"
+    "groupsConfig": {
+        "svc-custom-1759629893580": "AAV Packaging services",
+        "svc-custom-1759768141509": "Lentivirus",
+        "svc-custom-1766633494933": "AAV",
+        "svc-custom-1766633683929": "Others",
+        "svc-custom-1766633756918": "0-Overview",
+        "svc-05": "Stable Cell Pool",
+        "svc-custom-1781926857295": "Stable Single Clone",
+        "svc-custom-1781926955655": "Cell Exp Service",
+        "svc-custom-1781927021493": "Stable Cell Pool",
+        "svc-custom-1781927082345": "Stable Cell Pool",
+        "svc-custom-1781927152119": "Stable Cell Pool",
+        "svc-custom-1781927176761": "Stable Cell Pool",
+        "svc-custom-1781927260141": "Cell Exp Service",
+        "svc-custom-1781927281199": "Cell Exp Service",
+        "svc-custom-1781927305901": "Cell Exp Service",
+        "svc-custom-1781927395025": "Cell Exp Service",
+        "svc-custom-1781927453296": "Cell Exp Service",
+        "svc-custom-1781927518013": "Stable Single Clone",
+        "svc-custom-1781927590685": "Stable Single Clone",
+        "svc-custom-1781927623823": "Stable Single Clone",
+        "svc-custom-1781927675325": "Stable Single Clone",
+        "svc-custom-1781928419819": "CRISPR",
+        "svc-12": "CRISPR",
+        "svc-11": "CRISPR",
+        "svc-custom-1781928830040": "CRISPR",
+        "svc-02": "CRISPR",
+        "svc-custom-1781929007026": "CRISPR",
+        "svc-custom-1781929035479": "CRISPR",
+        "svc-custom-1781929077288": "CRISPR",
+        "svc-custom-1781929111008": "CRISPR",
+        "svc-custom-1781929139136": "CRISPR",
+        "svc-custom-1781929165744": "CRISPR",
+        "svc-custom-1781929207896": "RNA Editing",
+        "svc-custom-1781929250196": "RNA Editing",
+        "svc-custom-1781929272318": "RNA Editing",
+        "svc-custom-1781929439926": "Over Exp",
+        "svc-custom-1781929492404": "Over Exp",
+        "svc-custom-1781929583649": "Inducible Exp",
+        "svc-custom-1781929676236": "Inducible Exp",
+        "svc-09": "Cloning",
+        "svc-custom-1781930558612": "Cloning",
+        "svc-custom-1781930684357": "Cloning",
+        "svc-custom-1781930762953": "Cloning",
+        "svc-custom-1781930839047": "Mutagenesis",
+        "svc-custom-1781931104355": "Plasmid Prep",
+        "svc-custom-1781932238625": "RNA Editing",
+        "svc-custom-1781935103462": "2-Insect Cell",
+        "svc-custom-1781935162950": "1-Prokaryotic Cell",
+        "svc-custom-1781935204903": "3-Mammalian Cell",
+        "svc-custom-1781935294369": "3-Mammalian Cell",
+        "svc-01": "0-Overview",
+        "svc-custom-1782072955168": "Cloning"
     }
-  },
-  "custom": [
-    {
-      "id": "svc-custom-1782072955168",
-      "name": "Standard Cloning Service (PCST)",
-      "description": "BioArk Standard Cloning Service provides professional gene synthesis and cloning into BioArk's standard cloning vectors. This service is ideal for routine gene cloning, sequence verification, plasmid storage, and downstream molecular biology applications. All projects include sequence verification and delivery of 2–10 μg purified plasmid DNA with a typical turnaround time of 2–3 weeks.",
-      "link": "/services/standard-cloning-service-pcst",
-      "imageUrl": "",
-      "icon": "",
-      "category": "synthesis-cloning",
-      "groupName": "Cloning",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "BioArk Standard Cloning Service (PCST) provides a fast, reliable, and cost-effective solution for routine gene cloning projects. Customers provide the target DNA sequence, and BioArk performs gene synthesis, cloning into a standard BioArk cloning vector, sequence verification, and plasmid preparation.\n\nThis service is ideal for researchers requiring gene synthesis, DNA fragment storage, sequence verification, plasmid archiving, or downstream subcloning applications. Standard Cloning utilizes BioArk's validated cloning vectors and optimized workflows to ensure high cloning success rates and rapid project completion.\n\nAll completed projects are delivered as sequence-verified recombinant plasmids with 2–10 μg purified plasmid DNA, ready for downstream molecular biology applications.\n\n## Key Benefits\n\n- Cost-effective cloning solution\n- Utilizes BioArk standard cloning vectors\n- No customer vector required\n- Sequence-verified recombinant plasmids\n- High cloning success rate\n- Fast turnaround time (2–3 weeks)\n- Delivered as purified plasmid DNA (2–10 μg)\n- Ideal for gene storage and downstream subcloning\n\n## Typical Applications\n\n- Gene synthesis and cloning\n- DNA fragment archiving\n- Sequence verification\n- Gene storage and repository construction\n- Template preparation for downstream cloning\n- Molecular biology research\n- Synthetic biology projects\n\n## Pricing\n\n| Cat. No. | Insert Size | Deliverable | Price | Turnaround Time |\n|-----------|------------|-------------|--------|----------------|\n| PCST-060 | < 60 bp | 2–10 μg plasmid DNA | $150 | 2–3 Weeks |\n| PCST-1kb | 60 bp – 1 kb | 2–10 μg plasmid DNA | $200 | 2–3 Weeks |\n| PCST-3kb | 1 kb – 3 kb | 2–10 μg plasmid DNA | $0.20/bp | 2–3 Weeks |\n| PCST-5kb | 3 kb – 5 kb | 2–10 μg plasmid DNA | $0.24/bp | 2–3 Weeks |\n\n## Deliverables\n\n- Sequence-verified recombinant plasmid\n- 2–10 μg purified plasmid DNA\n- Sequencing report\n\n## Research Use Only (RUO)\n\nFor research use only. Not intended for diagnostic, therapeutic, or clinical applications.",
-      "createdAt": 1782072955168,
-      "order": 2,
-      "showInHomepageServices": false
-    },
-    {
-      "id": "svc-custom-1781935294369",
-      "name": "CHO Antibody Protein Purification",
-      "description": "",
-      "link": "/services/cho-antibody-protein-purification",
-      "imageUrl": "",
-      "icon": "",
-      "category": "category-1764976659245",
-      "groupName": "3-Mammalian Cell",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781935294369
-    },
-    {
-      "id": "svc-custom-1781935204903",
-      "name": "293T Antigen Protein Purification",
-      "description": "",
-      "link": "/services/293t-antigen-protein-purification",
-      "imageUrl": "",
-      "icon": "",
-      "category": "category-1764976659245",
-      "groupName": "3-Mammalian Cell",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781935204903
-    },
-    {
-      "id": "svc-custom-1781935162950",
-      "name": "Ecoil Protein Purification",
-      "description": "",
-      "link": "/services/ecoil-protein-purification",
-      "imageUrl": "",
-      "icon": "",
-      "category": "category-1764976659245",
-      "groupName": "1-Prokaryotic Cell",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781935162950
-    },
-    {
-      "id": "svc-custom-1781935103462",
-      "name": "Sf9 Protein Purification",
-      "description": "",
-      "link": "/services/sf9-cell-protein-purification",
-      "imageUrl": "",
-      "icon": "",
-      "category": "category-1764976659245",
-      "groupName": "2-Insect Cells",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781935103462,
-      "showInHomepageServices": false
-    },
-    {
-      "id": "svc-custom-1781932238625",
-      "name": "RNA Editing Overview (RNET)",
-      "description": "",
-      "link": "/services/rna-editing-overview-rnet",
-      "imageUrl": "",
-      "icon": "",
-      "category": "genome-editing-service",
-      "groupName": "RNA Editing",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781932238625,
-      "order": 0
-    },
-    {
-      "id": "svc-custom-1781931104355",
-      "name": "Plasmid Preparation Service (PPMX)",
-      "description": "BioArk Plasmid Preparation Service provides high-quality plasmid DNA purification for standard-copy and low-copy plasmids. Available in Mini, Midi, and Maxi preparation formats, this service delivers reliable yields and concentrations suitable for cloning, transfection, CRISPR gene editing, virus packaging, protein expression, and other molecular biology applications.",
-      "link": "/services/plasmid-preparation-service",
-      "imageUrl": "",
-      "icon": "",
-      "category": "synthesis-cloning",
-      "groupName": "Plasmid Prep",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "BioArk Plasmid Preparation Service provides high-quality plasmid DNA purification for research applications, including cloning, transfection, CRISPR gene editing, virus packaging, protein expression, and molecular biology studies. Our service offers both standard-copy and low-copy plasmid preparation options to accommodate a wide range of plasmid constructs and experimental requirements.\n\nUsing optimized bacterial culture and plasmid purification workflows, BioArk delivers highly concentrated plasmid DNA with reliable yield and purity. All plasmid preparations are supplied in nuclease-free buffer and are suitable for downstream applications in academic, biotechnology, and pharmaceutical research.\n\n## Service Options\n\n### Standard-Copy Plasmid Preparation\n\nDesigned for routine plasmid vectors with standard replication origins and typical bacterial copy numbers.\n\n**Available Formats**\n- Miniprep\n- Midiprep\n- Maxiprep\n\n### Low-Copy Plasmid Preparation\n\nDesigned for plasmids containing low-copy origins, large constructs, unstable sequences, lentiviral vectors, AAV vectors, BAC-derived plasmids, or other difficult-to-propagate constructs.\n\n**Available Formats**\n- Miniprep\n- Midiprep\n- Maxiprep\n\n## Key Features\n\n- High-quality plasmid DNA purification\n- Available for standard-copy and low-copy plasmids\n- Suitable for cloning, transfection, and gene editing applications\n- Reliable DNA yield and concentration\n- Nuclease-free preparation\n- Fast turnaround time\n- Delivered ready for downstream research applications\n- Compatible with CRISPR, RNAi, viral vector, and protein expression workflows\n\n## Pricing\n\n### Standard-Copy Plasmid Preparation\n\n| Cat. No. | Service | Typical Concentration | Typical Yield | Price | Turnaround Time |\n|-----------|-----------|-----------|-----------|-----------|-----------|\n| PPMN | Miniprep-Standard | >50 ng/μL | >5 μg | $35 | ~1 Week |\n| PPMD | Midiprep-Standard | >100 ng/μL | >50 μg | $82 | ~1 Week |\n| PPMX | Maxiprep-Standard | >100 ng/μL | >500 μg | $180 | ~1 Week |\n\n### Low-Copy Plasmid Preparation\n\n| Cat. No. | Service | Typical Concentration | Typical Yield | Price | Turnaround Time |\n|-----------|-----------|-----------|-----------|-----------|-----------|\n| PPMN-L | Miniprep-Low Copy | >50 ng/μL | >5 μg | $45 | ~1 Week |\n| PPMD-L | Midiprep-Low Copy | >100 ng/μL | >50 μg | $100 | ~1 Week |\n| PPMX-L | Maxiprep-Low Copy | >100 ng/μL | >500 μg | $230 | ~1 Week |\n\n## Applications\n\n- Molecular cloning\n- CRISPR gene editing\n- RNAi studies\n- Mammalian cell transfection\n- Lentiviral vector production\n- AAV vector production\n- Protein expression\n- Stable cell line development\n- Functional genomics research\n\n## Deliverables\n\n- Purified plasmid DNA\n- Concentration and yield information\n- Delivered in nuclease-free buffer\n\n## Research Use Only (RUO)\n\nFor research use only. Not intended for diagnostic, therapeutic, or clinical applications.",
-      "createdAt": 1781931104355,
-      "showInHomepageServices": false
-    },
-    {
-      "id": "svc-custom-1781930839047",
-      "name": "Plasmid Mutagenesis Service (PLMU)",
-      "description": "BioArk Plasmid Mutagenesis Service provides precise introduction of single or multiple mutations into existing plasmid constructs. Whether you require point mutations, amino acid substitutions, insertions, deletions, or complex multi-site modifications, our team delivers sequence-verified mutant plasmids with fast turnaround times and high accuracy, ready for downstream research applications.",
-      "link": "/services/mutagenesis-service-plmu",
-      "imageUrl": "",
-      "icon": "",
-      "category": "synthesis-cloning",
-      "groupName": "Mutagenesis",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "BioArk Plasmid Mutagenesis Service provides fast and reliable introduction of targeted mutations into existing plasmid constructs. Our experienced molecular biology team utilizes optimized mutagenesis strategies to generate precise sequence modifications while maintaining plasmid integrity and functionality.\n\nThe service supports single-site mutations, multiple-site mutations, amino acid substitutions, insertions, deletions, promoter modifications, epitope tag insertion, and other custom sequence alterations. All completed constructs are sequence-verified and delivered as purified plasmid DNA ready for downstream applications.\n\n## Service Options\n\n### Single Mutant (PLMU-S)\n\nDesigned for introducing a single nucleotide or amino acid mutation into an existing plasmid construct.\n\n**Typical Applications**\n- Point mutation\n- Amino acid substitution\n- Functional residue analysis\n- Protein structure-function studies\n\n### Multiple Mutant – Simple (PLMU-M)\n\nSuitable for introducing multiple mutations simultaneously when mutation sites are relatively close together or can be generated through a straightforward mutagenesis strategy.\n\n**Typical Applications**\n- Multi-site amino acid substitutions\n- Phosphorylation site mutations\n- Protein domain modification\n- Functional screening studies\n\n### Multiple Mutant – Complex (PLMU-C)\n\nDesigned for advanced mutagenesis projects involving numerous mutation sites, difficult sequence contexts, large-scale sequence modifications, insertions, deletions, or complex construct redesign.\n\n**Typical Applications**\n- Multi-domain engineering\n- Extensive protein engineering\n- Large-scale sequence optimization\n- Complex promoter or regulatory element modification\n\n## Key Features\n\n- High-accuracy mutagenesis design\n- Sequence-verified mutant constructs\n- Supports substitution, insertion, and deletion mutations\n- Single-site and multi-site mutagenesis options\n- Fast turnaround time\n- Delivered as purified plasmid DNA (2–10 μg)\n- Suitable for academic, biotechnology, and pharmaceutical research\n\n## Pricing\n\n| Cat. No. | Service Type | Deliverable | Price | Turnaround Time |\n|-----------|-------------|-------------|--------|----------------|\n| PLMU-S | Single Mutant | 2–10 μg plasmid DNA | $156 | ~2 Weeks |\n| PLMU-M | Multiple Mutant – Simple | 2–10 μg plasmid DNA | $240 | 2–3 Weeks |\n| PLMU-C | Multiple Mutant – Complex | 2–10 μg plasmid DNA | $300 | 2–3 Weeks |\n\n## Deliverables\n\n- Sequence-verified mutant plasmid\n- 2–10 μg purified plasmid DNA\n- Sequencing report\n\n## Research Use Only (RUO)\n\nFor research use only. Not intended for diagnostic, therapeutic, or clinical applications.",
-      "createdAt": 1781930839047,
-      "showInHomepageServices": false
-    },
-    {
-      "id": "svc-custom-1781930762953",
-      "name": "BioArk Complex Cloning Sevice (PCBC)",
-      "description": "BioArk Complex Cloning Service provides custom plasmid engineering solutions for advanced research applications, including multi-gene constructs, CRISPR systems, fusion proteins, inducible expression vectors, and synthetic biology projects. Our scientists design and build sequence-verified recombinant plasmids tailored to your specific requirements, delivering ready-to-use constructs for complex genetic engineering studies.",
-      "link": "/services/bioark-complex-cloning-sevice-pcbc",
-      "imageUrl": "",
-      "icon": "",
-      "category": "synthesis-cloning",
-      "groupName": "Cloning",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "BioArk Complex Cloning Service (PCBC) is designed for advanced plasmid engineering projects that require customized vector architecture, multi-fragment assembly, genetic element optimization, or sophisticated construct design beyond standard cloning workflows. Customers provide their project requirements and target sequences, while BioArk's molecular biology team designs, constructs, verifies, and delivers a fully customized recombinant plasmid.\n\nThis service is ideal for projects involving complex CRISPR systems, multi-gene expression vectors, fusion protein constructs, inducible expression systems, reporter-expression combinations, promoter replacement, synthetic biology applications, and other advanced genetic engineering requirements. BioArk scientists work closely with customers to optimize construct design and cloning strategies to maximize project success.\n\nAll completed projects are delivered as sequence-verified recombinant plasmids with 2–10 μg purified plasmid DNA, ready for downstream research applications.\n\n## Key Benefits\n\n- Fully customized plasmid design and construction\n- Expert cloning strategy and vector design support\n- Multi-fragment DNA assembly capabilities\n- Support for complex CRISPR, RNAi, and expression systems\n- Suitable for synthetic biology and advanced vector engineering\n- Sequence-verified recombinant plasmids\n- Fast turnaround time (2–3 weeks)\n- Delivered as purified plasmid DNA (2–10 μg)\n\n## Typical Applications\n\n- Multi-gene expression vectors\n- Dual-expression constructs\n- Fusion protein vectors\n- Complex CRISPR systems\n- Inducible gene expression systems\n- Promoter replacement and engineering\n- Reporter-expression combinations\n- Synthetic biology projects\n- Advanced vector optimization\n\n## Pricing\n\n| Cat. No. | Insert Size | Deliverable | Price | Turnaround Time |\n|-----------|------------|-------------|--------|----------------|\n| PCBC-060 | < 60 bp | 2–10 μg plasmid DNA | $650 | 2–3 Weeks |\n| PCBC-1kb | 60 bp – 1 kb | 2–10 μg plasmid DNA | $700 | 2–3 Weeks |\n| PCBC-3kb | 1 kb – 3 kb | 2–10 μg plasmid DNA | $0.20/bp + $500 | 2–3 Weeks |\n| PCBC-5kb | 3 kb – 5 kb | 2–10 μg plasmid DNA | $0.24/bp + $500 | 2–3 Weeks |\n\n## Deliverables\n\n- Custom-designed recombinant plasmid\n- Sequence verification report\n- 2–10 μg purified plasmid DNA\n- Project design consultation and cloning support\n\n## Research Use Only (RUO)\n\nFor research use only. Not intended for diagnostic, therapeutic, or clinical applications.",
-      "createdAt": 1781930762953,
-      "showInHomepageServices": false,
-      "order": 5
-    },
-    {
-      "id": "svc-custom-1781930684357",
-      "name": "BioArk Vector Cloning Service (PCBA)",
-      "description": "BioArk Vector Cloning Service provides professional cloning of customer target sequences into BioArk's validated vector platforms, including RNAi, CRISPR, OverExpression, and Inducible expression vectors. This service eliminates the need for customers to provide a destination vector and delivers sequence-verified recombinant plasmids ready for gene expression, gene editing, gene silencing, and functional genomics research applications.",
-      "link": "/services/bioark-vector-cloning-services",
-      "imageUrl": "",
-      "icon": "",
-      "category": "synthesis-cloning",
-      "groupName": "Cloning",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "BioArk Vector Cloning Service (PCBA) is designed for researchers who wish to clone their target sequences into BioArk's pre-validated vector platforms. Customers provide the target DNA sequence, and BioArk performs gene synthesis, vector construction, sequence verification, and plasmid preparation using one of BioArk's proprietary vector backbones.\n\nAvailable BioArk vector platforms include:\n\n- RNAi NonViral Template Vectors\n- CRISPR Gene Editing Vectors\n- OverExpression Vectors\n- Inducible Expression Vectors\n\nThis service is ideal for researchers seeking a ready-to-use functional vector without the need to supply a destination plasmid. The vector backbone architecture remains unchanged, while the customer's target sequence is inserted into the appropriate cloning site. All vectors have been optimized and validated for their intended applications, helping to reduce project risk and accelerate research progress.\n\nAll completed projects are delivered as sequence-verified recombinant plasmids with 2–10 μg purified plasmid DNA, ready for transfection, gene expression, RNAi, CRISPR gene editing, or inducible expression studies.\n\n## Key Benefits\n\n- Utilizes BioArk's validated vector platforms\n- No customer vector required\n- Available for RNAi, CRISPR, OverExpression, and Inducible applications\n- Sequence-verified recombinant plasmids\n- Reduced cloning design complexity\n- Fast turnaround time (2–3 weeks)\n- Delivered as purified plasmid DNA (2–10 μg)\n\n## Pricing\n\n| Cat. No. | Insert Size | Deliverable | Price | Turnaround Time |\n|-----------|------------|-------------|--------|----------------|\n| PCBA-060 | < 60 bp | 2–10 μg plasmid DNA | $450 | 2–3 Weeks |\n| PCBA-1kb | 60 bp – 1 kb | 2–10 μg plasmid DNA | $500 | 2–3 Weeks |\n| PCBA-3kb | 1 kb – 3 kb | 2–10 μg plasmid DNA | $0.20/bp + $300 | 2–3 Weeks |\n| PCBA-5kb | 3 kb – 5 kb | 2–10 μg plasmid DNA | $0.24/bp + $300 | 2–3 Weeks |\n\n## Deliverables\n\n- Sequence-verified recombinant plasmid\n- 2–10 μg purified plasmid DNA\n- Sequencing report\n\n## Research Use Only (RUO)\n\nFor research use only. Not intended for diagnostic, therapeutic, or clinical applications.",
-      "createdAt": 1781930684357,
-      "showInHomepageServices": false,
-      "order": 4
-    },
-    {
-      "id": "svc-custom-1781930558612",
-      "name": "Custom Cloning Service (PCCT)",
-      "description": "BioArk's Custom Cloning Service provides professional cloning of customer-supplied DNA sequences into customer-provided plasmid vectors. This service is ideal for researchers requiring customized expression, CRISPR, RNAi, reporter, or proprietary vector constructs. All projects include sequence verification and delivery of 2–10 μg purified plasmid DNA, with a typical turnaround time of 2–3 weeks.",
-      "link": "/services/custom-cloning-pcct",
-      "imageUrl": "",
-      "icon": "",
-      "category": "synthesis-cloning",
-      "groupName": "Cloning",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "\nBioArk's Custom Cloning Service (PCCT) is designed for researchers who require insertion of a DNA fragment into a customer-provided plasmid vector. Customers provide the target DNA sequence and destination vector, and BioArk performs professional cloning, plasmid construction, sequence verification, and plasmid preparation.\n\nThis service is ideal for projects involving proprietary vectors, customized expression systems, reporter plasmids, CRISPR vectors, RNAi vectors, gene overexpression constructs, and other specialized research applications. Our experienced molecular biology team utilizes optimized cloning strategies to ensure accurate construct generation and a high project success rate.\n\nAll completed projects are delivered as sequence-verified recombinant plasmids with 2–10 μg purified plasmid DNA, ready for downstream research applications.\n\n## Key Benefits\n\n- Compatible with customer-supplied vectors\n- Sequence-verified recombinant plasmids\n- Suitable for expression, CRISPR, RNAi, and reporter vector construction\n- High cloning success rate\n- Fast turnaround time (2–3 weeks)\n- Delivered as purified plasmid DNA (2–10 μg)\n\n## Pricing\n\n| Cat. No. | Insert Size | Deliverable | Price | Turnaround Time |\n|-----------|------------|-------------|--------|----------------|\n| PCCT-060 | < 60 bp | 2–10 μg plasmid DNA | $180 | 2–3 Weeks |\n| PCCT-1kb | 60 bp – 1 kb | 2–10 μg plasmid DNA | $240 | 2–3 Weeks |\n| PCCT-3kb | 1 kb – 3 kb | 2–10 μg plasmid DNA | $0.24/bp | 2–3 Weeks |\n| PCCT-5kb | 3 kb – 5 kb | 2–10 μg plasmid DNA | $0.28/bp | 2–3 Weeks |\n\n## Deliverables\n\n- Sequence-verified recombinant plasmid\n- 2–10 μg purified plasmid DNA\n- Sequencing report\n\n## Research Use Only (RUO)\n\nFor research use only. Not intended for diagnostic, therapeutic, or clinical applications.",
-      "createdAt": 1781930558612,
-      "showInHomepageServices": false,
-      "order": 3
-    },
-    {
-      "id": "svc-custom-1781930181444",
-      "name": "Subcloning Services (PCSC)",
-      "description": "BioArk Subcloning Service provides professional plasmid construction and DNA cloning solutions for research applications. Whether you need routine gene insertion, vector modification, or complex plasmid engineering, our experienced molecular biology team delivers sequence-verified recombinant plasmids with fast turnaround times and competitive pricing. Suitable for gene expression, CRISPR, RNAi, viral vector construction, and other molecular biology workflows.",
-      "link": "/services/subcloning-services-pcsc",
-      "imageUrl": "",
-      "icon": "",
-      "category": "synthesis-cloning",
-      "groupName": "Cloning",
-      "longDescription": "BioArk provides reliable and cost-effective molecular cloning services for researchers requiring DNA fragment insertion, vector construction, plasmid modification, and recombinant plasmid generation. Our experienced molecular biology team utilizes proven cloning strategies to deliver high-quality plasmid constructs suitable for downstream applications, including protein expression, gene overexpression, gene editing, viral vector construction, and functional studies.\nAll constructs undergo sequence verification prior to delivery to ensure cloning accuracy and project success.",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "BioArk provides reliable and cost-effective molecular cloning services for researchers requiring DNA fragment insertion, vector construction, plasmid modification, and recombinant plasmid generation. Our experienced molecular biology team utilizes proven cloning strategies to deliver high-quality plasmid constructs suitable for downstream applications, including protein expression, gene overexpression, gene editing, viral vector construction, and functional studies.\n\nAll constructs undergo sequence verification prior to delivery to ensure cloning accuracy and project success.\n\n---\n\n## Service Options\n\n| Class | Service | Cat. No. | Description | Deliverable | Turnaround Time | Price |\n|---------|---------|---------|---------|---------|---------|---------|\n| Subcloning | Simple Subcloning | PCSC-A | Standard cloning projects involving straightforward DNA fragment insertion into common plasmid vectors | 2–10 μg sequence-verified plasmid DNA | ~2 Weeks | $180 |\n| Subcloning | Complex Subcloning | PCSC-B | Advanced cloning projects involving large inserts, multiple fragments, vector modifications, or complex assembly strategies | 2–10 μg sequence-verified plasmid DNA | ~2 Weeks | $240 |\n\n---\n\n## Service Details\n\n### PCSC-A – Simple Subcloning\n\nSuitable for routine cloning projects, including:\n\n- PCR fragment cloning\n- Gene insertion into expression vectors\n- Restriction enzyme-based cloning\n- Vector-to-vector subcloning\n- Standard recombinant plasmid construction\n\n**Deliverables**\n\n- Sequence-verified recombinant plasmid\n- 2–10 μg purified plasmid DNA\n- Sequencing report\n\n---\n\n### PCSC-B – Complex Subcloning\n\nSuitable for advanced cloning projects, including:\n\n- Multi-fragment assembly\n- Large gene cloning\n- Promoter replacement\n- Site-directed modifications\n- Custom vector engineering\n- Complex plasmid construction\n\n**Deliverables**\n\n- Sequence-verified recombinant plasmid\n- 2–10 μg purified plasmid DNA\n- Sequencing report\n\n---\n\n## Key Features\n\n- Sequence-verified plasmid constructs\n- High cloning success rate\n- Experienced molecular cloning specialists\n- Support for custom vectors and cloning strategies\n- Fast turnaround time\n- Competitive pricing\n- Detailed project communication\n- Suitable for academic, biotechnology, and pharmaceutical research\n- Optional plasmid preparation upgrades available\n\n---\n\n## Applications\n\n- Gene overexpression studies\n- CRISPR vector construction\n- RNAi and shRNA vector generation\n- Protein expression projects\n- Lentiviral vector construction\n- AAV vector construction\n- Reporter plasmid development\n- Functional genomics research\n- Synthetic biology applications\n\n---\n\n## Ordering Information\n\n| Cat. No. | Service | Turnaround Time | Price |\n|-----------|-----------|-----------|-----------|\n| PCSC-A | Simple Subcloning | ~2 Weeks | $180 |\n| PCSC-B | Complex Subcloning | ~2 Weeks | $240 |\n\n---\n\n### Research Use Only (RUO)\n\nBioArk Subcloning Services are intended for research use only and are not for diagnostic, therapeutic, or clinical applications.",
-      "createdAt": 1781930181444,
-      "showInHomepageServices": false,
-      "order": 1
-    },
-    {
-      "id": "svc-custom-1781929676236",
-      "name": "CRISPR Targeting Inducible Expression Service (IDCB-021)",
-      "description": "",
-      "link": "/services/crispr-targeting-inducible-expression-service",
-      "imageUrl": "",
-      "icon": "",
-      "category": "genome-editing-service",
-      "groupName": "Inducible Exp",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781929676236,
-      "showInHomepageServices": false
-    },
-    {
-      "id": "svc-custom-1781929583649",
-      "name": "Classical Inducible Expression Service (IDCB-011)",
-      "description": "",
-      "link": "/services/classical-inducible-expression-service",
-      "imageUrl": "",
-      "icon": "",
-      "category": "genome-editing-service",
-      "groupName": "Inducible Exp",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781929583650,
-      "showInHomepageServices": false
-    },
-    {
-      "id": "svc-custom-1781929492404",
-      "name": "CRISPR Targeting OverExp Service (ORFX-021)",
-      "description": "",
-      "link": "/services/crispr-targeting-overexp-service",
-      "imageUrl": "",
-      "icon": "",
-      "category": "genome-editing-service",
-      "groupName": "OverExp",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781929492404,
-      "showInHomepageServices": false
-    },
-    {
-      "id": "svc-custom-1781929439926",
-      "name": "Classical OverExpression Service (ORFX-011)",
-      "description": "",
-      "link": "/services/classical-overexpression-service",
-      "imageUrl": "",
-      "icon": "",
-      "category": "genome-editing-service",
-      "groupName": "OverExp",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781929439926,
-      "showInHomepageServices": false
-    },
-    {
-      "id": "svc-custom-1781929272318",
-      "name": "Classical miRNA service (RNET-012)",
-      "description": "",
-      "link": "/services/classical-mirna-service",
-      "imageUrl": "",
-      "icon": "",
-      "category": "genome-editing-service",
-      "groupName": "RNAi",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781929272318,
-      "showInHomepageServices": false,
-      "order": 2
-    },
-    {
-      "id": "svc-custom-1781929250196",
-      "name": "CRISPR RNAi Service (RNET-021)",
-      "description": "",
-      "link": "/services/crispr-rnai-service",
-      "imageUrl": "",
-      "icon": "",
-      "category": "genome-editing-service",
-      "groupName": "RNAi",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781929250196,
-      "order": 3,
-      "showInHomepageServices": false
-    },
-    {
-      "id": "svc-custom-1781929207896",
-      "name": "Classical RNAi Service (RNET-011)",
-      "description": "",
-      "link": "/services/classical-rnai-service",
-      "imageUrl": "",
-      "icon": "",
-      "category": "genome-editing-service",
-      "groupName": "RNAi",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781929207896,
-      "showInHomepageServices": false,
-      "order": 1
-    },
-    {
-      "id": "svc-custom-1781929165744",
-      "name": "CRISPR Imaging Service (GEDT-023)",
-      "description": "",
-      "link": "/services/crispr-imaging-service-gedt-033",
-      "imageUrl": "",
-      "icon": "",
-      "category": "genome-editing-service",
-      "groupName": "CRISPR",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781929165744,
-      "order": 7
-    },
-    {
-      "id": "svc-custom-1781929139136",
-      "name": "CRISPR Inhibition Service (GEDT-022)",
-      "description": "",
-      "link": "/services/crispr-inhibition-service-gedt-022",
-      "imageUrl": "",
-      "icon": "",
-      "category": "genome-editing-service",
-      "groupName": "CRISPR",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781929139136,
-      "order": 6
-    },
-    {
-      "id": "svc-custom-1781929111008",
-      "name": "CRISPR Activation Service (GEDT-021)",
-      "description": "",
-      "link": "/services/crispr-activation-service-gedt-021",
-      "imageUrl": "",
-      "icon": "",
-      "category": "genome-editing-service",
-      "groupName": "CRISPR",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781929111008,
-      "order": 5
-    },
-    {
-      "id": "svc-custom-1781929077288",
-      "name": "CRISPR Primer Editing (GEDT-033)",
-      "description": "",
-      "link": "/services/crispr-primer-editing-cbe-033",
-      "imageUrl": "",
-      "icon": "",
-      "category": "genome-editing-service",
-      "groupName": "CRISPR",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781929077288,
-      "showInHomepageServices": false,
-      "order": 9
-    },
-    {
-      "id": "svc-custom-1781929007026",
-      "name": "CRISPR ABE/CBE Editing (GEDT-031)",
-      "description": "",
-      "link": "/services/crispr-abe-editing-gedt-031",
-      "imageUrl": "",
-      "icon": "",
-      "category": "genome-editing-service",
-      "groupName": "CRISPR",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781929007026,
-      "showInHomepageServices": false,
-      "order": 8
-    },
-    {
-      "id": "svc-custom-1781928830040",
-      "name": "CRISPR Targeting KnockIn (GEDT-013)",
-      "description": "",
-      "link": "/services/crispr-targeting-knockin-service-gedt-013",
-      "imageUrl": "",
-      "icon": "",
-      "category": "genome-editing-service",
-      "groupName": "CRISPR",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781928830040,
-      "order": 3,
-      "showInHomepageServices": false
-    },
-    {
-      "id": "svc-custom-1781928419819",
-      "name": "CRISPR Deletion Service (GEDT-012)",
-      "description": "",
-      "link": "/services/crispr-knockout",
-      "imageUrl": "",
-      "icon": "",
-      "category": "genome-editing-service",
-      "groupName": "CRISPR",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781928419819,
-      "showInHomepageServices": false,
-      "order": 2
-    },
-    {
-      "id": "svc-custom-1781927675325",
-      "name": "Inducible Stable Clone",
-      "description": "",
-      "link": "/services/inducible-stable-clone",
-      "imageUrl": "",
-      "icon": "",
-      "category": "cell-line-services",
-      "groupName": "Stable Single Clone",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781927675325,
-      "order": 4
-    },
-    {
-      "id": "svc-custom-1781927623823",
-      "name": "Overexpression Stable Clone",
-      "description": "",
-      "link": "/services/overexpression-stable-clone",
-      "imageUrl": "",
-      "icon": "",
-      "category": "cell-line-services",
-      "groupName": "Stable Cell Clone",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781927623823,
-      "order": 3
-    },
-    {
-      "id": "svc-custom-1781927590685",
-      "name": "RNAi Stable Clone",
-      "description": "",
-      "link": "/services/rnai-stable-clone",
-      "imageUrl": "",
-      "icon": "",
-      "category": "cell-line-services",
-      "groupName": "Stable Single Clone",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781927590685,
-      "order": 2
-    },
-    {
-      "id": "svc-custom-1781927518013",
-      "name": "CRISPR Stable Clone",
-      "description": "",
-      "link": "/services/crispr-stable-clone",
-      "imageUrl": "",
-      "icon": "",
-      "category": "cell-line-services",
-      "groupName": "Stable Cell Clone",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781927518013,
-      "order": 1
-    },
-    {
-      "id": "svc-custom-1781927453296",
-      "name": "Inducible Expression Service",
-      "description": "",
-      "link": "/services/inducible-expression-service",
-      "imageUrl": "",
-      "icon": "",
-      "category": "cell-line-services",
-      "groupName": "Cell Exp Service",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781927453296,
-      "order": 4
-    },
-    {
-      "id": "svc-custom-1781927395025",
-      "name": "OverExpression Service",
-      "description": "",
-      "link": "/services/overexpression-service-2",
-      "imageUrl": "",
-      "icon": "",
-      "category": "cell-line-services",
-      "groupName": "Cell Exp Service",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781927395025,
-      "order": 3
-    },
-    {
-      "id": "svc-custom-1781927281199",
-      "name": "RNAi Exp Service",
-      "description": "",
-      "link": "/services/rnai-service",
-      "imageUrl": "",
-      "icon": "",
-      "category": "cell-line-services",
-      "groupName": "Cell Exp Service",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781927281199,
-      "order": 2,
-      "showInHomepageServices": false
-    },
-    {
-      "id": "svc-custom-1781927260141",
-      "name": "CRISPR Exp Service",
-      "description": "",
-      "link": "/services/crispr-exp-service",
-      "imageUrl": "",
-      "icon": "",
-      "category": "cell-line-services",
-      "groupName": "Cell Exp Service",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781927260141,
-      "order": 1
-    },
-    {
-      "id": "svc-custom-1781927176761",
-      "name": "Inducible Cell Pool",
-      "description": "",
-      "link": "/services/inducible-cell-pool",
-      "imageUrl": "",
-      "icon": "",
-      "category": "cell-line-services",
-      "groupName": "Stable Cell Pool",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781927176761
-    },
-    {
-      "id": "svc-custom-1781927152119",
-      "name": "OverExpression Cell Pool",
-      "description": "",
-      "link": "/services/overexpression-cell-pool",
-      "imageUrl": "",
-      "icon": "",
-      "category": "cell-line-services",
-      "groupName": "Stable Cell Pool",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781927152119
-    },
-    {
-      "id": "svc-custom-1781927082345",
-      "name": "RNAi Cell Pool",
-      "description": "",
-      "link": "/services/rnai-cell-pool",
-      "imageUrl": "",
-      "icon": "",
-      "category": "cell-line-services",
-      "groupName": "Stable Cell Pool",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781927082345
-    },
-    {
-      "id": "svc-custom-1781927021493",
-      "name": "CRISPR Cell Pool",
-      "description": "",
-      "link": "/services/crispr-cell-pool",
-      "imageUrl": "",
-      "icon": "",
-      "category": "cell-line-services",
-      "groupName": "Stable Cell Pool",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781927021493
-    },
-    {
-      "id": "svc-custom-1781926955655",
-      "name": "Cell Research Service Overview",
-      "description": "",
-      "link": "/services/cell-research-service-overview",
-      "imageUrl": "",
-      "icon": "",
-      "category": "cell-line-services",
-      "groupName": "Cell Exp Service",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781926955655,
-      "order": 0
-    },
-    {
-      "id": "svc-custom-1781926857295",
-      "name": "Stable Single Clone Overview",
-      "description": "",
-      "link": "/services/stable-single-clone-overview",
-      "imageUrl": "",
-      "icon": "",
-      "category": "cell-line-services",
-      "groupName": "Stable Single Clone",
-      "longDescription": "",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "",
-      "createdAt": 1781926857295,
-      "order": 0
-    },
-    {
-      "id": "svc-custom-1766633756918",
-      "name": "Virus Packaging Overview",
-      "description": "Comprehensive viral packaging services, including AAV, Lentivirus, Retroviral (MLV), and Adenovirus systems.",
-      "link": "/services/virus-packaging-overview",
-      "imageUrl": "/content-api/uploads/originals/ff457910-f5b0-44b4-bcbc-920a8f51aa77.png",
-      "icon": "",
-      "category": "virus-packaging",
-      "groupName": "Others",
-      "longDescription": "We offer comprehensive viral packaging services, including AAV, Lentivirus, Retroviral (MLV), and Adenovirus systems. Each high-titer, ready-to-use viral particle is produced under stringent quality control (QC) standards and can be supplemented with optional functional testing to ensure exceptional performance and reliability.",
-      "keyBenefits": [
-        "High transduction efficiency with low cytotoxicity",
-        "Batch-to-batch consistency and comprehensive QC",
-        "Optional functional assays for tagged/untagged proteins",
-        "Broad serotype variety and flexible vector design options"
-      ],
-      "processOverview": [
-        {
-          "step": "System Selection",
-          "description": "Choose the optimal viral system (AAV, Lentivirus, Retrovirus, or Adenovirus) for your application."
-        },
-        {
-          "step": "Vector Design",
-          "description": "Customize promoters, tags, selection markers, and fluorescent reporters."
-        },
-        {
-          "step": "Packaging & QC",
-          "description": "Optimized production with titer, purity, and functionality checks."
-        },
-        {
-          "step": "Delivery",
-          "description": "Shipped on dry ice with comprehensive documentation."
-        }
-      ],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "At **BioArk Technologies**, we provide **end-to-end viral packaging services** encompassing **AAV**, **Lentivirus**, **Retrovirus (MLV)**, and **Adenovirus** systems.  \nEach viral vector is produced as a **high-titer, ready-to-use formulation**, manufactured under **stringent quality control (QC)** pipelines and optionally validated through **functional assays** to ensure **outstanding performance**, **reproducibility**, and **reliability**.\n\nOur **viral packaging platform** supports payload delivery for:\n- **Gene expression**\n- **RNA interference (knockdown)**\n- **CRISPR/Cas-based genome editing**\n\nWe also offer **flexible vector design options**, including a variety of **promoters**, **tags**, **selection markers**, and **fluorescent reporters**, tailored to your experimental needs.\n\nOur system is optimized to provide:\n- ✅ **High transduction efficiency**\n- ✅ **Low cytotoxicity**\n- ✅ **Batch-to-batch consistency**\n- ✅ **Broad host tropism** (effective in both dividing and non-dividing cells)\n\n---\n\n## Service Categories\n\n### AAV Packaging Services\nHigh-quality AAV packaging with ≥80% full particles, ≥95% purity, and guaranteed titers (≥1×10¹³ vg/mL) to support precise gene delivery and CRISPR applications.\n\n### Lenti Packaging Services\nHigh-titer, ready-to-use lentiviral vectors with full QC and optional functional testing for gene expression, knockdown, and CRISPR editing.\n\n---\n\n📩 **Contact:** [support@bioarktech.com](mailto:support@bioarktech.com)",
-      "createdAt": 1766633756918,
-      "showInHomepageServices": true
-    },
-    {
-      "id": "svc-custom-1766633494933",
-      "name": "AAV Packaging Services (AAVP)",
-      "description": "BioArk provides high-titer recombinant AAV (rAAV) production for gene expression, CRISPR gene editing, RNAi, and in vivo research applications. Available in Research Grade and Animal Grade formats, our service supports multiple serotypes, flexible production volumes, and fast turnaround times, delivering reliable viral vectors for both cell-based and animal studies.",
-      "link": "/services/aav-packaging-services",
-      "imageUrl": "",
-      "icon": "",
-      "category": "virus-packaging",
-      "groupName": "AAV",
-      "longDescription": "BioArk's AAV Packaging Service provides fast, high-titer recombinant adeno-associated virus (rAAV) production for gene delivery, gene overexpression, CRISPR gene editing, RNAi, and in vivo research applications. Available in both Research Grade (0.5–1 × 10¹³ vg/mL) and Animal Grade (1–5 × 10¹³ vg/mL) formats, our service supports multiple AAV serotypes, flexible production scales from 200 μL to 50 mL, and rapid turnaround times of 1–2 weeks. BioArk offers end-to-end support, from vector design and cloning to viral production, helping researchers accelerate cell-based and animal studies with reliable, high-quality AAV vectors.",
-      "keyBenefits": [],
-      "processOverview": [],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "BioArk's AAV Packaging Service provides fast, reliable, and cost-effective production of recombinant adeno-associated virus (rAAV) vectors for gene delivery, gene expression, CRISPR gene editing, RNA interference, and in vivo research applications. Utilizing optimized triple-transfection packaging workflows and rigorous quality control procedures, BioArk delivers high-titer AAV preparations suitable for both in vitro and animal studies.\n\nOur experienced viral vector team supports a wide range of research applications, including gene overexpression, gene knockdown, CRISPR-mediated genome editing, reporter gene expression, disease model development, and preclinical proof-of-concept studies. BioArk offers both Research Grade and Animal Grade AAV production services, allowing researchers to select the appropriate quality level for their experimental needs.\n\nMultiple serotypes are available upon request, including AAV2, AAV5, AAV6, AAV8, AAV9, AAV-DJ, and other commonly used capsids. Customer-provided plasmids or BioArk vector platforms may be used for packaging projects.\n\n---\n\n## Key Features\n\n- Fast turnaround time (1–2 weeks)\n- High-titer AAV production\n- Research Grade and Animal Grade options available\n- Multiple AAV serotypes supported\n- Suitable for gene overexpression, CRISPR, RNAi, and reporter applications\n- Endotoxin-controlled production workflow\n- Sequence-verified transfer plasmids\n- Flexible production volumes from 200 μL to 50 mL\n- Compatible with customer-supplied or BioArk vectors\n- Experienced technical support and project consultation\n\n---\n\n## Applications\n\n- Gene overexpression\n- CRISPR gene editing\n- Gene knockout studies\n- RNA interference (RNAi)\n- Functional genomics\n- Cell lineage tracing\n- Reporter gene expression\n- Neuroscience research\n- Cardiovascular research\n- Cancer biology\n- In vivo animal studies\n- Disease model development\n\n---\n\n# Research Grade AAV Packaging\n\nResearch Grade AAV is optimized for routine laboratory experiments, cell culture studies, proof-of-concept research, and exploratory in vivo studies.\n\n### Specifications\n\n- Typical Titer: **0.5–1 × 10¹³ vg/mL**\n- Recommended Use: In vitro studies and exploratory animal research\n- Turnaround Time: 1–2 weeks\n\n| Cat. No. | Volume | Typical Titer | Price |\n|-----------|---------|---------|---------|\n| AAVP-200ul-B | 2 × 100 μL | 0.5–1 × 10¹³ vg/mL | $935 |\n| AAVP-500ul-B | 2 × 250 μL | 0.5–1 × 10¹³ vg/mL | $1,182 |\n| AAVP-01ml-B | 2 × 500 μL | 0.5–1 × 10¹³ vg/mL | $1,768 |\n| AAVP-05ml-B | 5 × 1,000 μL | 0.5–1 × 10¹³ vg/mL | $5,763 |\n| AAVP-10ml-B | 10 × 1,000 μL | 0.5–1 × 10¹³ vg/mL | $8,721 |\n| AAVP-50ml-B | 10 × 5,000 μL | 0.5–1 × 10¹³ vg/mL | $30,150 |\n\n---\n\n# Animal Grade AAV Packaging\n\nAnimal Grade AAV is manufactured using enhanced purification and quality control procedures to support demanding in vivo applications requiring higher viral concentrations.\n\n### Specifications\n\n- Typical Titer: **1–5 × 10¹³ vg/mL**\n- Recommended Use: Animal studies and preclinical research\n- Turnaround Time: 2 weeks\n\n| Cat. No. | Volume | Typical Titer | Price |\n|-----------|---------|---------|---------|\n| AAVP-200ul-C | 2 × 100 μL | 1–5 × 10¹³ vg/mL | $1,267 |\n| AAVP-500ul-C | 2 × 250 μL | 1–5 × 10¹³ vg/mL | $1,515 |\n| AAVP-01ml-C | 2 × 500 μL | 1–5 × 10¹³ vg/mL | $2,335 |\n| AAVP-05ml-C | 5 × 1,000 μL | 1–5 × 10¹³ vg/mL | $7,788 |\n| AAVP-10ml-C | 10 × 1,000 μL | 1–5 × 10¹³ vg/mL | $11,789 |\n| AAVP-50ml-C | 10 × 5,000 μL | 1–5 × 10¹³ vg/mL | $41,790 |\n\n---\n\n## Available Serotypes\n\nBioArk currently supports packaging of commonly used serotypes, including:\n\n- AAV2\n- AAV5\n- AAV6\n- AAV8\n- AAV9\n- AAV-DJ\n- Additional serotypes available upon request\n\n---\n\n## Optional Services\n\n- Transfer plasmid construction\n- Custom AAV vector design\n- CRISPR AAV vector development\n- RNAi AAV vector development\n- Gene synthesis\n- Sequencing verification\n- Stable cell line generation\n- In vivo experimental consultation\n\n---\n\n## Why Choose BioArk?\n\n- Competitive pricing compared with major CRO providers\n- Fast turnaround times\n- Flexible project customization\n- Integration with BioArk cloning, CRISPR, RNAi, and cell engineering services\n- End-to-end support from vector design through viral production\n- Dedicated technical support from experienced molecular biologists\n\n---\n\n## Deliverables\n\n- Purified recombinant AAV\n- Viral genome titer report (vg/mL)\n- Product delivered in sterile formulation buffer\n- Technical support documentation\n\n---\n\n## Research Use Only (RUO)\n\nBioArk AAV Packaging Services are intended for research use only and are not for diagnostic, therapeutic, or clinical applications.",
-      "createdAt": 1766633494933,
-      "showInHomepageServices": false
-    },
-    {
-      "id": "svc-custom-1759768141509",
-      "name": "Lentivirus Packaging Services",
-      "description": "High-titer, ready-to-use lentiviral vectors with full QC and optional functional testing.",
-      "link": "/services/lentivirus-packaging-services",
-      "category": "virus-packaging",
-      "imageUrl": "",
-      "icon": "",
-      "longDescription": "High-titer, ready-to-use lentiviral vectors with full QC and optional functional testing.",
-      "keyBenefits": [
-        "High transduction efficiency with low cytotoxicity",
-        "Batch-to-batch consistency and comprehensive QC",
-        "Optional functional assays for tagged/untagged proteins"
-      ],
-      "processOverview": [
-        {
-          "step": "System Selection",
-          "description": "Choose 2nd-gen (3-plasmid) or 3rd-gen (4-plasmid) systems."
-        },
-        {
-          "step": "Subcloning",
-          "description": "MiniGFP (~330 bp) tags or selection markers (Puro/BSD/Neo, etc.)."
-        },
-        {
-          "step": "Packaging & QC",
-          "description": "Optimized production with titer, purity, and functionality checks."
-        },
-        {
-          "step": "Delivery",
-          "description": "Shipped on dry ice with documentation."
-        }
-      ],
-      "relatedProducts": [],
-      "caseStudies": [],
-      "markdown": "### Technology Background\n**2nd Generation (Three-Plasmid):** Transfer, Packaging (Gag/Pol/Rev), Envelope.  \n**3rd Generation (Four-Plasmid):** Transfer, Gag/Pol, Rev, Envelope — safer but typically lower titer (default).\n\n### Service Offerings\n1. Project Support — System selection and construct customization.  \n2. Lentivirus Subcloning — MiniGFP (~330 bp) or selection markers (Puro/BSD/Neo, custom).  \n3. Lentivirus Packaging — Optimized yield and purity; full QC.  \n4. Functional Testing — qPCR, fluorescence, immunofluorescence, Western blot (custom).\n\n### Pricing\n| Catalog Number | Minimum Titer | Volume | 1st Tube Price | 2nd Tube Price | Turnaround |\n| --- | --- | --- | --- | --- | --- |\n| LPSVC-mini | >10^7 TU/ml | 200 µl | $199 | $199 | 2–3 weeks |\n| LPSVC-midi | >10^8 TU/ml | 200 µl | $399 | $399 | 2–3 weeks |\n| LPSVC-maxi | >10^9 TU/ml | 200 µl | $699 | $699 | 2–3 weeks |\n\n### Functional Services (Add-ons)\n| Titer and Functional Service | Price | Note |\n| --- | --- | --- |\n| qPCR | - | Optimized RT‑qPCR quantifies lentiviral RNA |\n| Fluorescent Tag Analysis | +$50 | HEK293T infection and imaging (GFP/RFP/BFP, etc.) |\n| Protein Tag Analysis (IF) | +$70 | Immunofluorescence for Myc/His/Flag or custom tags |\n| Customized Testing (WB) | +$120 | Western blot; customer provides primary antibody |\n\n### Subcloning & Analysis\n| Service | Price | Note |\n| --- | --- | --- |\n| Lenti‑miniGFP Subcloning & Fluorescence | +$199 | Transfer gene to miniGFP construct; HEK293T infection/analysis |\n| Lenti Selection Subcloning | +$189 | Transfer to selection constructs (Puro/BSD/Neo or custom) |\n\nContact: support@bioarktech.com\n",
-      "createdAt": 1759768141509
-    }
-  ],
-  "media": {
-    "svc-01": [
-      "/content-api/uploads/originals/fd95c1eb-6489-4a85-9c4b-4138296a9dcb.jpg",
-      "/content-api/uploads/originals/a0b892b9-7048-41b4-acbd-bbc1f3aa088a.png"
-    ],
-    "svc-custom-1758072727410": [
-      "/content-api/uploads/originals/e7713989-a4d3-42b4-b4de-b9ad1a66d78a.png"
-    ],
-    "svc-04": [],
-    "svc-05": [
-      "/content-api/uploads/originals/0a5f4fe1-7860-4f0b-8eba-2b3235da7392.jpg"
-    ],
-    "svc-03": [],
-    "svc-02": [
-      "/content-api/uploads/originals/4bbb795d-8216-4baa-8755-6a15aad7a6e5.jpeg"
-    ],
-    "svc-09": [
-      "/content-api/uploads/originals/99fa2ec1-247f-49fd-af65-7b2a3dbf64e1.png"
-    ],
-    "svc-11": [
-      "/content-api/uploads/originals/b154b10a-d7ad-46c6-b639-d44d1139f77f.jpg"
-    ],
-    "svc-10": [
-      "/content-api/uploads/originals/0889bb39-7a02-4bb1-b32b-be64bb006090.jpg"
-    ],
-    "svc-06": [],
-    "svc-custom-1766633756918": [
-      "/content-api/uploads/originals/ff457910-f5b0-44b4-bcbc-920a8f51aa77.png"
-    ]
-  },
-  "categoriesConfig": {
-    "categories": [
-      {
-        "id": "synthesis-cloning",
-        "name": "Synthesis & Cloning",
-        "order": 2
-      },
-      {
-        "id": "genome-editing-service",
-        "name": "Genome Editing",
-        "order": 1
-      },
-      {
-        "id": "virus-packaging",
-        "name": "Virus Packaging",
-        "order": 4
-      },
-      {
-        "id": "cell-line-services",
-        "name": "Cell Line Services",
-        "order": 5
-      },
-      {
-        "id": "category-1764976659245",
-        "name": "Protein Purification ",
-        "order": 3
-      }
-    ]
-  },
-  "groupsConfig": {
-    "svc-custom-1759629893580": "AAV Packaging services",
-    "svc-custom-1759768141509": "Lentivirus",
-    "svc-custom-1766633494933": "AAV",
-    "svc-custom-1766633683929": "Others",
-    "svc-custom-1766633756918": "0-Overview",
-    "svc-05": "Stable Cell Pool",
-    "svc-custom-1781926857295": "Stable Single Clone",
-    "svc-custom-1781926955655": "Cell Exp Service",
-    "svc-custom-1781927021493": "Stable Cell Pool",
-    "svc-custom-1781927082345": "Stable Cell Pool",
-    "svc-custom-1781927152119": "Stable Cell Pool",
-    "svc-custom-1781927176761": "Stable Cell Pool",
-    "svc-custom-1781927260141": "Cell Exp Service",
-    "svc-custom-1781927281199": "Cell Exp Service",
-    "svc-custom-1781927305901": "Cell Exp Service",
-    "svc-custom-1781927395025": "Cell Exp Service",
-    "svc-custom-1781927453296": "Cell Exp Service",
-    "svc-custom-1781927518013": "Stable Single Clone",
-    "svc-custom-1781927590685": "Stable Single Clone",
-    "svc-custom-1781927623823": "Stable Single Clone",
-    "svc-custom-1781927675325": "Stable Single Clone",
-    "svc-custom-1781928419819": "CRISPR",
-    "svc-12": "CRISPR",
-    "svc-11": "CRISPR",
-    "svc-custom-1781928830040": "CRISPR",
-    "svc-02": "CRISPR",
-    "svc-custom-1781929007026": "CRISPR",
-    "svc-custom-1781929035479": "CRISPR",
-    "svc-custom-1781929077288": "CRISPR",
-    "svc-custom-1781929111008": "CRISPR",
-    "svc-custom-1781929139136": "CRISPR",
-    "svc-custom-1781929165744": "CRISPR",
-    "svc-custom-1781929207896": "RNA Editing",
-    "svc-custom-1781929250196": "RNA Editing",
-    "svc-custom-1781929272318": "RNA Editing",
-    "svc-custom-1781929439926": "Over Exp",
-    "svc-custom-1781929492404": "Over Exp",
-    "svc-custom-1781929583649": "Inducible Exp",
-    "svc-custom-1781929676236": "Inducible Exp",
-    "svc-09": "Cloning",
-    "svc-custom-1781930558612": "Cloning",
-    "svc-custom-1781930684357": "Cloning",
-    "svc-custom-1781930762953": "Cloning",
-    "svc-custom-1781930839047": "Mutagenesis",
-    "svc-custom-1781931104355": "Plasmid Prep",
-    "svc-custom-1781932238625": "RNA Editing",
-    "svc-custom-1781935103462": "2-Insect Cell",
-    "svc-custom-1781935162950": "1-Prokaryotic Cell",
-    "svc-custom-1781935204903": "3-Mammalian Cell",
-    "svc-custom-1781935294369": "3-Mammalian Cell",
-    "svc-01": "0-Overview",
-    "svc-custom-1782072955168": "Cloning"
-  }
 }

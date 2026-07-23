@@ -499,7 +499,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
           setCatalog(data);
           
           // Auto-select the first product category as default activeCategory
-          const firstProd = data.find(c => !c.product_type || c.product_type === 'product');
+          const firstProd = data.find(c => !c.product_type || c.product_type === 'product' || c.product_type === 'both');
           if (firstProd) {
             setActiveCategory(firstProd.external_id);
           }
@@ -568,7 +568,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
   const profileAltText = `Hi, ${firstName}`;
   const isAdminUser = Boolean(currentUserProfile?.isAdmin || currentUserProfile?.is_admin);
 
-  const productCategories = catalog.filter((c) => !c.product_type || c.product_type === 'product');
+  const productCategories = catalog.filter((c) => !c.product_type || c.product_type === 'product' || c.product_type === 'both');
   const serviceCategories = catalog.filter((c) => c.product_type === 'service');
   
   // Combine Reagents and Consumables categories, placing Consumables directly below Cell Reagents
@@ -602,7 +602,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
       : activeSubcategories.reduce((acc, sub) => acc + (sub.products?.length || 0), 0)) : 0;
 
     const targetCategoryParam = activeEntry ? (
-      activeEntry.product_type === 'product' ? 'products' :
+      (activeEntry.product_type === 'product' || activeEntry.product_type === 'both') ? 'products' :
       (activeEntry.product_type === 'service' ? 'services' :
       (activeEntry.product_type === 'consumable' || activeEntry.external_id === 'category-1780539818236' ? 'consumables' : 'reagents'))
     ) : 'products';
@@ -801,7 +801,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
           onMouseEnter={() => {
             closeMenus();
             setProductMenuOpen(true);
-            const first = catalog.find(c => !c.product_type || c.product_type === 'product');
+            const first = catalog.find(c => !c.product_type || c.product_type === 'product' || c.product_type === 'both');
             if (first) {
               setActiveCategory(first.external_id);
             }
@@ -817,7 +817,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
               closeMenus();
               setProductMenuOpen((isOpen) => !isOpen);
               if (!productMenuOpen) {
-                const first = catalog.find(c => !c.product_type || c.product_type === 'product');
+                const first = catalog.find(c => !c.product_type || c.product_type === 'product' || c.product_type === 'both');
                 if (first) setActiveCategory(first.external_id);
               }
             }}

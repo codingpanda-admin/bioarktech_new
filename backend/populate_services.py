@@ -1,190 +1,272 @@
 import os
-import django
 import sys
+import django
+import json
 
-# Setup django environment
+# Setup Django environment
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 
-from interface.models import ServiceMode
-
-# Check if services are already populated
-if ServiceMode.objects.count() > 5:
-    print("Services already populated. Skipping population script.")
-    sys.exit(0)
-
-print("Populating and categorizing services...")
-
-# 1. Update existing services
-service_mappings = {
-    'Genome Editing Services': 'genome-editing-services',
-    'Gene Editing Services': 'genome-editing-services',
-    
-    'Synthesis & Cloning Services': 'synthesis-cloning-services',
-    'DNA Cloning Service': 'synthesis-cloning-services',
-    
-    'Lentivirus Package Services': 'virus-packaging-services',
-    'Lentivirus Packaging Services': 'virus-packaging-services',
-    'AAV Packaging Services': 'virus-packaging-services',
-    'Virus Packaging Overview': 'virus-packaging-services',
-    
-    'Cell Line Services': 'cell-line-services',
-    'Stable Cell Line Services': 'cell-line-services',
-    
-    'Lab Supplies': 'lab-supplies-services',
-    'Experiment Services': 'experiment-services',
+CATEGORY_MAPPING = {
+    'genome-editing-service': {
+        'id': 'genome-editing-services',
+        'name': 'Genome Editing Services'
+    },
+    'synthesis-cloning': {
+        'id': 'synthesis-cloning-services',
+        'name': 'Custom Cloning Services'
+    },
+    'virus-packaging': {
+        'id': 'virus-packaging-services',
+        'name': 'Lentivirus Package Services'
+    },
+    'cell-line-services': {
+        'id': 'cell-line-services',
+        'name': 'Stable Cell Line Services'
+    },
+    'category-1764976659245': {
+        'id': 'protein-purification-services',
+        'name': 'Protein Purification Services'
+    }
 }
 
-for title, category in service_mappings.items():
-    try:
-        services = ServiceMode.objects.filter(title=title)
-        for s in services:
-            s.category = category
-            s.save()
-            print(f"Set category '{category}' for existing service '{title}'")
-    except Exception as e:
-        print(f"Error updating '{title}': {e}")
+def markdown_to_html(md):
+    if not md:
+        return ""
+    import re
+    html = md
+    
+    # Escaping / Normalize newlines
+    html = html.replace('\r\n', '\n').replace('\r', '\n')
+    
+    # Convert headers: e.g. ## Header -> <h2>Header</h2>
+    html = re.sub(r'^###### (.*?)$', r'<h6>\1</h6>', html, flags=re.MULTILINE)
+    html = re.sub(r'^##### (.*?)$', r'<h5>\1</h5>', html, flags=re.MULTILINE)
+    html = re.sub(r'^#### (.*?)$', r'<h4>\1</h4>', html, flags=re.MULTILINE)
+    html = re.sub(r'^### (.*?)$', r'<h3>\1</h3>', html, flags=re.MULTILINE)
+    html = re.sub(r'^## (.*?)$', r'<h2>\1</h2>', html, flags=re.MULTILINE)
+    html = re.sub(r'^# (.*?)$', r'<h1>\1</h1>', html, flags=re.MULTILINE)
+    
+    # Convert tables
+    lines = html.split('\n')
+    in_table = False
+    table_html = []
+    new_lines = []
+    for line in lines:
+        if line.strip().startswith('|'):
+            if not in_table:
+                in_table = True
+                table_html.append('<table class="table table-bordered">')
+                cols = [c.strip() for c in line.split('|')[1:-1]]
+                table_html.append('<thead><tr>' + ''.join(f'<th>{c}</th>' for c in cols) + '</tr></thead>')
+                table_html.append('<tbody>')
+            else:
+                if '---' in line:
+                    continue
+                cols = [c.strip() for c in line.split('|')[1:-1]]
+                table_html.append('<tr>' + ''.join(f'<td>{c}</td>' for c in cols) + '</tr>')
+        else:
+            if in_table:
+                in_table = False
+                table_html.append('</tbody></table>')
+                new_lines.append('\n'.join(table_html))
+                table_html = []
+            new_lines.append(line)
+    if in_table:
+        table_html.append('</tbody></table>')
+        new_lines.append('\n'.join(table_html))
+    html = '\n'.join(new_lines)
+    
+    # Bold / Italics
+    html = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', html)
+    html = re.sub(r'__(.*?)__', r'<strong>\1</strong>', html)
+    html = re.sub(r'\*(.*?)\*', r'<em>\1</em>', html)
+    
+    # Unordered list helper
+    lines = html.split('\n')
+    in_list = False
+    list_html = []
+    new_lines2 = []
+    for line in lines:
+        striped = line.strip()
+        if striped.startswith('- ') or striped.startswith('* '):
+            item = striped[2:]
+            if not in_list:
+                in_list = True
+                list_html.append('<ul>')
+            list_html.append(f'<li>{item}</li>')
+        else:
+            if in_list:
+                in_list = False
+                list_html.append('</ul>')
+                new_lines2.append('\n'.join(list_html))
+                list_html = []
+            new_lines2.append(line)
+    if in_list:
+        list_html.append('</ul>')
+        new_lines2.append('\n'.join(list_html))
+    html = '\n'.join(new_lines2)
+    
+    # Links
+    html = re.sub(r'\[(.*?)\]\((.*?)\)', r'<a href="\2">\1</a>', html)
+    
+    # Paragraphs wrapping
+    lines = html.split('\n')
+    new_lines3 = []
+    for line in lines:
+        striped = line.strip()
+        if not striped:
+            continue
+        if striped.startswith('<') and (striped.endswith('>') or striped.endswith('</p>')):
+            new_lines3.append(striped)
+        else:
+            new_lines3.append(f'<p>{striped}</p>')
+    html = '\n'.join(new_lines3)
+    
+    return html
 
-# 1.5 Update specific images for existing services if not set or mapping them
-existing_service_images = {
-    'stable-cell-line': 'service_images/Service-3-Stable-Cell-Line-Services.jpeg',
-    'lab-supplies': 'service_images/Service-5-Lab-Supplies.png',
-}
+def main():
+    print("Resetting database to services.json content...")
+    from interface.models import ServiceMode
+    from products.models import ProductCategory
+    
+    # 1. Clear existing ServiceMode
+    ServiceMode.objects.all().delete()
+    
+    # 2. Locate services.json
+    possible_paths = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), 'services.json'),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), '../services.json'),
+        '/app/services.json',
+        'services.json',
+    ]
+    
+    json_path = None
+    for path in possible_paths:
+        if os.path.exists(path):
+            json_path = path
+            break
+            
+    if not json_path:
+        print("Error: Could not locate services.json")
+        sys.exit(1)
+        
+    print(f"Loading data from: {json_path}")
+    with open(json_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+        
+    categories_data = data.get("categoriesConfig", {}).get("categories", [])
+    overrides = data.get("overrides", {})
+    custom = data.get("custom", [])
+    
+    # 3. Create or update categories for services
+    for cat in categories_data:
+        cat_id = cat['id']
+        cat_name = cat['name']
+        cat_order = cat.get('order', 1)
+        
+        # Apply mapping
+        if cat_id in CATEGORY_MAPPING:
+            m = CATEGORY_MAPPING[cat_id]
+            cat_id = m['id']
+            cat_name = m['name']
+            
+        ProductCategory.objects.update_or_create(
+            external_id=cat_id,
+            defaults={
+                'category_name': cat_name,
+                'priority': cat_order,
+                'product_type': 'service'
+            }
+        )
+        print(f"Service Category: {cat_name} ({cat_id})")
+        
+    # 4. Parse and Load Services
+    services_to_insert = []
+    
+    # - Process Overrides
+    for key, val in overrides.items():
+        if val.get('hidden') is True and not val.get('name'):
+            # This is a hidden override without content, skip
+            continue
+            
+        link = val.get('link')
+        if not link:
+            continue
+            
+        url_slug = link.replace('/services/', '')
+        content_html = markdown_to_html(val.get('markdown', ''))
+        
+        img_url = val.get('imageUrl', '')
+        django_image_name = ''
+        if img_url:
+            filename = os.path.basename(img_url)
+            django_image_name = f"service_images/{filename}"
+            
+        is_featured = val.get('showInHomepageServices', False)
+        show_on_screen = not val.get('hidden', False)
+        
+        cat_id = val.get('category')
+        if cat_id in CATEGORY_MAPPING:
+            cat_id = CATEGORY_MAPPING[cat_id]['id']
+            
+        services_to_insert.append({
+            'url': url_slug,
+            'title': val.get('name', ''),
+            'content': content_html,
+            'image': django_image_name,
+            'category': cat_id,
+            'is_featured': is_featured,
+            'show_on_screen': show_on_screen
+        })
+        
+    # - Process Custom List
+    for c in custom:
+        link = c.get('link')
+        if not link:
+            continue
+            
+        url_slug = link.replace('/services/', '')
+        content_html = markdown_to_html(c.get('markdown', ''))
+        
+        img_url = c.get('imageUrl', '')
+        django_image_name = ''
+        if img_url:
+            filename = os.path.basename(img_url)
+            django_image_name = f"service_images/{filename}"
+            
+        is_featured = c.get('showInHomepageServices', False)
+        show_on_screen = not c.get('hidden', False)
+        
+        cat_id = c.get('category')
+        if cat_id in CATEGORY_MAPPING:
+            cat_id = CATEGORY_MAPPING[cat_id]['id']
+            
+        services_to_insert.append({
+            'url': url_slug,
+            'title': c.get('name', ''),
+            'content': content_html,
+            'image': django_image_name,
+            'category': cat_id,
+            'is_featured': is_featured,
+            'show_on_screen': show_on_screen
+        })
+        
+    # 5. Insert into Database
+    for s_data in services_to_insert:
+        s_obj = ServiceMode.objects.create(
+            url=s_data['url'],
+            title=s_data['title'],
+            content=s_data['content'],
+            image=s_data['image'] if s_data['image'] else None,
+            category=s_data['category'],
+            is_featured=s_data['is_featured'],
+            show_on_screen=s_data['show_on_screen']
+        )
+        print(f"Service: {s_obj.title} (url={s_obj.url}, show={s_obj.show_on_screen})")
+        
+    print(f"Successfully populated {len(services_to_insert)} services.")
 
-for slug, img_path in existing_service_images.items():
-    try:
-        s = ServiceMode.objects.get(url=slug)
-        s.image = img_path
-        s.save()
-        print(f"Updated image for existing service '{slug}' to '{img_path}'")
-    except Exception as e:
-        print(f"Error updating image for '{slug}': {e}")
-
-# 2. Add missing services
-missing_services = [
-    {
-        'title': 'Gene Tagging Service',
-        'url': 'gene-tagging-service',
-        'category': 'genome-editing-services',
-        'content': '<h3>Gene Tagging Service</h3><p>Advanced CRISPR-based endogenous gene tagging services to visualize and track proteins inside cells.</p>',
-        'image': 'service_images/b154b10a-d7ad-46c6-b639-d44d1139f77f.jpg'
-    },
-    {
-        'title': 'Gene Knockout Service',
-        'url': 'gene-knockout-service',
-        'category': 'genome-editing-services',
-        'content': '<h3>Gene Knockout Service</h3><p>High-efficiency CRISPR knockouts in a variety of cell lines for functional gene analysis.</p>',
-        'image': None
-    },
-    {
-        'title': 'mRNA LNP packaging Service',
-        'url': 'mrna-lnp-packaging-service',
-        'category': 'lab-supplies-services',
-        'content': '<h3>mRNA LNP packaging Service</h3><p>Custom IVT mRNA synthesis and Lipid Nanoparticle (LNP) encapsulation for robust in vitro and in vivo transfection.</p>',
-        'image': 'service_images/0889bb39-7a02-4bb1-b32b-be64bb006090.jpg'
-    }
-]
-
-for item in missing_services:
-    s, created = ServiceMode.objects.get_or_create(
-        url=item['url'],
-        defaults={
-            'title': item['title'],
-            'content': item['content'],
-            'category': item['category'],
-            'image': item.get('image')
-        }
-    )
-    if created:
-        print(f"Created new service: '{item['title']}' under category '{item['category']}'")
-    else:
-        s.category = item['category']
-        s.title = item['title']
-        if item.get('image'):
-            s.image = item['image']
-        s.save()
-        print(f"Updated existing service slug '{item['url']}' with category '{item['category']}'")
-
-
-# 3. Add homepage slides
-print("Populating homepage slides...")
-from interface.models import HomepageSlide
-
-slides = [
-    {
-        'id': 1,
-        'eyebrow': 'Genetic Innovation',
-        'title': 'Innovative Seed on Board',
-        'description': 'Your trusted CRO partner for advanced gene editing and delivery solutions, accelerating research from discovery to therapy.',
-        'primary_button_text': 'Explore Services',
-        'primary_button_link': '/services',
-        'secondary_button_text': 'Request a Quote',
-        'secondary_button_link': '/request-quote',
-        'image_url': '/images/homepage/hero-background-new.jpg',
-        'display_order': 1,
-        'is_active': True
-    },
-    {
-        'id': 2,
-        'eyebrow': 'Limited Offer',
-        'title': '50% Off Precast Agarose Gels',
-        'description': 'High-resolution, ready-to-use gels for fast and reliable DNA analysis. In-stock and ready to ship.',
-        'primary_button_text': 'Shop Now',
-        'primary_button_link': '/search?q=Agarose',
-        'secondary_button_text': 'Request a Quote',
-        'secondary_button_link': '/request-quote',
-        'image_url': '/images/homepage/Homepage-1.jpg',
-        'display_order': 2,
-        'is_active': True
-    },
-    {
-        'id': 3,
-        'eyebrow': 'Advanced Virus Packaging',
-        'title': 'High-Titer Lentivirus Stocks',
-        'description': 'Ready-to-use lentivirus particles containing ORF stocks for stable and high-efficiency gene expression.',
-        'primary_button_text': 'View Reagents',
-        'primary_button_link': '/search?q=Lentivirus',
-        'secondary_button_text': 'Contact Expert',
-        'secondary_button_link': '/request-quote',
-        'image_url': '/images/homepage/Homepage-2.jpg',
-        'display_order': 3,
-        'is_active': True
-    },
-    {
-        'id': 4,
-        'eyebrow': 'Cell Line Engineering',
-        'title': 'Pre-made Stable Cell Lines',
-        'description': 'Clonally isolated, mycoplasma-free stable cell lines expressing popular reporters and checkpoints.',
-        'primary_button_text': 'Explore Lines',
-        'primary_button_link': '/search?q=Cell',
-        'secondary_button_text': 'Request a Quote',
-        'secondary_button_link': '/request-quote',
-        'image_url': '/images/homepage/Homepage-3.jpg',
-        'display_order': 4,
-        'is_active': True
-    }
-]
-
-for slide_data in slides:
-    slide_id = slide_data['id']
-    s, created = HomepageSlide.objects.update_or_create(
-        id=slide_id,
-        defaults={
-            'eyebrow': slide_data['eyebrow'],
-            'title': slide_data['title'],
-            'description': slide_data['description'],
-            'primary_button_text': slide_data['primary_button_text'],
-            'primary_button_link': slide_data['primary_button_link'],
-            'secondary_button_text': slide_data['secondary_button_text'],
-            'secondary_button_link': slide_data['secondary_button_link'],
-            'image_url': slide_data['image_url'],
-            'display_order': slide_data['display_order'],
-            'is_active': slide_data['is_active']
-        }
-    )
-    if created:
-        print(f"Created homepage slide: '{s.title}'")
-    else:
-        print(f"Updated homepage slide: '{s.title}'")
-
-print("Services and Homepage slides population finished!")
+if __name__ == '__main__':
+    main()

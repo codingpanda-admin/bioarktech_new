@@ -440,47 +440,14 @@ def search_product(request):
         featured_products = FeaturedProduct.objects.all()
 
     combined_results = []
+    seen_skus = set()
     
-    # 1. Add general products
-    for p in products:
-        category_type = classify_product(p.category_external_id, p.source_type)
-        
-        # Apply category filter
-        if category_filter == 'featured':
-            if not (p.is_featured or p.show_in_featured):
-                continue
-        else:
-            if category_filter == 'consumables' and category_type != 'consumables':
-                continue
-            if category_filter == 'reagents' and category_type not in ['reagents', 'consumables']:
-                continue
-            if category_filter == 'products' and category_type != 'products':
-                continue
-            if category_filter == 'services':
-                continue
-
-        prod_cat = 'Consumables' if category_type == 'consumables' else ('Reagents & Kits' if category_type == 'reagents' else 'Products & Services')
-
-        combined_results.append({
-            'product_id': p.product_id,
-            'product_sku': p.catalog_number or p.external_id,
-            'external_id': p.external_id,
-            'externalId': p.external_id,
-            'catalog_number': p.catalog_number,
-            'product_name': p.product_name,
-            'description': p.description,
-            'unit_price': 0.0,
-            'list_price': p.list_price or p.price_range or '',
-            'image': p.image_url or (p.images[0] if p.images else None),
-            'category': prod_cat,
-            'category_external_id': p.category_external_id,
-            'product_group': p.product_group,
-            'shipping_cost': 100.0 if category_type == 'consumables' else 60.0,
-            'is_featured': p.is_featured or p.show_in_featured
-        })
-        
-    # 2. Add featured products (including the imported reagents)
+    # 1. Add featured products first to prioritize rich featured data (prices/images)
     for fp in featured_products:
+        sku = (fp.catalog_number or "").strip()
+        if sku:
+            seen_skus.add(sku.lower())
+            
         linked_product = Product.objects.filter(catalog_number=fp.catalog_number, hidden=False).first()
         linked_cat_id = linked_product.category_external_id if linked_product else None
         linked_src_type = linked_product.source_type if linked_product else 'reagent'
@@ -537,6 +504,51 @@ def search_product(request):
             'shipping_cost': 100.0 if category_type == 'consumables' else 60.0,
             'is_featured': True
         })
+        
+    # 2. Add general products next, skipping any that were already added as featured
+    for p in products:
+        sku = (p.catalog_number or p.external_id or "").strip()
+        if sku and sku.lower() in seen_skus:
+            continue
+        if sku:
+            seen_skus.add(sku.lower())
+            
+        category_type = classify_product(p.category_external_id, p.source_type)
+        
+        # Apply category filter
+        if category_filter == 'featured':
+            if not (p.is_featured or p.show_in_featured):
+                continue
+        else:
+            if category_filter == 'consumables' and category_type != 'consumables':
+                continue
+            if category_filter == 'reagents' and category_type not in ['reagents', 'consumables']:
+                continue
+            if category_filter == 'products' and category_type != 'products':
+                continue
+            if category_filter == 'services':
+                continue
+
+        prod_cat = 'Consumables' if category_type == 'consumables' else ('Reagents & Kits' if category_type == 'reagents' else 'Products & Services')
+
+        combined_results.append({
+            'product_id': p.product_id,
+            'product_sku': p.catalog_number or p.external_id,
+            'external_id': p.external_id,
+            'externalId': p.external_id,
+            'catalog_number': p.catalog_number,
+            'product_name': p.product_name,
+            'description': p.description,
+            'unit_price': 0.0,
+            'list_price': p.list_price or p.price_range or '',
+            'image': p.image_url or (p.images[0] if p.images else None),
+            'category': prod_cat,
+            'category_external_id': p.category_external_id,
+            'product_group': p.product_group,
+            'shipping_cost': 100.0 if category_type == 'consumables' else 60.0,
+            'is_featured': p.is_featured or p.show_in_featured
+        })
+
 
     # 3. Add services from ServiceMode
     if category_filter not in ['reagents', 'consumables', 'featured'] and category_filter != 'products':
