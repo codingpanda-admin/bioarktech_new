@@ -9,3 +9,4 @@ dist/
 .DS_Store
 services-json
 .qwen
+full_inventory_and_services_export.json

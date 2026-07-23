@@ -1,0 +1,1127 @@
+{
+    "version": 1,
+    "products": [
+        {
+            "id": "custom-1782348472905",
+            "name": "OverExpression LentiViral Template Vector - MiniGFP2",
+            "description": "ML-UX0M0C-T2 is a versatile mammalian expression vector engineered for high-level transgene expression and convenient fluorescent monitoring. The vector combines a strong CMV promoter for robust expression of the target gene with an independent EF-1α core promoter-driven miniGFP reporter, allowing rapid identification of successfully transfected cells without compromising expression performance.\n\nCompared with conventional GFP reporters, miniGFP occupies significantly less vector space while maintaining bright green fluorescence. Its compact design reduces the metabolic burden on host cells and minimizes the potential for interference with protein expression, folding, and cellular function. These advantages make EML-UX0M0C-T2 particularly suitable for applications where vector capacity is limited, such as viral vector development or expression of large transgenes.\n\nThe vector also incorporates a FLAG epitope for convenient protein detection, an SV40 nuclear localization signal (NLS) for nuclear targeting, and WPRE to enhance mRNA stability and increase protein expression. A chloramphenicol resistance gene (CmR) provides reliable bacterial selection during plasmid propagation.\n\nEML-UX0M0C-T2 is an ideal tool for transient transfection, stable cell line generation, CRISPR-based studies, fluorescence imaging, flow cytometry, and protein expression experiments.",
+            "imageUrl": "",
+            "link": "/products/overexpression-lentiviral-template-vector-minigfp2",
+            "category": "vector-clones",
+            "createdAt": 1782348472905,
+            "__type": "buy",
+            "groupName": "CDS LentVirus Vector (EL)"
+        },
+        {
+            "id": "custom-1782347629415",
+            "name": "OverExpression LentiViral Template Vector - MiniGFP1",
+            "description": "EML-UX0M0C-T1 is a mammalian expression vector designed for efficient gene expression and convenient monitoring of transfection and protein production. The vector combines a strong CMV promoter for high-level expression of the target gene with an EF-1α core promoter-driven miniGFP reporter cassette, allowing rapid visualization of successfully transfected cells while minimizing the impact of the fluorescent reporter on cellular physiology.\n\nThe vector also contains a FLAG tag, SV40 nuclear localization signal (NLS), WPRE for enhanced transgene expression, and a chloramphenicol resistance marker (CmR) for bacterial selection.\n\nUltra-Compact miniGFP Reporter\n\nUnlike conventional GFP (~27 kDa), miniGFP is an engineered fluorescent protein with approximately half the molecular size (~13 kDa), providing several advantages:\n\nSmaller genetic footprint, making the vector more suitable for size-limited applications.\nReduced metabolic burden on transfected cells.\nLower risk of interfering with protein folding, localization, or biological function.\nImproved compatibility with viral vector construction, especially when vector packaging capacity is limited.\nBright green fluorescence enables rapid identification of transfected cells using standard FITC/GFP filter sets.\nIdeal for transfection optimization, cell sorting (FACS), and fluorescence microscopy.\n\nThe compact size of miniGFP makes it an excellent reporter for applications where traditional GFP may negatively affect protein expression or vector capacity. Engineered miniGFP variants are approximately 12–13 kDa while retaining bright cyan-green fluorescence, offering a substantially smaller alternative to the ~27 kDa conventional GFP.",
+            "imageUrl": "",
+            "link": "/products/overexpression-lentiviral-template-vector-minigfp1",
+            "category": "vector-clones",
+            "createdAt": 1782347629415,
+            "__type": "buy",
+            "groupName": "CDS LentVirus Vector (EL) "
+        },
+        {
+            "id": "custom-1782162964753",
+            "name": "RNAi LentiViral Template Vector - Puro",
+            "description": "SHL-UX00PC-T is a high-performance mammalian overexpression vector designed for robust constitutive expression of recombinant proteins in a wide range of mammalian cell lines. Driven by the strong CMV promoter, the vector enables efficient transgene expression for functional genomics, protein production, cell engineering, and gene function studies.\n\nThe vector incorporates dual FLAG and Myc epitope tags to facilitate protein detection, purification, immunoprecipitation, and localization studies. A self-cleaving P2A peptide enables co-expression of the gene of interest and the puromycin resistance marker (PuroR) from a single transcript, allowing rapid enrichment and stable selection of transfected cells.\n\nTo enhance transgene expression, SHL-UX00PC-T contains the Rev Response Element (RRE), central polypurine tract/central termination sequence (cPPT/CTS), and Woodchuck Hepatitis Virus Posttranscriptional Regulatory Element (WPRE). These regulatory elements improve RNA processing, nuclear import, transcript stability, and overall gene expression efficiency. The plasmid backbone also contains a chloramphenicol resistance marker (CmR) and a bacterial replication origin for plasmid propagation in E. coli.\n\nSHL-UX00PC-T is particularly suitable for applications requiring high-level gene expression, stable cell line generation, lentiviral transfer vector development, and functional characterization of proteins in mammalian systems.",
+            "imageUrl": "",
+            "link": "/products/rnai-lentiviral-template-vector-puro",
+            "category": "vector-clones",
+            "createdAt": 1782162964753,
+            "__type": "buy",
+            "groupName": "RNAi LentVirus Vector (SL)"
+        },
+        {
+            "id": "custom-1782162359032",
+            "name": "OverExpression LentiViral Template Vector- Puro",
+            "description": "EMA-UX00PA-T is an AAV-based mammalian overexpression vector designed for efficient gene expression in mammalian cells and subsequent adeno-associated virus (AAV) packaging applications. The vector combines a robust mammalian expression cassette with AAV inverted terminal repeats (ITRs), allowing seamless transition from plasmid-based expression studies to AAV vector production.\n\nThe vector contains dual FLAG and Myc epitope tags for convenient protein detection, purification, and characterization. An SV40 Nuclear Localization Signal (NLS) can facilitate nuclear targeting of expressed proteins when required. The P2A self-cleaving peptide enables co-expression of the gene of interest and the puromycin resistance marker (PuroR), allowing efficient antibiotic selection of transfected cells while maintaining expression of the target protein.\n\nThe plasmid backbone includes both a standard bacterial replication origin (ori) and an M13 origin for plasmid propagation, sequencing, and molecular biology applications. EMA-UX00PA-T is suitable for gene overexpression studies, AAV vector development, stable cell line generation, functional genomics research, and in vivo gene delivery projects.",
+            "imageUrl": "",
+            "link": "/products/overexpression-lentiviral-template-vector-puro-2",
+            "category": "vector-clones",
+            "createdAt": 1782162359032,
+            "__type": "buy",
+            "groupName": "CDS AAV Vector (EA)"
+        },
+        {
+            "id": "custom-1782161506879",
+            "name": "OverExpression LentiViral Template Vector - Puro",
+            "description": "EML-UX00PC-T is a CMV promoter-driven mammalian expression vector designed for high-level constitutive expression of recombinant proteins in a wide variety of mammalian cell lines. The vector incorporates dual FLAG and Myc epitope tags for convenient protein detection, purification, and characterization, as well as a puromycin resistance gene (PuroR) for efficient selection of stable transfectants.\n\nTo maximize transgene expression, EML-UX00PC-T contains both the Woodchuck Hepatitis Virus Posttranscriptional Regulatory Element (WPRE) and the Rev Response Element (RRE), which support enhanced RNA processing and expression efficiency. The bacterial backbone includes a chloramphenicol resistance marker (CmR) and a replication origin (ori) for plasmid propagation and maintenance in E. coli.\n\nThis vector is suitable for transient transfection, stable cell line generation, recombinant protein production, functional genomics research, protein interaction studies, and CRISPR rescue experiments.",
+            "imageUrl": "",
+            "link": "/products/overexpression-lentiviral-template-vector-puro",
+            "category": "vector-clones",
+            "createdAt": 1782161506879,
+            "__type": "buy",
+            "groupName": "CDS LentVirus Vector (EL)"
+        },
+        {
+            "id": "custom-1782064575337",
+            "name": "RNAi NonViral Template Vector - Puro",
+            "description": "The RNAi NonViral Template Vector – Puro is a plasmid-based RNA interference (RNAi) vector designed for the efficient expression of shRNA constructs in mammalian cells. This non-viral system enables stable and long-term gene silencing without the complexity and biosafety concerns associated with viral delivery methods.\n\nThe vector contains a human U6 promoter for robust shRNA expression, a Puromycin resistance gene (PuroR) for antibiotic selection of transfected cells, and an SV40 Nuclear Localization Signal (NLS) to facilitate efficient nuclear transport and plasmid function. Following transfection, cells carrying the vector can be readily enriched using puromycin selection, allowing the generation of stable knockdown cell populations.",
+            "imageUrl": "",
+            "link": "/products/rnai-nonviral-template-vector-puro",
+            "category": "vector-clones",
+            "createdAt": 1782064575337,
+            "__type": "buy",
+            "groupName": "RNAi NonViral Vector (SN)"
+        },
+        {
+            "id": "custom-1782064257105",
+            "name": "OverExpression NonViral Template Vector - Puro",
+            "description": "The OverExpression NonViral Template Vector – Puro is a plasmid-based mammalian expression vector designed for efficient overexpression of genes of interest in a wide range of mammalian cell types. This non-viral system provides a convenient and cost-effective alternative to viral expression platforms while enabling both transient and stable gene expression studies.\n\nThe vector features a strong mammalian promoter to drive robust transgene expression, a Puromycin resistance gene (PuroR) for antibiotic selection, an SV40 Nuclear Localization Signal (NLS) to support efficient plasmid function in mammalian cells, and an hGH poly(A) signal for proper transcription termination and mRNA stability. Following transfection, puromycin selection can be applied to generate stable cell populations expressing the target gene.",
+            "imageUrl": "",
+            "link": "/products/overexpression-nonviral-template-vector-puro",
+            "category": "vector-clones",
+            "createdAt": 1782064257105,
+            "__type": "buy",
+            "groupName": "CDS NonViral Vector (EN)"
+        },
+        {
+            "id": "custom-1781983829405",
+            "name": "Lentivirus Template Stock (LVSK-T)",
+            "description": "",
+            "imageUrl": "",
+            "link": "/products/lentivirus-template-stock",
+            "category": "lentivirus",
+            "createdAt": 1781983829405,
+            "__type": "quote",
+            "groupName": "Overview"
+        },
+        {
+            "id": "custom-1781936136038",
+            "name": "Recombinant Protein Overview",
+            "description": "",
+            "imageUrl": "",
+            "link": "/products/recombinant-protein-overview",
+            "category": "category-1764975769330",
+            "createdAt": 1781936136038,
+            "__type": "quote",
+            "groupName": "Overview"
+        },
+        {
+            "id": "custom-1759879837546",
+            "name": "RNAi NonViral Vector Stock (VCSK-RN)",
+            "description": "A high-efficiency, non-viral RNAi plasmid designed for customizable, stable, or transient gene silencing in mammalian cells.",
+            "imageUrl": "",
+            "link": "/products/nonviral-rnai-template",
+            "category": "vector-clones",
+            "createdAt": 1759879837546,
+            "__type": "quote",
+            "order": 9
+        },
+        {
+            "id": "custom-1759625091045",
+            "name": "CRISPR Inhibition Kit",
+            "description": "The CRISPR Inhibition (CRISPRi) Kit enables precise, reversible downregulation of target gene expression without altering DNA sequences. Utilizing a nuclease-deactivated Cas9 (dCas9) fused with potent transcriptional repressors, this system offers a robust tool for functional genomics, pathway analysis, and loss-of-function studies. Each kit includes three target-specific gRNA vectors and one scramble control, available in all-in-one or standalone formats for flexible experimental design.",
+            "imageUrl": "",
+            "link": "/products/crispr-inhibition",
+            "category": "genome-editing",
+            "createdAt": 1759625091045,
+            "__type": "quote",
+            "order": 4
+        },
+        {
+            "id": "custom-1759624148236",
+            "name": "CRISPR Activation Kit",
+            "description": "Our CRISPR activation (CRISPRa) kits enable precise, reversible upregulation of endogenous genes without altering DNA sequences. Powered by nuclease-deactivated Cas9 (dCas9) fused to potent transcriptional activators, the platform offers a robust solution for functional genomics, pathway analysis, and therapeutic research. Each kit includes three target-specific gRNA vectors (all-in-one or standalone format) and one scramble control.",
+            "imageUrl": "",
+            "link": "/products/crispr-activation",
+            "category": "genome-editing",
+            "createdAt": 1759624148236,
+            "__type": "quote",
+            "order": 5
+        }
+    ],
+    "overrides": {
+        "gep-01": {
+            "name": "CRISPR Gene Tagging Kit",
+            "description": "Precision services for endogenous gene tagging and reporter knock-in.",
+            "link": "/products/gene-knock-in",
+            "category": "genome-editing",
+            "order": 3,
+            "__type": "quote"
+        },
+        "gep-05": {
+            "name": "CRISPR KnockIn at AAVS1",
+            "description": "Precise integration to drive robust gene overexpression at safe-harbor or locus-specific sites.",
+            "link": "/products/overexpression-targeted-knock-in",
+            "category": "genome-editing",
+            "order": 2,
+            "__type": "quote"
+        },
+        "lv-02": {
+            "name": "Lentivirus Control Stock (LVSK-C)",
+            "description": "Control lentiviral stocks for assay validation and benchmarking.",
+            "link": "/products/lentivirus-control-stock",
+            "category": "lentivirus",
+            "order": 12,
+            "__type": "quote"
+        },
+        "vc-01": {
+            "name": "Vector Specific Stock (VCSK-G)",
+            "description": "Ready-to-use cDNA vector stocks for cloning and expression workflows.",
+            "link": "/products/cdna-vector-stock",
+            "category": "vector-clones",
+            "order": 1,
+            "__type": "quote"
+        },
+        "sc-01": {
+            "name": "Stable Cell Line Stock",
+            "description": "Ready-to-use stable cell line stocks for research applications.",
+            "link": "/products/stable-cell-line-stock",
+            "category": "stable-cell-lines",
+            "order": 8,
+            "__type": "quote"
+        },
+        "lv-01": {
+            "name": "Lentivirus Specific Stock (LVSK-G)",
+            "description": "cDNA-expressing lentiviral stocks for gene delivery.",
+            "link": "/products/cdna-lentivirus-stock",
+            "category": "lentivirus",
+            "order": 7,
+            "__type": "quote"
+        },
+        "vc-02": {
+            "name": "Vector Template Stock (VCSK-T)",
+            "description": "Templates for building functional vector kits with modular components.",
+            "link": "/products/functional-vectors-kits-template",
+            "category": "vector-clones",
+            "order": 0,
+            "__type": "quote"
+        },
+        "gep-02": {
+            "name": "CRISPR KnockOut Kit",
+            "description": "Generate complete loss-of-function models using CRISPR-Cas9 technology.",
+            "link": "/products/gene-knock-out",
+            "category": "genome-editing",
+            "order": 0,
+            "__type": "quote"
+        },
+        "gep-03": {
+            "name": "CRISPR Gene Deletion Kit",
+            "description": "Expertly remove large genomic regions to study gene function.",
+            "link": "/products/gene-deletion",
+            "category": "genome-editing",
+            "order": 1,
+            "__type": "quote"
+        },
+        "gep-04": {
+            "name": "CRISPR RNA KnockDown Kit",
+            "description": "Modulate gene expression with our reliable RNA interference services.",
+            "link": "/products/crispr-knock-down",
+            "category": "genome-editing",
+            "order": 6,
+            "__type": "quote"
+        }
+    },
+    "details": {
+        "lv-01": {
+            "catalogNumber": "LVSK-G",
+            "availability": "In Stock",
+            "listPrice": "Contact for Quote",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [
+                "High titer",
+                "Sterile filtered",
+                "QC validated"
+            ],
+            "storageStability": "Store at -80°C. Avoid repeated freeze-thaw cycles.",
+            "performanceData": "Infectivity verified in standard cell lines.",
+            "manuals": [
+                "Lentivirus User Guide (PDF)"
+            ],
+            "manualUrls": [],
+            "storeLink": "",
+            "quoteOnly": true,
+            "contentText": "# BioArk Technologies\n\nBioArk Technologies is continuously expanding its collection of cDNA lentivirus stocks, offering an ever-growing selection of specific genes and targets. Our mission is to provide high-quality, pre-packaged lentiviruses at an affordable price while promoting scientific collaboration and resource sharing.\n\nExplore our expanding list of cost-effective, pre-constructed lentiviruses here.\n\n---\n\n| Major Vector | | | Donor Vector | | | Scramble Control Vector | | |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n| **Class** | **Product Name** | **SKU** | **Information** | **Donor Name** | **SKU** | **Information** | **Scramble Name** | **SKU** | **Information** |\n| Non-Viral CDS-P011k | CRISPR KN AIO Kit-Gene AAVS1, Vector type | COT-FXD00A-AAVS1gk | The CRISPR tool specifically designed to target and cut human AAVS1 safe harbor site. | AAVS1 Dnr Std Kit | CDS-FX00PA-XXXXXXk | Insert Customer Gene into human AAVS1 site, please specify your genes by clicking the button | GFP Donor Control AAVS1 Dnr Std Ctrl Kit, vector type | CDS-FX0GPA-000000k | Insert GFP into human AAVS1 site as control |\n| Non-Viral CDS-P011k | CRISPR KN AIO Kit-Gene ROSA26, Vector type | COT-FXD00A-ROSA26gk | The CRISPR tool specifically designed to target and cut mouse ROSA26 safe harbor site. | Dnr Std Kit-ROSA26 Site | TBD | Insert Customer Gene into mouse ROSA26 site, please specify your custom gene by clicking the button | GFP Donor Control Dnr Std Kit-ROSA26 Site, vector type | TBD | Insert GFP into mouse ROSA26 site as control |\n\n*Showing 1 to 3 of 3 entries*\n\n---\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n```",
+            "images": [
+                "/placeholder.svg"
+            ],
+            "priceRange": "",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": false
+        },
+        "lv-02": {
+            "catalogNumber": "LVSK-C",
+            "availability": "In Stock",
+            "listPrice": "Contact for Quote",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [
+                "Positive/negative controls",
+                "Consistent titers",
+                "Ready-to-use"
+            ],
+            "storageStability": "Store at -80°C. Avoid repeated freeze-thaw cycles.",
+            "performanceData": "Validated for use across common cell lines.",
+            "manuals": [
+                "Control Stock Guide (PDF)"
+            ],
+            "manualUrls": [],
+            "storeLink": "",
+            "quoteOnly": true,
+            "contentText": "# BioArk Technologies\n\nBioArk Technologies is continuously expanding its collection of cDNA lentivirus stocks, offering a growing selection of control lentiviruses for various research applications. Our mission is to provide high-quality, pre-packaged lentiviruses at an affordable price while fostering scientific collaboration and resource sharing.\n\nExplore our expanding list of cost-effective, pre-constructed lentivirus controls [here](#).\n\n---\n\n## Lentivirus Controls Catalog\n\n| Category        | Class               | Product Name                              | SKU                     | Accessory Virus | Promoter   | Protein Tag | Fluorescence Marker | Selection Marker |\n|-----------------|---------------------|-------------------------------------------|-------------------------|-----------------|------------|-------------|---------------------|------------------|\n| Overexpression  | Viral All-in-one    | OverExp Lenti Ctrl Kit, lentivirus type   | EML-CXDG0C-000000l      | None            | PCMV       | MycDDK      | GFP                 | None             |\n| Inducible       | Viral All-in-one    | Inducible Lenti-AIO Ctrl Kit, lentivirus type | IMM-DXDGPC-000000l  | None            | Inducible  | MycDDK      | GFP                 | Puro             |\n\n*Showing 1 to 3 of 3 entries*  \n*10 entries per page*  \n*Search functionality available*\n\n---\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n```",
+            "images": [
+                "/placeholder.svg"
+            ],
+            "priceRange": "",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": false
+        },
+        "vc-02": {
+            "catalogNumber": "VCSK-T",
+            "availability": "In Stock",
+            "listPrice": "Contact for Quote",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [
+                "Modular design",
+                "Customizable elements",
+                "Comprehensive documentation"
+            ],
+            "storageStability": "Store at -20°C. See manual for details.",
+            "performanceData": "Suitable for rapid kit assembly and iteration.",
+            "manuals": [
+                "Template Guide (PDF)"
+            ],
+            "manualUrls": [],
+            "storeLink": "",
+            "quoteOnly": true,
+            "contentText": "# BioArk Technologies\n\nBioArk Technologies offers an extensive inventory of vectors, optimized for automated cloning design and construction. Our pre-assembled templates can be quickly adapted and customized into different kits, tailored for various applications. You can utilize these established systems for your project or design your own system based on your specific preferences.\n\nBelow is a list of our current established function kits. Simply click the SKU number to add your preferred gene information or just select the control or scramble vectors.\n\n---\n\n| Major Vector | Features | | | | | Scramble Vector |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n| **Class** | **Product Name** | **SKU** | **Accessory Vector** | **Promoter** | **Tag** | **Fluorescence Marker** | **Selection Marker** | **Control Sample** | **SKU** |\n| Non-Viral All-in-One | CRISPRa AIO Kit | CAT-FXD00A-XXXXXXk | None | EF1core | MycDDK | None | None | Scramble Control | CAT-FXD00A-000000k |\n| Viral All-in-one | CRISPRa AIO Kit | CAM-FXD0PC-XXXXXXk | None | EF1core | MycDDK | None | Puro | Scramble Control | CAM-FXD0PC-000000k |\n\n*Showing 1 to 3 of 3 entries*\n\n---\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n```",
+            "images": [
+                "/placeholder.svg"
+            ],
+            "isFeatured": false,
+            "priceRange": "",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": false
+        },
+        "vc-01": {
+            "catalogNumber": "VCSK-G",
+            "availability": "In Stock",
+            "listPrice": "Contact for Quote",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [
+                "High-quality backbone",
+                "Multiple cloning sites",
+                "Sequence-verified"
+            ],
+            "storageStability": "Store at -20°C. See manual for details.",
+            "performanceData": "Validated for standard cloning workflows.",
+            "manuals": [
+                "Vector Handbook (PDF)"
+            ],
+            "manualUrls": [],
+            "storeLink": "",
+            "quoteOnly": true,
+            "contentText": "This technique enables the precise integration of target genes or regulatory cassettes into safe harbor sites—genomic regions where foreign DNA can be inserted without disrupting essential endogenous gene functions or causing adverse cellular effects. These sites are widely used in genome engineering for stable gene insertion, ensuring long-term and predictable transgene expression.\n\nCommonly used safe harbor sites include human AAVS1 and CCR5, as well as the mouse ROSA26 locus. Our standard kit utilizes the AAVS1 site as the default insertion locus. For alternative loci or custom services, please contact us at [support@bioarktech.com](mailto:support@bioarktech.com).\n\n---\n\n| Main Plasmid | Features | | | | | | Scramble Plasmid | Order |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n| **Class** | **Product Name** | **SKU** | **Accessory** | **Promoter** | **Protein Tag** | **Fluorescence Marker** | **Selection Marker** | **Target Gene** | **Control Sample** | **SKU** |\n| Viral | OverExp Lenti Kit | EML-CXD0PC-LARGETk | None | PCMV | MycDDK | None | Puro | LargeT | GFP control | EML-CXDGPC-000000k |\n| Viral | OverExp Lenti Kit | EML-CXD0BC-LARGETk | None | PCMV | MycDDK | None | BSD | LargeT | GFP control | EML-CXDGBC-000000k |\n\n*Showing 1 to 3 of 3 entries*\n\n---\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n```",
+            "images": [
+                "/content-api/uploads/originals/30248855-528e-46b1-9487-e748b7bbe964.png"
+            ],
+            "isFeatured": false,
+            "priceRange": "",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": false,
+            "order": 0
+        },
+        "sc-01": {
+            "catalogNumber": "SCSK",
+            "availability": "In Stock",
+            "listPrice": "Contact for Quote",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [
+                "Authenticated",
+                "Mycoplasma-tested",
+                "Application-ready"
+            ],
+            "storageStability": "Store in liquid nitrogen or as specified.",
+            "performanceData": "QC documentation available upon request.",
+            "manuals": [
+                "Cell Line Handling Guide (PDF)"
+            ],
+            "manualUrls": [],
+            "storeLink": "",
+            "quoteOnly": true,
+            "contentText": "# BioArk Technologies\n\nBioArk Technologies is continuously expanding its stable cell line stock, offering an ever-growing selection of gene-specific modifications. Our mission is to provide high-quality, pre-validated stable cell lines at an affordable price while fostering scientific collaboration and resource sharing.\n\nExplore our expanding list of cost-effective, pre-constructed stable cell lines here.\n\n---\n\n| Stable Cell Line | | | Gene Editing Feature | | | | |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n| **Product Name** | **SKU** | **Description** | **Promoter** | **Protein Tag** | **Fluorescence Marker** | **Selection Marker** | **Target Gene** | **Cell Background** |\n| OverExp Lenti Kit | EML-CXD0PC-LARGETc | The large T antigen is integrated by lentivirus | PCMV | MycDDK | None | Puro | LargeT | Fibroblast Cells |\n\n*Showing 1 to 2 of 2 entries*\n\n---\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n\nIf you have any further inquiries regarding your project, please click the button to contact us. We are fully equipped to accommodate a wide range of your requirements.\n```",
+            "images": [
+                "/placeholder.svg"
+            ],
+            "priceRange": "",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": false
+        },
+        "gep-01": {
+            "catalogNumber": "GEDT-014k",
+            "availability": "In Stock",
+            "listPrice": "$640.37",
+            "options": [
+                "Standard Kit",
+                "Pro Kit"
+            ],
+            "optionPrices": {},
+            "keyFeatures": [
+                "High-purity components for robust genome editing",
+                "Complete systems for high-titer virus production",
+                "Scalable solutions for manufacturing",
+                "Custom-designed for targeted gene editing"
+            ],
+            "storageStability": "Store components at specified temperatures. See manual for details.",
+            "performanceData": "Consistently high efficiency and low off-target effects reported in publications.",
+            "manuals": [
+                "Protocol Guide (PDF)",
+                "Troubleshooting (PDF)"
+            ],
+            "manualUrls": [],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "quoteOnly": true,
+            "contentText": "This technique provides versatile options for attaching selected tags to the 3′ or 5′ ends of customer-specified target genes, enabling precise tracking and functional analysis. Gene knock-in tagging can be applied across a broad range of research areas, including investigating protein localization, studying protein-protein interactions, analyzing gene function and regulation, creating transgenic models, and facilitating drug discovery efforts.\n\n## Technical Background\n\nThe CRISPR-Cas9 system is the core technology behind gene knock-in tagging. It utilizes a guide RNA (gRNA) to direct the Cas9 endonuclease to a specific genomic site, where it generates a double-strand break (DSB). This break is then repaired by either non-homologous end joining (NHEJ) or homology-directed repair (HDR). For knock-in tagging, HDR is the preferred method, where a donor template containing the desired tag, flanked by homology arms, facilitates the precise insertion of the tag at the target locus.\n\n## Key Components\n\n- **Cas9 protein**: Creates a DSB at the target site.\n- **Guide RNA (gRNA)**: Directs Cas9 to the desired genomic locus.\n- **Donor template**: Contains the tag (e.g., GFP, HA tag) along with homology arms to facilitate HDR-mediated knock-in.\n\n## Features of Our Products\n\n- **AI-Assisted Design**: Our CRISPR and donor vectors are AI-assisted, designed to streamline and optimize the process for efficient target gene integration.\n- **User-Friendly Techniques**: Our plasmid kits utilize lab-friendly methods that avoid the need for electroporation, making them easy to use in most labs. They are particularly well-suited for adherent cancer cell lines.\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.",
+            "images": [
+                "/content-api/uploads/originals/3b93f03a-4932-4a55-a0be-0acfc63a9b42.png"
+            ],
+            "priceRange": "$1600",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": true
+        },
+        "custom-1757608878053": {
+            "catalogNumber": "",
+            "availability": "In Stock",
+            "listPrice": "",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [],
+            "storageStability": "",
+            "performanceData": "",
+            "manuals": [],
+            "manualUrls": [],
+            "storeLink": "",
+            "quoteOnly": false,
+            "contentText": "",
+            "images": [
+                "/images/products/1-BSY3320_2__SYBR_Green_qPCR_Master_Mix-300x300.jpg"
+            ]
+        },
+        "custom-1757609198384": {
+            "catalogNumber": "",
+            "availability": "In Stock",
+            "listPrice": "",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [],
+            "storageStability": "",
+            "performanceData": "",
+            "manuals": [],
+            "manualUrls": [],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "quoteOnly": true,
+            "contentText": "",
+            "images": [
+                "/images/products/1-BSY3323_2__Fast_SYBR_Green_qPCR_Master_Mix-300x300.jpg"
+            ]
+        },
+        "gep-05": {
+            "catalogNumber": "GEDT-013K",
+            "availability": "In Stock",
+            "listPrice": "",
+            "options": [
+                "Standard Kit",
+                "Pro Kit"
+            ],
+            "optionPrices": {},
+            "keyFeatures": [
+                "High-purity components for robust genome editing",
+                "Complete systems for high-titer virus production",
+                "Scalable solutions for manufacturing",
+                "Custom-designed for targeted gene editing"
+            ],
+            "storageStability": "Store components at specified temperatures. See manual for details.",
+            "performanceData": "Consistently high efficiency and low off-target effects reported in publications.",
+            "manuals": [
+                "Protocol Guide (PDF)",
+                "Troubleshooting (PDF)"
+            ],
+            "manualUrls": [],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "quoteOnly": true,
+            "contentText": "# Safe Harbor Site Gene Integration\n\nThis technique enables the precise integration of target genes or regulatory cassettes into safe harbor sites—genomic regions where foreign DNA can be inserted without disrupting essential endogenous gene functions or causing adverse cellular effects. These sites are widely used in genome engineering for stable gene insertion, ensuring long-term and predictable transgene expression.\n\nCommonly used safe harbor sites include human AAVS1 and CCR5, as well as the mouse ROSA26 locus. Our standard kit utilizes the AAVS1 site as the default insertion locus. For alternative loci or custom services, please contact us at support@bioarktech.com.\n\n## Technical Background\n\nCRISPR-Cas9-mediated targeted knock-in at safe harbor sites involves:\n\n- **Cas9**: An endonuclease that creates a double-strand break (DSB) at the target site.\n- **Guide RNA (gRNA)**: Directs Cas9 to the specific safe harbor locus, such as AAVS1 or the mouse ROSA26 locus.\n- **Donor DNA template**: A construct containing the desired transgene flanked by homology arms complementary to sequences adjacent to the AAVS1 site, facilitating targeted insertion via homology-directed repair (HDR).\n\n## Key Features of Our Products\n\n### Streamlined CRISPR and Donor Vectors\nDesigned for efficient target gene integration, outperforming commercially available alternatives.\n\n### Targeted vs. Random Integration\nMany conventional approaches rely on non-targeting lentiviruses, leading to random gene integration, which can pose safety risks and unpredictable outcomes, particularly in gene therapy and clinical research.\n\nOur vector and virus kits enable precise, targeted integration at safe harbor sites, significantly reducing these risks.\n\n### User-Friendly Plasmid Kits for Broad Accessibility\nUnlike many market solutions that require electroporation—necessitating specialized equipment and techniques—our plasmid-based kits are optimized for ease of use, making them ideal for adherent cancer cell lines.\n\n## Product Catalog\n\n10 entries per page  \nSearch:  \nEdit\n\n| Major Vector | Donor Vector | Scramble Control Vector |\n|--------------|--------------|-------------------------|\n| **Class** | **Product Name** | **SKU** | **Information** | **Donor Name** | **SKU** | **Information** | **Scramble Name** | **SKU** | **Information** |\n| Non-Viral CDS-P011k | CRISPR KN AIO Kit-Gene AAVS1, Vector type | COT-FXD00A-AAVS1gk | The CRISPR tool specifically designed to target and cut human AAVS1 safe harbor site. | AAVS1 Dnr Std Kit | CDS-FX00PA-XXXXXXk | Insert Customer Gene into human AAVS1 site, please specify your genes by clicking the button | GFP Donor Control AAVS1 Dnr Std Ctrl Kit, vector type | CDS-FX0GPA-000000k | Insert GFP into human AAVS1 site as control |\n| Non-Viral CDS-P011k | CRISPR KN AIO Kit-Gene ROSA26, Vector type | COT-FXD00A-ROSA26gk | The CRISPR tool specifically designed to target and cut mouse ROSA26 safe harbor site. | Dnr Std Kit-ROSA26 Site | TBD | Insert Customer Gene into mouse ROSA26 site, please specify your custom gene by clicking the button | GFP Donor Control Dnr Std Kit-ROSA26 Site, vector type | TBD | Insert GFP into mouse ROSA26 site as control |\n\nShowing 1 to 3 of 3 entries\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n",
+            "images": [
+                "/content-api/uploads/originals/fc52e6f9-7ac7-4885-9af4-a371e8b37a37.png",
+                "/content-api/uploads/originals/10dab363-fd33-419a-9002-6be439265a5d.jpg",
+                "/content-api/uploads/originals/85dd272f-4a6c-40fa-b9ff-b59b48e972ab.jpg"
+            ],
+            "priceRange": "$1500",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": true,
+            "isFeatured": false
+        },
+        "gep-02": {
+            "catalogNumber": "GEDT-011k",
+            "availability": "In Stock",
+            "listPrice": "$546.36",
+            "options": [
+                "Standard Kit",
+                "Pro Kit"
+            ],
+            "optionPrices": {},
+            "keyFeatures": [
+                "High-purity components for robust genome editing",
+                "Complete systems for high-titer virus production",
+                "Scalable solutions for manufacturing",
+                "Custom-designed for targeted gene editing"
+            ],
+            "storageStability": "Store components at specified temperatures. See manual for details.",
+            "performanceData": "Consistently high efficiency and low off-target effects reported in publications.",
+            "manuals": [
+                "Protocol Guide (PDF)",
+                "Troubleshooting (PDF)"
+            ],
+            "manualUrls": [],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "quoteOnly": true,
+            "contentText": "# CRISPR Knockout (KO) Technique\n\nCRISPR knockout (KO) is a revolutionary gene-editing technique that allows researchers to disrupt or \"knock out\" specific genes within an organism’s genome. The CRISPR-Cas9 system is the most widely used tool for this purpose, harnessing a natural bacterial defense mechanism against viral infections. Our technique provides a rapid and efficient approach to disrupt gene expression for both research and therapeutic applications.\n\n## Technical Background\n\n### Description:\n\n- **spCas9 Protein**: An endonuclease that induces double-strand breaks (DSBs) in DNA at specific genomic loci.\n- **Guide RNA (gRNA)**: A short RNA sequence that guides the Cas9 protein to the target gene through complementary base pairing.\n- **Repair Pathways**: Following the creation of a DSB, the cell’s repair machinery is activated. The primary repair pathways are:\n  - **Non-Homologous End Joining (NHEJ)**: This repair mechanism often results in insertions or deletions (indels) at the break site, leading to frameshift mutations that can disrupt gene function.\n  - **Homology-Directed Repair (HDR)**: Typically used for precise edits, HDR can also be employed when a donor template is provided. Although HDR is less common for knockout purposes, it can be leveraged to integrate exogenous DNA into the genome, facilitating quick screening for knockout stable cell lines.\n\nBy utilizing the NHEJ repair pathway, researchers can efficiently create gene knockouts, resulting in the loss of gene function. On the other hand, using HDR allows for precise integration of exogenous DNA fragments into the genome.\n\n## Features of Our Products\n\n- **Dual Repair Pathways**: Our CRISPR knockout (KN) tool supports both NHEJ and HDR, offering flexibility depending on customer preferences and project requirements.\n- **Two Delivery Options**: We provide two versions of our CRISPR KN tool: lentivirus and regular plasmid, allowing customers to choose the most suitable option for their needs.\n- **Superior Knockout Efficiency**: Our tools deliver enhanced knockout efficiency, leveraging the latest advancements in CRISPR technology, including optimized gRNA scaffold structures and improved gRNA sequence selection.\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n\n---\n\n## Product Catalog\n\n10 entries per page  \nSearch:  \nEdit\n\n| Major Vector | Scramble Control Vector |  |  |  |\n| :--- | :--- | :--- | :--- | :--- |\n| **Class** | **Product Name** | **SKU** | **Information** | **Scramble Name** | **SKU** | **Information** |\n| Non-Viral All-In-one | COT-P031k | CRISPR KN AIO Kit | COT-FXD0PA-XXXXXXk | The non-viral CRISPR kit includes three AI-designed gRNA sites tailored to target the customer-specified genes. Please click button to design the target genes. | Scramble Control CRISPR KN AIO Ctrl Kit, Vector type | COT-FXD0PA-000000k | The scramble sequence are used as non-specific cutting control |\n| Viral All-in-one | COM-P032k | CRISPR KN Lenti-AIO Kit | COM-FXD0PA-XXXXXXl | The CRISPR lentivirus kit packages three AI-designed gRNA sites into a single mixture tube for precise targeting and cutting of customer-specified genes. Please click button to design the target genes. | Scramble Control CRISPR KN Lenti-AIO Ctrl Kit, lentivirus type | COM-FXD0PA-000000l | The scramble sequence are used as non-specific cutting control |\n",
+            "images": [
+                "/content-api/uploads/originals/ddbc6621-4c4f-470c-8730-6ccdcd6c1c1a.png",
+                "/content-api/uploads/originals/e517607f-dde5-4e77-96ba-ad123c4b3ea8.png"
+            ],
+            "priceRange": "$1080",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": true
+        },
+        "gep-03": {
+            "catalogNumber": "GEDT-012k",
+            "availability": "In Stock",
+            "listPrice": "$320.67",
+            "options": [
+                "Standard Kit",
+                "Pro Kit"
+            ],
+            "optionPrices": {},
+            "keyFeatures": [
+                "High-purity components for robust genome editing",
+                "Complete systems for high-titer virus production",
+                "Scalable solutions for manufacturing",
+                "Custom-designed for targeted gene editing"
+            ],
+            "storageStability": "Store components at specified temperatures. See manual for details.",
+            "performanceData": "Consistently high efficiency and low off-target effects reported in publications.",
+            "manuals": [
+                "Protocol Guide (PDF)",
+                "Troubleshooting (PDF)"
+            ],
+            "manualUrls": [],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "quoteOnly": true,
+            "contentText": "CRISPR Genome Knockout Deletion provides an efficient method for deleting genomic fragments of various sizes, ranging from short deletions to large deletions exceeding 10 kb. It is a valuable tool for studying the functions of non-coding regions of the genome, creating disease models such as Huntington’s disease, exploring gene cluster complexities, investigating chromatin architecture, and examining the role of pathogenic copy number variations (CNVs).\n\n \nTechnical Background\nKey Components:\n\nCas9 Protein: A nuclease that creates double-strand breaks (DSBs) at specified genomic locations, guided by a complementary RNA sequence.\nGuide RNA (gRNA): A synthetic RNA molecule designed to bind to a specific target sequence in the genome, directing the Cas9 protein to the desired site.\nDNA Repair Mechanisms: After the DSB is introduced by Cas9, the cell’s natural repair mechanisms take over. The primary repair pathways involved are:\nNon-Homologous End Joining (NHEJ): The predominant pathway for gene knockout, NHEJ can lead to insertions or deletions (indels) at the break site, causing frameshifts or premature stop codons that result in gene knockout.\nHomology-Directed Repair (HDR): Although not commonly used for knockout deletions, HDR can be applied for precise gene editing when a donor template is provided.\n \nFeatures of Our Products\nFlexible Cloning Options: We offer three different cloning methods for the CRISPR deletion kit:\nCas9 vector with a separate gRNA vector.\nTwo distinct Cas9 + gRNA All-in-one vectors. Each vector carries one gRNA.\nA specialized vector designed for the simultaneous delivery of two gRNAs, allowing for the efficient removal of target genomic fragments.\nUser-Friendly Techniques: Our plasmid kits are designed to be lab-friendly, eliminating the need for electroporation and making them easy to use in most lab settings. These kits are particularly well-suited for adherent cancer cell lines.\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.",
+            "images": [
+                "/content-api/uploads/originals/d650e3bb-1045-4bef-abcd-d9baf2e92493.png"
+            ],
+            "priceRange": "$1440",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": true
+        },
+        "gep-04": {
+            "catalogNumber": "RNDT-021k",
+            "availability": "In Stock",
+            "listPrice": "$384.90",
+            "options": [
+                "Standard Kit",
+                "Pro Kit"
+            ],
+            "optionPrices": {},
+            "keyFeatures": [
+                "High-purity components for robust genome editing",
+                "Complete systems for high-titer virus production",
+                "Scalable solutions for manufacturing",
+                "Custom-designed for targeted gene editing"
+            ],
+            "storageStability": "Store components at specified temperatures. See manual for details.",
+            "performanceData": "Consistently high efficiency and low off-target effects reported in publications.",
+            "manuals": [
+                "Protocol Guide (PDF)",
+                "Troubleshooting (PDF)"
+            ],
+            "manualUrls": [],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "quoteOnly": true,
+            "contentText": "# CRISPR RNA Knockdown (KD) Technique\n\nThis technique offers a more specific and efficient alternative to traditional RNAi methods for knocking down RNA expression levels. CRISPR RNA knockdown using Cas13 provides a powerful and precise approach to regulate gene expression at the RNA level. Its ability to selectively degrade mRNA transcripts makes it a versatile tool for studying gene function and developing therapeutic strategies across diverse fields, including basic research, applied biotechnology, and medicine.\n\nCRISPR RNA knockdown (KD) is particularly useful for studying gene roles by reducing RNA transcript levels. It can be applied in:\n- Disease models\n- Therapeutic development\n- RNA regulatory mechanisms\n- Customized RNA therapies\n- Antiviral applications\n- High-throughput genetic screening\n\n## Technical Background\n\n### Key Components:\n\n- **RfxCas13d (CasRx) Protein**: A member of the CRISPR family that specifically targets RNA rather than DNA. RfxCas13d is derived from the bacterium *Rhodococcus fascians*.\n- **Guide RNA (gRNA)**: A synthetic RNA molecule designed to bind to the target mRNA. It contains a sequence complementary to the target RNA, guiding Cas13 to the specific mRNA for cleavage.\n\n## Features of Our Products\n\n- **Reduced Off-Target Effects**: Compared to traditional RNA interference (RNAi), this method significantly minimizes off-target activity in cultured cells, offering greater specificity.\n- **Customizable Kits**: We provide two distinct kits—vector kits designed for use with cancer cell lines and virus kits tailored for hard-to-transfect cells.\n\n---\n\n## Product Catalog\n\n10 entries per page  \nSearch:  \nEdit\n\n| Major Vector | Scramble Control Vector |  |  |  |\n| :--- | :--- | :--- | :--- | :--- |\n| **Class** | **Product Name** | **SKU** | **Information** | **Scramble Name** | **SKU** | **Information** |\n| Non-Viral All-In-one | COT-P031k | CRISPR KN AIO Kit | COT-FXD0PA-XXXXXXk | The non-viral CRISPR kit includes three AI-designed gRNA sites tailored to target the customer-specified genes. Please click button to design the target genes. | Scramble Control CRISPR KN AIO Ctrl Kit, Vector type | COT-FXD0PA-000000k | The scramble sequence are used as non-specific cutting control |\n| Viral All-in-one | COM-P032k | CRISPR KN Lenti-AIO Kit | COM-FXD0PA-XXXXXXl | The CRISPR lentivirus kit packages three AI-designed gRNA sites into a single mixture tube for precise targeting and cutting of customer-specified genes. Please click button to design the target genes. | Scramble Control CRISPR KN Lenti-AIO Ctrl Kit, lentivirus type | COM-FXD0PA-000000l | The scramble sequence are used as non-specific cutting control |\n\nShowing 1 to 3 of 3 entries\n\nOur design program assists customers in adjusting vector components and developing specific functions tailored to their unique requirements.\n",
+            "images": [
+                "/content-api/uploads/originals/aba9a3b2-8f86-40bb-8668-30a1686f4b13.png"
+            ],
+            "priceRange": "$1080",
+            "dataDescription": "",
+            "showInFeatured": true,
+            "showInGeneEditing": false
+        },
+        "custom-1757746922797": {
+            "catalogNumber": "",
+            "availability": "In Stock",
+            "listPrice": "",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [],
+            "storageStability": "",
+            "performanceData": "",
+            "manuals": [],
+            "manualUrls": [],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "quoteOnly": false,
+            "contentText": "",
+            "images": []
+        },
+        "custom-1757747120684": {
+            "catalogNumber": "",
+            "availability": "In Stock",
+            "listPrice": "",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [],
+            "storageStability": "",
+            "performanceData": "",
+            "manuals": [],
+            "manualUrls": [],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "quoteOnly": false,
+            "contentText": "",
+            "images": []
+        },
+        "custom-1757747406537": {
+            "catalogNumber": "",
+            "availability": "In Stock",
+            "listPrice": "",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [],
+            "storageStability": "",
+            "performanceData": "",
+            "manuals": [],
+            "manualUrls": [],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "quoteOnly": false,
+            "contentText": "",
+            "images": []
+        },
+        "custom-1757747796374": {
+            "catalogNumber": "",
+            "availability": "In Stock",
+            "listPrice": "",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [],
+            "storageStability": "",
+            "performanceData": "",
+            "manuals": [],
+            "manualUrls": [],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "quoteOnly": false,
+            "contentText": "",
+            "images": []
+        },
+        "custom-1757748063327": {
+            "catalogNumber": "",
+            "availability": "In Stock",
+            "listPrice": "$75.00",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [],
+            "storageStability": "",
+            "performanceData": "",
+            "manuals": [],
+            "manualUrls": [],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "quoteOnly": false,
+            "contentText": "",
+            "images": []
+        },
+        "custom-1759624148236": {
+            "images": [
+                "/content-api/uploads/originals/aa6a0b48-05c6-47d2-8764-87d73b4c7824.png"
+            ],
+            "quoteOnly": true,
+            "createdAt": 1759624148236,
+            "catalogNumber": "GEDT-022k",
+            "availability": "In Stock",
+            "listPrice": "",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [],
+            "storageStability": "",
+            "performanceData": "",
+            "manuals": [],
+            "manualUrls": [],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "contentText": "\n**CRISPR activation (CRISPRa)** is an advanced gene-regulation technology that enables researchers to **upregulate or activate the expression** of target genes **without altering the underlying DNA sequence**.  \n\nUnlike CRISPR knockout, which disrupts gene function, CRISPRa employs a **nuclease-deactivated Cas9 (dCas9)** fused to **transcriptional activators**, allowing **precise control of gene expression**.  \n\nOur system provides a **rapid, efficient, and reversible** approach to enhance gene expression—ideal for **functional genomics**, **pathway analysis**, and **therapeutic research**.\n\nEach kit includes **three target-specific gRNA vectors** (available in **all-in-one** or **standalone** format) and **one scramble control vector**, offering flexibility for both experimental validation and control design.\n\n---\n\n## Technical Background\n\n1. **dCas9 Protein**  \n   A catalytically inactive Cas9 variant that binds to specific genomic loci guided by gRNA, without inducing double-strand breaks.  \n\n2. **Guide RNA (gRNA)**  \n   A short RNA sequence that directs dCas9 to the promoter or enhancer region of a target gene, enabling site-specific activation.  \n\n3. **Transcriptional Activators**  \n   - **VP64, p65, Rta, or VPR fusions**: Potent activator domains that recruit the cell’s transcriptional machinery to drive robust gene expression.  \n   - **MS2 or SAM system (optional)**: Enhanced multi-component activation systems that further amplify transcriptional output.  \n\nBy precisely positioning **dCas9-activator complexes** near promoter regions, researchers can **turn on endogenous gene expression**, enabling **fine-tuned control** for mechanistic studies or phenotype screening.\n\n---\n\n## Features of Our Products\n\n1. **High Activation Efficiency**  \n   Our CRISPRa platform integrates optimized gRNA design and advanced activator domains to achieve **strong and consistent gene upregulation**.\n\n2. **Multiple Delivery Options**  \n   Available in both **lentiviral** and **plasmid** formats, allowing **flexible delivery** to a wide range of cell types, including difficult-to-transfect cells.\n\n3. **All-in-One or Standalone Configurations**  \n   Choose between **all-in-one** and **standalone** formats to suit your experimental needs:  \n   - **All-in-One**: Cas9 activator and gRNA cassettes are integrated into a single vector for streamlined transfection and stable expression.  \n   - **Standalone**: Cas9 activator and gRNA are provided on separate plasmids, offering greater modularity and experimental control.\n\n4. **Comprehensive Kit Design**  \n   Each kit contains **three gRNA vectors** targeting the gene of interest and **one scramble control**, ensuring reliable results with appropriate experimental controls.\n",
+            "priceRange": "$1080",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": false
+        },
+        "custom-1759625091045": {
+            "images": [
+                "/content-api/uploads/originals/d93c6340-fa2f-4545-b855-e1d8744cf268.png"
+            ],
+            "quoteOnly": true,
+            "createdAt": 1759625091045,
+            "catalogNumber": "GEDT-021k",
+            "availability": "In Stock",
+            "listPrice": "",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [],
+            "storageStability": "",
+            "performanceData": "",
+            "manuals": [],
+            "manualUrls": [],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "contentText": "\n**CRISPR inhibition (CRISPRi)** is an advanced gene-regulation technology that enables researchers to **downregulate or silence the expression** of target genes **without altering the underlying DNA sequence**.  \n\nUnlike CRISPR knockout, which introduces double-strand breaks to disrupt gene function, CRISPRi employs a **nuclease-deactivated Cas9 (dCas9)** fused to **transcriptional repressors**, allowing **precise and reversible suppression of gene expression**.  \n\nOur system provides a **rapid, efficient, and reversible** approach to inhibit gene expression—ideal for **functional genomics**, **pathway analysis**, and **loss-of-function studies** in therapeutic research.\n\n---\n\n## Technical Background\n\n1. **dCas9 Protein**  \n   A catalytically inactive Cas9 variant that binds to specific genomic loci guided by gRNA, without inducing double-strand breaks.  \n\n2. **Guide RNA (gRNA)**  \n   A short RNA sequence that directs dCas9 to the **promoter or regulatory region** of a target gene, enabling **site-specific transcriptional repression**.  \n\n3. **Transcriptional Repressors**  \n   - **KRAB or SID domains**: Potent repressor domains that recruit chromatin-modifying complexes to inhibit transcriptional initiation.  \n   - **Combinatorial systems (optional)**: Enhanced multi-component repression systems (e.g., **dCas9-KRAB-MeCP2**) for stronger gene silencing.  \n\nBy precisely positioning **dCas9-repressor complexes** near promoter regions, researchers can **block transcription initiation or elongation**, enabling **fine-tuned control** of endogenous gene suppression for mechanistic studies or phenotype screening.\n\n---\n\n## Features of Our Products\n\n1. **High Repression Efficiency**  \n   Our CRISPRi platform integrates optimized gRNA design and advanced repressor domains to achieve **strong and consistent gene downregulation**.  \n\n2. **Multiple Delivery Options**  \n   Available in both **lentiviral** and **plasmid** formats, allowing **flexible delivery** to a wide range of cell types, including difficult-to-transfect cells.  \n\n3. **All-in-One or Standalone Configurations**  \n   Choose between **all-in-one** and **standalone** formats to suit your experimental needs:  \n   - **All-in-One**: Cas9 repressor and gRNA cassettes are integrated into a single vector for streamlined transfection and stable expression.  \n   - **Standalone**: Cas9 repressor and gRNA are provided on separate plasmids, offering greater modularity and experimental control.  \n\n4. **Comprehensive Kit Design**  \n   Each kit contains **three gRNA vectors** targeting the gene of interest and **one scramble control**, ensuring **reliable results** with appropriate experimental controls.\n",
+            "priceRange": "$1080",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": true
+        },
+        "custom-1759879837546": {
+            "images": [
+                "/content-api/uploads/originals/c5ac4a80-c1b8-4a65-bfd6-2cff30793e96.png",
+                "/content-api/uploads/originals/5a8011d4-06aa-45d6-ab93-9ae692c8f9d6.png",
+                "/content-api/uploads/originals/ae36de5d-e9fe-4dbb-837d-cb8198b45646.png",
+                "/content-api/uploads/originals/9c956c8c-5f7c-45e2-a3e5-87807324aea3.png",
+                "/content-api/uploads/originals/0c525c15-a111-4c49-9d2c-c80046c7cf79.png",
+                "/content-api/uploads/originals/dbd48ede-551b-491d-99ea-aa75f96d11c8.png",
+                "/content-api/uploads/originals/eb9cef4a-5e19-4224-a6fc-adcc03ad13a1.png",
+                "/content-api/uploads/originals/f3740117-de84-456d-bce5-c2e8191c5d6e.png"
+            ],
+            "quoteOnly": true,
+            "createdAt": 1759879837546,
+            "catalogNumber": "VCSK-RN",
+            "availability": "Ready To Order",
+            "listPrice": "",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [],
+            "storageStability": "",
+            "performanceData": "",
+            "manuals": [],
+            "manualUrls": [],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "contentText": "# Product Description\n\nOur **Non-Viral RNAi Plasmid** provides a **flexible and efficient solution** for **stable or transient gene silencing** in mammalian cells.  \nDesigned for **high-efficiency RNA interference (RNAi)**, this plasmid enables researchers to easily **clone**, **express**, and **evaluate shRNA or miRNA constructs** targeting genes of interest—**without the use of viral vectors**.  \n\nThe system supports a wide range of **functional genomics** and **molecular biology** applications, including **loss-of-function studies**, **pathway analysis**, and **phenotypic screening**.  \n\n---\n\n# Key Features\n\n- 🔹 **High-Efficiency Gene Silencing**  \n  Optimized expression of **shRNA or miRNA sequences** under strong **U6** or **H1 promoters** ensures robust and consistent knockdown of target genes.  \n\n- 🔹 **Customizable Promoter Options**  \n  Combine **RNA Pol III promoters (U6/H1)** with **constitutive Pol II promoters** (e.g., **CMV**, **EF1α**, **CAG**) for **dual-expression systems** or **regulated knockdown**.  \n\n- 🔹 **Selectable Markers**  \n  Available with **Puromycin**, **Neomycin (G418)**, **Blasticidin**, or **Hygromycin** resistance cassettes for **stable cell selection** in various cell types.  \n\n- 🔹 **Fluorescent Reporter Integration**  \n  Optional **GFP**, **RFP**, **BFP**, or **mCherry** reporters allow easy monitoring of **transfection efficiency** and **cell selection**.  \n\n- 🔹 **Cloning Flexibility**  \n  Supports **multiple cloning sites (MCS)** and is compatible with **Gateway®** or **Gibson Assembly®**, streamlining the insertion of **custom RNAi sequences**.  \n\n- 🔹 **Non-Viral and Safe**  \n  Completely **non-viral**, avoiding biosafety concerns, and ideal for **in vitro** and **preclinical research applications**.  \n\n---\n\n# Applications\n\n- **Gene knockdown** and **loss-of-function** studies  \n- **Functional genomics** and **pathway dissection**  \n- **Target validation** and **drug screening**  \n- **Phenotypic screening** for gene function analysis  \n- **Reporter-based assays** for silencing efficiency evaluation\n",
+            "priceRange": "$299",
+            "dataDescription": "Support Documents",
+            "showInFeatured": false,
+            "showInGeneEditing": false
+        },
+        "fp-badm3362": {
+            "isFeatured": true
+        },
+        "fp-badm3363": {
+            "isFeatured": true
+        },
+        "fp-badm3364": {
+            "isFeatured": false
+        },
+        "fp-bal100468": {
+            "isFeatured": true
+        },
+        "fp-bal100668": {
+            "isFeatured": true,
+            "order": 3
+        },
+        "fp-bal100688": {
+            "isFeatured": false,
+            "order": 1
+        },
+        "fp-bapm2083": {
+            "isFeatured": true
+        },
+        "fp-bapm2086": {
+            "isFeatured": true,
+            "order": 2
+        },
+        "fp-bsy3320": {
+            "isFeatured": false
+        },
+        "fp-bsy3323": {
+            "isFeatured": false
+        },
+        "custom-1781936136038": {
+            "quoteOnly": true,
+            "createdAt": 1781936136038
+        },
+        "custom-1781983829405": {
+            "quoteOnly": true,
+            "createdAt": 1781983829405,
+            "catalogNumber": "LVSK-T",
+            "availability": "In Stock",
+            "listPrice": "",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [],
+            "storageStability": "",
+            "performanceData": "",
+            "manuals": [],
+            "manualUrls": [],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "contentText": "",
+            "priceRange": "",
+            "dataDescription": "",
+            "images": [
+                "/placeholder.svg"
+            ],
+            "showInFeatured": false,
+            "showInGeneEditing": false
+        },
+        "custom-1782064257105": {
+            "images": [
+                "/content-api/uploads/originals/656a29a6-6458-4f0e-9d57-81ba79bb8052.png"
+            ],
+            "quoteOnly": false,
+            "createdAt": 1782064257105,
+            "catalogNumber": "EMS-UX00PA-T",
+            "availability": "In Stock",
+            "listPrice": "$500",
+            "options": [
+                "5 µg"
+            ],
+            "optionPrices": {},
+            "keyFeatures": [
+                "• Non-Viral Gene Expression System – Enables efficient transgene expression without the need for viral packaging or transduction.",
+                "• High-Level Gene Expression – Strong mammalian promoter supports robust expression of the gene of interest.",
+                "• Puromycin Selection Marker (PuroR) – Allows rapid enrichment and maintenance of transfected mammalian cells.",
+                "• Supports Stable Cell Line Generation – Suitable for establishing long-term expression cell lines through antibiotic selection.",
+                "• SV40 Nuclear Localization Signal (NLS) – Enhances nuclear transport and expression efficiency in mammalian cells.",
+                "• hGH Poly(A) Signal – Promotes proper mRNA processing, stability, and efficient protein expression.",
+                "• Flexible Gene Cloning – Multiple cloning region facilitates convenient insertion of coding sequences.",
+                "• Transient and Stable Expression Applications – Suitable for short-term expression studies as well as long-term functional assays."
+            ],
+            "storageStability": "Store at -20℃",
+            "performanceData": "• Recombinant protein expression\n• Gene function studies\n• Stable cell line development\n• Functional genomics research\n• Signal transduction analysis\n• Pathway activation studies\n• Drug target validation\n• Cell engineering projects\n• Reporter gene expression studies\n• Protein localization and interaction studies",
+            "manuals": [
+                "EMS-UX00PA-T Sequence"
+            ],
+            "manualUrls": [
+                "/content-api/uploads/originals/91cdb637-a7eb-4f36-b902-bb5d1ee9aa85.docx"
+            ],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "contentText": "",
+            "priceRange": "",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": false
+        },
+        "custom-1782064575337": {
+            "images": [
+                "/content-api/uploads/originals/baf1f0c6-ee02-47cb-8404-6db79ca2917f.png",
+                "/content-api/uploads/originals/8c8cd041-f81d-41f4-a624-540a97674659.png"
+            ],
+            "quoteOnly": false,
+            "createdAt": 1782064575337,
+            "catalogNumber": "SHS-UX00PA-T",
+            "availability": "In Stock",
+            "listPrice": "$500",
+            "options": [
+                "5 µg"
+            ],
+            "optionPrices": {},
+            "keyFeatures": [
+                "• Non-Viral RNAi Expression System – Enables shRNA-mediated gene silencing without viral packaging, simplifying experimental workflows and reducing biosafety concerns.",
+                "• Human U6 Promoter – Drives robust and constitutive expression of shRNA for efficient target gene knockdown in mammalian cells.",
+                "• Puromycin Resistance Marker (PuroR) – Allows rapid selection and enrichment of transfected cells using puromycin.",
+                "• Suitable for Stable Cell Line Generation – Facilitates the establishment of long-term gene knockdown cell populations.",
+                "• SV40 Nuclear Localization Signal (NLS) – Supports efficient nuclear transport and plasmid function in mammalian cells.",
+                "• Convenient shRNA Cloning – Designed for straightforward insertion of custom shRNA sequences targeting genes of interest.",
+                "• Long-Term Gene Silencing – Provides sustained suppression of target gene expression for functional studies."
+            ],
+            "storageStability": "Store at -20°C",
+            "performanceData": "Stable shRNA cell line generation\nFunctional genomics studies\nGene knockdown validation\nTarget identification and pathway analysis\nDrug target evaluation\nCancer biology research\nSignal transduction studies\nRNAi screening projects",
+            "manuals": [
+                "SHS-UX00PA-T Sequence"
+            ],
+            "manualUrls": [
+                "/content-api/uploads/originals/ee1d30e8-636e-44d9-9957-819a6ab31d7c.docx"
+            ],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "contentText": "",
+            "priceRange": "",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": false
+        },
+        "custom-1782161506879": {
+            "images": [
+                "/content-api/uploads/originals/f9890d66-0347-4d57-8ebe-e4830a4eca0b.png"
+            ],
+            "quoteOnly": false,
+            "createdAt": 1782161506879,
+            "catalogNumber": "EML-UX00PC-T ",
+            "availability": "In Stock",
+            "listPrice": "$500",
+            "options": [
+                "5 µg"
+            ],
+            "optionPrices": {},
+            "keyFeatures": [
+                "Strong CMV promoter for robust mammalian gene expression",
+                "Dual FLAG and Myc epitope tags for protein detection and purification",
+                "Puromycin resistance gene (PuroR) for stable cell selection",
+                "WPRE element for enhanced transgene expression",
+                "RRE element for improved RNA processing",
+                "Chloramphenicol resistance marker (CmR) for bacterial selection",
+                "High-copy plasmid replication origin for efficient plasmid amplification",
+                "Compatible with both transient and stable expression applications",
+                "Suitable for a wide range of mammalian cell lines"
+            ],
+            "storageStability": "",
+            "performanceData": "Gene overexpression studies\nRecombinant protein expression\nStable cell line development\nProtein localization analysis\nProtein-protein interaction studies\nSignal transduction research\nFunctional genomics\nCRISPR rescue experiments\nAntibody validation studies",
+            "manuals": [
+                "EML-UX00PA-T Sequence"
+            ],
+            "manualUrls": [
+                "/content-api/uploads/originals/ff38b4ce-49f2-436e-bc85-6ff2bf810034.docx"
+            ],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "contentText": "",
+            "priceRange": "",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": false
+        },
+        "custom-1782162359032": {
+            "images": [
+                "/content-api/uploads/originals/9dadd322-0e4d-495b-9af5-444fe3ffc45c.png"
+            ],
+            "quoteOnly": false,
+            "createdAt": 1782162359032,
+            "catalogNumber": "EMA-UX00PA-T",
+            "availability": "In Stock",
+            "listPrice": "$500",
+            "options": [
+                "5 µg"
+            ],
+            "optionPrices": {},
+            "keyFeatures": [
+                "AAV-compatible vector backbone for recombinant AAV development",
+                "Supports both plasmid expression and AAV packaging workflows",
+                "Dual FLAG and Myc epitope tags for protein detection and purification",
+                "SV40 Nuclear Localization Signal (NLS) for nuclear-targeted protein expression",
+                "P2A peptide for bicistronic expression",
+                "Puromycin resistance gene (PuroR) for mammalian cell selection",
+                "T7 promoter for in vitro transcription and sequencing applications",
+                "M13 origin for sequencing and molecular biology workflows",
+                "High-copy bacterial replication origin for efficient plasmid production",
+                "Suitable for transient expression and stable cell line generation"
+            ],
+            "storageStability": "Store at -20℃\n",
+            "performanceData": "Mammalian gene overexpression\nRecombinant AAV vector construction\nAAV packaging and production\nStable cell line development\nFunctional genomics research\nProtein localization studies\nProtein-protein interaction analysis\nCRISPR rescue experiments\nIn vivo gene delivery research\nGene function validation",
+            "manuals": [
+                "EMA-UX00PA-T Sequence"
+            ],
+            "manualUrls": [
+                "/content-api/uploads/originals/d4106530-8e70-47a7-99b2-6f8b1d6035b1.docx"
+            ],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "contentText": "",
+            "priceRange": "",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": false
+        },
+        "custom-1782162964753": {
+            "images": [
+                "/content-api/uploads/originals/1c533cfe-b7c9-4447-bb2a-7f1708df13b6.png"
+            ],
+            "quoteOnly": false,
+            "createdAt": 1782162964753,
+            "catalogNumber": "SHL-UX00PC-T",
+            "availability": "In Stock",
+            "listPrice": "$500",
+            "options": [],
+            "optionPrices": {},
+            "keyFeatures": [
+                "Strong CMV promoter for high-level constitutive gene expression",
+                "Dual FLAG and Myc epitope tags for protein detection and purification",
+                "P2A peptide for bicistronic co-expression",
+                "Puromycin resistance gene (PuroR) for stable mammalian cell selection",
+                "WPRE element for enhanced transcript stability and expression",
+                "RRE element for efficient RNA processing",
+                "cPPT/CTS element for improved nuclear import and vector performance",
+                "Chloramphenicol resistance marker (CmR) for bacterial selection",
+                "High-copy bacterial replication origin for efficient plasmid amplification",
+                "Compatible with transient transfection and stable cell line generation",
+                "Suitable for lentiviral transfer vector construction and packaging workflows"
+            ],
+            "storageStability": "Store at -20°C",
+            "performanceData": "Mammalian gene overexpression\nRecombinant protein expression\nStable cell line generation\nLentiviral vector development\nFunctional genomics research\nProtein localization studies\nProtein-protein interaction analysis\nSignal transduction research\nCRISPR rescue experiments\nDrug target validation",
+            "manuals": [
+                "SHL-UX00PA-T Sequence"
+            ],
+            "manualUrls": [
+                "/content-api/uploads/originals/df04c7e1-ea2e-4623-82be-f6fb282c7b95.docx"
+            ],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "contentText": "",
+            "priceRange": "",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": false
+        },
+        "custom-1782347629415": {
+            "images": [
+                "/content-api/uploads/originals/1242b78f-12b1-44d8-9009-77344ce784eb.png"
+            ],
+            "quoteOnly": false,
+            "createdAt": 1782347629415,
+            "catalogNumber": "EML-UX0M0C-T1 ",
+            "availability": "In Stock",
+            "listPrice": "$500.00",
+            "options": [
+                "5 µg"
+            ],
+            "optionPrices": {},
+            "keyFeatures": [
+                "Ultra-Compact miniGFP Reporter – Approximately half the size of conventional GFP (~13 kDa vs. ~27 kDa), minimizing vector size and cellular burden while providing bright green fluorescence for convenient transfection monitoring.",
+                "High-Level Mammalian Expression – Strong human CMV promoter drives robust expression of the gene of interest in a broad range of mammalian cell lines.",
+                "Independent Fluorescent Reporter – EF-1α core promoter enables stable miniGFP expression for rapid visualization of transfected cells.",
+                "Bright Fluorescence Detection – Compatible with standard GFP/FITC fluorescence microscopy and flow cytometry (FACS).",
+                "Reduced Functional Interference – Compact miniGFP is less likely than conventional GFP to interfere with protein folding, localization, or biological activity.",
+                "Ideal for Size-Constrained Applications – The smaller reporter conserves vector capacity, making the construct well suited for viral vector development and large transgene applications.",
+                "Enhanced Transgene Expression – WPRE improves mRNA stability and increases overall protein expression.",
+                "N-Terminal FLAG Tag – Enables convenient protein detection, purification, and Western blot analysis using anti-FLAG antibodies.",
+                "SV40 Nuclear Localization Signal (NLS) – Directs expressed proteins to the nucleus for nuclear-targeted applications.",
+                "Reliable Bacterial Propagation – Chloramphenicol resistance (CmR) allows efficient bacterial selection and plasmid amplification.",
+                "Versatile Applications – Suitable for transient transfection, stable cell line generation, CRISPR studies, fluorescence imaging, protein expression, and cell sorting."
+            ],
+            "storageStability": "Store at -20℃\n",
+            "performanceData": "Mammalian transient expression\nStable cell line generation\nFluorescence-based transfection assessment\nFlow cytometry (FACS)\nLive-cell fluorescence imaging\nCRISPR/Cas gene editing\nViral vector construction\nFunctional protein expression and localization studies",
+            "manuals": [
+                "EML-UX0M0C-T1 Sequence"
+            ],
+            "manualUrls": [
+                "/content-api/uploads/originals/d923554d-a98f-4b41-8232-a7e0aa63ca6a.docx"
+            ],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "contentText": "",
+            "priceRange": "",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": false
+        },
+        "custom-1782348472905": {
+            "images": [
+                "/content-api/uploads/originals/0624ddd2-a765-4f9d-8142-0e2a6073937a.png"
+            ],
+            "quoteOnly": false,
+            "createdAt": 1782348472905,
+            "catalogNumber": "EML-UX0M0C-T2",
+            "availability": "In Stock",
+            "listPrice": "$500.00",
+            "options": [
+                "5 µg"
+            ],
+            "optionPrices": {},
+            "keyFeatures": [
+                "Ultra-Compact miniGFP Reporter – Approximately half the size of conventional GFP, reducing vector size while maintaining bright green fluorescence.",
+                "Reduced Cellular Burden – Smaller reporter minimizes the impact on cell metabolism and improves overall expression efficiency.",
+                "Minimal Functional Interference – Less likely than conventional GFP to affect protein folding, localization, or biological activity.",
+                "Ideal for Viral Vector Development – Conserves vector capacity for larger transgene inserts and size-limited applications.",
+                "Rapid Fluorescent Screening – Bright miniGFP enables easy visualization of transfected cells by fluorescence microscopy or flow cytometry.",
+                "High-Level Gene Expression – Human CMV promoter drives robust expression in a wide variety of mammalian cell lines.",
+                "Independent Reporter Expression – EF-1α core promoter provides stable miniGFP expression for reliable transfection monitoring.",
+                "Enhanced Protein Production – WPRE increases mRNA stability and enhances transgene expression.",
+                "Convenient Protein Detection – N-terminal FLAG tag enables straightforward Western blotting, immunofluorescence, and affinity purification.",
+                "Nuclear Targeting Capability – SV40 NLS directs expressed proteins to the nucleus when required.",
+                "Reliable Plasmid Amplification – Chloramphenicol resistance marker supports efficient bacterial selection."
+            ],
+            "storageStability": "Store at -20℃\n",
+            "performanceData": "Mammalian transient expression\nStable cell line generation\nFluorescence-based transfection assessment\nFlow cytometry (FACS)\nLive-cell fluorescence imaging\nCRISPR/Cas gene editing\nViral vector construction\nFunctional protein expression and localization studies",
+            "manuals": [
+                "EML-UX0M0C-T2 Sequence"
+            ],
+            "manualUrls": [
+                "/content-api/uploads/originals/a6cb1842-a1f5-4bf3-957a-9f7ce5a35c77.docx"
+            ],
+            "storeLink": "https://store.bioarktech.com/cart",
+            "contentText": "",
+            "priceRange": "",
+            "dataDescription": "",
+            "showInFeatured": false,
+            "showInGeneEditing": false
+        }
+    },
+    "hidden": [],
+    "categoriesConfig": {
+        "categories": [
+            {
+                "id": "stable-cell-lines",
+                "name": "Cell Lines",
+                "order": 5,
+                "productType": "both"
+            },
+            {
+                "id": "genome-editing",
+                "name": "Genome Editing",
+                "order": 1,
+                "productType": "both"
+            },
+            {
+                "id": "lentivirus",
+                "name": "Virus Product",
+                "order": 4,
+                "productType": "both"
+            },
+            {
+                "id": "vector-clones",
+                "name": "Vector Stock",
+                "order": 2,
+                "productType": "both"
+            },
+            {
+                "id": "category-1764975769330",
+                "name": "Purified Protein",
+                "order": 3,
+                "productType": "both"
+            }
+        ]
+    },
+    "groupsConfig": {
+        "custom-1762801437711": "3",
+        "custom-1762801582044": "2",
+        "custom-1762801601793": "2",
+        "custom-1762801947809": "3",
+        "custom-1762803603192": "zyy",
+        "vc-02": "0-Overview",
+        "vc-01": "0-Overview",
+        "custom-1759879837546": "0-Overview",
+        "custom-1759628557002": "Overview",
+        "gep-05": "CRISPR Design Kit",
+        "gep-04": "RNAi Design Kit",
+        "gep-01": "CRISPR Design Kit",
+        "gep-03": "CRISPR Design Kit",
+        "gep-02": "CRISPR Design Kit",
+        "custom-1759624148236": "CRISPR Design Kit",
+        "custom-1759625091045": "CRISPR Design Kit",
+        "custom-1764990947079": "DNA",
+        "lv-01": "Overview",
+        "lv-02": "Overview",
+        "sc-01": "Overview",
+        "custom-1781936136038": "Overview",
+        "custom-1781983829405": "Overview",
+        "custom-1782064257105": "CDS NonViral Vector (EN)",
+        "custom-1782064575337": "RNAi NonViral Vector (SN)",
+        "custom-1782161506879": "CDS LentVirus Vector (EL)",
+        "custom-1782162359032": "CDS AAV Vector (EA)",
+        "custom-1782162964753": "RNAi LentVirus Vector (SL)",
+        "custom-1782347629415": "CDS LentVirus Vector (EL)",
+        "custom-1782348472905": "CDS LentVirus Vector (EL)"
+    }
+}
