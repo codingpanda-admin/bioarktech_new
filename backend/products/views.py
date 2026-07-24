@@ -140,6 +140,18 @@ def get_nav_catalog(request):
                 if cat_id not in products_by_category:
                     products_by_category[cat_id] = []
                 products_by_category[cat_id].append(p)
+                
+        # 2b. Fetch all services to count them by category
+        from interface.models import ServiceMode
+        all_services = ServiceMode.objects.filter(show_on_screen=True)
+        
+        services_by_category = {}
+        for s in all_services:
+            cat_id = s.category
+            if cat_id:
+                if cat_id not in services_by_category:
+                    services_by_category[cat_id] = []
+                services_by_category[cat_id].append(s)
         
         merged_map = {}
         
@@ -185,10 +197,12 @@ def get_nav_catalog(request):
                 cat_id = f"cat-{cat.category_id}"
                 
             cat_products = products_by_category.get(cat_id, [])
+            cat_services = services_by_category.get(cat_id, [])
+            total_items_count = len(cat_products) + len(cat_services)
             
             # Filter out empty orphaned seed categories (like CRISPR-Cas9, RNAi etc. which have no products and are not defaults)
             is_default = any(d['external_id'] == cat_id for d in DEFAULT_PRODUCT_CATEGORIES)
-            if not is_default and len(cat_products) == 0 and not cat.external_id:
+            if not is_default and total_items_count == 0 and not cat.external_id:
                 continue
                 
             # Build subcategories
@@ -216,7 +230,7 @@ def get_nav_catalog(request):
                 'category_name': final_name,
                 'external_id': cat_id,
                 'externalId': cat_id,
-                'product_count': len(cat_products),
+                'product_count': total_items_count,
                 'product_type': final_type,
                 'show_on_homepage': cat.show_on_homepage,
                 'homepage_image': cat.homepage_image,
@@ -260,7 +274,7 @@ def get_nav_catalog(request):
                     'category_name': cat['category_name'],
                     'external_id': ext_id,
                     'externalId': ext_id,
-                    'product_count': len(cat_products),
+                    'product_count': total_items_count,
                     'product_type': cat['product_type'],
                     'show_on_homepage': False,
                     'homepage_image': None,
