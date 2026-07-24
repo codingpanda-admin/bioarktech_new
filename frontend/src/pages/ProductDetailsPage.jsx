@@ -26,7 +26,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState('specifications');
+  const [activeTab, setActiveTab] = useState('details');
   
   // Featured product specific states
   const [mainImage, setMainImage] = useState(logo);
@@ -40,6 +40,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
     const fetchProduct = async () => {
       setLoading(true);
       setError('');
+      setActiveTab('details');
       try {
         const productDetail = await apiFetch(`/api/products/load-product-by-external-id/${encodeURIComponent(skuOrCatalog)}/`);
         
@@ -97,14 +98,85 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   if (!product) return null;
 
   const isFeatured = product && Array.isArray(product.unit_prices);
+  const isReagent = String(product.source_type || '').toLowerCase() === 'reagent';
+  const reagentKeyFeatures = isReagent && Array.isArray(product.key_features)
+    ? (product.key_features.length === 1
+      ? product.key_features[0]
+      : product.key_features.map((feature) => `- ${feature}`).join('\n'))
+    : '';
   const name = product.product_name || product.externalId || product.external_id;
   const categoryLabel = product.category_name || product.categoryName || product.product_category || product.category_external_id;
+  const serviceGroupLabel = product.product_group || product.productGroup;
+  const serviceCategoryValues = [
+    product.category_external_id,
+    product.categoryExternalId,
+    product.product_category,
+    product.category_name,
+    product.categoryName,
+  ].filter(Boolean).map(value => String(value).toLowerCase());
+  const isService = String(product.source_type || '').toLowerCase() === 'service'
+    || String(product.product_id || '').startsWith('svc-')
+    || SERVICES_CATEGORIES.some(category => (
+      serviceCategoryValues.includes(category.id.toLowerCase())
+      || serviceCategoryValues.includes(category.label.toLowerCase())
+    ));
   const availabilityLabel = product.availability;
   const quoteOnly = Boolean(product.quote_only || product.quoteOnly);
   const productCode = product.catalog_number || product.product_sku || product.external_id || product.externalId || '';
   const detailsContent = formatRichText(
     product.content_text || product.contentText || product.raw_detail?.contentText || ''
   );
+  const documentFileName = (value) => {
+    const cleanValue = String(value || '').split('?')[0].split('#')[0];
+    const fileName = cleanValue.split('/').filter(Boolean).pop();
+    try {
+      return decodeURIComponent(fileName || 'Product document');
+    } catch {
+      return fileName || 'Product document';
+    }
+  };
+  const normalizeDocument = (document, index) => {
+    if (typeof document === 'string') {
+      return {
+        name: documentFileName(document),
+        url: document,
+        type: 'Product Document',
+        key: `${document}-${index}`,
+      };
+    }
+
+    const url = document?.url || document?.manual || document?.download_url || document?.file || '';
+    return {
+      name: document?.name || document?.title || documentFileName(url),
+      url,
+      type: document?.type || 'Product Document',
+      key: document?.id || `${url || document?.name || 'document'}-${index}`,
+    };
+  };
+  const apiDocuments = Array.isArray(product.documents)
+    ? product.documents.map(normalizeDocument)
+    : [];
+  const legacyDocuments = (() => {
+    const manuals = Array.isArray(product.manuals) ? product.manuals : [];
+    const manualUrls = Array.isArray(product.manual_urls) ? product.manual_urls : [];
+    return Array.from({ length: Math.max(manuals.length, manualUrls.length) }, (_, index) => {
+      const manual = manuals[index];
+      const storedUrl = manualUrls[index];
+      if (manual && typeof manual === 'object') {
+        return normalizeDocument({
+          ...manual,
+          url: manual.url || manual.manual || storedUrl,
+        }, index);
+      }
+      const url = storedUrl || manual || '';
+      return normalizeDocument({
+        name: storedUrl && manual && storedUrl !== manual ? manual : documentFileName(url),
+        url,
+        type: 'Product Document',
+      }, index);
+    });
+  })();
+  const productDocuments = apiDocuments.length > 0 ? apiDocuments : legacyDocuments;
   const getImageUrl = (image) => {
     if (!image) return '';
     if (typeof image === 'string') return image;
@@ -125,12 +197,18 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   };
 
   const getProductQuoteDescription = () => (
-    [
-      `Product Name: ${name || 'N/A'}`,
-      `Product Code: ${productCode || 'N/A'}`,
-      `Product Group: ${product.product_group || product.productGroup || 'N/A'}`,
-      `Product Category: ${categoryLabel || 'N/A'}`,
-    ].join('\n')
+    isService
+      ? [
+          `Service Name: ${name || 'N/A'}`,
+          `Service Code: ${productCode || 'N/A'}`,
+          `Service Category: ${categoryLabel || 'N/A'}`,
+        ].join('\n')
+      : [
+          `Product Name: ${name || 'N/A'}`,
+          `Product Code: ${productCode || 'N/A'}`,
+          `Product Group: ${product.product_group || product.productGroup || 'N/A'}`,
+          `Product Category: ${categoryLabel || 'N/A'}`,
+        ].join('\n')
   );
 
   const getQuoteServiceType = () => {
@@ -169,6 +247,129 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   const onDiscount = isFeatured ? selectedUnitSize?.on_discount : false;
   const discountPercent = onDiscount && listPrice && price ? Math.round(((listPrice - price) / listPrice) * 100) : 0;
   const displayPrice = price || product.price_range || product.list_price || 'Contact for Quote';
+
+  const quoteModal = showQuoteModal && (
+    <div
+      className="modal-overlay product-quote-modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={showQuoteConfirmation ? 'quote-confirmation-title' : 'quote-form-title'}
+      onClick={() => setShowQuoteModal(false)}
+    >
+      {showQuoteConfirmation ? (
+        <div className="quote-confirmation-modal" onClick={(e) => e.stopPropagation()}>
+          <h2 id="quote-confirmation-title">Quote Request Submitted</h2>
+          <p>Your quote request has been submitted successfully. Our team will review the details and contact you shortly.</p>
+          <button type="button" className="primary-button" onClick={() => setShowQuoteModal(false)}>
+            Close
+          </button>
+        </div>
+      ) : (
+        <div className="quote-panel product-quote-modal" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className="product-quote-modal-close"
+            aria-label="Close quote form"
+            onClick={() => setShowQuoteModal(false)}
+          >
+            x
+          </button>
+          <QuoteRequestForm
+            currentUser={currentUser}
+            currentUserProfile={currentUserProfile}
+            initialProjectDescription={getProductQuoteDescription()}
+            initialServiceType={getQuoteServiceType()}
+            onSubmitted={() => setShowQuoteConfirmation(true)}
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  if (isService) {
+    const hasServiceImage = Boolean(product.image_url || productImages.length > 0);
+
+    return (
+      <main className="service-detail-page">
+        <div className={`service-detail-banner ${hasServiceImage ? '' : 'is-fallback'}`}>
+          <img src={mainImage} alt={name} />
+        </div>
+
+        <div className="service-detail-layout">
+          <section className="service-detail-copy" aria-labelledby="service-details-heading">
+            <h2 id="service-details-heading">Details</h2>
+            {detailsContent ? (
+              <div
+                className="blog-detail-content product-detail-content"
+                dangerouslySetInnerHTML={{ __html: detailsContent }}
+              />
+            ) : (
+              <div className="admin-empty-table service-detail-empty">
+                No additional details available.
+              </div>
+            )}
+          </section>
+
+          <aside className="service-detail-summary">
+            {(categoryLabel || serviceGroupLabel) && (
+              <nav className="product-breadcrumb" aria-label="Breadcrumb">
+                {categoryLabel && <span>{categoryLabel}</span>}
+                {categoryLabel && serviceGroupLabel && <span aria-hidden="true">/</span>}
+                {serviceGroupLabel && <span>{serviceGroupLabel}</span>}
+              </nav>
+            )}
+            <h1>{name}</h1>
+            <div className="product-detail-labels" aria-label="Service labels">
+              {categoryLabel && <span className="product-detail-pill category">{categoryLabel}</span>}
+              {availabilityLabel && <span className="product-detail-pill availability">{availabilityLabel}</span>}
+            </div>
+            <div className="service-detail-actions">
+              <button type="button" className="primary-button" onClick={handleRequestQuote}>
+                Request for Quote
+              </button>
+              <button type="button" className="secondary-button" onClick={() => navigate('/search?category=services')}>
+                Back to Services
+              </button>
+            </div>
+          </aside>
+        </div>
+
+        <section className="service-specifications" aria-labelledby="service-specifications-heading">
+          <h2 id="service-specifications-heading">Specifications</h2>
+          <table className="product-specifications-table">
+            <tbody>
+              {categoryLabel && (
+                <tr>
+                  <td>Service Category</td>
+                  <td>{categoryLabel}</td>
+                </tr>
+              )}
+              {productCode && (
+                <tr>
+                  <td>Service Code</td>
+                  <td>{productCode}</td>
+                </tr>
+              )}
+              {availabilityLabel && (
+                <tr>
+                  <td>Availability</td>
+                  <td>{availabilityLabel}</td>
+                </tr>
+              )}
+              {(product.product_group || product.productGroup) && (
+                <tr>
+                  <td>Service Group</td>
+                  <td>{product.product_group || product.productGroup}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </section>
+
+        {quoteModal}
+      </main>
+    );
+  }
 
   return (
     <main className="product-page" style={{ width: 'min(1200px, calc(100% - 48px))', margin: '40px auto' }}>
@@ -330,48 +531,21 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
         </div>
       </div>
 
-      {showQuoteModal && (
-        <div
-          className="modal-overlay product-quote-modal-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={showQuoteConfirmation ? 'quote-confirmation-title' : 'quote-form-title'}
-          onClick={() => setShowQuoteModal(false)}
-        >
-          {showQuoteConfirmation ? (
-            <div className="quote-confirmation-modal" onClick={(e) => e.stopPropagation()}>
-              <h2 id="quote-confirmation-title">Quote Request Submitted</h2>
-              <p>Your quote request has been submitted successfully. Our team will review the details and contact you shortly.</p>
-              <button type="button" className="primary-button" onClick={() => setShowQuoteModal(false)}>
-                Close
-              </button>
-            </div>
-          ) : (
-            <div className="quote-panel product-quote-modal" onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                className="product-quote-modal-close"
-                aria-label="Close quote form"
-                onClick={() => setShowQuoteModal(false)}
-              >
-                x
-              </button>
-              <QuoteRequestForm
-                currentUser={currentUser}
-                currentUserProfile={currentUserProfile}
-                initialProjectDescription={getProductQuoteDescription()}
-                initialServiceType={getQuoteServiceType()}
-                onSubmitted={() => setShowQuoteConfirmation(true)}
-              />
-            </div>
-          )}
-        </div>
-      )}
+      {quoteModal}
 
       {/* Tabs / Info Table Section */}
       <div className="product-info-table">
         <div className="product-info-nav">
           <ul className="nav nav-tabs" style={{ display: 'flex', borderBottom: '1px solid var(--line)', padding: 0, listStyle: 'none', gap: '24px' }}>
+            <li className="nav-item">
+              <a
+                className={`nav-link ${activeTab === 'details' ? 'active' : ''}`}
+                onClick={() => setActiveTab('details')}
+                style={{ display: 'block', padding: '12px 0', fontWeight: 500, cursor: 'pointer', borderBottom: activeTab === 'details' ? '2px solid var(--blue)' : 'none', color: activeTab === 'details' ? 'var(--blue)' : 'var(--muted)' }}
+              >
+                Details
+              </a>
+            </li>
             <li className="nav-item">
               <a
                 className={`nav-link ${activeTab === 'specifications' ? 'active' : ''}`}
@@ -383,38 +557,22 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
             </li>
             <li className="nav-item">
               <a
-                className={`nav-link ${activeTab === 'details' ? 'active' : ''}`}
-                onClick={() => setActiveTab('details')}
-                style={{ display: 'block', padding: '12px 0', fontWeight: 500, cursor: 'pointer', borderBottom: activeTab === 'details' ? '2px solid var(--blue)' : 'none', color: activeTab === 'details' ? 'var(--blue)' : 'var(--muted)' }}
+                className={`nav-link ${activeTab === 'performance' ? 'active' : ''}`}
+                onClick={() => setActiveTab('performance')}
+                style={{ display: 'block', padding: '12px 0', fontWeight: 500, cursor: 'pointer', borderBottom: activeTab === 'performance' ? '2px solid var(--blue)' : 'none', color: activeTab === 'performance' ? 'var(--blue)' : 'var(--muted)' }}
               >
-                Details
+                Performance
               </a>
             </li>
-            {isFeatured && product.performance_data && (
-              <li className="nav-item">
-                <a
-                  className={`nav-link ${activeTab === 'performance-data' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('performance-data')}
-                  style={{ display: 'block', padding: '12px 0', fontWeight: 500, cursor: 'pointer', borderBottom: activeTab === 'performance-data' ? '2px solid var(--blue)' : 'none', color: activeTab === 'performance-data' ? 'var(--blue)' : 'var(--muted)' }}
-                >
-                  Performance Data
-                </a>
-              </li>
-            )}
-            {product.manuals && product.manuals.length > 0 && (
-              <li className="nav-item">
-                <a
-                  className="nav-link"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate('/blogs?tab=documents');
-                  }}
-                  style={{ display: 'block', padding: '12px 0', fontWeight: 500, cursor: 'pointer', color: 'var(--muted)' }}
-                >
-                  Manuals
-                </a>
-              </li>
-            )}
+            <li className="nav-item">
+              <a
+                className={`nav-link ${activeTab === 'documents' ? 'active' : ''}`}
+                onClick={() => setActiveTab('documents')}
+                style={{ display: 'block', padding: '12px 0', fontWeight: 500, cursor: 'pointer', borderBottom: activeTab === 'documents' ? '2px solid var(--blue)' : 'none', color: activeTab === 'documents' ? 'var(--blue)' : 'var(--muted)' }}
+              >
+                Documents
+              </a>
+            </li>
           </ul>
         </div>
 
@@ -454,7 +612,11 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                     {product.description && (
                       <tr>
                         <td>Description</td>
-                        <td>{product.description}</td>
+                        {isReagent ? (
+                          <td dangerouslySetInnerHTML={{ __html: formatRichText(product.description) }} />
+                        ) : (
+                          <td>{product.description}</td>
+                        )}
                       </tr>
                     )}
                     {categoryLabel && (
@@ -478,25 +640,27 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                     {product.key_features && product.key_features.length > 0 && (
                       <tr>
                         <td>Key Features</td>
-                        <td>
-                          <ul>
-                            {product.key_features.map((feature, idx) => (
-                              <li key={idx}>{feature}</li>
-                            ))}
-                          </ul>
-                        </td>
+                        {isReagent ? (
+                          <td dangerouslySetInnerHTML={{ __html: formatRichText(reagentKeyFeatures) }} />
+                        ) : (
+                          <td>
+                            <ul>
+                              {product.key_features.map((feature, idx) => (
+                                <li key={idx}>{feature}</li>
+                              ))}
+                            </ul>
+                          </td>
+                        )}
                       </tr>
                     )}
                     {product.storage_stability && (
                       <tr>
                         <td>Storage & Stability</td>
-                        <td>{product.storage_stability}</td>
-                      </tr>
-                    )}
-                    {product.performance_data && (
-                      <tr>
-                        <td>Performance Data</td>
-                        <td>{product.performance_data}</td>
+                        {isReagent ? (
+                          <td dangerouslySetInnerHTML={{ __html: formatRichText(product.storage_stability) }} />
+                        ) : (
+                          <td>{product.storage_stability}</td>
+                        )}
                       </tr>
                     )}
                   </>
@@ -523,41 +687,66 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
           </div>
         )}
 
-        {/* Performance Data Tab */}
-        {activeTab === 'performance-data' && isFeatured && (
+        {/* Performance Tab */}
+        {activeTab === 'performance' && (
           <div style={{ marginTop: '24px' }}>
-            <div className="tab-header" style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Performance Data</div>
-            <table className="product-specifications-table">
-              <tbody>
-                <tr>
-                  <td dangerouslySetInnerHTML={{ __html: product.performance_data }}></td>
-                </tr>
-              </tbody>
-            </table>
+            <div className="tab-header" style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Performance</div>
+            {product.performance_data ? (
+              <div
+                className="blog-detail-content product-detail-content"
+                dangerouslySetInnerHTML={{ __html: formatRichText(product.performance_data) }}
+              />
+            ) : (
+              <div className="admin-empty-table" style={{ minHeight: '80px', background: '#fcfdfd' }}>
+                No performance information available.
+              </div>
+            )}
           </div>
         )}
 
-        {/* Manuals Tab */}
-        {activeTab === 'manuals' && (
+        {/* Documents Tab */}
+        {activeTab === 'documents' && (
           <div style={{ marginTop: '24px' }}>
-            <div className="tab-header" style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Manuals</div>
-            <div className="manual-table">
-              <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {product.manuals.map((man, idx) => (
-                  <li key={idx}>
-                    <a
-                      onClick={(e) => {
-                        e.preventDefault();
-                        navigate('/blogs?tab=documents');
-                      }}
-                      style={{ color: 'var(--blue)', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500, cursor: 'pointer' }}
-                    >
-                      Document: {man.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <div className="tab-header" style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Documents</div>
+            {productDocuments.length > 0 ? (
+              <div className="document-list">
+                {productDocuments.map((document) => {
+                  const fileUrl = document.url ? formatAssetUrl(document.url) : '';
+                  return (
+                    <article className="document-item-card" key={document.key}>
+                      <div className="document-card-main-info">
+                        <div className="document-icon-wrapper" aria-hidden="true" style={{ fontSize: '12px', fontWeight: 800 }}>
+                          DOC
+                        </div>
+                        <div className="document-text-wrapper">
+                          <span className="document-category-badge">{document.type}</span>
+                          <h3>
+                            {fileUrl ? (
+                              <a className="document-link" href={fileUrl} target="_blank" rel="noopener noreferrer">
+                                {document.name}
+                              </a>
+                            ) : document.name}
+                          </h3>
+                        </div>
+                      </div>
+                      <div className="document-download-action">
+                        {fileUrl ? (
+                          <a className="document-download-btn" href={fileUrl} target="_blank" rel="noopener noreferrer">
+                            Open document
+                          </a>
+                        ) : (
+                          <span style={{ color: 'var(--muted)', fontSize: '14px' }}>File unavailable</span>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="admin-empty-table" style={{ minHeight: '80px', background: '#fcfdfd' }}>
+                No product documents available.
+              </div>
+            )}
           </div>
         )}
       </div>

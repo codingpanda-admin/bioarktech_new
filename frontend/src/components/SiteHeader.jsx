@@ -112,6 +112,40 @@ const categoryIcons = {
   ),
 };
 
+const getMenuCatalogNumber = (item) => {
+  const directCatalogNumber = String(item?.catalog_number || '').trim();
+  if (directCatalogNumber) return directCatalogNumber;
+
+  const titleMatch = String(item?.product_name || '').match(/\(([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*)\)\s*$/i);
+  return titleMatch?.[1] || '';
+};
+
+const sortMenuItemsByCatalogNumber = (items) => (
+  [...(items || [])]
+    .map((item, index) => ({ item, index }))
+    .sort((left, right) => {
+      const leftCatalogNumber = getMenuCatalogNumber(left.item);
+      const rightCatalogNumber = getMenuCatalogNumber(right.item);
+
+      if (!leftCatalogNumber && rightCatalogNumber) return 1;
+      if (leftCatalogNumber && !rightCatalogNumber) return -1;
+
+      const catalogComparison = leftCatalogNumber.localeCompare(rightCatalogNumber, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      });
+      if (catalogComparison !== 0) return catalogComparison;
+
+      const nameComparison = String(left.item?.product_name || '').localeCompare(
+        String(right.item?.product_name || ''),
+        undefined,
+        { numeric: true, sensitivity: 'base' },
+      );
+      return nameComparison || left.index - right.index;
+    })
+    .map(({ item }) => item)
+);
+
 const getCategorySubcategories = (cat) => {
   if (cat.subcategories && cat.subcategories.length > 0) {
     return cat.subcategories;
@@ -555,9 +589,13 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
     if (!menuOpenState) return null;
 
     const activeEntry = menuCategories.find((c) => c.external_id === activeCategory) || menuCategories[0];
-    const activeSubcategories = activeEntry ? (activeEntry.subcategories && activeEntry.subcategories.length > 0
+    const rawActiveSubcategories = activeEntry ? (activeEntry.subcategories && activeEntry.subcategories.length > 0
       ? activeEntry.subcategories
       : getCategorySubcategories(activeEntry)) : [];
+    const activeSubcategories = rawActiveSubcategories.map((subcategory) => ({
+      ...subcategory,
+      products: sortMenuItemsByCatalogNumber(subcategory.products),
+    }));
     
     const totalCount = activeEntry ? (activeEntry.product_count > 0
       ? activeEntry.product_count
@@ -736,7 +774,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
                   <a href="/profile?tab=orders" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/profile?tab=orders'); }}>
                     My Purchases
                   </a>
-                  <a href="/quotes" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/quotes'); }}>
+                  <a href="/profile?tab=quotes" onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/profile?tab=quotes'); }}>
                     My Quotes
                   </a>
                   {isAdminUser && (

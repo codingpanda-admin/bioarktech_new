@@ -42,8 +42,34 @@ const normalizeUsState = (state) => {
   return match ? match[0] : '';
 };
 
+const formatQuoteDate = (dateStr) => {
+  if (!dateStr) return 'N/A';
+
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return 'N/A';
+
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const getQuoteValue = (quote, ...keys) => {
+  for (const key of keys) {
+    const value = quote[key];
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      return value;
+    }
+  }
+
+  return 'N/A';
+};
+
 function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
-  const [activeTab, setActiveTab] = useState(initialTab || 'personal'); // 'personal', 'address', 'orders', 'security'
+  const [activeTab, setActiveTab] = useState(initialTab || 'personal'); // 'personal', 'address', 'orders', 'quotes', 'security'
 
   useEffect(() => {
     setActiveTab(initialTab || 'personal');
@@ -69,6 +95,11 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
   // Order history state
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+
+  // Quote history state
+  const [quotes, setQuotes] = useState([]);
+  const [quotesLoading, setQuotesLoading] = useState(false);
+  const [quotesError, setQuotesError] = useState('');
 
   // Shipping addresses state
   const [shippingAddresses, setShippingAddresses] = useState([]);
@@ -148,6 +179,27 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
       };
       fetchOrders();
     }
+  }, [activeTab]);
+
+  // Fetch quotes when quote history is active
+  useEffect(() => {
+    if (activeTab !== 'quotes') return;
+
+    const fetchQuotes = async () => {
+      setQuotesLoading(true);
+      setQuotesError('');
+
+      try {
+        const response = await apiFetch('/api/quotes/my-quotes/');
+        setQuotes(response.results || []);
+      } catch (err) {
+        setQuotesError(err.message || 'Failed to load quotes.');
+      } finally {
+        setQuotesLoading(false);
+      }
+    };
+
+    fetchQuotes();
   }, [activeTab]);
 
   const handleInputChange = (event) => {
@@ -723,7 +775,7 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
       <section className="profile-header" style={{ width: 'min(1200px, calc(100% - 48px))', margin: '40px auto 0' }}>
         <div>
           <h1 style={{ fontWeight: 700 }}>My Account</h1>
-          <p style={{ color: 'var(--muted)', fontSize: '15px' }}>Manage your profile, shipping addresses, and review your purchases.</p>
+          <p style={{ color: 'var(--muted)', fontSize: '15px' }}>Manage your profile, shipping addresses, purchases, and quote requests.</p>
         </div>
       </section>
 
@@ -772,6 +824,13 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
               onClick={() => { setActiveTab('orders'); setStatus({ type: '', message: '' }); }}
             >
               🛍️ Order History
+            </button>
+            <button
+              type="button"
+              className={`profile-sidebar-tab ${activeTab === 'quotes' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('quotes'); setStatus({ type: '', message: '' }); }}
+            >
+              🧾 Quote History
             </button>
             <button 
               type="button" 
@@ -1113,7 +1172,67 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
             </div>
           )}
 
-          {/* TAB 4: SECURITY */}
+          {/* TAB 4: QUOTE HISTORY */}
+          {activeTab === 'quotes' && (
+            <div>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '20px', borderBottom: '1px solid var(--line)', paddingBottom: '10px' }}>
+                Quote History
+              </h2>
+
+              {quotesLoading ? (
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                  <div className="spinner" style={{ margin: '0 auto' }} />
+                </div>
+              ) : quotesError ? (
+                <div className="alert-banner error">{quotesError}</div>
+              ) : quotes.length === 0 ? (
+                <div className="customer-quotes-empty">
+                  <h2>No quotes submitted yet.</h2>
+                  <p>When you request a quote, it will be listed here with its status.</p>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => navigate('/request-quote')}
+                    style={{ marginTop: '16px' }}
+                  >
+                    Request a Quote
+                  </button>
+                </div>
+              ) : (
+                <div className="customer-quotes-list">
+                  {quotes.map((quote) => (
+                    <article className="customer-quote-card" key={quote.id}>
+                      <div className="customer-quote-card-header">
+                        <div>
+                          <h2>{getQuoteValue(quote, 'service_type', 'serviceType')}</h2>
+                          <p>{getQuoteValue(quote, 'project_description', 'projectDescription')}</p>
+                        </div>
+                        <span className={`customer-quote-status ${quote.read ? 'is-read' : 'is-unread'}`}>
+                          {quote.read ? 'Read' : 'Unread'}
+                        </span>
+                      </div>
+                      <dl className="customer-quote-meta">
+                        <div>
+                          <dt>Created Date</dt>
+                          <dd>{formatQuoteDate(getQuoteValue(quote, 'created_at', 'createdAt'))}</dd>
+                        </div>
+                        <div>
+                          <dt>Timeline</dt>
+                          <dd>{getQuoteValue(quote, 'timeline')}</dd>
+                        </div>
+                        <div>
+                          <dt>Budget</dt>
+                          <dd>{getQuoteValue(quote, 'budget')}</dd>
+                        </div>
+                      </dl>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 5: SECURITY */}
           {activeTab === 'security' && (
             <form onSubmit={handlePasswordSubmit}>
               <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '20px', borderBottom: '1px solid var(--line)', paddingBottom: '10px' }}>

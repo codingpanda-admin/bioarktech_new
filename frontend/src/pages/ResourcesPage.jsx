@@ -3,6 +3,20 @@ import { apiFetch, formatAssetUrl, mockResources } from '../utils/api';
 
 const BLOG_CATEGORIES = ['All', 'BioArk News', 'Biotech Outlook', 'Business News'];
 
+const formatBlogDate = (datePosted) => {
+  if (!datePosted) return '';
+
+  const date = new Date(datePosted);
+  if (Number.isNaN(date.getTime())) return '';
+
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+};
+
 const inferBlogCategory = (blog) => {
   const text = `${blog.title || ''} ${blog.description || ''} ${blog.tag || ''}`.toLowerCase();
 
@@ -171,7 +185,7 @@ function ResourcesPage({ navigate, searchParams }) {
                 <div className="featured-blog-meta">
                   <span>By {blog.author}</span>
                   <span>•</span>
-                  <span>{new Date(blog.date_posted).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  <span>{formatBlogDate(blog.date_posted)}</span>
                 </div>
               </div>
             </article>
@@ -232,7 +246,7 @@ function ResourcesPage({ navigate, searchParams }) {
                     <div className="featured-blog-meta">
                       <span>By {blog.author}</span>
                       <span>•</span>
-                      <span>{new Date(blog.date_posted).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      <span>{formatBlogDate(blog.date_posted)}</span>
                     </div>
                   </div>
                 </article>
@@ -372,6 +386,8 @@ function ResourcesPage({ navigate, searchParams }) {
                   const title = blog.title || blog.name;
                   const imageUrl = blog.image ? formatAssetUrl(blog.image) : null;
                   const blogHref = blog.id ? `/blog/${blog.id}` : `/blog/mock-${index}`;
+                  const publishDateSource = blog.date_posted || blog.date;
+                  const publishDate = formatBlogDate(publishDateSource);
 
                   return (
                     <article
@@ -401,6 +417,11 @@ function ResourcesPage({ navigate, searchParams }) {
                             {title}
                           </a>
                         </h2>
+                        {publishDate && (
+                          <time className="blog-card-date" dateTime={publishDateSource}>
+                            {publishDate}
+                          </time>
+                        )}
                       </div>
                     </article>
                   );

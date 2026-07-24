@@ -4,6 +4,28 @@ import { logo } from '../utils/api';
 import IconMark from '../components/IconMark';
 import ProductVisual from '../components/ProductVisual';
 
+const HOME_BLOG_CATEGORIES = ['All', 'BioArk News', 'Biotech Outlook', 'Business News'];
+
+const inferHomeBlogCategory = (blog) => {
+  const text = `${blog?.title || ''} ${blog?.description || ''} ${blog?.tag || ''}`.toLowerCase();
+
+  if (text.includes('bioark') || text.includes('company') || text.includes('growth')) {
+    return 'BioArk News';
+  }
+
+  if (text.includes('business') || text.includes('market') || text.includes('economics')) {
+    return 'Business News';
+  }
+
+  return 'Biotech Outlook';
+};
+
+const getHomeBlogCategory = (blog) => {
+  if (HOME_BLOG_CATEGORIES.includes(blog?.category)) return blog.category;
+  if (HOME_BLOG_CATEGORIES.includes(blog?.tag)) return blog.tag;
+  return inferHomeBlogCategory(blog);
+};
+
 const getBlogTimestamp = (blog) => {
   const rawDate = blog?.date_posted || blog?.date || '';
   const timestamp = rawDate ? new Date(rawDate).getTime() : 0;
@@ -25,6 +47,7 @@ const formatHomeBlogDate = (blog) => {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
+    timeZone: 'UTC',
   });
 };
 
@@ -55,12 +78,36 @@ const getSlideImageUrl = (url) => {
   return formatAssetUrl(url);
 };
 
+const getCategoryImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('/images/') || url.startsWith('/img/')) return url;
+  return formatAssetUrl(url);
+};
+
+const getCategoryHref = (category) => {
+  const categoryId = category?.external_id || category?.externalId || category?.id;
+  const categoryName = category?.category_name || category?.name || '';
+  if (!categoryId) return `/search?q=${encodeURIComponent(categoryName)}`;
+
+  const productType = String(category?.product_type || 'product').toLowerCase();
+  const searchCategory = productType === 'service'
+    ? 'services'
+    : productType === 'reagent'
+      ? 'reagents'
+      : productType === 'consumable'
+        ? 'consumables'
+        : 'products';
+
+  return `/search?category=${searchCategory}&cat=${encodeURIComponent(categoryId)}`;
+};
+
 function HomePage({ navigate, searchParams }) {
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [featuredGeneralProducts, setFeaturedGeneralProducts] = useState([]);
   const [featuredServices, setFeaturedServices] = useState([]);
   const [blogs, setBlogs] = useState([]);
+  const [activeBlogCategory, setActiveBlogCategory] = useState('All');
   const [loading, setLoading] = useState(true);
   const [featuredStartIndex, setFeaturedStartIndex] = useState(0);
   const [generalProductsStartIndex, setGeneralProductsStartIndex] = useState(0);
@@ -98,7 +145,7 @@ function HomePage({ navigate, searchParams }) {
           apiFetch('/api/products/get-latest-featured-products/').catch(() => []),
           apiFetch('/api/products/get-featured-general-products/').catch(() => []),
           apiFetch('/api/interface/get-featured-services/').catch(() => []),
-          apiFetch('/api/blogs/get-latest-blogs/').catch(() => mockResources),
+          apiFetch('/api/blogs/get-all-blogs/').catch(() => mockResources),
           apiFetch('/api/interface/get-homepage-slides/').catch(() => [])
         ]);
 
@@ -106,7 +153,7 @@ function HomePage({ navigate, searchParams }) {
         setFeaturedProducts(Array.isArray(prodData) ? prodData : []);
         setFeaturedGeneralProducts(Array.isArray(generalProdData) ? generalProdData : []);
         setFeaturedServices(Array.isArray(servicesData) ? servicesData : []);
-        setBlogs(getRecentBlogs(Array.isArray(blogData) && blogData.length > 0 ? blogData : mockResources));
+        setBlogs(Array.isArray(blogData) && blogData.length > 0 ? blogData : mockResources);
         if (Array.isArray(slideData) && slideData.length > 0) {
           setSlides(slideData);
         }
@@ -122,6 +169,17 @@ function HomePage({ navigate, searchParams }) {
 
   const activeSlides = slides.length > 0 ? slides : defaultSlides;
   const currentSlide = activeSlides[activeSlideIndex] || defaultSlides[0];
+  const categorizedBlogs = blogs.map((blog, index) => ({
+    ...blog,
+    homeCategory: getHomeBlogCategory(blog),
+    homeIndex: index,
+  }));
+  const visibleHomeBlogs = getRecentBlogs(
+    categorizedBlogs.filter((blog) => (
+      activeBlogCategory === 'All' || blog.homeCategory === activeBlogCategory
+    ))
+  );
+  const popularCategories = categories.filter((category) => category.show_on_homepage);
 
   const handlePrevSlide = () => {
     setActiveSlideIndex((prev) => (prev - 1 + activeSlides.length) % activeSlides.length);
@@ -187,7 +245,7 @@ function HomePage({ navigate, searchParams }) {
   }, [featuredServices.length]);
 
   const visibleFeaturedServices = featuredServices.length
-    ? Array.from({ length: Math.min(3, featuredServices.length) }, (_, offset) => {
+    ? Array.from({ length: Math.min(4, featuredServices.length) }, (_, offset) => {
         const index = (servicesStartIndex + offset) % featuredServices.length;
         return { service: featuredServices[index], index };
       })
@@ -209,7 +267,7 @@ function HomePage({ navigate, searchParams }) {
 
   return (
     <>
-      <main>
+      <main className="home-page">
         <section className="hero-section">
           {currentSlide.image_url && (
             <div
@@ -314,12 +372,25 @@ function HomePage({ navigate, searchParams }) {
         <section className="categories-section" aria-labelledby="categories-title">
           <h2 id="categories-title">Explore Popular Categories</h2>
           <div className="category-row">
-            {categories.map((cat, idx) => {
+            {popularCategories.map((cat, idx) => {
               const name = cat.category_name;
               const icon = cat.icon || getCategoryIcon(name);
+              const imageUrl = getCategoryImageUrl(cat.homepage_image);
+              const categoryHref = getCategoryHref(cat);
               return (
-                <a className="category-item" href="#" key={idx} onClick={(e) => { e.preventDefault(); navigate(`/search?q=${encodeURIComponent(name)}`); }}>
-                  <IconMark type={icon} />
+                <a
+                  className="category-item"
+                  href={categoryHref}
+                  key={cat.category_id || cat.external_id || `${name}-${idx}`}
+                  onClick={(e) => { e.preventDefault(); navigate(categoryHref); }}
+                >
+                  {imageUrl ? (
+                    <span className="category-home-image">
+                      <img src={imageUrl} alt="" />
+                    </span>
+                  ) : (
+                    <IconMark type={icon} />
+                  )}
                   <span>{name}<small>{cat.description || 'BioArk Category'}</small></span>
                 </a>
               );
@@ -361,7 +432,7 @@ function HomePage({ navigate, searchParams }) {
                       <h3>{name}</h3>
                       <p className="rating">★★★★★ <span>({prod.reviews || '45'})</span></p>
                       <p className="price">{priceStr}</p>
-                      <a href={productHref} onClick={(e) => { e.preventDefault(); navigate(productHref); }}>View Product <span>→</span></a>
+                      <a className="product-card-action" href={productHref} onClick={(e) => { e.preventDefault(); navigate(productHref); }}>View Product <span>→</span></a>
                     </article>
                   );
                 })}
@@ -379,10 +450,10 @@ function HomePage({ navigate, searchParams }) {
         </section>
 
         {featuredGeneralProducts.length > 0 && (
-          <section className="products-section" aria-labelledby="general-products-title" style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)', padding: '60px 0', borderTop: '1px solid var(--line)' }}>
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+          <section className="products-section" aria-labelledby="general-products-title" style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)', borderTop: '1px solid var(--line)' }}>
+            <div className="home-section-inner" style={{ margin: '0 auto', padding: '0 20px' }}>
               <h2 id="general-products-title" style={{ textAlign: 'center', marginBottom: '10px', fontSize: '2.2rem', color: 'var(--blue-dark)' }}>Products</h2>
-              <p className="section-subtitle" style={{ textAlign: 'center', marginBottom: '40px', color: 'var(--ink-light)', maxWidth: '700px', margin: '0 auto 45px auto' }}>
+              <p className="section-subtitle" style={{ textAlign: 'center', marginBottom: '40px', color: 'var(--ink-light)', maxWidth: '1100px', margin: '0 auto 45px auto' }}>
                 High-quality reagents, kits, and ladders selected to ensure precision and reproducibility in your experiments.
               </p>
               
@@ -433,7 +504,7 @@ function HomePage({ navigate, searchParams }) {
                               <p className="rating" style={{ margin: '0 0 12px 0' }}>★★★★★ <span style={{ color: 'var(--ink-light)', fontSize: '0.85rem' }}>(4.8)</span></p>
                               <p className="price" style={{ margin: '0 0 20px 0', fontSize: '1.2rem', fontWeight: '700', color: 'var(--blue)' }}>{priceStr}</p>
                             </div>
-                            <a href={productHref} className="secondary-button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(productHref); }} style={{ width: '100%', textAlign: 'center', display: 'block', padding: '10px 0', borderRadius: '6px', fontSize: '0.95rem', fontWeight: '600' }}>View Details</a>
+                            <a className="product-card-action" href={productHref} onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(productHref); }}>View Details <span>→</span></a>
                           </div>
                         </article>
                       );
@@ -451,17 +522,17 @@ function HomePage({ navigate, searchParams }) {
               </div>
               
               <div style={{ textAlign: 'center', marginTop: '40px' }}>
-                <a className="view-all" href="#" onClick={(e) => { e.preventDefault(); navigate('/search?category=reagents'); }} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '600', color: '#fff' }}>View All Reagents & Materials <span>→</span></a>
+                <a className="view-all" href="#" onClick={(e) => { e.preventDefault(); navigate('/search?category=reagents'); }} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '600', color: '#fff' }}>View Product and Service Catalog <span>→</span></a>
               </div>
             </div>
           </section>
         )}
 
         {featuredServices.length > 0 && (
-          <section className="services-section" aria-labelledby="featured-services-title" style={{ background: '#f8fafc', padding: '60px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+          <section className="services-section" aria-labelledby="featured-services-title" style={{ background: '#f8fafc', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
+            <div className="home-section-inner" style={{ margin: '0 auto', padding: '0 20px' }}>
               <h2 id="featured-services-title" style={{ textAlign: 'center', marginBottom: '10px', fontSize: '2.2rem', color: 'var(--blue-dark)' }}>Services</h2>
-              <p className="section-subtitle" style={{ textAlign: 'center', marginBottom: '45px', color: 'var(--ink-light)', maxWidth: '750px', margin: '0 auto 45px auto' }}>
+              <p className="section-subtitle" style={{ textAlign: 'center', marginBottom: '45px', color: 'var(--ink-light)', maxWidth: '1100px', margin: '0 auto 45px auto' }}>
                 Partner with our expert scientific team for custom cloning, high-titer virus packaging, and cell line engineering.
               </p>
               
@@ -506,7 +577,7 @@ function HomePage({ navigate, searchParams }) {
                               <p style={{ fontSize: '0.95rem', color: 'var(--ink-light)', lineHeight: '1.6', margin: '0 0 24px 0' }}>{cleanText}</p>
                             </div>
                             <div style={{ display: 'flex', gap: '12px' }}>
-                              <a href={serviceHref} className="primary-button" onClick={(e) => { e.preventDefault(); navigate(serviceHref); }} style={{ flex: 1, textAlign: 'center', padding: '10px 0', fontSize: '0.95rem', fontWeight: '600' }}>Explore Service</a>
+                              <a href={serviceHref} className="product-card-action" onClick={(e) => { e.preventDefault(); navigate(serviceHref); }}>Explore Service <span>→</span></a>
                               <a href="/request-quote" className="secondary-button" onClick={(e) => { e.preventDefault(); navigate(`/request-quote?service=${encodeURIComponent(name)}`); }} style={{ flex: 1, textAlign: 'center', padding: '10px 0', fontSize: '0.95rem', fontWeight: '600' }}>Get Quote</a>
                             </div>
                           </div>
@@ -551,26 +622,44 @@ function HomePage({ navigate, searchParams }) {
 
         <section className="resources-section" aria-labelledby="resources-title">
           <h2 id="resources-title">Resources and Blogs</h2>
-          <div className="resource-grid">
-            {blogs.map((blog, idx) => {
-              const blogHref = getHomeBlogHref(blog, idx);
-              return (
-              <article className="resource-card" key={blog.id || blog.external_id || idx}>
-                <div className="resource-image">
-                  {blog.image && (
-                    <img src={formatAssetUrl(blog.image)} alt={blog.title || blog.name || 'Blog post'} />
-                  )}
-                  <span>{blog.tag || 'Blog'}</span>
-                </div>
-                <div className="resource-body">
-                  <h3>{blog.title || blog.name}</h3>
-                  <p>{formatHomeBlogDate(blog)} <span>•</span> {blog.readTime || '3 min read'}</p>
-                  <a href={blogHref} onClick={(e) => { e.preventDefault(); navigate(blogHref); }}>Read More <span>→</span></a>
-                </div>
-              </article>
-              );
-            })}
+          <div className="home-blog-tabs" role="tablist" aria-label="Blog categories">
+            {HOME_BLOG_CATEGORIES.map((category) => (
+              <button
+                className={`home-blog-tab ${activeBlogCategory === category ? 'is-active' : ''}`}
+                key={category}
+                type="button"
+                role="tab"
+                aria-selected={activeBlogCategory === category}
+                onClick={() => setActiveBlogCategory(category)}
+              >
+                {category}
+              </button>
+            ))}
           </div>
+          {visibleHomeBlogs.length > 0 ? (
+            <div className="resource-grid">
+              {visibleHomeBlogs.map((blog) => {
+                const blogHref = getHomeBlogHref(blog, blog.homeIndex);
+                return (
+                  <article className="resource-card" key={blog.id || blog.external_id || blog.homeIndex}>
+                    <div className="resource-image">
+                      {blog.image && (
+                        <img src={formatAssetUrl(blog.image)} alt={blog.title || blog.name || 'Blog post'} />
+                      )}
+                      <span>{blog.homeCategory}</span>
+                    </div>
+                    <div className="resource-body">
+                      <h3>{blog.title || blog.name}</h3>
+                      <p>{formatHomeBlogDate(blog)} <span>•</span> {blog.readTime || '3 min read'}</p>
+                      <a href={blogHref} onClick={(e) => { e.preventDefault(); navigate(blogHref); }}>Read More <span>→</span></a>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="home-blog-empty">No blog posts are available in this category yet.</p>
+          )}
           <a className="view-all" href="/blogs" onClick={(e) => { e.preventDefault(); navigate('/blogs'); }}>View All Resources & Blogs <span>→</span></a>
         </section>
 

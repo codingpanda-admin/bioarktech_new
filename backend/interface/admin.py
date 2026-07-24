@@ -8,4 +8,4 @@ class ProductModeAdmin(admin.ModelAdmin):
 
 @admin.register(ServiceMode)
 class ServiceModeAdmin(admin.ModelAdmin):
-    list_display = ("url", "title")
+    list_display = ("url", "title", "catalog_number", "category", "service_group")

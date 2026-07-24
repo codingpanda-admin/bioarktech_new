@@ -8,6 +8,13 @@ import {
   SERVICES_CATEGORIES
 } from '../data/catalogCategories';
 
+const ALL_REAGENT_CATEGORIES = [
+  ...REAGENTS_CATEGORIES,
+  ...CONSUMABLES_CATEGORIES,
+];
+
+const getProductGroup = (product) => String(product?.product_group || '').trim();
+
 function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCategory }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,12 +29,15 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
   }, [initialSelectedCategory]);
 
   useEffect(() => {
+    setSelectedSubcategory(null);
+  }, [currentQuery, currentCategory]);
+
+  useEffect(() => {
     if (currentQuery) {
       const matchedCat = [
         ...PRODUCTS_CATEGORIES,
         ...SERVICES_CATEGORIES,
-        ...REAGENTS_CATEGORIES,
-        ...CONSUMABLES_CATEGORIES
+        ...ALL_REAGENT_CATEGORIES
       ].find(c => c.label.toLowerCase() === currentQuery.trim().toLowerCase());
 
       if (matchedCat && matchedCat.id !== 'all-products' && matchedCat.id !== 'all-reagents' && matchedCat.id !== 'all-services') {
@@ -69,8 +79,9 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
     return 'bottle';
   };
 
-  // Filter products by selected sidebar category & subcategory
-  const filteredResults = results.filter(prod => {
+  // Filter products by the selected catalog category first so the group chips
+  // always reflect groups that are available in the current result set.
+  const categoryFilteredResults = results.filter(prod => {
     if (!selectedCategory) return true;
 
     if (selectedCategory === 'all-products') {
@@ -83,14 +94,24 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
       return prod.category === 'Services';
     }
 
-    const catMatch = prod.category_external_id === selectedCategory;
-    if (!catMatch) return false;
-
-    if (selectedSubcategory) {
-      return prod.product_group === selectedSubcategory;
-    }
-    return true;
+    return prod.category_external_id === selectedCategory;
   });
+
+  const productGroupOptions = Array.from(
+    categoryFilteredResults.reduce((groups, product) => {
+      const group = getProductGroup(product);
+      if (group) groups.set(group, (groups.get(group) || 0) + 1);
+      return groups;
+    }, new Map())
+  )
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const groupFilterLabel = currentCategory === 'services' ? 'Service groups' : 'Product groups';
+
+  const filteredResults = selectedSubcategory
+    ? categoryFilteredResults.filter(prod => getProductGroup(prod) === selectedSubcategory)
+    : categoryFilteredResults;
 
   // Sort filtered products
   const sortedResults = [...filteredResults].sort((a, b) => {
@@ -112,7 +133,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
   const displayTitle = currentQuery 
     ? `Results for "${currentQuery}"` 
     : (currentCategory === 'consumables' || currentCategory === 'reagents')
-      ? 'Reagents, Kits & Consumables' 
+      ? 'Reagents & Kits'
       : currentCategory === 'services'
         ? 'Services Catalog'
         : currentCategory === 'products'
@@ -343,6 +364,91 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
           align-items: center;
         }
 
+        .product-group-filters {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          margin: -10px 0 30px;
+        }
+
+        .product-group-filter-label {
+          flex: 0 0 auto;
+          padding-top: 8px;
+          color: #64748b;
+          font-size: 13px;
+          font-weight: 600;
+        }
+
+        .product-group-bubbles {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .product-group-bubble {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          min-height: 34px;
+          border: 1px solid #cbd5e1;
+          border-radius: 999px;
+          padding: 6px 12px;
+          color: #475569;
+          background: #fff;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .product-group-bubble:hover,
+        .product-group-bubble:focus-visible {
+          border-color: #0064df;
+          color: #0064df;
+        }
+
+        .product-group-bubble:focus-visible {
+          outline: none;
+          box-shadow: 0 0 0 3px rgba(0, 100, 223, 0.15);
+        }
+
+        .product-group-bubble.active {
+          border-color: #0064df;
+          color: #fff;
+          background: #0064df;
+        }
+
+        .product-group-bubble-count {
+          min-width: 20px;
+          border-radius: 999px;
+          padding: 2px 6px;
+          color: #64748b;
+          background: #f1f5f9;
+          font-size: 10px;
+          text-align: center;
+        }
+
+        .product-group-bubble.active .product-group-bubble-count {
+          color: #0052b8;
+          background: #fff;
+        }
+
+        .product-group-bubble-remove {
+          font-size: 15px;
+          line-height: 1;
+        }
+
+        @media (max-width: 640px) {
+          .product-group-filters {
+            flex-direction: column;
+            gap: 8px;
+          }
+
+          .product-group-filter-label {
+            padding-top: 0;
+          }
+        }
+
         .search-sort-select {
           padding: 10px 16px;
           border: 1px solid #cbd5e1;
@@ -417,12 +523,6 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
           border: 1px solid #c7d2fe;
         }
 
-        .badge-category.consumable {
-          background: #ecfdf5;
-          color: #059669;
-          border: 1px solid #a7f3d0;
-        }
-
         .badge-category.product {
           background: #fef3c7;
           color: #d97706;
@@ -477,6 +577,18 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
           letter-spacing: 0;
           margin-bottom: 6px;
           text-transform: uppercase;
+        }
+
+        .card-product-group {
+          width: fit-content;
+          margin-bottom: 8px;
+          border-radius: 999px;
+          padding: 3px 8px;
+          color: #175cd3;
+          background: #eff8ff;
+          font-size: 10px;
+          font-weight: 600;
+          line-height: 1.3;
         }
 
         .card-title {
@@ -705,29 +817,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
             <div className="sidebar-group">
               <h4 className="sidebar-group-title">Reagents & Kits</h4>
               <ul className="sidebar-list">
-                {REAGENTS_CATEGORIES.map(cat => (
-                  <li key={cat.id}>
-                    <button
-                      className={`sidebar-item-btn ${selectedCategory === cat.id ? 'active' : ''}`}
-                      onClick={() => {
-                        setSelectedCategory(selectedCategory === cat.id ? null : cat.id);
-                        setSelectedSubcategory(null);
-                      }}
-                    >
-                      {cat.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Consumables Categories */}
-          {(!currentCategory || currentCategory === 'reagents' || currentCategory === 'consumables' || currentCategory === 'featured') && (
-            <div className="sidebar-group">
-              <h4 className="sidebar-group-title">Consumables & Supplies</h4>
-              <ul className="sidebar-list">
-                {CONSUMABLES_CATEGORIES.map(cat => (
+                {ALL_REAGENT_CATEGORIES.map(cat => (
                   <li key={cat.id}>
                     <button
                       className={`sidebar-item-btn ${selectedCategory === cat.id ? 'active' : ''}`}
@@ -767,6 +857,31 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
             </div>
           </div>
 
+          {!loading && productGroupOptions.length > 0 && (
+            <div className="product-group-filters" aria-label={`Filter by ${groupFilterLabel.toLowerCase()}`}>
+              <span className="product-group-filter-label">{groupFilterLabel}</span>
+              <div className="product-group-bubbles">
+                {productGroupOptions.map(({ name, count }) => {
+                  const isActive = selectedSubcategory === name;
+                  return (
+                    <button
+                      className={`product-group-bubble ${isActive ? 'active' : ''}`}
+                      key={name}
+                      type="button"
+                      aria-pressed={isActive}
+                      aria-label={isActive ? `Remove ${name} group filter` : `Filter by ${name}`}
+                      onClick={() => setSelectedSubcategory(isActive ? null : name)}
+                    >
+                      <span>{name}</span>
+                      <span className="product-group-bubble-count">{count}</span>
+                      {isActive && <span className="product-group-bubble-remove" aria-hidden="true">×</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Loading state */}
           {loading && (
             <div className="spinner-container">
@@ -796,6 +911,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
               {sortedResults.map((prod, idx) => {
                 const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
                 const isConsumable = prod.category === 'Consumables';
+                const isReagent = prod.category === 'Reagents & Kits' || isConsumable;
                 const shippingCost = prod.shipping_cost || (isConsumable ? 100 : 40);
 
                 return (
@@ -817,8 +933,8 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
                           ★ Featured
                         </span>
                       )}
-                      <span className={`badge-category ${isConsumable ? 'consumable' : (prod.category === 'Reagents & Kits' ? 'reagent' : 'product')}`}>
-                        {isConsumable ? 'Consumable' : (prod.category === 'Reagents & Kits' ? 'Reagent / Kit' : 'Product / Service')}
+                      <span className={`badge-category ${isReagent ? 'reagent' : 'product'}`}>
+                        {isReagent ? 'Reagent / Kit' : 'Product / Service'}
                       </span>
                       <span className="badge-shipping">
                         ${shippingCost} Shipping
@@ -837,6 +953,9 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
                     {/* Details */}
                     <div className="card-details">
                       <span className="card-sku">SKU / Catalog: {prod.product_sku}</span>
+                      {prod.product_group && (
+                        <span className="card-product-group">{prod.product_group}</span>
+                      )}
                       <h3 className="card-title" title={prod.product_name}>{prod.product_name}</h3>
                       
                       <div className="card-price-row">

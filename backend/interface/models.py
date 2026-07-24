@@ -14,9 +14,11 @@ class ProductMode(models.Model):
 class ServiceMode(models.Model):
     url = models.CharField()
     title = models.CharField(max_length=60)
+    catalog_number = models.CharField(max_length=100, blank=True, null=True)
     content = HTMLField()
     image = models.ImageField(blank=True, null=True)
     category = models.CharField(max_length=100, blank=True, null=True)
+    service_group = models.CharField(max_length=100, blank=True, null=True)
     is_featured = models.BooleanField(default=False)
     show_on_screen = models.BooleanField(default=False)
 
