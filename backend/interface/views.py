@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from rest_framework.decorators import api_view
 
 from .models import *
@@ -15,7 +15,7 @@ def get_product_page(request, url):
 
 @api_view(['GET'])
 def get_service_page(request, url):
-    page = ServiceMode.objects.get(url=url)
+    page = get_object_or_404(ServiceMode, url=url, hidden=False)
     serializer = ServiceModeSerializer(page)
 
     return JsonResponse(serializer.data)
@@ -28,6 +28,12 @@ def get_homepage_slides(request):
 
 @api_view(['GET'])
 def get_featured_services(request):
-    services = ServiceMode.objects.filter(show_on_screen=True)
+    services = ServiceMode.objects.filter(is_featured=True, hidden=False).order_by('title')
     serializer = ServiceModeSerializer(services, many=True)
-    return JsonResponse(serializer.data, safe=False)
+    return JsonResponse(serializer.data, safe=False)
+
+@api_view(['GET'])
+def get_homepage_services(request):
+    services = ServiceMode.objects.filter(show_on_screen=True, hidden=False).order_by('title')
+    serializer = ServiceModeSerializer(services, many=True)
+    return JsonResponse(serializer.data, safe=False)

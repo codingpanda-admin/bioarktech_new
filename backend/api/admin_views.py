@@ -250,11 +250,24 @@ def admin_list_products(request):
         source_type = request.GET.get('source_type', None)
         hidden = request.GET.get('hidden')
 
+        reagent_category_ids = [
+            'category-1765063995229',
+            'category-1766675380397',
+            'category-1766675365489',
+            'category-1765995504911',
+            'category-1780539818236',
+        ]
+        reagent_products = (
+            Q(source_type='reagent')
+            | Q(category_external_id__in=reagent_category_ids)
+            | Q(category__product_type__in=['reagent', 'consumable'])
+        )
+
         products = Product.objects.all().order_by('display_order', '-created_at')
         if source_type == 'reagent':
-            products = products.filter(source_type='reagent')
+            products = products.filter(reagent_products)
         elif source_type == 'product':
-            products = products.exclude(source_type='reagent')
+            products = products.exclude(reagent_products)
 
         if hidden is not None:
             normalized_hidden = hidden.strip().lower()
@@ -1428,6 +1441,34 @@ def admin_delete_quote(request, quote_id):
 #  SERVICES CRUD (ServiceMode)
 # ===========================================================================
 
+def _normalize_service_manuals(value):
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            value = []
+
+    if not isinstance(value, list):
+        return []
+
+    documents = []
+    for item in value:
+        if isinstance(item, dict):
+            name = str(item.get('name') or '').strip()
+            manual = str(item.get('manual') or item.get('url') or '').strip()
+        else:
+            manual = str(item or '').strip()
+            name = manual.replace('\\', '/').split('/')[-1] if manual else ''
+
+        if manual:
+            documents.append({
+                'name': name or manual.replace('\\', '/').split('/')[-1],
+                'manual': manual,
+            })
+
+    return documents
+
+
 @api_view(['GET'])
 def admin_list_services(request):
     err = _check_admin(request)
@@ -1435,7 +1476,15 @@ def admin_list_services(request):
         return err
 
     try:
+        hidden = request.GET.get('hidden')
         services = ServiceMode.objects.all()
+        if hidden is not None:
+            normalized_hidden = hidden.strip().lower()
+            if normalized_hidden in ('true', '1'):
+                services = services.filter(hidden=True)
+            elif normalized_hidden in ('false', '0'):
+                services = services.filter(hidden=False)
+
         data = []
         for s in services:
             data.append({
@@ -1445,11 +1494,14 @@ def admin_list_services(request):
                 'title': s.title,
                 'catalog_number': s.catalog_number,
                 'content': s.content,
+                'performance_data': s.performance_data,
+                'manuals': s.manuals,
                 'image': request.build_absolute_uri(s.image.url) if s.image else None,
                 'category': s.category,
                 'service_group': s.service_group,
                 'is_featured': s.is_featured,
                 'show_on_screen': s.show_on_screen,
+                'hidden': s.hidden,
             })
         return Response({'results': data})
     except Exception as e:
@@ -1471,11 +1523,14 @@ def admin_get_service(request, service_id):
             'title': s.title,
             'catalog_number': s.catalog_number,
             'content': s.content,
+            'performance_data': s.performance_data,
+            'manuals': s.manuals,
             'image': request.build_absolute_uri(s.image.url) if s.image else None,
             'category': s.category,
             'service_group': s.service_group,
             'is_featured': s.is_featured,
             'show_on_screen': s.show_on_screen,
+            'hidden': s.hidden,
         }
         return Response(data)
     except ServiceMode.DoesNotExist:
@@ -1498,15 +1553,21 @@ def admin_create_service(request):
         show_on_screen_val = d.get('show_on_screen', False)
         if isinstance(show_on_screen_val, str):
             show_on_screen_val = show_on_screen_val.lower() == 'true'
+        hidden_val = d.get('hidden', False)
+        if isinstance(hidden_val, str):
+            hidden_val = hidden_val.lower() == 'true'
         s = ServiceMode(
             url=d.get('url', ''),
             title=d.get('title', ''),
             catalog_number=d.get('catalog_number', ''),
             content=d.get('content', ''),
+            performance_data=d.get('performance_data', ''),
+            manuals=_normalize_service_manuals(d.get('manuals', [])),
             category=d.get('category', ''),
             service_group=d.get('service_group', ''),
             is_featured=is_featured_val,
             show_on_screen=show_on_screen_val,
+            hidden=hidden_val,
         )
         if request.FILES.get('image'):
             s.image = request.FILES['image']
@@ -1530,9 +1591,12 @@ def admin_update_service(request, service_id):
         s = ServiceMode.objects.get(id=service_id)
         d = request.data
 
-        for field in ['url', 'title', 'catalog_number', 'content', 'category', 'service_group']:
+        for field in ['url', 'title', 'catalog_number', 'content', 'performance_data', 'category', 'service_group']:
             if field in d:
                 setattr(s, field, d[field])
+
+        if 'manuals' in d:
+            s.manuals = _normalize_service_manuals(d['manuals'])
 
         if 'is_featured' in d:
             is_featured_val = d['is_featured']
@@ -1545,6 +1609,12 @@ def admin_update_service(request, service_id):
             if isinstance(show_on_screen_val, str):
                 show_on_screen_val = show_on_screen_val.lower() == 'true'
             s.show_on_screen = show_on_screen_val
+
+        if 'hidden' in d:
+            hidden_val = d['hidden']
+            if isinstance(hidden_val, str):
+                hidden_val = hidden_val.lower() == 'true'
+            s.hidden = hidden_val
 
         remove_image_val = d.get('remove_image', False)
         if isinstance(remove_image_val, str):
@@ -1576,12 +1646,44 @@ def admin_delete_service(request, service_id):
 
     try:
         s = ServiceMode.objects.get(id=service_id)
-        s.delete()
-        return Response({'message': 'Service deleted successfully'})
+        s.hidden = True
+        s.save(update_fields=['hidden'])
+        return Response({'message': 'Service deactivated successfully'})
     except ServiceMode.DoesNotExist:
         return Response({'error': 'Service not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def admin_upload_service_document(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        document_file = request.FILES.get('document')
+        if not document_file:
+            return Response({'error': 'No document file provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        extension = document_file.name.rsplit('.', 1)[-1].lower() if '.' in document_file.name else ''
+        allowed_extensions = {'pdf', 'doc', 'docx', 'xls', 'xlsx'}
+        if extension not in allowed_extensions:
+            return Response(
+                {'error': 'Unsupported document type. Upload a PDF, Word, or Excel file.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from django.core.files.storage import default_storage
+
+        saved_path = default_storage.save(f'manual_files/{document_file.name}', document_file)
+        return Response({
+            'document_path': f'media/{saved_path}',
+            'url': request.build_absolute_uri(default_storage.url(saved_path)),
+            'message': 'Document uploaded successfully',
+        }, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ===========================================================================

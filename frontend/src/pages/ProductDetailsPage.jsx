@@ -2,7 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { logo, apiFetch, formatAssetUrl } from '../utils/api';
 import { formatRichText } from '../utils/richText';
 import QuoteRequestForm from '../components/QuoteRequestForm';
-import { SERVICES_CATEGORIES } from '../data/catalogCategories';
+import {
+  CONSUMABLES_CATEGORIES,
+  REAGENTS_CATEGORIES,
+  SERVICES_CATEGORIES,
+} from '../data/catalogCategories';
 
 const SERVICE_CATEGORY_ALIASES = {
   'genome-editing-service': 'Genome Editing Services',
@@ -21,6 +25,12 @@ const SERVICE_CATEGORY_ALIASES = {
   'project-consultation': 'Project Consultation'
 };
 
+const REAGENT_CATEGORY_IDS = new Set(
+  [...REAGENTS_CATEGORIES, ...CONSUMABLES_CATEGORIES]
+    .map((category) => category.id)
+    .filter((categoryId) => !categoryId.startsWith('all-'))
+);
+
 function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, currentUserProfile }) {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,6 +44,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   const [cartAdded, setCartAdded] = useState(false);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [showQuoteConfirmation, setShowQuoteConfirmation] = useState(false);
+  const [featuredServices, setFeaturedServices] = useState([]);
   const thumbnailStripRef = useRef(null);
 
   useEffect(() => {
@@ -72,6 +83,26 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
     fetchProduct();
   }, [skuOrCatalog]);
 
+  useEffect(() => {
+    let isCurrent = true;
+
+    apiFetch('/api/interface/get-featured-services/')
+      .then((services) => {
+        if (isCurrent) {
+          setFeaturedServices(Array.isArray(services) ? services : []);
+        }
+      })
+      .catch(() => {
+        if (isCurrent) {
+          setFeaturedServices([]);
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
+
   const handleAddToCart = () => {
     if (product?.quote_only || product?.quoteOnly) {
       return;
@@ -98,15 +129,30 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   if (!product) return null;
 
   const isFeatured = product && Array.isArray(product.unit_prices);
-  const isReagent = String(product.source_type || '').toLowerCase() === 'reagent';
+  const categoryExternalId = product.category_external_id || product.categoryExternalId || '';
+  const normalizedCategoryLabel = String(
+    product.category_name || product.categoryName || product.product_category || ''
+  ).toLowerCase();
+  const isReagent = String(product.source_type || '').toLowerCase() === 'reagent'
+    || REAGENT_CATEGORY_IDS.has(categoryExternalId)
+    || normalizedCategoryLabel.includes('reagent')
+    || normalizedCategoryLabel.includes('consumable');
   const reagentKeyFeatures = isReagent && Array.isArray(product.key_features)
     ? (product.key_features.length === 1
       ? product.key_features[0]
       : product.key_features.map((feature) => `- ${feature}`).join('\n'))
     : '';
   const name = product.product_name || product.externalId || product.external_id;
+  const breadcrumbSection = isReagent
+    ? { label: 'Reagents', href: '/search?category=reagents' }
+    : { label: 'Products', href: '/search?category=products' };
   const categoryLabel = product.category_name || product.categoryName || product.product_category || product.category_external_id;
-  const serviceGroupLabel = product.product_group || product.productGroup;
+  const productGroupLabel = product.service_group
+    || product.serviceGroup
+    || product.product_group
+    || product.productGroup
+    || product.group_name
+    || product.groupName;
   const serviceCategoryValues = [
     product.category_external_id,
     product.categoryExternalId,
@@ -291,80 +337,204 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
 
     return (
       <main className="service-detail-page">
-        <div className={`service-detail-banner ${hasServiceImage ? '' : 'is-fallback'}`}>
-          <img src={mainImage} alt={name} />
-        </div>
+        <nav className="product-breadcrumb service-page-breadcrumb" aria-label="Breadcrumb">
+          <a href="/" onClick={(event) => { event.preventDefault(); navigate('/'); }}>
+            Home
+          </a>
+          <span aria-hidden="true">/</span>
+          <a
+            href="/search?category=services"
+            onClick={(event) => {
+              event.preventDefault();
+              navigate('/search?category=services');
+            }}
+          >
+            Services
+          </a>
+          <span aria-hidden="true">/</span>
+          <span>{categoryLabel || productGroupLabel || 'Service'}</span>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">{name}</span>
+        </nav>
 
         <div className="service-detail-layout">
-          <section className="service-detail-copy" aria-labelledby="service-details-heading">
-            <h2 id="service-details-heading">Details</h2>
-            {detailsContent ? (
-              <div
-                className="blog-detail-content product-detail-content"
-                dangerouslySetInnerHTML={{ __html: detailsContent }}
-              />
-            ) : (
-              <div className="admin-empty-table service-detail-empty">
-                No additional details available.
-              </div>
-            )}
-          </section>
+          <aside className="service-detail-navigation" aria-labelledby="featured-services-heading">
+            <h2 id="featured-services-heading">Featured Services</h2>
+            {featuredServices.length > 0 ? (
+              <nav aria-label="Featured Services">
+                {featuredServices.map((service) => {
+                  const serviceHref = `/product/${service.url}`;
+                  const isActiveService = String(service.url) === String(skuOrCatalog);
 
-          <aside className="service-detail-summary">
-            {(categoryLabel || serviceGroupLabel) && (
-              <nav className="product-breadcrumb" aria-label="Breadcrumb">
-                {categoryLabel && <span>{categoryLabel}</span>}
-                {categoryLabel && serviceGroupLabel && <span aria-hidden="true">/</span>}
-                {serviceGroupLabel && <span>{serviceGroupLabel}</span>}
+                  return (
+                    <a
+                      key={service.id || service.url}
+                      href={serviceHref}
+                      className={`service-detail-nav-link ${isActiveService ? 'is-active' : ''}`}
+                      aria-current={isActiveService ? 'page' : undefined}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        navigate(serviceHref);
+                      }}
+                    >
+                      {service.title}
+                    </a>
+                  );
+                })}
               </nav>
+            ) : (
+              <p className="service-detail-nav-empty">No featured services are available.</p>
             )}
-            <h1>{name}</h1>
-            <div className="product-detail-labels" aria-label="Service labels">
-              {categoryLabel && <span className="product-detail-pill category">{categoryLabel}</span>}
-              {availabilityLabel && <span className="product-detail-pill availability">{availabilityLabel}</span>}
-            </div>
-            <div className="service-detail-actions">
-              <button type="button" className="primary-button" onClick={handleRequestQuote}>
+          </aside>
+
+          <div className="service-detail-main">
+            <div className={`service-detail-banner ${hasServiceImage ? '' : 'is-fallback'}`}>
+              <img src={mainImage} alt={name} />
+              <button
+                type="button"
+                className="primary-button service-banner-quote-button"
+                onClick={handleRequestQuote}
+              >
                 Request for Quote
               </button>
-              <button type="button" className="secondary-button" onClick={() => navigate('/search?category=services')}>
-                Back to Services
+            </div>
+
+            <header className="service-detail-heading">
+              <h1>{name}</h1>
+              <div className="product-detail-labels" aria-label="Service labels">
+                {categoryLabel && <span className="product-detail-pill category">{categoryLabel}</span>}
+                {productGroupLabel && <span className="product-detail-pill subgroup">{productGroupLabel}</span>}
+                {availabilityLabel && <span className="product-detail-pill availability">{availabilityLabel}</span>}
+              </div>
+            </header>
+
+            <section className="service-detail-copy" aria-label="Service information">
+            <div className="service-detail-tabs" role="tablist" aria-label="Service information">
+              <button
+                type="button"
+                id="service-details-tab"
+                className={activeTab === 'details' ? 'is-active' : ''}
+                role="tab"
+                aria-selected={activeTab === 'details'}
+                aria-controls="service-details-panel"
+                onClick={() => setActiveTab('details')}
+              >
+                Detail
+              </button>
+              <button
+                type="button"
+                id="service-performance-tab"
+                className={activeTab === 'performance' ? 'is-active' : ''}
+                role="tab"
+                aria-selected={activeTab === 'performance'}
+                aria-controls="service-performance-panel"
+                onClick={() => setActiveTab('performance')}
+              >
+                Performance
+              </button>
+              <button
+                type="button"
+                id="service-documents-tab"
+                className={activeTab === 'documents' ? 'is-active' : ''}
+                role="tab"
+                aria-selected={activeTab === 'documents'}
+                aria-controls="service-documents-panel"
+                onClick={() => setActiveTab('documents')}
+              >
+                Documents
               </button>
             </div>
-          </aside>
-        </div>
 
-        <section className="service-specifications" aria-labelledby="service-specifications-heading">
-          <h2 id="service-specifications-heading">Specifications</h2>
-          <table className="product-specifications-table">
-            <tbody>
-              {categoryLabel && (
-                <tr>
-                  <td>Service Category</td>
-                  <td>{categoryLabel}</td>
-                </tr>
-              )}
-              {productCode && (
-                <tr>
-                  <td>Service Code</td>
-                  <td>{productCode}</td>
-                </tr>
-              )}
-              {availabilityLabel && (
-                <tr>
-                  <td>Availability</td>
-                  <td>{availabilityLabel}</td>
-                </tr>
-              )}
-              {(product.product_group || product.productGroup) && (
-                <tr>
-                  <td>Service Group</td>
-                  <td>{product.product_group || product.productGroup}</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </section>
+            {activeTab === 'details' && (
+              <div
+                id="service-details-panel"
+                className="service-detail-tab-panel"
+                role="tabpanel"
+                aria-labelledby="service-details-tab"
+              >
+                {detailsContent ? (
+                  <div
+                    className="blog-detail-content product-detail-content"
+                    dangerouslySetInnerHTML={{ __html: detailsContent }}
+                  />
+                ) : (
+                  <div className="admin-empty-table service-detail-empty">
+                    No additional details available.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'performance' && (
+              <div
+                id="service-performance-panel"
+                className="service-detail-tab-panel"
+                role="tabpanel"
+                aria-labelledby="service-performance-tab"
+              >
+                {product.performance_data ? (
+                  <div
+                    className="blog-detail-content product-detail-content"
+                    dangerouslySetInnerHTML={{ __html: formatRichText(product.performance_data) }}
+                  />
+                ) : (
+                  <div className="admin-empty-table service-detail-empty">
+                    No performance information available.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'documents' && (
+              <div
+                id="service-documents-panel"
+                className="service-detail-tab-panel"
+                role="tabpanel"
+                aria-labelledby="service-documents-tab"
+              >
+                {productDocuments.length > 0 ? (
+                  <div className="document-list">
+                    {productDocuments.map((document) => {
+                      const fileUrl = document.url ? formatAssetUrl(document.url) : '';
+
+                      return (
+                        <article className="document-item-card" key={document.key}>
+                          <div className="document-card-main-info">
+                            <div className="document-icon-wrapper" aria-hidden="true">DOC</div>
+                            <div className="document-text-wrapper">
+                              <span className="document-category-badge">{document.type}</span>
+                              <h3>
+                                {fileUrl ? (
+                                  <a className="document-link" href={fileUrl} target="_blank" rel="noopener noreferrer">
+                                    {document.name}
+                                  </a>
+                                ) : document.name}
+                              </h3>
+                            </div>
+                          </div>
+                          <div className="document-download-action">
+                            {fileUrl ? (
+                              <a className="document-download-btn" href={fileUrl} target="_blank" rel="noopener noreferrer">
+                                Open document
+                              </a>
+                            ) : (
+                              <span className="service-document-unavailable">File unavailable</span>
+                            )}
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="admin-empty-table service-detail-empty">
+                    No service documents available.
+                  </div>
+                )}
+              </div>
+            )}
+            </section>
+          </div>
+        </div>
 
         {quoteModal}
       </main>
@@ -373,6 +543,22 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
 
   return (
     <main className="product-page" style={{ width: 'min(1200px, calc(100% - 48px))', margin: '40px auto' }}>
+      <nav className="product-breadcrumb product-page-breadcrumb" aria-label="Breadcrumb">
+        <a href="/" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Home</a>
+        <span aria-hidden="true">/</span>
+        <a
+          href={breadcrumbSection.href}
+          onClick={(e) => {
+            e.preventDefault();
+            navigate(breadcrumbSection.href);
+          }}
+        >
+          {breadcrumbSection.label}
+        </a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{name}</span>
+      </nav>
+
       <div className="content" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: '48px', marginBottom: '40px' }}>
         
         {/* Gallery Section */}
@@ -424,16 +610,12 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
 
         {/* Info Panel Section */}
         <div className="product-container" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {categoryLabel && (
-            <nav className="product-breadcrumb" aria-label="Breadcrumb">
-              <span>{categoryLabel}</span>
-              <span aria-hidden="true">/</span>
-              <span>{name}</span>
-            </nav>
-          )}
           <h2>{name}</h2>
           <div className="product-detail-labels" aria-label="Product labels">
             {categoryLabel && <span className="product-detail-pill category">{categoryLabel}</span>}
+            {isReagent && productGroupLabel && (
+              <span className="product-detail-pill subgroup">{productGroupLabel}</span>
+            )}
             {availabilityLabel && <span className="product-detail-pill availability">{availabilityLabel}</span>}
           </div>
 

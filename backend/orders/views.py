@@ -707,16 +707,16 @@ def _lookup_db_price(sku, unit_size=None):
 
     # 3. Check if it's a service
     # Services in this app have URL as their identifier (e.g. s.url)
-    service = ServiceMode.objects.filter(url__iexact=sku).first()
+    service = ServiceMode.objects.filter(url__iexact=sku, hidden=False).first()
     if not service:
         # Sometimes SKU is url.upper() or has "svc-" prefix
         clean_sku = sku
         if sku.lower().startswith("svc-"):
             clean_sku = sku[4:]
-        service = ServiceMode.objects.filter(url__iexact=clean_sku).first()
+        service = ServiceMode.objects.filter(url__iexact=clean_sku, hidden=False).first()
         if not service:
             # Fallback check by title
-            service = ServiceMode.objects.filter(title__iexact=sku).first()
+            service = ServiceMode.objects.filter(title__iexact=sku, hidden=False).first()
 
     if service:
         return 0.0 # Services are quote-only/free to add to cart on backend until custom quoted

@@ -159,6 +159,7 @@ def main():
     categories_data = data.get("categoriesConfig", {}).get("categories", [])
     overrides = data.get("overrides", {})
     custom = data.get("custom", [])
+    groups_config = data.get("groupsConfig", {})
     
     # 3. Create or update categories for services
     for cat in categories_data:
@@ -217,6 +218,7 @@ def main():
             'content': content_html,
             'image': django_image_name,
             'category': cat_id,
+            'service_group': groups_config.get(key, val.get('groupName')),
             'is_featured': is_featured,
             'show_on_screen': show_on_screen
         })
@@ -249,6 +251,7 @@ def main():
             'content': content_html,
             'image': django_image_name,
             'category': cat_id,
+            'service_group': groups_config.get(c.get('id'), c.get('groupName')),
             'is_featured': is_featured,
             'show_on_screen': show_on_screen
         })
@@ -261,6 +264,7 @@ def main():
             content=s_data['content'],
             image=s_data['image'] if s_data['image'] else None,
             category=s_data['category'],
+            service_group=s_data['service_group'],
             is_featured=s_data['is_featured'],
             show_on_screen=s_data['show_on_screen']
         )

@@ -22,6 +22,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
   const [sortBy, setSortBy] = useState('name-asc');
   const [selectedCategory, setSelectedCategory] = useState(initialSelectedCategory);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+  const [groupFiltersExpanded, setGroupFiltersExpanded] = useState(false);
 
   useEffect(() => {
     setSelectedCategory(initialSelectedCategory);
@@ -67,6 +68,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
   const handleTabChange = (categoryVal) => {
     setSelectedCategory(null);
     setSelectedSubcategory(null);
+    setGroupFiltersExpanded(false);
     navigate(`/search?q=${encodeURIComponent(currentQuery)}&category=${categoryVal}`);
   };
 
@@ -380,9 +382,18 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
         }
 
         .product-group-bubbles {
+          position: relative;
           display: flex;
+          flex: 1 1 auto;
           flex-wrap: wrap;
           gap: 8px;
+          min-width: 0;
+        }
+
+        .product-group-bubbles.is-collapsed {
+          max-height: 34px;
+          overflow: hidden;
+          padding-right: 42px;
         }
 
         .product-group-bubble {
@@ -397,6 +408,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
           background: #fff;
           font-size: 12px;
           font-weight: 600;
+          white-space: nowrap;
           cursor: pointer;
           transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
         }
@@ -436,6 +448,35 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
         .product-group-bubble-remove {
           font-size: 15px;
           line-height: 1;
+        }
+
+        .product-group-bubble-toggle {
+          justify-content: center;
+          width: 34px;
+          min-width: 34px;
+          padding: 0;
+          color: #0064df;
+          background: #f8fbff;
+        }
+
+        .product-group-bubbles.is-collapsed .product-group-bubble-toggle {
+          position: absolute;
+          top: 0;
+          right: 0;
+          z-index: 2;
+        }
+
+        .product-group-toggle-arrow {
+          width: 8px;
+          height: 8px;
+          border-right: 2px solid currentColor;
+          border-bottom: 2px solid currentColor;
+          transform: rotate(45deg) translate(-1px, -1px);
+          transition: transform 0.2s ease;
+        }
+
+        .product-group-bubbles.is-expanded .product-group-toggle-arrow {
+          transform: rotate(-135deg) translate(-1px, -1px);
         }
 
         @media (max-width: 640px) {
@@ -860,7 +901,10 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
           {!loading && productGroupOptions.length > 0 && (
             <div className="product-group-filters" aria-label={`Filter by ${groupFilterLabel.toLowerCase()}`}>
               <span className="product-group-filter-label">{groupFilterLabel}</span>
-              <div className="product-group-bubbles">
+              <div
+                className={`product-group-bubbles ${groupFiltersExpanded ? 'is-expanded' : 'is-collapsed'}`}
+                id="product-group-chip-list"
+              >
                 {productGroupOptions.map(({ name, count }) => {
                   const isActive = selectedSubcategory === name;
                   return (
@@ -878,6 +922,17 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
                     </button>
                   );
                 })}
+                <button
+                  className="product-group-bubble product-group-bubble-toggle"
+                  type="button"
+                  aria-expanded={groupFiltersExpanded}
+                  aria-controls="product-group-chip-list"
+                  aria-label={groupFiltersExpanded ? 'Collapse product group filters' : 'Show all product group filters'}
+                  title={groupFiltersExpanded ? 'Collapse filters' : 'Show all filters'}
+                  onClick={() => setGroupFiltersExpanded((isExpanded) => !isExpanded)}
+                >
+                  <span className="product-group-toggle-arrow" aria-hidden="true" />
+                </button>
               </div>
             </div>
           )}

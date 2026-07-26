@@ -101,6 +101,24 @@ const getCategoryHref = (category) => {
   return `/search?category=${searchCategory}&cat=${encodeURIComponent(categoryId)}`;
 };
 
+const HomeSectionHeading = ({ id, title, href, linkLabel, navigate }) => (
+  <div className="home-section-heading">
+    <h2 id={id}>{title}</h2>
+    <a
+      className="home-section-heading-arrow"
+      href={href}
+      aria-label={linkLabel}
+      title={linkLabel}
+      onClick={(event) => {
+        event.preventDefault();
+        navigate(href);
+      }}
+    >
+      <span aria-hidden="true">→</span>
+    </a>
+  </div>
+);
+
 function HomePage({ navigate, searchParams }) {
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -144,7 +162,7 @@ function HomePage({ navigate, searchParams }) {
           apiFetch('/api/products/load-product-categories/').catch(() => mockCategories),
           apiFetch('/api/products/get-latest-featured-products/').catch(() => []),
           apiFetch('/api/products/get-featured-general-products/').catch(() => []),
-          apiFetch('/api/interface/get-featured-services/').catch(() => []),
+          apiFetch('/api/interface/get-homepage-services/').catch(() => []),
           apiFetch('/api/blogs/get-all-blogs/').catch(() => mockResources),
           apiFetch('/api/interface/get-homepage-slides/').catch(() => [])
         ]);
@@ -370,7 +388,13 @@ function HomePage({ navigate, searchParams }) {
 
 
         <section className="categories-section" aria-labelledby="categories-title">
-          <h2 id="categories-title">Explore Popular Categories</h2>
+          <HomeSectionHeading
+            id="categories-title"
+            title="Explore Popular Categories"
+            href="/search?q="
+            linkLabel="View all product categories"
+            navigate={navigate}
+          />
           <div className="category-row">
             {popularCategories.map((cat, idx) => {
               const name = cat.category_name;
@@ -399,15 +423,21 @@ function HomePage({ navigate, searchParams }) {
         </section>
 
         <section className="products-section" aria-labelledby="products-title">
-          <h2 id="products-title">Featured Products</h2>
+          <HomeSectionHeading
+            id="products-title"
+            title="Featured Products"
+            href="/search?category=featured"
+            linkLabel="View all featured items"
+            navigate={navigate}
+          />
           <p className="section-subtitle">
-            High-performance reagents designed to accelerate your research and deliver reliable results.
+            Featured products, reagents, and scientific services selected to accelerate your research.
           </p>
-          <div className="products-carousel" aria-label="Featured products carousel">
+          <div className="products-carousel" aria-label="Featured products, reagents, and services carousel">
             <button
               className="product-carousel-control product-carousel-prev"
               type="button"
-              aria-label="Previous featured products"
+              aria-label="Previous featured item"
               onClick={() => rollFeaturedProducts('prev')}
               disabled={featuredProducts.length <= 1}
             />
@@ -415,13 +445,27 @@ function HomePage({ navigate, searchParams }) {
               <div className="product-grid product-carousel-grid">
                 {visibleFeaturedProducts.map(({ product: prod, index }) => {
                   const name = prod.product_name;
-                  const priceStr = prod.unit_price ? `$${prod.unit_price}` : '$29.00 - $129.00';
+                  const itemType = prod.item_type || (prod.source_type === 'reagent' ? 'reagent' : 'product');
+                  const itemLabel = itemType === 'service'
+                    ? 'Service'
+                    : itemType === 'reagent'
+                      ? 'Reagent'
+                      : 'Product';
+                  const rawPrice = prod.unit_price;
+                  const priceStr = itemType === 'service'
+                    ? 'Contact for Quote'
+                    : rawPrice
+                      ? (String(rawPrice).startsWith('$') || /^contact/i.test(String(rawPrice))
+                        ? rawPrice
+                        : `$${rawPrice}`)
+                      : '$29.00 - $129.00';
                   const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
                   const productId = prod.externalId || prod.external_id || prod.catalog_number || prod.product_sku;
                   const productHref = productId ? `/product/${productId}` : `/search?q=${encodeURIComponent(name)}`;
                   
                   return (
                     <article className="product-card" key={`${prod.catalog_number || prod.product_sku || name}-${index}`}>
+                      <span className={`featured-item-type-badge ${itemType}`}>{itemLabel}</span>
                       {imgUrl ? (
                         <div style={{ height: '140px', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '20px 0' }}>
                           <img src={imgUrl} alt={name} style={{ maxHeight: '100%', maxWidth: '100%', borderRadius: '8px' }} />
@@ -430,9 +474,11 @@ function HomePage({ navigate, searchParams }) {
                         <ProductVisual type={prod.visual || 'bottle'} />
                       )}
                       <h3>{name}</h3>
-                      <p className="rating">★★★★★ <span>({prod.reviews || '45'})</span></p>
+                      {itemType !== 'service' && (
+                        <p className="rating">★★★★★ <span>({prod.reviews || '45'})</span></p>
+                      )}
                       <p className="price">{priceStr}</p>
-                      <a className="product-card-action" href={productHref} onClick={(e) => { e.preventDefault(); navigate(productHref); }}>View Product <span>→</span></a>
+                      <a className="product-card-action" href={productHref} onClick={(e) => { e.preventDefault(); navigate(productHref); }}>View {itemLabel} <span>→</span></a>
                     </article>
                   );
                 })}
@@ -441,18 +487,23 @@ function HomePage({ navigate, searchParams }) {
             <button
               className="product-carousel-control product-carousel-next"
               type="button"
-              aria-label="Next featured products"
+              aria-label="Next featured item"
               onClick={() => rollFeaturedProducts('next')}
               disabled={featuredProducts.length <= 1}
             />
           </div>
-          <a className="view-all" href="#" onClick={(e) => { e.preventDefault(); navigate('/search?q='); }}>View All Products <span>→</span></a>
         </section>
 
         {featuredGeneralProducts.length > 0 && (
           <section className="products-section" aria-labelledby="general-products-title" style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)', borderTop: '1px solid var(--line)' }}>
             <div className="home-section-inner" style={{ margin: '0 auto', padding: '0 20px' }}>
-              <h2 id="general-products-title" style={{ textAlign: 'center', marginBottom: '10px', fontSize: '2.2rem', color: 'var(--blue-dark)' }}>Products</h2>
+              <HomeSectionHeading
+                id="general-products-title"
+                title="Products"
+                href="/search?category=reagents"
+                linkLabel="View all products"
+                navigate={navigate}
+              />
               <p className="section-subtitle" style={{ textAlign: 'center', marginBottom: '40px', color: 'var(--ink-light)', maxWidth: '1100px', margin: '0 auto 45px auto' }}>
                 High-quality reagents, kits, and ladders selected to ensure precision and reproducibility in your experiments.
               </p>
@@ -520,10 +571,6 @@ function HomePage({ navigate, searchParams }) {
                   disabled={featuredGeneralProducts.length <= 1}
                 />
               </div>
-              
-              <div style={{ textAlign: 'center', marginTop: '40px' }}>
-                <a className="view-all" href="#" onClick={(e) => { e.preventDefault(); navigate('/search?category=reagents'); }} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '600', color: '#fff' }}>View Product and Service Catalog <span>→</span></a>
-              </div>
             </div>
           </section>
         )}
@@ -531,7 +578,13 @@ function HomePage({ navigate, searchParams }) {
         {featuredServices.length > 0 && (
           <section className="services-section" aria-labelledby="featured-services-title" style={{ background: '#f8fafc', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
             <div className="home-section-inner" style={{ margin: '0 auto', padding: '0 20px' }}>
-              <h2 id="featured-services-title" style={{ textAlign: 'center', marginBottom: '10px', fontSize: '2.2rem', color: 'var(--blue-dark)' }}>Services</h2>
+              <HomeSectionHeading
+                id="featured-services-title"
+                title="Services"
+                href="/search?category=services"
+                linkLabel="View all services"
+                navigate={navigate}
+              />
               <p className="section-subtitle" style={{ textAlign: 'center', marginBottom: '45px', color: 'var(--ink-light)', maxWidth: '1100px', margin: '0 auto 45px auto' }}>
                 Partner with our expert scientific team for custom cloning, high-titer virus packaging, and cell line engineering.
               </p>
@@ -549,8 +602,8 @@ function HomePage({ navigate, searchParams }) {
                     {visibleFeaturedServices.map(({ service, index }) => {
                       const name = service.title;
                       const cleanText = service.content
-                        ? service.content.replace(/<[^>]*>/g, '').substring(0, 150) + '...'
-                        : 'Custom contract research services designed to support your molecular biology workflows.';
+                        ? service.content.replace(/<[^>]*>/g, '').substring(0, 75) + '...'
+                        : 'Custom research services for your workflows.';
                       const imgUrl = service.image ? formatAssetUrl(service.image) : null;
                       const serviceHref = `/product/${service.url}`;
 

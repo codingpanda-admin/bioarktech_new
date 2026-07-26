@@ -951,7 +951,7 @@ function CartPage({
                     }}
                     onClick={() => {
                       if (currentUser) {
-                        navigate('/request-quote');
+                        navigate('/request-quote?source=cart');
                       } else {
                         if (onOpenAuth) onOpenAuth();
                       }

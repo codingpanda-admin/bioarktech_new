@@ -30,6 +30,7 @@ function AdminServices() {
   const [error, setError] = useState('');
   const [editingService, setEditingService] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [catalogStatus, setCatalogStatus] = useState('active');
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [imageFile, setImageFile] = useState(null);
@@ -42,6 +43,7 @@ function AdminServices() {
   const [draggedCatalogIndex, setDraggedCatalogIndex] = useState(null);
   const [collapsedCatalogs, setCollapsedCatalogs] = useState(() => new Set());
   const serviceContentEditorRef = useRef(null);
+  const performanceDataEditorRef = useRef(null);
   const imagePreviewRequestRef = useRef(0);
 
   const loadServices = useCallback(async () => {
@@ -49,7 +51,7 @@ function AdminServices() {
     setError('');
     try {
       const [servicesData, categoriesData] = await Promise.all([
-        apiFetch('/api/admin-panel/services/'),
+        apiFetch(`/api/admin-panel/services/?hidden=${catalogStatus === 'deactivated' ? 'true' : 'false'}`),
         apiFetch('/api/admin-panel/product-categories/?product_type=service'),
       ]);
       setServices(servicesData.results || servicesData.services || []);
@@ -59,7 +61,7 @@ function AdminServices() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [catalogStatus]);
 
   useEffect(() => { loadServices(); }, [loadServices]);
 
@@ -121,10 +123,13 @@ function AdminServices() {
       title: '',
       catalog_number: '',
       content: '',
+      performance_data: '',
+      manuals: [],
       category: selectedCategory !== 'All' ? selectedCategory : 'uncategorized',
       service_group: '',
       is_featured: false,
       show_on_screen: false,
+      hidden: false,
     });
     setImageFile(null);
     setImagePreviewUrl('');
@@ -159,11 +164,25 @@ function AdminServices() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = async (serviceId) => {
-    if (!confirm('Are you sure you want to delete this service?')) return;
+  const handleDeactivate = async (serviceId) => {
+    if (!confirm('Are you sure you want to deactivate this service?')) return;
     try {
       await apiFetch(`/api/admin-panel/services/${serviceId}/delete/`, { method: 'POST' });
-      showSuccess('Service deleted.');
+      showSuccess('Service deactivated successfully.');
+      loadServices();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleActivate = async (serviceId) => {
+    if (!confirm('Are you sure you want to activate this service?')) return;
+    try {
+      await apiFetch(`/api/admin-panel/services/${serviceId}/update/`, {
+        method: 'POST',
+        body: { hidden: false },
+      });
+      showSuccess('Service activated successfully.');
       loadServices();
     } catch (err) {
       setError(err.message);
@@ -191,13 +210,11 @@ function AdminServices() {
       showSuccess(updatedStatus ? 'Service is now featured.' : 'Service is no longer featured.');
 
       // Sync silent background reload
-      const servicesData = await apiFetch('/api/admin-panel/services/');
-      setServices(servicesData.results || servicesData.services || []);
+      await loadServices();
     } catch (err) {
       setError(err.message);
       // Revert status on failure
-      const servicesData = await apiFetch('/api/admin-panel/services/');
-      setServices(servicesData.results || servicesData.services || []);
+      await loadServices();
     }
   };
 
@@ -222,13 +239,11 @@ function AdminServices() {
       showSuccess(updatedStatus ? 'Service will display on homepage.' : 'Service will not display on homepage.');
 
       // Sync silent background reload
-      const servicesData = await apiFetch('/api/admin-panel/services/');
-      setServices(servicesData.results || servicesData.services || []);
+      await loadServices();
     } catch (err) {
       setError(err.message);
       // Revert status on failure
-      const servicesData = await apiFetch('/api/admin-panel/services/');
-      setServices(servicesData.results || servicesData.services || []);
+      await loadServices();
     }
   };
 
@@ -238,6 +253,10 @@ function AdminServices() {
     setError('');
     try {
       const latestContent = serviceContentEditorRef.current?.getHtml?.() ?? editingService.content ?? '';
+      const latestPerformanceData = performanceDataEditorRef.current?.getHtml?.() ?? editingService.performance_data ?? '';
+      const serviceManuals = (editingService.manuals || []).filter((document) => (
+        document?.name && document?.manual
+      ));
       const isNew = !editingService.id;
       const endpoint = isNew
         ? '/api/admin-panel/services/create/'
@@ -248,10 +267,13 @@ function AdminServices() {
       formData.append('title', editingService.title);
       formData.append('catalog_number', editingService.catalog_number || '');
       formData.append('content', latestContent);
+      formData.append('performance_data', latestPerformanceData);
+      formData.append('manuals', JSON.stringify(serviceManuals));
       formData.append('category', editingService.category || 'uncategorized');
       formData.append('service_group', editingService.service_group || '');
       formData.append('is_featured', editingService.is_featured ? 'true' : 'false');
       formData.append('show_on_screen', editingService.show_on_screen ? 'true' : 'false');
+      formData.append('hidden', editingService.hidden ? 'true' : 'false');
       if (imageFile) {
         formData.append('image', imageFile);
       }
@@ -275,6 +297,8 @@ function AdminServices() {
         setEditingService((prev) => ({
           ...prev,
           content: latestContent,
+          performance_data: latestPerformanceData,
+          manuals: serviceManuals,
           id: prev?.id || saveResponse?.id || saveResponse?.service?.id,
           image: saveResponse?.image ?? saveResponse?.service?.image ?? (removeImage ? null : prev?.image),
         }));
@@ -323,6 +347,56 @@ function AdminServices() {
     imagePreviewRequestRef.current += 1;
     setRemoveImage(true);
     setEditingService((prev) => ({ ...prev, image: null }));
+  };
+
+  const handleServiceDocumentUpload = async (event, index) => {
+    const fileInput = event.currentTarget;
+    const file = fileInput.files?.[0];
+    if (!file) return;
+
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('document', file);
+
+      let csrfToken = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+
+      if (!csrfToken) {
+        const csrfResponse = await fetch(`${API_URL}/api/csrf/`, { credentials: 'include' });
+        const csrfData = await csrfResponse.json();
+        csrfToken = csrfData.csrftoken;
+      }
+
+      const response = await fetch(`${API_URL}/api/admin-panel/services/upload-document/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRFToken': csrfToken },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to upload service document.');
+      }
+
+      const data = await response.json();
+      const defaultName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+      const documents = [...(editingService.manuals || [])];
+      documents[index] = {
+        ...documents[index],
+        name: documents[index]?.name || defaultName,
+        manual: data.document_path,
+      };
+      updateField('manuals', documents);
+      showSuccess('Service document uploaded successfully.');
+    } catch (err) {
+      setError(err.message || 'Service document upload failed.');
+    } finally {
+      fileInput.value = '';
+    }
   };
 
   const openCatalogEditor = () => {
@@ -636,7 +710,83 @@ function AdminServices() {
                 </span>
               )}
             </div>
+            <div className="admin-form-field span-3" style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--line)', paddingTop: '15px', marginTop: '10px' }}>
+              <span style={{ fontWeight: '600', color: 'var(--ink)' }}>Service Documents</span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px', marginTop: '5px' }}>
+                {(editingService.manuals || []).map((document, index) => (
+                  <div key={index} style={{ position: 'relative', border: '1px solid var(--line)', borderRadius: '6px', padding: '10px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <input
+                      type="text"
+                      value={document.name || ''}
+                      onChange={(event) => {
+                        const documents = [...(editingService.manuals || [])];
+                        documents[index] = { ...documents[index], name: event.target.value };
+                        updateField('manuals', documents);
+                      }}
+                      placeholder="Document name (e.g. Protocol Guide)"
+                      style={{ fontSize: '12px', padding: '6px', border: '1px solid var(--line)', borderRadius: '4px' }}
+                    />
+                    <input
+                      type="text"
+                      value={document.manual || ''}
+                      onChange={(event) => {
+                        const documents = [...(editingService.manuals || [])];
+                        documents[index] = { ...documents[index], manual: event.target.value };
+                        updateField('manuals', documents);
+                      }}
+                      placeholder="File path (e.g. manual_files/...)"
+                      style={{ fontSize: '12px', padding: '6px', border: '1px solid var(--line)', borderRadius: '4px' }}
+                    />
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '4px' }}>
+                      <label className="secondary-admin-button" style={{ fontSize: '11px', padding: '4px 8px', cursor: 'pointer', margin: 0, display: 'inline-block' }}>
+                        Upload File
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.xls,.xlsx"
+                          onChange={(event) => handleServiceDocumentUpload(event, index)}
+                          style={{ display: 'none' }}
+                        />
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const documents = (editingService.manuals || []).filter((_, documentIndex) => documentIndex !== index);
+                        updateField('manuals', documents);
+                      }}
+                      style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(244, 67, 54, 0.9)', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                      title="Remove document"
+                      aria-label={`Remove ${document.name || 'service document'}`}
+                    >
+                      x
+                    </button>
+                  </div>
+                ))}
+
+                <div style={{ minHeight: '110px', border: '1px dashed var(--line)', borderRadius: '6px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#fcfdfd', padding: '10px' }}>
+                  <button
+                    type="button"
+                    className="secondary-admin-button"
+                    onClick={() => {
+                      const documents = [...(editingService.manuals || []), { name: '', manual: '' }];
+                      updateField('manuals', documents);
+                    }}
+                    style={{ fontSize: '12px', padding: '6px 10px', width: '100%' }}
+                  >
+                    + Add Document
+                  </button>
+                </div>
+              </div>
+            </div>
             <div className="admin-form-toggles span-3">
+              <label className="admin-toggle">
+                <input
+                  type="checkbox"
+                  checked={!!editingService.hidden}
+                  onChange={(e) => updateField('hidden', e.target.checked)}
+                />
+                <span>Deactivated</span>
+              </label>
               <label className="admin-toggle">
                 <input
                   type="checkbox"
@@ -663,6 +813,15 @@ function AdminServices() {
                 ariaLabel="Service content text"
               />
             </div>
+            <div className="admin-form-field span-3">
+              <span>Performance Data</span>
+              <ProductContentEditor
+                ref={performanceDataEditorRef}
+                value={editingService.performance_data || ''}
+                onChange={(value) => updateField('performance_data', value)}
+                ariaLabel="Service performance data"
+              />
+            </div>
           </div>
 
           <div className="admin-editor-footer">
@@ -687,6 +846,27 @@ function AdminServices() {
           <button className="secondary-admin-button" onClick={openCatalogEditor}>Edit Catalog</button>
           <button className="primary-button" onClick={handleCreate}>+ Add Service</button>
         </div>
+      </div>
+
+      <div className="admin-tabs" role="tablist" aria-label="Service status">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={catalogStatus === 'active'}
+          className={catalogStatus === 'active' ? 'is-active' : ''}
+          onClick={() => setCatalogStatus('active')}
+        >
+          Active Services
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={catalogStatus === 'deactivated'}
+          className={catalogStatus === 'deactivated' ? 'is-active' : ''}
+          onClick={() => setCatalogStatus('deactivated')}
+        >
+          Deactivated Services
+        </button>
       </div>
 
       <div className="admin-category-pills">
@@ -787,6 +967,7 @@ function AdminServices() {
                           <th>External ID</th>
                           <th>Service Group</th>
                           <th>Content Preview</th>
+                          {catalogStatus === 'deactivated' && <th>Status</th>}
                           <th>Actions</th>
                         </tr>
                       </thead>
@@ -821,8 +1002,13 @@ function AdminServices() {
                             <td className="admin-cell-truncate">
                               {service.content ? service.content.replace(/<[^>]*>/g, '').substring(0, 120) + '...' : '-'}
                             </td>
+                            {catalogStatus === 'deactivated' && (
+                              <td><span className="admin-badge badge-muted">Deactivated</span></td>
+                            )}
                             <td>
                               <div className="admin-row-actions">
+                                {catalogStatus !== 'deactivated' && (
+                                  <>
                                 <button
                                   type="button"
                                   className="admin-action-btn"
@@ -871,8 +1057,14 @@ function AdminServices() {
                                 >
                                   <FilledHomeIcon />
                                 </button>
+                                  </>
+                                )}
                                 <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(service.id); }}>Edit</button>
-                                <button type="button" className="admin-action-btn delete" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(service.id); }}>Delete</button>
+                                {service.hidden ? (
+                                  <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleActivate(service.id); }}>Activate</button>
+                                ) : (
+                                  <button type="button" className="admin-action-btn delete" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeactivate(service.id); }}>Deactivate</button>
+                                )}
                               </div>
                             </td>
                           </tr>

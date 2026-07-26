@@ -444,11 +444,19 @@ def search_product(request):
     
     # 1. Add featured products first to prioritize rich featured data (prices/images)
     for fp in featured_products:
+        linked_products = Product.objects.filter(catalog_number__iexact=fp.catalog_number)
+        linked_product = linked_products.filter(hidden=False).first()
+
+        # FeaturedProduct is a legacy detail/pricing record. If its canonical
+        # Product row is deactivated, it must not re-enter public search through
+        # the featured results path.
+        if not linked_product and linked_products.filter(hidden=True).exists():
+            continue
+
         sku = (fp.catalog_number or "").strip()
         if sku:
             seen_skus.add(sku.lower())
-            
-        linked_product = Product.objects.filter(catalog_number=fp.catalog_number, hidden=False).first()
+
         linked_cat_id = linked_product.category_external_id if linked_product else None
         linked_src_type = linked_product.source_type if linked_product else 'reagent'
         linked_group = linked_product.product_group if linked_product else None
@@ -551,8 +559,12 @@ def search_product(request):
 
 
     # 3. Add services from ServiceMode
-    if category_filter not in ['reagents', 'consumables', 'featured'] and category_filter != 'products':
+    if category_filter not in ['reagents', 'consumables'] and category_filter != 'products':
         from interface.models import ServiceMode
+        service_filters = {'hidden': False}
+        if category_filter == 'featured':
+            service_filters['is_featured'] = True
+
         if list_keywords:
             service_query = Q()
             for keyword in list_keywords:
@@ -561,9 +573,9 @@ def search_product(request):
                 service_query |= Q(content__icontains=keyword)
                 service_query |= Q(category__icontains=keyword)
                 service_query |= Q(service_group__icontains=keyword)
-            services = ServiceMode.objects.filter(service_query)
+            services = ServiceMode.objects.filter(service_query, **service_filters)
         else:
-            services = ServiceMode.objects.all()
+            services = ServiceMode.objects.filter(**service_filters)
 
         for s in services:
             # Clean HTML content for description snippet
@@ -598,7 +610,7 @@ def search_product(request):
                 'category_external_id': svc_cat,
                 'product_group': s.service_group or None,
                 'shipping_cost': 0.0,
-                'is_featured': False
+                'is_featured': s.is_featured
             })
 
     # Sort all results alphabetically by name

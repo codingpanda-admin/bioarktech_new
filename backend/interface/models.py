@@ -16,11 +16,14 @@ class ServiceMode(models.Model):
     title = models.CharField(max_length=60)
     catalog_number = models.CharField(max_length=100, blank=True, null=True)
     content = HTMLField()
+    performance_data = models.TextField(blank=True, default='')
+    manuals = models.JSONField(default=list, blank=True)
     image = models.ImageField(blank=True, null=True)
     category = models.CharField(max_length=100, blank=True, null=True)
     service_group = models.CharField(max_length=100, blank=True, null=True)
     is_featured = models.BooleanField(default=False)
     show_on_screen = models.BooleanField(default=False)
+    hidden = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'service_mode'

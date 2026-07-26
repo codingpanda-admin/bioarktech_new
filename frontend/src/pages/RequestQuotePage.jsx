@@ -3,6 +3,8 @@ import QuoteRequestForm from '../components/QuoteRequestForm';
 
 function RequestQuotePage({ navigate, cart, onClearCart, currentUser, currentUserProfile, quotePrefill }) {
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const quoteContext = quotePrefill?.toString() || 'default';
+  const isCartQuote = quotePrefill?.get('source') === 'cart';
 
   const handleConfirmationClose = () => {
     setShowConfirmation(false);
@@ -31,8 +33,9 @@ function RequestQuotePage({ navigate, cart, onClearCart, currentUser, currentUse
       <section className="quote-layout" aria-labelledby="quote-form-title">
         <div className="quote-panel">
           <QuoteRequestForm
-            cart={cart}
-            onClearCart={onClearCart}
+            key={quoteContext}
+            cart={isCartQuote ? cart : []}
+            onClearCart={isCartQuote ? onClearCart : undefined}
             currentUser={currentUser}
             currentUserProfile={currentUserProfile}
             quotePrefill={quotePrefill}

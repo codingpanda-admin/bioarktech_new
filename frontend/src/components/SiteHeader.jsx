@@ -589,9 +589,11 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
     if (!menuOpenState) return null;
 
     const activeEntry = menuCategories.find((c) => c.external_id === activeCategory) || menuCategories[0];
-    const rawActiveSubcategories = activeEntry ? (activeEntry.subcategories && activeEntry.subcategories.length > 0
-      ? activeEntry.subcategories
-      : getCategorySubcategories(activeEntry)) : [];
+    const rawActiveSubcategories = activeEntry
+      ? (Array.isArray(activeEntry.subcategories)
+        ? activeEntry.subcategories
+        : getCategorySubcategories(activeEntry))
+      : [];
     const activeSubcategories = rawActiveSubcategories.map((subcategory) => ({
       ...subcategory,
       products: sortMenuItemsByCatalogNumber(subcategory.products),

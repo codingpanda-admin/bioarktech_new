@@ -296,8 +296,7 @@ function ResourcesPage({ navigate, searchParams }) {
           display: 'flex', 
           justifyContent: 'center', 
           gap: '16px', 
-          margin: '32px auto 0', 
-          width: 'min(1440px, calc(100% - 52px))' 
+          margin: '32px auto 0'
         }}
       >
         <button 
@@ -534,6 +533,7 @@ function ResourcesPage({ navigate, searchParams }) {
             )
           )}
         </section>
+
       </div>
 
       {previewFileUrl && (

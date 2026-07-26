@@ -124,7 +124,8 @@ def get_nav_catalog(request):
         # 1. Fetch categories from DB
         db_categories = ProductCategory.objects.all().order_by("priority", "category_id")
         active_service_category_ids = set(
-            ServiceMode.objects.exclude(category__isnull=True)
+            ServiceMode.objects.filter(hidden=False)
+            .exclude(category__isnull=True)
             .exclude(category='')
             .values_list('category', flat=True)
         )
@@ -143,7 +144,7 @@ def get_nav_catalog(request):
                 
         # 2b. Fetch all services to count them by category
         from interface.models import ServiceMode
-        all_services = ServiceMode.objects.filter(show_on_screen=True)
+        all_services = ServiceMode.objects.filter(hidden=False)
         
         services_by_category = {}
         for s in all_services:
@@ -219,6 +220,19 @@ def get_nav_catalog(request):
                     'sort_external_id': p.external_id,
                     'catalog_number': p.catalog_number,
                 })
+
+            for service in cat_services:
+                group = service.service_group or ''
+                if group not in subcategories_map:
+                    subcategories_map[group] = []
+                subcategories_map[group].append({
+                    'product_id': f'svc-{service.id}',
+                    'product_name': service.title,
+                    'external_id': service.url,
+                    'externalId': service.url,
+                    'sort_external_id': service.url,
+                    'catalog_number': service.catalog_number,
+                })
                 
             subcategories = [{'name': name, 'products': products} for name, products in subcategories_map.items()]
             
@@ -242,6 +256,8 @@ def get_nav_catalog(request):
             ext_id = cat['external_id']
             if ext_id not in merged_map:
                 cat_products = products_by_category.get(ext_id, [])
+                cat_services = services_by_category.get(ext_id, [])
+                total_items_count = len(cat_products) + len(cat_services)
                 has_services = (
                     cat.get('product_type') == 'service'
                     and ext_id in active_service_category_ids
@@ -265,6 +281,19 @@ def get_nav_catalog(request):
                         'externalId': p.catalog_number or p.external_id,
                         'sort_external_id': p.external_id,
                         'catalog_number': p.catalog_number,
+                    })
+
+                for service in cat_services:
+                    group = service.service_group or ''
+                    if group not in subcategories_map:
+                        subcategories_map[group] = []
+                    subcategories_map[group].append({
+                        'product_id': f'svc-{service.id}',
+                        'product_name': service.title,
+                        'external_id': service.url,
+                        'externalId': service.url,
+                        'sort_external_id': service.url,
+                        'catalog_number': service.catalog_number,
                     })
                     
                 subcategories = [{'name': name, 'products': products} for name, products in subcategories_map.items()]
@@ -568,7 +597,13 @@ def _get_product_documents(product=None, featured_product=None):
 @api_view(['GET'])
 def load_product_by_external_id(request, external_id):
     # 1. Check if there is a FeaturedProduct associated with this external_id or catalog_number
-    product = Product.objects.filter(Q(external_id=external_id) | Q(catalog_number=external_id), hidden=False).first()
+    matching_products = Product.objects.filter(
+        Q(external_id=external_id) | Q(catalog_number=external_id)
+    )
+    product = matching_products.filter(hidden=False).first()
+
+    if not product and matching_products.filter(hidden=True).exists():
+        return Response({'detail': 'Product not found.'}, status=status.HTTP_404_NOT_FOUND)
     
     featured_product = None
     if product and product.catalog_number:
@@ -598,6 +633,8 @@ def load_product_by_external_id(request, external_id):
             data['product_name'] = source_product.product_name
             data['category_external_id'] = source_product.category_external_id
             data['category_name'] = get_product_category_name(source_product)
+            data['product_group'] = source_product.product_group
+            data['source_type'] = source_product.source_type
             data['availability'] = source_product.availability
             data['content_text'] = source_product.content_text
             data['raw_detail'] = source_product.raw_detail
@@ -624,7 +661,7 @@ def load_product_by_external_id(request, external_id):
 
     # 3. Fall back to ServiceMode (services)
     from interface.models import ServiceMode
-    service = ServiceMode.objects.filter(url=external_id).first()
+    service = ServiceMode.objects.filter(url=external_id, hidden=False).first()
     if service:
         # Get matching ProductCategory to display correct category name
         from products.models import ProductCategory
@@ -638,6 +675,15 @@ def load_product_by_external_id(request, external_id):
         # Clean HTML content for description snippet
         import re
         clean_desc = re.sub(r'<[^>]*>', '', service.content)[:250] + "..." if service.content else ""
+        service_documents = [
+            {
+                'name': document.get('name') or 'Service Document',
+                'url': document.get('manual') or document.get('url'),
+                'type': 'Service Document',
+            }
+            for document in (service.manuals or [])
+            if isinstance(document, dict) and (document.get('manual') or document.get('url'))
+        ]
 
         service_data = {
             'product_id': f"svc-{service.id}",
@@ -649,12 +695,15 @@ def load_product_by_external_id(request, external_id):
             'image_url': f"/media/{service.image.name}" if service.image else None,
             'category_name': cat_name,
             'category_external_id': cat_ext_id,
+            'service_group': service.service_group,
             'product_group': service.service_group,
             'availability': 'Quote Required',
             'quote_only': True,
             'quoteOnly': True,
             'description': clean_desc,
             'content_text': service.content,
+            'performance_data': service.performance_data,
+            'documents': service_documents,
             'unit_prices': []
         }
         return Response(service_data)
@@ -670,8 +719,48 @@ def get_latest_featured_products(request):
         "product_name",
     )
     serializer = PreviewFeaturedProductSerializer(products, many=True)
+    category_types = {
+        category['external_id']: category['product_type']
+        for category in DEFAULT_PRODUCT_CATEGORIES
+    }
+    featured_items = []
 
-    return Response(serializer.data)
+    for product, serialized_product in zip(products, serializer.data):
+        category_type = category_types.get(product.category_external_id)
+        item_type = (
+            'reagent'
+            if product.source_type == 'reagent' or category_type in {'reagent', 'consumable'}
+            else 'product'
+        )
+        featured_items.append({
+            **serialized_product,
+            'item_type': item_type,
+            'source_type': product.source_type,
+            'category_external_id': product.category_external_id,
+            'is_featured': True,
+        })
+
+    from interface.models import ServiceMode
+
+    services = ServiceMode.objects.filter(is_featured=True, hidden=False).order_by('title')
+    featured_items.extend([
+        {
+            'product_name': service.title,
+            'external_id': service.url,
+            'externalId': service.url,
+            'catalog_number': service.catalog_number or service.url.upper(),
+            'unit_price': 'Contact for Quote',
+            'image': f'/media/{service.image.name}' if service.image else None,
+            'show_on_screen': service.show_on_screen,
+            'item_type': 'service',
+            'source_type': 'service',
+            'category_external_id': service.category,
+            'is_featured': True,
+        }
+        for service in services
+    ])
+
+    return Response(featured_items)
 
 
 @api_view(['GET'])

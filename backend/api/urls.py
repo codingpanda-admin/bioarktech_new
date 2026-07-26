@@ -21,7 +21,7 @@ from .admin_views import (
     admin_list_quotes, admin_get_quote, admin_mark_quote_read,
     admin_delete_quote,
     admin_list_services, admin_get_service, admin_create_service,
-    admin_update_service, admin_delete_service,
+    admin_update_service, admin_delete_service, admin_upload_service_document,
     admin_list_media, admin_upload_media, admin_delete_media,
     admin_list_slides, admin_get_slide, admin_create_slide,
     admin_update_slide, admin_reorder_slides, admin_delete_slide,
@@ -108,6 +108,7 @@ urlpatterns = [
     # Services
     path('admin-panel/services/', admin_list_services),
     path('admin-panel/services/create/', admin_create_service),
+    path('admin-panel/services/upload-document/', admin_upload_service_document),
     path('admin-panel/services/<int:service_id>/', admin_get_service),
     path('admin-panel/services/<int:service_id>/update/', admin_update_service),
     path('admin-panel/services/<int:service_id>/delete/', admin_delete_service),

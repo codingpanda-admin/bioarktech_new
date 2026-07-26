@@ -93,7 +93,7 @@ def main():
             'product_link': p.get('link', ''),
             'category_external_id': p.get('category'),
             'product_group': groups_config.get(pid, p.get('groupName')),
-            'source_type': p.get('__type', 'quote'),
+            'source_type': 'reagent',
             'quote_only': p.get('__type') == 'quote',
             'display_order': p.get('order'),
             'source_created_at_ms': p.get('createdAt'),
@@ -119,7 +119,7 @@ def main():
                 'product_link': o.get('link', ''),
                 'category_external_id': o.get('category'),
                 'product_group': groups_config.get(pid, o.get('groupName')),
-                'source_type': o.get('__type', 'quote'),
+                'source_type': 'reagent',
                 'quote_only': o.get('__type') == 'quote',
                 'display_order': o.get('order'),
                 'availability': 'In Stock',
@@ -138,7 +138,7 @@ def main():
             p['product_link'] = o.get('link', p['product_link'])
             p['category_external_id'] = o.get('category', p['category_external_id'])
             p['product_group'] = groups_config.get(pid, p.get('product_group'))
-            p['source_type'] = o.get('__type', p['source_type'])
+            p['source_type'] = 'reagent'
             p['quote_only'] = o.get('__type') == 'quote'
             if 'order' in o:
                 p['display_order'] = o['order']
