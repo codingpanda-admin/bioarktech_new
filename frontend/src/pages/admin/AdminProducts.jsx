@@ -47,6 +47,23 @@ const FilledHomeIcon = () => (
   </svg>
 );
 
+const PublicDetailLink = ({ identifier }) => {
+  if (!identifier) return <span>—</span>;
+  const publicPath = `/product/${encodeURIComponent(identifier)}`;
+
+  return (
+    <a
+      className="admin-public-detail-link"
+      href={publicPath}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Open ${publicPath} in a new tab`}
+    >
+      {publicPath}
+    </a>
+  );
+};
+
 export const ProductContentEditor = React.forwardRef(function ProductContentEditor({ value, onChange, ariaLabel = 'Product content text' }, ref) {
   const editorRef = useRef(null);
   const lastEmittedHtmlRef = useRef(null);
@@ -1976,6 +1993,7 @@ function AdminProducts({ categoryFilter = null }) {
                               <tr>
                                 <SortableHeader label="Name" field="product_name" sortKey={sortKey} sortConfig={sortConfig} />
                                 <SortableHeader label="External ID" field="external_id" sortKey={sortKey} sortConfig={sortConfig} />
+                                <th>Public URL</th>
                                 <SortableHeader label="Catalog #" field="catalog_number" sortKey={sortKey} sortConfig={sortConfig} />
                                 <SortableHeader label="Price" field="price" sortKey={sortKey} sortConfig={sortConfig} />
                                 {catalogStatus === 'deactivated' && <th>Status</th>}
@@ -2000,6 +2018,9 @@ function AdminProducts({ categoryFilter = null }) {
                                       </div>
                                     </td>
                                     <td><code>{product.external_id}</code></td>
+                                    <td>
+                                      <PublicDetailLink identifier={product.external_id || product.catalog_number} />
+                                    </td>
                                     <td>{product.catalog_number || '—'}</td>
                                     <td>{product.list_price || '—'}</td>
                                     {catalogStatus === 'deactivated' && (

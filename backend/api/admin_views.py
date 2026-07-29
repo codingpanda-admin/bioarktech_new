@@ -1494,6 +1494,7 @@ def admin_list_services(request):
                 'title': s.title,
                 'catalog_number': s.catalog_number,
                 'content': s.content,
+                'price': s.price,
                 'performance_data': s.performance_data,
                 'manuals': s.manuals,
                 'image': request.build_absolute_uri(s.image.url) if s.image else None,
@@ -1523,6 +1524,7 @@ def admin_get_service(request, service_id):
             'title': s.title,
             'catalog_number': s.catalog_number,
             'content': s.content,
+            'price': s.price,
             'performance_data': s.performance_data,
             'manuals': s.manuals,
             'image': request.build_absolute_uri(s.image.url) if s.image else None,
@@ -1561,6 +1563,7 @@ def admin_create_service(request):
             title=d.get('title', ''),
             catalog_number=d.get('catalog_number', ''),
             content=d.get('content', ''),
+            price=d.get('price', ''),
             performance_data=d.get('performance_data', ''),
             manuals=_normalize_service_manuals(d.get('manuals', [])),
             category=d.get('category', ''),
@@ -1591,7 +1594,7 @@ def admin_update_service(request, service_id):
         s = ServiceMode.objects.get(id=service_id)
         d = request.data
 
-        for field in ['url', 'title', 'catalog_number', 'content', 'performance_data', 'category', 'service_group']:
+        for field in ['url', 'title', 'catalog_number', 'content', 'price', 'performance_data', 'category', 'service_group']:
             if field in d:
                 setattr(s, field, d[field])
 

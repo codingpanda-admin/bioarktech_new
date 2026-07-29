@@ -23,6 +23,23 @@ const FilledHomeIcon = () => (
   </svg>
 );
 
+const PublicDetailLink = ({ identifier }) => {
+  if (!identifier) return <span>—</span>;
+  const publicPath = `/product/${encodeURIComponent(identifier)}`;
+
+  return (
+    <a
+      className="admin-public-detail-link"
+      href={publicPath}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Open ${publicPath} in a new tab`}
+    >
+      {publicPath}
+    </a>
+  );
+};
+
 function AdminServices() {
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -43,6 +60,7 @@ function AdminServices() {
   const [draggedCatalogIndex, setDraggedCatalogIndex] = useState(null);
   const [collapsedCatalogs, setCollapsedCatalogs] = useState(() => new Set());
   const serviceContentEditorRef = useRef(null);
+  const priceEditorRef = useRef(null);
   const performanceDataEditorRef = useRef(null);
   const imagePreviewRequestRef = useRef(0);
 
@@ -123,6 +141,7 @@ function AdminServices() {
       title: '',
       catalog_number: '',
       content: '',
+      price: '',
       performance_data: '',
       manuals: [],
       category: selectedCategory !== 'All' ? selectedCategory : 'uncategorized',
@@ -253,6 +272,7 @@ function AdminServices() {
     setError('');
     try {
       const latestContent = serviceContentEditorRef.current?.getHtml?.() ?? editingService.content ?? '';
+      const latestPrice = priceEditorRef.current?.getHtml?.() ?? editingService.price ?? '';
       const latestPerformanceData = performanceDataEditorRef.current?.getHtml?.() ?? editingService.performance_data ?? '';
       const serviceManuals = (editingService.manuals || []).filter((document) => (
         document?.name && document?.manual
@@ -267,6 +287,7 @@ function AdminServices() {
       formData.append('title', editingService.title);
       formData.append('catalog_number', editingService.catalog_number || '');
       formData.append('content', latestContent);
+      formData.append('price', latestPrice);
       formData.append('performance_data', latestPerformanceData);
       formData.append('manuals', JSON.stringify(serviceManuals));
       formData.append('category', editingService.category || 'uncategorized');
@@ -297,6 +318,7 @@ function AdminServices() {
         setEditingService((prev) => ({
           ...prev,
           content: latestContent,
+          price: latestPrice,
           performance_data: latestPerformanceData,
           manuals: serviceManuals,
           id: prev?.id || saveResponse?.id || saveResponse?.service?.id,
@@ -673,7 +695,7 @@ function AdminServices() {
               </select>
             </label>
             <label className="admin-form-field">
-              <span>Service Group</span>
+              <span>Service Sub Group</span>
               <input
                 type="text"
                 value={editingService.service_group || ''}
@@ -814,6 +836,15 @@ function AdminServices() {
               />
             </div>
             <div className="admin-form-field span-3">
+              <span>Price</span>
+              <ProductContentEditor
+                ref={priceEditorRef}
+                value={editingService.price || ''}
+                onChange={(value) => updateField('price', value)}
+                ariaLabel="Service price"
+              />
+            </div>
+            <div className="admin-form-field span-3">
               <span>Performance Data</span>
               <ProductContentEditor
                 ref={performanceDataEditorRef}
@@ -931,6 +962,24 @@ function AdminServices() {
               return null;
             }
 
+            const serviceSubgroups = groupList.reduce((subgroups, service) => {
+              const subgroupName = String(service.service_group || '').trim();
+              if (!subgroups[subgroupName]) {
+                subgroups[subgroupName] = [];
+              }
+              subgroups[subgroupName].push(service);
+              return subgroups;
+            }, {});
+            const serviceSubgroupEntries = Object.entries(serviceSubgroups)
+              .sort(([leftName], [rightName]) => {
+                if (!leftName && rightName) return 1;
+                if (leftName && !rightName) return -1;
+                return leftName.localeCompare(rightName, undefined, {
+                  numeric: true,
+                  sensitivity: 'base',
+                });
+              });
+
             const isCollapsed = collapsedCatalogs.has(cat.id);
 
             return (
@@ -958,6 +1007,12 @@ function AdminServices() {
                         No services in this category.
                       </div>
                     ) : (
+                      <>
+                        {serviceSubgroupEntries.map(([subgroupName, subgroupServices]) => (
+                          <div key={subgroupName || '__general'} className="admin-subgroup-group">
+                            <h4 className="admin-subgroup-title">
+                              {subgroupName || 'General'} ({subgroupServices.length})
+                            </h4>
                       <div className="admin-data-table-wrap">
                     <table className="admin-data-table">
                       <thead>
@@ -965,14 +1020,13 @@ function AdminServices() {
                           <th>Title</th>
                           <th>Catalog #</th>
                           <th>External ID</th>
-                          <th>Service Group</th>
-                          <th>Content Preview</th>
+                          <th>Public URL</th>
                           {catalogStatus === 'deactivated' && <th>Status</th>}
                           <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {groupList.map((service) => (
+                        {subgroupServices.map((service) => (
                           <tr key={service.id}>
                             <td>
                               <div className="admin-product-cell">
@@ -998,9 +1052,8 @@ function AdminServices() {
                             </td>
                             <td><code>{service.catalog_number || '—'}</code></td>
                             <td><code>{service.external_id || service.url}</code></td>
-                            <td>{service.service_group || '-'}</td>
-                            <td className="admin-cell-truncate">
-                              {service.content ? service.content.replace(/<[^>]*>/g, '').substring(0, 120) + '...' : '-'}
+                            <td>
+                              <PublicDetailLink identifier={service.external_id || service.url || service.catalog_number} />
                             </td>
                             {catalogStatus === 'deactivated' && (
                               <td><span className="admin-badge badge-muted">Deactivated</span></td>
@@ -1072,6 +1125,9 @@ function AdminServices() {
                       </tbody>
                     </table>
                       </div>
+                          </div>
+                        ))}
+                      </>
                     )}
                   </div>
                 )}

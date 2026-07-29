@@ -674,7 +674,13 @@ function HomePage({ navigate, searchParams }) {
         </section>
 
         <section className="resources-section" aria-labelledby="resources-title">
-          <h2 id="resources-title">Resources and Blogs</h2>
+          <HomeSectionHeading
+            id="resources-title"
+            title="Resources and Blogs"
+            href="/blogs"
+            linkLabel="View all resources and blogs"
+            navigate={navigate}
+          />
           <div className="home-blog-tabs" role="tablist" aria-label="Blog categories">
             {HOME_BLOG_CATEGORIES.map((category) => (
               <button
@@ -713,7 +719,6 @@ function HomePage({ navigate, searchParams }) {
           ) : (
             <p className="home-blog-empty">No blog posts are available in this category yet.</p>
           )}
-          <a className="view-all" href="/blogs" onClick={(e) => { e.preventDefault(); navigate('/blogs'); }}>View All Resources & Blogs <span>→</span></a>
         </section>
 
         <section className="bulk-cta">

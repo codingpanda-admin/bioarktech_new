@@ -702,6 +702,7 @@ def load_product_by_external_id(request, external_id):
             'quoteOnly': True,
             'description': clean_desc,
             'content_text': service.content,
+            'price': service.price,
             'performance_data': service.performance_data,
             'documents': service_documents,
             'unit_prices': []

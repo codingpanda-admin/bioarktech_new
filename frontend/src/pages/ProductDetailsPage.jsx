@@ -31,6 +31,71 @@ const REAGENT_CATEGORY_IDS = new Set(
     .filter((categoryId) => !categoryId.startsWith('all-'))
 );
 
+const formatProductPrice = (value) => {
+  if (value === null || value === undefined || value === '') return '';
+  if (typeof value === 'number') return `$${value}`;
+
+  const text = String(value).trim();
+  if (!text) return '';
+  if (/^[+-]?\d+(?:\.\d+)?$/.test(text)) return `$${text}`;
+  return text;
+};
+
+const parseProductPrice = (value) => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (value === null || value === undefined) return null;
+
+  const normalized = String(value).trim().replace(/[$,]/g, '');
+  if (!/^[+-]?\d+(?:\.\d+)?$/.test(normalized)) return null;
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const getProductPriceOptions = (product) => {
+  const options = Array.isArray(product?.options) ? product.options : [];
+  const rawOptionPrices = (
+    product?.option_prices
+    && typeof product.option_prices === 'object'
+    && !Array.isArray(product.option_prices)
+  ) ? product.option_prices : {};
+  const optionPrices = Object.fromEntries(
+    Object.entries(rawOptionPrices)
+      .map(([option, optionPrice]) => [String(option || '').trim(), optionPrice])
+      .filter(([option]) => Boolean(option))
+  );
+  const optionNames = [...new Set([
+    ...options.map((option) => String(option || '').trim()).filter(Boolean),
+    ...Object.keys(optionPrices).map((option) => String(option || '').trim()).filter(Boolean),
+  ])];
+
+  if (Object.keys(optionPrices).length > 0) {
+    return optionNames.map((option, index) => ({
+      id: `catalog-option-${index}-${option}`,
+      unit_size: option,
+      unit_price: optionPrices[option] ?? '',
+      list_price: '',
+      on_discount: false,
+    }));
+  }
+
+  const unitPrices = Array.isArray(product?.unit_prices) ? product.unit_prices : [];
+  if (unitPrices.length > 0) {
+    return unitPrices.map((unit, index) => ({
+      ...unit,
+      id: unit.id || `unit-price-${index}-${unit.unit_size || 'option'}`,
+    }));
+  }
+
+  return optionNames.map((option, index) => ({
+    id: `catalog-option-${index}-${option}`,
+    unit_size: option,
+    unit_price: '',
+    list_price: '',
+    on_discount: false,
+  }));
+};
+
 function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, currentUserProfile }) {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -60,11 +125,8 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
         }
         
         setProduct(productDetail);
-        if (productDetail && Array.isArray(productDetail.unit_prices) && productDetail.unit_prices.length > 0) {
-          setSelectedUnitSize(productDetail.unit_prices[0]);
-        } else {
-          setSelectedUnitSize(null);
-        }
+        const priceOptions = getProductPriceOptions(productDetail);
+        setSelectedUnitSize(priceOptions[0] || null);
         setMainImage(
           productDetail.image_url
             ? formatAssetUrl(productDetail.image_url)
@@ -109,7 +171,8 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
     }
 
     if (onAddToCart && product) {
-      onAddToCart(product, quantity, isFeatured ? selectedUnitSize : null);
+      const hasSelectablePrice = getProductPriceOptions(product).length > 0;
+      onAddToCart(product, quantity, hasSelectablePrice ? selectedUnitSize : null);
     }
     setCartAdded(true);
     setTimeout(() => setCartAdded(false), 2000);
@@ -289,10 +352,23 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   
   // Calculate price dynamically for featured products based on selected unit size
   const price = isFeatured ? selectedUnitSize?.unit_price : product.unit_price;
-  const listPrice = isFeatured ? selectedUnitSize?.list_price : product.list_price;
-  const onDiscount = isFeatured ? selectedUnitSize?.on_discount : false;
-  const discountPercent = onDiscount && listPrice && price ? Math.round(((listPrice - price) / listPrice) * 100) : 0;
-  const displayPrice = price || product.price_range || product.list_price || 'Contact for Quote';
+  const productPriceOptions = getProductPriceOptions(product);
+  const hasProductPriceOptions = productPriceOptions.length > 0;
+  const selectedPrice = hasProductPriceOptions ? selectedUnitSize?.unit_price : price;
+  const listPrice = hasProductPriceOptions ? selectedUnitSize?.list_price : product.list_price;
+  const onDiscount = hasProductPriceOptions ? selectedUnitSize?.on_discount : false;
+  const numericSelectedPrice = parseProductPrice(selectedPrice);
+  const numericListPrice = parseProductPrice(listPrice);
+  const discountPercent = (
+    onDiscount
+    && numericSelectedPrice !== null
+    && numericListPrice !== null
+    && numericListPrice > numericSelectedPrice
+  ) ? Math.round(((numericListPrice - numericSelectedPrice) / numericListPrice) * 100) : 0;
+  const showDiscount = discountPercent > 0;
+  const displayPrice = formatProductPrice(
+    selectedPrice || product.price_range || product.list_price
+  ) || 'Contact for Quote';
 
   const quoteModal = showQuoteModal && (
     <div
@@ -390,13 +466,6 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
           <div className="service-detail-main">
             <div className={`service-detail-banner ${hasServiceImage ? '' : 'is-fallback'}`}>
               <img src={mainImage} alt={name} />
-              <button
-                type="button"
-                className="primary-button service-banner-quote-button"
-                onClick={handleRequestQuote}
-              >
-                Request for Quote
-              </button>
             </div>
 
             <header className="service-detail-heading">
@@ -406,6 +475,13 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 {productGroupLabel && <span className="product-detail-pill subgroup">{productGroupLabel}</span>}
                 {availabilityLabel && <span className="product-detail-pill availability">{availabilityLabel}</span>}
               </div>
+              <button
+                type="button"
+                className="primary-button service-detail-quote-button"
+                onClick={handleRequestQuote}
+              >
+                Request for Quote
+              </button>
             </header>
 
             <section className="service-detail-copy" aria-label="Service information">
@@ -420,6 +496,17 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 onClick={() => setActiveTab('details')}
               >
                 Detail
+              </button>
+              <button
+                type="button"
+                id="service-price-tab"
+                className={activeTab === 'price' ? 'is-active' : ''}
+                role="tab"
+                aria-selected={activeTab === 'price'}
+                aria-controls="service-price-panel"
+                onClick={() => setActiveTab('price')}
+              >
+                Price
               </button>
               <button
                 type="button"
@@ -460,6 +547,26 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 ) : (
                   <div className="admin-empty-table service-detail-empty">
                     No additional details available.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'price' && (
+              <div
+                id="service-price-panel"
+                className="service-detail-tab-panel"
+                role="tabpanel"
+                aria-labelledby="service-price-tab"
+              >
+                {product.price ? (
+                  <div
+                    className="blog-detail-content product-detail-content"
+                    dangerouslySetInnerHTML={{ __html: formatRichText(product.price) }}
+                  />
+                ) : (
+                  <div className="admin-empty-table service-detail-empty">
+                    No pricing information available.
                   </div>
                 )}
               </div>
@@ -619,12 +726,12 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
             {availabilityLabel && <span className="product-detail-pill availability">{availabilityLabel}</span>}
           </div>
 
-          {/* Unit Size Selection (Featured only) */}
-          {isFeatured && product.unit_prices && product.unit_prices.length > 0 && (
+          {/* Available size and price options */}
+          {hasProductPriceOptions && (
             <div className="spec-container" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span className="spec-label" style={{ fontWeight: 500, color: 'var(--muted)' }}>Spec:</span>
-              <div className="spec-options" style={{ display: 'flex', gap: '8px' }}>
-                {product.unit_prices.map((unit) => (
+              <div className="spec-options" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {productPriceOptions.map((unit) => (
                   <button
                     key={unit.id}
                     type="button"
@@ -636,10 +743,19 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                       border: selectedUnitSize?.id === unit.id ? '2px solid var(--blue)' : '1px solid var(--line)',
                       background: selectedUnitSize?.id === unit.id ? 'rgba(0, 111, 242, 0.05)' : '#fff',
                       fontWeight: 500,
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      gap: '2px'
                     }}
                   >
-                    {unit.unit_size}
+                    <span>{unit.unit_size}</span>
+                    {formatProductPrice(unit.unit_price) && (
+                      <span style={{ color: 'var(--blue)', fontSize: '13px', fontWeight: 600 }}>
+                        {formatProductPrice(unit.unit_price)}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -647,21 +763,21 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
           )}
 
           {/* Price display */}
-          {onDiscount ? (
+          {showDiscount ? (
             <div>
               <p className="discount-price" style={{ margin: 0, fontSize: '24px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span className="discount-percent" style={{ background: '#f44336', color: '#fff', padding: '3px 8px', borderRadius: '4px', fontSize: '14px' }}>
                   -{discountPercent}%
                 </span>
-                <span className="price" style={{ color: 'var(--blue)' }}>${price}</span>
+                <span className="price" style={{ color: 'var(--blue)' }}>{formatProductPrice(selectedPrice)}</span>
               </p>
               <p className="list-price-block" style={{ margin: '5px 0 0', color: 'var(--muted)' }}>
-                List Price: <span className="list-price" style={{ textDecoration: 'line-through' }}>${listPrice}</span>
+                List Price: <span className="list-price" style={{ textDecoration: 'line-through' }}>{formatProductPrice(listPrice)}</span>
               </p>
             </div>
           ) : (
             <p className="price" style={{ fontSize: '28px', fontWeight: 600, color: 'var(--blue)', margin: 0 }}>
-              {typeof displayPrice === 'number' ? `$${displayPrice}` : displayPrice}
+              {displayPrice}
             </p>
           )}
 
