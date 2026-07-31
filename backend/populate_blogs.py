@@ -9,9 +9,10 @@ django.setup()
 from blogs.models import Blog
 from django.utils.dateparse import parse_datetime
 
-# Check if blogs are already populated
-if Blog.objects.exists():
-    print("Blogs already populated. Skipping population script.")
+# Check if blogs and resources are already populated
+from blogs.models import ResourceDocument
+if Blog.objects.exists() and ResourceDocument.objects.exists():
+    print("Blogs and resource documents already populated. Skipping population script.")
     sys.exit(0)
 
 print("Populating blogs in the database...")
@@ -40,3 +41,90 @@ with connection.cursor() as cursor:
     cursor.execute("SELECT setval(pg_get_serial_sequence('blog', 'id'), COALESCE((SELECT MAX(id) FROM blog), 1), true);")
 
 print("Blogs population finished successfully! Total: ", Blog.objects.count())
+
+# Now populate resource documents if they don't exist
+if not ResourceDocument.objects.exists():
+    print("Populating Resource Documents...")
+    from django.conf import settings
+    from products.models import ManualFile, Product
+    def get_category(name):
+        name_lower = name.lower()
+        if 'msds' in name_lower or 'sds' in name_lower or 'safety data' in name_lower:
+            return 'MSDS'
+        elif 'protocol' in name_lower or 'guide' in name_lower or 'manual' in name_lower:
+            return 'Protocols & Manuals'
+        elif 'handbook' in name_lower:
+            return 'Handbooks'
+        elif 'sequence' in name_lower:
+            return 'Sequences'
+        else:
+            return 'Product Manuals'
+
+    count = 0
+    # Add from ManualFile (Premium Manuals)
+    manuals = ManualFile.objects.all()
+    for m in manuals:
+        file_path = m.manual.name
+        full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+        if os.path.exists(full_path):
+            doc = ResourceDocument(
+                name=m.name,
+                category='Product Manuals',
+                description=f"Technical manual for {m.name}",
+                download_url=m.manual.url if m.manual else '',
+                file=m.manual
+            )
+            doc.save()
+            count += 1
+        
+    # Add from Product (Standard product manuals and data sheets)
+    for p in Product.objects.all():
+        manuals_list = p.manuals or []
+        urls_list = p.manual_urls or []
+        for i in range(max(len(manuals_list), len(urls_list))):
+            name = manuals_list[i] if i < len(manuals_list) else ""
+            url = urls_list[i] if i < len(urls_list) else ""
+            
+            if not url and name:
+                if '/' in name or '\\' in name or name.lower().endswith('.pdf'):
+                    url = name
+            
+            if url:
+                ext = url.split('.')[-1].lower() if '.' in url else ''
+                if ext in ['pdf', 'doc', 'docx', 'xls', 'xlsx']:
+                    normalized_url = url
+                    if normalized_url.startswith('/content-api/uploads/originals/'):
+                        normalized_url = '/media/' + normalized_url[len('/content-api/uploads/originals/'):]
+                    elif normalized_url.startswith('content-api/uploads/originals/'):
+                        normalized_url = '/media/' + normalized_url[len('content-api/uploads/originals/'):]
+                    
+                    file_path = normalized_url
+                    if file_path.startswith('/media/'):
+                        file_path = file_path[len('/media/'):]
+                    elif file_path.startswith('media/'):
+                        file_path = file_path[len('media/'):]
+                        
+                    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+                    if os.path.exists(full_path):
+                        if ResourceDocument.objects.filter(download_url=normalized_url).exists():
+                            continue
+                            
+                        doc_name = name or url.split('/')[-1]
+                        doc_name = doc_name.replace('_', ' ').replace('-', ' ').strip()
+                        
+                        for e in ['.pdf', '.docx', '.doc', '.xls', '.xlsx']:
+                            if doc_name.lower().endswith(e):
+                                doc_name = doc_name[:-len(e)].strip()
+                                
+                        doc = ResourceDocument(
+                            name=doc_name,
+                            category=get_category(doc_name),
+                            description=f"Technical document for {p.product_name}",
+                            download_url=normalized_url,
+                            file=file_path
+                        )
+                        doc.save()
+                        count += 1
+    print(f"Successfully populated {count} resource documents.")
+else:
+    print("Resource documents already populated.")

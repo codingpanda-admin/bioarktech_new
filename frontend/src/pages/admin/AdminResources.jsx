@@ -588,7 +588,7 @@ function AdminResources() {
             </div>
             <div style={{ flex: 1, position: 'relative', background: '#f1f5f9' }}>
               <iframe 
-                src={previewFileUrl} 
+                src={previewFileUrl ? `${previewFileUrl}?t=${new Date().getTime()}` : ''} 
                 title="Document Preview"
                 style={{
                   width: '100%',

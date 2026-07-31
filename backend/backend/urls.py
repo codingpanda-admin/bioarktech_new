@@ -20,19 +20,15 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.static import serve as serve_media
 
+from django.views.decorators.clickjacking import xframe_options_exempt
+
 urlpatterns = [
     path('', home_view),
     path('api/', include('api.urls')),
     path('tinymce/', include('tinymce.urls')),
 ]
 
-# Serve media files in development
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-else:
-    # Product/category media URLs are returned by the public API. The current
-    # deployment sends those URLs directly to Django, so keep them available
-    # when DEBUG is disabled as well.
-    urlpatterns += [
-        re_path(r'^media/(?P<path>.*)$', serve_media, {'document_root': settings.MEDIA_ROOT}),
-    ]
+# Serve media files in both development and production, exempting them from X-Frame-Options to allow frontend previews
+urlpatterns += [
+    re_path(r'^media/(?P<path>.*)$', xframe_options_exempt(serve_media), {'document_root': settings.MEDIA_ROOT}),
+]
