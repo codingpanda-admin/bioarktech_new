@@ -5,6 +5,7 @@ import IconMark from '../components/IconMark';
 import ProductVisual from '../components/ProductVisual';
 
 const HOME_BLOG_CATEGORIES = ['All', 'BioArk News', 'Biotech Outlook', 'Business News'];
+const HOME_POPULAR_CATEGORY_LIMIT = 7;
 
 const inferHomeBlogCategory = (blog) => {
   const text = `${blog?.title || ''} ${blog?.description || ''} ${blog?.tag || ''}`.toLowerCase();
@@ -197,7 +198,12 @@ function HomePage({ navigate, searchParams }) {
       activeBlogCategory === 'All' || blog.homeCategory === activeBlogCategory
     ))
   );
-  const popularCategories = categories.filter((category) => category.show_on_homepage);
+  const selectedPopularCategories = categories.filter((category) => category.show_on_homepage);
+  const remainingCategories = categories.filter((category) => !category.show_on_homepage);
+  const popularCategories = [
+    ...selectedPopularCategories,
+    ...remainingCategories,
+  ].slice(0, HOME_POPULAR_CATEGORY_LIMIT);
 
   const handlePrevSlide = () => {
     setActiveSlideIndex((prev) => (prev - 1 + activeSlides.length) % activeSlides.length);
@@ -422,10 +428,10 @@ function HomePage({ navigate, searchParams }) {
           </div>
         </section>
 
-        <section className="products-section" aria-labelledby="products-title">
+        <section className="products-section featured-solutions-section" aria-labelledby="products-title">
           <HomeSectionHeading
             id="products-title"
-            title="Featured Products"
+            title="Featured Solutions"
             href="/search?category=featured"
             linkLabel="View all featured items"
             navigate={navigate}
@@ -629,7 +635,7 @@ function HomePage({ navigate, searchParams }) {
                               <h3 style={{ fontSize: '1.25rem', fontWeight: '700', margin: '0 0 12px 0', color: 'var(--blue-dark)', lineHeight: '1.4' }}>{name}</h3>
                               <p style={{ fontSize: '0.95rem', color: 'var(--ink-light)', lineHeight: '1.6', margin: '0 0 24px 0' }}>{cleanText}</p>
                             </div>
-                            <div style={{ display: 'flex', gap: '12px' }}>
+                            <div className="service-card-actions">
                               <a href={serviceHref} className="product-card-action" onClick={(e) => { e.preventDefault(); navigate(serviceHref); }}>Explore Service <span>→</span></a>
                               <a href="/request-quote" className="secondary-button" onClick={(e) => { e.preventDefault(); navigate(`/request-quote?service=${encodeURIComponent(name)}`); }} style={{ flex: 1, textAlign: 'center', padding: '10px 0', fontSize: '0.95rem', fontWeight: '600' }}>Get Quote</a>
                             </div>
