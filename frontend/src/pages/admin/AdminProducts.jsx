@@ -1057,12 +1057,14 @@ function AdminProducts({ categoryFilter = null }) {
   };
 
 
-  const fallbackCategories = categoryFilter === 'products' ? PRODUCTS_CATEGORIES : REAGENTS_CATEGORIES;
+  const fallbackCategories = (
+    categoryFilter === 'products' ? PRODUCTS_CATEGORIES : REAGENTS_CATEGORIES
+  ).filter((cat) => !cat.id.startsWith('all-'));
   const fallbackCategoryIds = fallbackCategories.map((cat) => cat.id);
   const currentProductType = categoryFilter === 'products' ? 'product' : 'reagent';
   const normalizeCategory = (cat) => ({
     id: cat.external_id || cat.externalId || cat.id,
-    name: cat.category_name || cat.name,
+    name: cat.category_name || cat.name || cat.label,
     category_id: cat.category_id || cat.id,
     priority: cat.priority || 1,
     product_type: cat.product_type || currentProductType,
@@ -1074,7 +1076,14 @@ function AdminProducts({ categoryFilter = null }) {
   const dbMatchedCategories = categories
     .filter((cat) => {
       const type = (cat.product_type || '').toLowerCase();
-      return type === currentProductType || (!type && fallbackCategoryIds.includes(cat.external_id));
+      return type === currentProductType
+        || (currentProductType === 'product' && type === 'both')
+        || (
+          currentProductType === 'reagent'
+          && type === 'consumable'
+          && fallbackCategoryIds.includes(cat.external_id)
+        )
+        || (!type && fallbackCategoryIds.includes(cat.external_id));
     })
     .map(normalizeCategory);
   const categoryMap = new Map(dbMatchedCategories.map((cat) => [cat.id, cat]));
@@ -1088,12 +1097,13 @@ function AdminProducts({ categoryFilter = null }) {
     .sort((a, b) => (a.priority || 0) - (b.priority || 0) || a.name.localeCompare(b.name));
 
   const openCatalogEditor = () => {
+    setError('');
     setCatalogRows(matchedCategories.map((cat, index) => ({
       category_id: cat.isFallback ? null : cat.category_id,
       category_name: cat.name,
       external_id: cat.id,
       priority: cat.priority || index + 1,
-      product_type: currentProductType,
+      product_type: cat.product_type || currentProductType,
       show_on_homepage: !!cat.show_on_homepage,
       homepage_image: cat.homepage_image || '',
       product_count: products.filter(p => p.category_external_id === cat.id).length,
@@ -1241,13 +1251,18 @@ function AdminProducts({ categoryFilter = null }) {
     setCatalogSaving(true);
     setError('');
     try {
+      const unnamedRowIndex = catalogRows.findIndex((row) => !row.category_name?.trim());
+      if (unnamedRowIndex !== -1) {
+        throw new Error(`Catalog name is required in row ${unnamedRowIndex + 1}.`);
+      }
+
       const savedRows = [];
       for (const row of catalogRows) {
         const payload = {
           category_name: row.category_name,
           external_id: row.external_id,
           priority: row.priority,
-          product_type: currentProductType,
+          product_type: row.product_type || currentProductType,
           show_on_homepage: !!row.show_on_homepage,
           homepage_image: row.homepage_image || '',
         };
@@ -2416,6 +2431,7 @@ function AdminProducts({ categoryFilter = null }) {
               <button className="admin-modal-close" onClick={() => setIsCatalogModalOpen(false)}>×</button>
             </div>
             <div className="admin-modal-body">
+              {error && <div className="admin-alert error" role="alert">{error}</div>}
               <div className="admin-catalog-toolbar">
                 <button type="button" className="primary-button" onClick={addCatalogRow}>+ Add Catalog</button>
               </div>

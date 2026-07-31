@@ -69,6 +69,8 @@ def update_shelf_price(request):
 def load_product_categories(request):
     # if request.user.is_authenticated:
     queryset = ProductCategory.objects.all().order_by("priority", "category_id")
+    if request.query_params.get('show_on_homepage', '').lower() == 'true':
+        queryset = queryset.filter(show_on_homepage=True)
     serializer = ProductCategorySerializer(queryset, many=True)
     return Response(serializer.data)
     

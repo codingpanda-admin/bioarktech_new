@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiFetch, mockCategories, mockResources, getCategoryIcon, formatAssetUrl } from '../utils/api';
+import { apiFetch, mockResources, getCategoryIcon, formatAssetUrl } from '../utils/api';
 import { logo } from '../utils/api';
 import IconMark from '../components/IconMark';
 import ProductVisual from '../components/ProductVisual';
@@ -131,6 +131,7 @@ function HomePage({ navigate, searchParams }) {
   const [featuredStartIndex, setFeaturedStartIndex] = useState(0);
   const [generalProductsStartIndex, setGeneralProductsStartIndex] = useState(0);
   const [servicesStartIndex, setServicesStartIndex] = useState(0);
+  const [categoryStartIndex, setCategoryStartIndex] = useState(0);
   const [slides, setSlides] = useState([]);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
@@ -160,7 +161,7 @@ function HomePage({ navigate, searchParams }) {
           blogData,
           slideData
         ] = await Promise.all([
-          apiFetch('/api/products/load-product-categories/').catch(() => mockCategories),
+          apiFetch('/api/products/load-product-categories/?show_on_homepage=true').catch(() => []),
           apiFetch('/api/products/get-latest-featured-products/').catch(() => []),
           apiFetch('/api/products/get-featured-general-products/').catch(() => []),
           apiFetch('/api/interface/get-homepage-services/').catch(() => []),
@@ -168,7 +169,7 @@ function HomePage({ navigate, searchParams }) {
           apiFetch('/api/interface/get-homepage-slides/').catch(() => [])
         ]);
 
-        setCategories(Array.isArray(catData) && catData.length > 0 ? catData : mockCategories);
+        setCategories(Array.isArray(catData) ? catData : []);
         setFeaturedProducts(Array.isArray(prodData) ? prodData : []);
         setFeaturedGeneralProducts(Array.isArray(generalProdData) ? generalProdData : []);
         setFeaturedServices(Array.isArray(servicesData) ? servicesData : []);
@@ -198,12 +199,24 @@ function HomePage({ navigate, searchParams }) {
       activeBlogCategory === 'All' || blog.homeCategory === activeBlogCategory
     ))
   );
-  const selectedPopularCategories = categories.filter((category) => category.show_on_homepage);
-  const remainingCategories = categories.filter((category) => !category.show_on_homepage);
-  const popularCategories = [
-    ...selectedPopularCategories,
-    ...remainingCategories,
-  ].slice(0, HOME_POPULAR_CATEGORY_LIMIT);
+  const popularCategories = categories.filter((category) => category.show_on_homepage === true);
+  const hasPopularCategoryOverflow = popularCategories.length > HOME_POPULAR_CATEGORY_LIMIT;
+  const visiblePopularCategories = hasPopularCategoryOverflow
+    ? Array.from(
+        { length: HOME_POPULAR_CATEGORY_LIMIT },
+        (_, offset) => popularCategories[(categoryStartIndex + offset) % popularCategories.length]
+      )
+    : popularCategories;
+
+  const rollPopularCategories = (direction) => {
+    if (!hasPopularCategoryOverflow) return;
+
+    setCategoryStartIndex((currentIndex) => (
+      direction === 'next'
+        ? (currentIndex + 1) % popularCategories.length
+        : (currentIndex - 1 + popularCategories.length) % popularCategories.length
+    ));
+  };
 
   const handlePrevSlide = () => {
     setActiveSlideIndex((prev) => (prev - 1 + activeSlides.length) % activeSlides.length);
@@ -401,30 +414,55 @@ function HomePage({ navigate, searchParams }) {
             linkLabel="View all product categories"
             navigate={navigate}
           />
-          <div className="category-row">
-            {popularCategories.map((cat, idx) => {
-              const name = cat.category_name;
-              const icon = cat.icon || getCategoryIcon(name);
-              const imageUrl = getCategoryImageUrl(cat.homepage_image);
-              const categoryHref = getCategoryHref(cat);
-              return (
-                <a
-                  className="category-item"
-                  href={categoryHref}
-                  key={cat.category_id || cat.external_id || `${name}-${idx}`}
-                  onClick={(e) => { e.preventDefault(); navigate(categoryHref); }}
-                >
-                  {imageUrl ? (
-                    <span className="category-home-image">
-                      <img src={imageUrl} alt="" />
-                    </span>
-                  ) : (
-                    <IconMark type={icon} />
-                  )}
-                  <span>{name}<small>{cat.description || 'BioArk Category'}</small></span>
-                </a>
-              );
-            })}
+          <div
+            className={`products-carousel category-carousel ${
+              hasPopularCategoryOverflow ? '' : 'category-carousel-static'
+            }`}
+            aria-label="Popular categories carousel"
+          >
+            {hasPopularCategoryOverflow && (
+              <button
+                className="product-carousel-control product-carousel-prev"
+                type="button"
+                aria-label="Previous popular category"
+                onClick={() => rollPopularCategories('prev')}
+              />
+            )}
+            <div className="product-carousel-viewport">
+              <div className="category-row">
+                {visiblePopularCategories.map((cat, idx) => {
+                  const name = cat.category_name;
+                  const icon = cat.icon || getCategoryIcon(name);
+                  const imageUrl = getCategoryImageUrl(cat.homepage_image);
+                  const categoryHref = getCategoryHref(cat);
+                  return (
+                    <a
+                      className="category-item"
+                      href={categoryHref}
+                      key={cat.category_id || cat.external_id || `${name}-${idx}`}
+                      onClick={(e) => { e.preventDefault(); navigate(categoryHref); }}
+                    >
+                      {imageUrl ? (
+                        <span className="category-home-image">
+                          <img src={imageUrl} alt="" />
+                        </span>
+                      ) : (
+                        <IconMark type={icon} />
+                      )}
+                      <span>{name}<small>{cat.description || 'BioArk Category'}</small></span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+            {hasPopularCategoryOverflow && (
+              <button
+                className="product-carousel-control product-carousel-next"
+                type="button"
+                aria-label="Next popular category"
+                onClick={() => rollPopularCategories('next')}
+              />
+            )}
           </div>
         </section>
 
@@ -630,14 +668,13 @@ function HomePage({ navigate, searchParams }) {
                               </div>
                             </div>
                           )}
-                          <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'space-between' }}>
+                          <div style={{ padding: '24px 24px 12px', display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'space-between' }}>
                             <div>
                               <h3 style={{ fontSize: '1.25rem', fontWeight: '700', margin: '0 0 12px 0', color: 'var(--blue-dark)', lineHeight: '1.4' }}>{name}</h3>
                               <p style={{ fontSize: '0.95rem', color: 'var(--ink-light)', lineHeight: '1.6', margin: '0 0 24px 0' }}>{cleanText}</p>
                             </div>
                             <div className="service-card-actions">
                               <a href={serviceHref} className="product-card-action" onClick={(e) => { e.preventDefault(); navigate(serviceHref); }}>Explore Service <span>→</span></a>
-                              <a href="/request-quote" className="secondary-button" onClick={(e) => { e.preventDefault(); navigate(`/request-quote?service=${encodeURIComponent(name)}`); }} style={{ flex: 1, textAlign: 'center', padding: '10px 0', fontSize: '0.95rem', fontWeight: '600' }}>Get Quote</a>
                             </div>
                           </div>
                         </article>

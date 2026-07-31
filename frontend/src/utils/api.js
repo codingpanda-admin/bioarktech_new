@@ -77,7 +77,7 @@ export const apiFetch = async (endpoint, options = {}) => {
       errorData = {};
     }
 
-    throw new Error(errorData.detail || errorData.message || responseText || `The request failed with status ${response.status}.`);
+    throw new Error(errorData.error || errorData.detail || errorData.message || responseText || `The request failed with status ${response.status}.`);
   }
 
   return response.json();

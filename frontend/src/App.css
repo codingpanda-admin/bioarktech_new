@@ -973,6 +973,10 @@ label,
   padding-top: 20px;
 }
 
+.products-carousel.category-carousel-static {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .category-item {
   display: grid;
   flex: 0 1 130px;
