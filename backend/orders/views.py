@@ -855,15 +855,33 @@ def create_stripe_checkout_session(request):
                 logger.error(f"Error saving checkout address to profile: {e}")
 
 
-        session_metadata = {
-            "user_id": str(request.user.id),
-            "user_email": request.user.email,
-            "address_id": str(address_obj.id),
-            "subtotal": str(subtotal),
-            "shipping_amount": str(shipping_amount),
-            "total_quantity": str(total_quantity),
+        import uuid
+
+        # Create Order object in database as "pending"
+        order_data = {
+            "payment_token": f"pending-{uuid.uuid4()}",
+            "subtotal": subtotal,
+            "shipping_amount": shipping_amount,
+            "tax_amount": 0,
+            "total_price": grand_total,
+            "total_paid": 0.0,
+            "minimum_payment": calculate_minimum_payment(grand_total),
+            "payment_source": "Pending Payment (Stripe)",
+            "quantity": total_quantity,
+            "shipping_address": address_obj,
+            "billing_address": address_obj,
+            "user": request.user,
             "discount_code": discount_code,
-            "cart_json": json.dumps(cart_items),
+            "transaction_status": "pending",
+            "paid": False,
+        }
+        order_obj = Order.objects.create(**order_data)
+
+        # Create OrderItem objects
+        create_order_items(cart_items, order_obj)
+
+        session_metadata = {
+            "order_id": str(order_obj.order_id),
         }
 
         frontend_url = _get_frontend_url()
@@ -877,10 +895,7 @@ def create_stripe_checkout_session(request):
             success_url=f"{frontend_url}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{frontend_url}/checkout/cancel",
             customer_email=request.user.email,
-            metadata={
-                "user_id": str(request.user.id),
-                "user_email": request.user.email,
-            },
+            metadata=session_metadata,
             shipping_options=[
                 {
                     "shipping_rate_data": {
@@ -998,30 +1013,7 @@ def _process_successful_checkout(session):
                     pass
 
         effective_metadata = payment_intent_metadata or metadata
-
-        user_id = effective_metadata.get("user_id")
-        address_id = effective_metadata.get("address_id")
-        subtotal = float(effective_metadata.get("subtotal", 0))
-        shipping_amount = float(effective_metadata.get("shipping_amount", 0))
-        total_quantity = int(effective_metadata.get("total_quantity", 0))
-        discount_code = effective_metadata.get("discount_code", "")
-        cart_json = effective_metadata.get("cart_json", "[]")
-
-        if not user_id:
-            logger.error("Stripe order processing: no user_id in metadata")
-            return False, None
-
-        try:
-            user = User.objects.get(id=int(user_id))
-        except User.DoesNotExist:
-            logger.error(f"Stripe order processing: user {user_id} not found")
-            return False, None
-
-        try:
-            address = Address.objects.get(id=int(address_id))
-        except Address.DoesNotExist:
-            logger.error(f"Stripe order processing: address {address_id} not found")
-            return False, None
+        order_id = effective_metadata.get("order_id")
 
         amount_received = session.get("amount_total", 0) / 100.0
         total_price = amount_received
@@ -1044,34 +1036,84 @@ def _process_successful_checkout(session):
                 except Exception:
                     pass
 
-        order_data = {
-            "payment_token": session_id,
-            "subtotal": subtotal,
-            "shipping_amount": shipping_amount,
-            "tax_amount": 0,
-            "total_price": total_price,
-            "total_paid": total_price,
-            "minimum_payment": calculate_minimum_payment(total_price),
-            "payment_source": payment_source,
-            "quantity": total_quantity,
-            "shipping_address": address,
-            "billing_address": address,
-            "user": user,
-            "last_digits": last_digits,
-            "discount_code": discount_code,
-            "transaction_status": "completed",
-        }
+        if order_id:
+            try:
+                order_obj = Order.objects.select_for_update().get(order_id=int(order_id))
+            except Order.DoesNotExist:
+                logger.error(f"Stripe order processing: order {order_id} not found in database.")
+                return False, None
 
-        order_obj = Order.objects.create(**order_data)
+            if order_obj.paid:
+                logger.info(f"Stripe order processing: order {order_id} is already marked as paid.")
+                return True, order_obj
 
-        try:
-            cart_items = json.loads(cart_json)
-            create_order_items(cart_items, order_obj)
-        except Exception as e:
-            logger.error(f"Stripe order processing: error creating order items: {e}")
+            order_obj.payment_token = session_id
+            order_obj.paid = True
+            order_obj.transaction_status = "completed"
+            order_obj.total_price = total_price
+            order_obj.total_paid = total_price
+            order_obj.payment_source = payment_source
+            if last_digits is not None:
+                order_obj.last_digits = last_digits
+            order_obj.save()
 
-        logger.info(f"Stripe order processing: order {session_id} created for user {user_id}, total ${total_price}")
-        return True, order_obj
+            logger.info(f"Stripe order processing: order {order_id} successfully updated to paid/completed.")
+            return True, order_obj
+
+        else:
+            # Fallback for old sessions that didn't have order_id in metadata
+            user_id = effective_metadata.get("user_id")
+            address_id = effective_metadata.get("address_id")
+            subtotal = float(effective_metadata.get("subtotal", 0))
+            shipping_amount = float(effective_metadata.get("shipping_amount", 0))
+            total_quantity = int(effective_metadata.get("total_quantity", 0))
+            discount_code = effective_metadata.get("discount_code", "")
+            cart_json = effective_metadata.get("cart_json", "[]")
+
+            if not user_id:
+                logger.error("Stripe order processing: no order_id or user_id in metadata")
+                return False, None
+
+            try:
+                user = User.objects.get(id=int(user_id))
+            except User.DoesNotExist:
+                logger.error(f"Stripe order processing: user {user_id} not found")
+                return False, None
+
+            try:
+                address = Address.objects.get(id=int(address_id))
+            except Address.DoesNotExist:
+                logger.error(f"Stripe order processing: address {address_id} not found")
+                return False, None
+
+            order_data = {
+                "payment_token": session_id,
+                "subtotal": subtotal,
+                "shipping_amount": shipping_amount,
+                "tax_amount": 0,
+                "total_price": total_price,
+                "total_paid": total_price,
+                "minimum_payment": calculate_minimum_payment(total_price),
+                "payment_source": payment_source,
+                "quantity": total_quantity,
+                "shipping_address": address,
+                "billing_address": address,
+                "user": user,
+                "last_digits": last_digits,
+                "discount_code": discount_code,
+                "transaction_status": "completed",
+            }
+
+            order_obj = Order.objects.create(**order_data)
+
+            try:
+                cart_items = json.loads(cart_json)
+                create_order_items(cart_items, order_obj)
+            except Exception as e:
+                logger.error(f"Stripe order processing: error creating order items: {e}")
+
+            logger.info(f"Stripe order processing: order {session_id} created for user {user_id}, total ${total_price}")
+            return True, order_obj
 
 
 def _handle_checkout_completed(event_data):
