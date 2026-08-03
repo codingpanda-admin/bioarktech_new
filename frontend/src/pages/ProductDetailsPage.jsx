@@ -470,6 +470,9 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
 
             <header className="service-detail-heading">
               <h1>{name}</h1>
+              {productCode && (
+                <p className="product-detail-catalog-number">Catalog #: {productCode}</p>
+              )}
               <div className="product-detail-labels" aria-label="Service labels">
                 {categoryLabel && <span className="product-detail-pill category">{categoryLabel}</span>}
                 {productGroupLabel && <span className="product-detail-pill subgroup">{productGroupLabel}</span>}
@@ -717,7 +720,12 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
 
         {/* Info Panel Section */}
         <div className="product-container" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <h2>{name}</h2>
+          <div className="product-detail-title-block">
+            <h2>{name}</h2>
+            {productCode && (
+              <p className="product-detail-catalog-number">Catalog #: {productCode}</p>
+            )}
+          </div>
           <div className="product-detail-labels" aria-label="Product labels">
             {categoryLabel && <span className="product-detail-pill category">{categoryLabel}</span>}
             {isReagent && productGroupLabel && (

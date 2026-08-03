@@ -18,9 +18,9 @@ const adminLinks = [
   'Homepage',
   'Users',
   'Products',
-  'Featured Products',
   'Reagents',
   'Services',
+  'Featured Solutions',
   'Blogs',
   'Documents',
   'Quotes',
@@ -30,11 +30,27 @@ const adminLinks = [
 
 function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSuccess, onLogout }) {
   const [activeSection, setActiveSection] = useState('Overview');
+  const [featuredEditRequest, setFeaturedEditRequest] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const homepageSettings = ['Background Images', 'Hero Text', 'CTA Button', 'Metrics'];
+
+  const handleFeaturedItemEdit = (item) => {
+    const section = item.item_type === 'service'
+      ? 'Services'
+      : item.item_type === 'reagent'
+        ? 'Reagents'
+        : 'Products';
+
+    setFeaturedEditRequest({ section, itemId: item.edit_id || item.id });
+    setActiveSection(section);
+  };
+
+  const handleFeaturedEditOpened = () => {
+    setFeaturedEditRequest(null);
+  };
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -172,19 +188,30 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
         )}
 
         {activeSection === 'Products' && (
-          <AdminProducts categoryFilter="products" />
+          <AdminProducts
+            categoryFilter="products"
+            initialEditId={featuredEditRequest?.section === 'Products' ? featuredEditRequest.itemId : null}
+            onInitialEditHandled={handleFeaturedEditOpened}
+          />
         )}
 
-        {activeSection === 'Featured Products' && (
-          <AdminFeaturedProducts />
+        {activeSection === 'Featured Solutions' && (
+          <AdminFeaturedProducts onEditItem={handleFeaturedItemEdit} />
         )}
 
         {activeSection === 'Reagents' && (
-          <AdminProducts categoryFilter="reagents" />
+          <AdminProducts
+            categoryFilter="reagents"
+            initialEditId={featuredEditRequest?.section === 'Reagents' ? featuredEditRequest.itemId : null}
+            onInitialEditHandled={handleFeaturedEditOpened}
+          />
         )}
 
         {activeSection === 'Services' && (
-          <AdminServices />
+          <AdminServices
+            initialEditId={featuredEditRequest?.section === 'Services' ? featuredEditRequest.itemId : null}
+            onInitialEditHandled={handleFeaturedEditOpened}
+          />
         )}
 
         {activeSection === 'Blogs' && (

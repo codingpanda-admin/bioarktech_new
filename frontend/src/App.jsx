@@ -194,6 +194,17 @@ function App() {
     }
   };
 
+  const handleAdminLogout = async () => {
+    try {
+      await apiFetch('/api/logout/', { method: 'POST' });
+      setCurrentUser(null);
+      setCurrentUserProfile(null);
+      navigate('/admin');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const refreshUserProfile = async () => {
     try {
       const profile = await apiFetch('/api/users/view-user-info/');
@@ -252,14 +263,14 @@ function App() {
   return (
     <div className="site-shell">
       {isAdminPage && currentUserProfile && (currentUserProfile.is_admin || currentUserProfile.isAdmin || currentUserProfile.is_staff) ? (
-        <AdminHeader navigate={navigate} onLogout={handleLogout} />
+        <AdminHeader navigate={navigate} onLogout={handleAdminLogout} />
       ) : (
         <SiteHeader 
           navigate={navigate} 
           currentUser={currentUser} 
           currentUserProfile={currentUserProfile}
           onOpenAuth={handleOpenAuth} 
-          onLogout={handleLogout} 
+          onLogout={handleAdminLogout}
           cartCount={cartCount}
         />
       )}

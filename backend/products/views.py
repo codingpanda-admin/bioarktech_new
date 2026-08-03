@@ -185,8 +185,10 @@ def get_nav_catalog(request):
             cat_id = cat.external_id
             matched_default = None
             
-            # Match by name to DEFAULT_PRODUCT_CATEGORIES if external_id is missing or null
-            if cat.category_name:
+            # A persisted external ID identifies the catalog record, so its
+            # administrator-managed name must remain authoritative. Name-based
+            # matching is only needed for legacy rows that predate external IDs.
+            if not cat_id and cat.category_name:
                 matched_default = find_default_category(cat.category_name, cat.product_type)
                 
             if matched_default:
@@ -238,8 +240,8 @@ def get_nav_catalog(request):
                 
             subcategories = [{'name': name, 'products': products} for name, products in subcategories_map.items()]
             
-            final_name = matched_default['category_name'] if matched_default else cat.category_name
-            final_type = matched_default['product_type'] if matched_default else (cat.product_type or 'product')
+            final_name = cat.category_name or (matched_default['category_name'] if matched_default else '')
+            final_type = cat.product_type or (matched_default['product_type'] if matched_default else 'product')
             
             merged_map[cat_id] = {
                 'category_id': cat.category_id,
@@ -643,6 +645,32 @@ def load_product_by_external_id(request, external_id):
             data['options'] = source_product.options or []
             data['option_prices'] = source_product.option_prices or {}
 
+            # Some imported catalog items also have a legacy FeaturedProduct
+            # record whose union contains no images. Keep the featured images
+            # when they exist, but fall back to the canonical Product images so
+            # the detail page does not lose valid reagent/product photography.
+            featured_images = list(data.get('images') or [])
+            source_images = list(dict.fromkeys([
+                source_product.image_url,
+                *(source_product.images or []),
+            ]))
+            source_images = [image for image in source_images if image]
+
+            def image_path(image):
+                if isinstance(image, dict):
+                    return image.get('image') or image.get('url') or image.get('image_url') or ''
+                return str(image or '')
+
+            seen_image_paths = {image_path(image) for image in featured_images if image_path(image)}
+            for source_image in source_images:
+                if source_image not in seen_image_paths:
+                    featured_images.append(source_image)
+                    seen_image_paths.add(source_image)
+
+            if source_images and not data.get('images'):
+                data['image_url'] = source_images[0]
+            data['images'] = featured_images
+
             # FeaturedProduct unit-size rows come from a legacy table whose text
             # can contain mojibake. The canonical Product options are maintained
             # in the admin console, so use their labels while preserving the
@@ -692,7 +720,7 @@ def load_product_by_external_id(request, external_id):
             'product_name': service.title,
             'external_id': service.url,
             'externalId': service.url,
-            'catalog_number': service.url.upper(),
+            'catalog_number': service.catalog_number or service.url.upper(),
             'product_sku': service.url,
             'image_url': f"/media/{service.image.name}" if service.image else None,
             'category_name': cat_name,

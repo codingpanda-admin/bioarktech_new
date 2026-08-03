@@ -409,7 +409,7 @@ function HomePage({ navigate, searchParams }) {
         <section className="categories-section" aria-labelledby="categories-title">
           <HomeSectionHeading
             id="categories-title"
-            title="Explore Popular Categories"
+            title="Popular Categories"
             href="/search?q="
             linkLabel="View all product categories"
             navigate={navigate}
@@ -449,7 +449,10 @@ function HomePage({ navigate, searchParams }) {
                       ) : (
                         <IconMark type={icon} />
                       )}
-                      <span>{name}<small>{cat.description || 'BioArk Category'}</small></span>
+                      <span>
+                        {name}
+                        {cat.description && <small>{cat.description}</small>}
+                      </span>
                     </a>
                   );
                 })}

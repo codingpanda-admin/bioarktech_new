@@ -3,6 +3,8 @@ import { apiFetch, API_URL, formatAssetUrl } from '../../utils/api';
 import { formatRichText } from '../../utils/richText';
 import { ProductContentEditor as BlogContentEditor } from './AdminProducts';
 
+const BLOG_CATEGORIES = ['BioArk News', 'Biotech Outlook', 'Business News'];
+
 const LegacyBlogContentEditor = React.forwardRef(function LegacyBlogContentEditor({ value, onChange }, ref) {
   const editorRef = useRef(null);
 
@@ -246,6 +248,7 @@ function AdminBlogs() {
   const handleCreate = () => {
     setEditingBlog({
       title: '',
+      category: '',
       description: '',
       author: '',
       content: '',
@@ -331,6 +334,7 @@ function AdminBlogs() {
       if (imageFile) {
         const formData = new FormData();
         formData.append('title', editingBlog.title);
+        formData.append('category', editingBlog.category);
         formData.append('description', editingBlog.description);
         formData.append('author', editingBlog.author);
         formData.append('content', latestContent);
@@ -358,13 +362,14 @@ function AdminBlogs() {
 
         if (!response.ok) {
           const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.detail || 'Failed to save blog.');
+          throw new Error(errData.error || errData.detail || 'Failed to save blog.');
         }
       } else {
         await apiFetch(endpoint, {
           method: 'POST',
           body: {
             title: editingBlog.title,
+            category: editingBlog.category,
             description: editingBlog.description,
             author: editingBlog.author,
             content: latestContent,
@@ -416,8 +421,17 @@ function AdminBlogs() {
         <form id="admin-blog-editor-form" onSubmit={handleSave} className="admin-editor-panel">
           <div className="admin-form-grid">
             <label className="admin-form-field span-2">
-              <span>Title *</span>
+              <span>Blog Title *</span>
               <input type="text" value={editingBlog.title || ''} onChange={(e) => updateField('title', e.target.value)} required maxLength="200" />
+            </label>
+            <label className="admin-form-field span-2">
+              <span>Blog Category *</span>
+              <select value={editingBlog.category || ''} onChange={(e) => updateField('category', e.target.value)} required>
+                <option value="" disabled>Select a blog category</option>
+                {BLOG_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
             </label>
             <label className="admin-form-field">
               <span>Author *</span>

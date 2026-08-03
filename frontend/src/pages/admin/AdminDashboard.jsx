@@ -21,7 +21,7 @@ function AdminDashboard({ onNavigate }) {
 
   const cards = [
     { label: 'Products', key: 'total_products', icon: '🧬', section: 'Products', color: '#006ff2' },
-    { label: 'Featured Products', key: 'total_featured_products', icon: '⭐', section: 'Featured Products', color: '#e5a800' },
+    { label: 'Featured Solutions', key: 'total_featured_products', icon: '⭐', section: 'Featured Solutions', color: '#e5a800' },
     { label: 'Blog Posts', key: 'total_blogs', icon: '📝', section: 'Blogs', color: '#00b37e' },
     { label: 'Users', key: 'total_users', icon: '👥', section: 'Users', color: '#7c3aed' },
     { label: 'Quotes', key: 'total_quotes', icon: '📋', section: 'Quotes', color: '#0891b2' },

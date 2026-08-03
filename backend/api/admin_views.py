@@ -3,7 +3,7 @@ import traceback
 
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q, Max
+from django.db.models import F, Q, Max
 from django.utils.text import slugify
 
 from rest_framework.decorators import api_view
@@ -716,45 +716,75 @@ def admin_list_featured_products(request):
         return err
 
     try:
-        fps = FeaturedProduct.objects.all().order_by('priority')
-        data = []
-        for fp in fps:
-            # Gather related unit-prices and images via the union FK
-            unit_prices = []
-            images = []
-            if fp.union:
-                for up in UnitPrice.objects.filter(union=fp.union):
-                    unit_prices.append({
-                        'id': up.id,
-                        'unit_size': up.unit_size,
-                        'list_price': str(up.list_price),
-                        'unit_price': str(up.unit_price),
-                        'on_discount': up.on_discount,
-                    })
-                for img in Image.objects.filter(union=fp.union):
-                    images.append({
-                        'id': img.id,
-                        'main_display': img.main_display,
-                        'url': _get_resolved_image_url(request, img.image),
-                    })
+        category_details = {
+            category.external_id: {
+                'name': category.category_name,
+                'type': (category.product_type or '').lower(),
+            }
+            for category in ProductCategory.objects.exclude(external_id__isnull=True).exclude(external_id='')
+        }
+        legacy_reagent_category_ids = {
+            'category-1765063995229',
+            'category-1766675380397',
+            'category-1766675365489',
+            'category-1765995504911',
+            'category-1780539818236',
+        }
 
-            data.append({
-                'id': fp.id,
-                'catalog_number': fp.catalog_number,
-                'product_name': fp.product_name,
-                'description': fp.description,
-                'shelf_status': fp.shelf_status,
-                'on_display': fp.on_display,
-                'on_discount': fp.on_discount,
-                'priority': fp.priority,
-                'units_in_stock': fp.units_in_stock,
-                'units': fp.units,
-                'union_id': fp.union_id,
-                'unit_prices': unit_prices,
-                'images': images,
+        buckets = {
+            'products': [],
+            'services': [],
+            'reagents': [],
+        }
+
+        products = Product.objects.filter(is_featured=True, hidden=False).order_by(
+            F('display_order').asc(nulls_last=True),
+            'product_name',
+        )
+        for product in products:
+            category_detail = category_details.get(product.category_external_id, {})
+            category_type = category_detail.get('type', '')
+            is_reagent = (
+                (product.source_type or '').lower() == 'reagent'
+                or category_type in ('reagent', 'consumable')
+                or product.category_external_id in legacy_reagent_category_ids
+            )
+            bucket_name = 'reagents' if is_reagent else 'products'
+            image_url = product.image_url or next((image for image in (product.images or []) if image), None)
+
+            buckets[bucket_name].append({
+                'id': product.product_id,
+                'edit_id': product.product_id,
+                'item_type': 'reagent' if is_reagent else 'product',
+                'product_name': product.product_name,
+                'catalog_number': product.catalog_number or '',
+                'category_name': category_detail.get('name') or product.category_external_id or 'Uncategorized',
+                'group_name': product.product_group or '',
+                'external_id': product.external_id,
+                'homepage_url': f'/product/{product.external_id}',
+                'image_url': image_url,
             })
 
-        return Response({'results': data})
+        services = ServiceMode.objects.filter(is_featured=True, hidden=False).order_by('title')
+        for service in services:
+            category_detail = category_details.get(service.category, {})
+            buckets['services'].append({
+                'id': service.id,
+                'edit_id': service.id,
+                'item_type': 'service',
+                'product_name': service.title,
+                'catalog_number': service.catalog_number or '',
+                'category_name': category_detail.get('name') or service.category or 'Uncategorized',
+                'group_name': service.service_group or '',
+                'external_id': service.url,
+                'homepage_url': f'/product/{service.url}',
+                'image_url': request.build_absolute_uri(service.image.url) if service.image else None,
+            })
+
+        return Response({
+            'buckets': buckets,
+            'results': buckets['products'] + buckets['services'] + buckets['reagents'],
+        })
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -911,6 +941,7 @@ def admin_list_blogs(request):
             data.append({
                 'id': b.id,
                 'title': b.title,
+                'category': b.category,
                 'description': b.description,
                 'author': b.author,
                 'content': b.content,
@@ -935,6 +966,7 @@ def admin_get_blog(request, blog_id):
         data = {
             'id': b.id,
             'title': b.title,
+            'category': b.category,
             'description': b.description,
             'author': b.author,
             'content': b.content,
@@ -958,8 +990,16 @@ def admin_create_blog(request):
 
     try:
         d = request.data
+        category = str(d.get('category', '')).strip()
+        valid_categories = {value for value, _label in Blog.CATEGORY_CHOICES}
+        if not category:
+            return Response({'error': 'Blog category is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if category not in valid_categories:
+            return Response({'error': 'Select a valid blog category.'}, status=status.HTTP_400_BAD_REQUEST)
+
         b = Blog(
             title=d.get('title', ''),
+            category=category,
             description=d.get('description', ''),
             author=d.get('author', ''),
             content=d.get('content', ''),
@@ -986,6 +1026,15 @@ def admin_update_blog(request, blog_id):
         for field in ['title', 'description', 'author', 'content']:
             if field in d:
                 setattr(b, field, d[field])
+
+        if 'category' in d:
+            category = str(d.get('category', '')).strip()
+            valid_categories = {value for value, _label in Blog.CATEGORY_CHOICES}
+            if not category:
+                return Response({'error': 'Blog category is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            if category not in valid_categories:
+                return Response({'error': 'Select a valid blog category.'}, status=status.HTTP_400_BAD_REQUEST)
+            b.category = category
 
         if 'is_featured' in d:
             b.is_featured = str(d['is_featured']).lower() == 'true'

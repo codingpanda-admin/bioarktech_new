@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { apiFetch, formatAssetUrl } from '../utils/api';
 import ProductVisual from '../components/ProductVisual';
 import {
@@ -8,12 +8,20 @@ import {
   SERVICES_CATEGORIES
 } from '../data/catalogCategories';
 
-const ALL_REAGENT_CATEGORIES = [
+const FALLBACK_REAGENT_CATEGORIES = [
   ...REAGENTS_CATEGORIES,
   ...CONSUMABLES_CATEGORIES,
 ];
 
 const getProductGroup = (product) => String(product?.product_group || '').trim();
+
+const toFilterCategory = (category) => ({
+  id: category.external_id || category.externalId,
+  label: category.category_name || category.name,
+  subcategories: (category.subcategories || [])
+    .map((subcategory) => String(subcategory?.name || '').trim())
+    .filter(Boolean),
+});
 
 function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCategory }) {
   const [results, setResults] = useState([]);
@@ -23,6 +31,71 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
   const [selectedCategory, setSelectedCategory] = useState(initialSelectedCategory);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [groupFiltersExpanded, setGroupFiltersExpanded] = useState(false);
+  const [catalog, setCatalog] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    apiFetch('/api/products/get-nav-catalog/')
+      .then((data) => {
+        if (isMounted) setCatalog(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (isMounted) setCatalog([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const activeResultCategoryIds = useMemo(() => new Set(
+    results.map((product) => product.category_external_id).filter(Boolean),
+  ), [results]);
+
+  const activeCatalog = useMemo(() => catalog.filter((category) => (
+    category.external_id
+    && Number(category.product_count || 0) > 0
+  )), [catalog]);
+
+  const productCategoryOptions = useMemo(() => {
+    const liveCategories = activeCatalog
+      .filter((category) => !category.product_type || ['product', 'both'].includes(category.product_type))
+      .map(toFilterCategory);
+    const fallbackCategories = PRODUCTS_CATEGORIES
+      .filter((category) => category.id !== 'all-products' && activeResultCategoryIds.has(category.id));
+
+    return [
+      { id: 'all-products', label: 'All Products' },
+      ...(liveCategories.length > 0 ? liveCategories : fallbackCategories),
+    ];
+  }, [activeCatalog, activeResultCategoryIds]);
+
+  const serviceCategoryOptions = useMemo(() => {
+    const liveCategories = activeCatalog
+      .filter((category) => category.product_type === 'service')
+      .map(toFilterCategory);
+    const fallbackCategories = SERVICES_CATEGORIES
+      .filter((category) => category.id !== 'all-services' && activeResultCategoryIds.has(category.id));
+
+    return [
+      { id: 'all-services', label: 'All Services' },
+      ...(liveCategories.length > 0 ? liveCategories : fallbackCategories),
+    ];
+  }, [activeCatalog, activeResultCategoryIds]);
+
+  const reagentCategoryOptions = useMemo(() => {
+    const liveCategories = activeCatalog
+      .filter((category) => ['reagent', 'consumable'].includes(category.product_type))
+      .map(toFilterCategory);
+    const fallbackCategories = FALLBACK_REAGENT_CATEGORIES
+      .filter((category) => category.id !== 'all-reagents' && activeResultCategoryIds.has(category.id));
+
+    return [
+      { id: 'all-reagents', label: 'All Reagents' },
+      ...(liveCategories.length > 0 ? liveCategories : fallbackCategories),
+    ];
+  }, [activeCatalog, activeResultCategoryIds]);
 
   useEffect(() => {
     setSelectedCategory(initialSelectedCategory);
@@ -36,16 +109,16 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
   useEffect(() => {
     if (currentQuery) {
       const matchedCat = [
-        ...PRODUCTS_CATEGORIES,
-        ...SERVICES_CATEGORIES,
-        ...ALL_REAGENT_CATEGORIES
+        ...productCategoryOptions,
+        ...serviceCategoryOptions,
+        ...reagentCategoryOptions
       ].find(c => c.label.toLowerCase() === currentQuery.trim().toLowerCase());
 
       if (matchedCat && matchedCat.id !== 'all-products' && matchedCat.id !== 'all-reagents' && matchedCat.id !== 'all-services') {
         navigate(`/search?category=${currentCategory || ''}&cat=${matchedCat.id}`);
       }
     }
-  }, [currentQuery, currentCategory, navigate]);
+  }, [currentQuery, currentCategory, navigate, productCategoryOptions, serviceCategoryOptions, reagentCategoryOptions]);
 
   useEffect(() => {
     const doSearch = async () => {
@@ -243,6 +316,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
             grid-template-columns: 1fr;
             gap: 30px;
           }
+
         }
 
         .search-sidebar {
@@ -252,7 +326,38 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
           padding: 24px;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
           position: sticky;
-          top: 20px;
+          top: 168px;
+          max-height: calc(100vh - 188px);
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          scrollbar-gutter: stable;
+          scrollbar-width: thin;
+          scrollbar-color: #cbd5e1 transparent;
+        }
+
+        .search-sidebar::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .search-sidebar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .search-sidebar::-webkit-scrollbar-thumb {
+          border: 2px solid transparent;
+          border-radius: 999px;
+          background: #cbd5e1;
+          background-clip: padding-box;
+        }
+
+        @media (max-width: 992px) {
+          .search-sidebar {
+            position: static;
+            max-height: none;
+            overflow-y: visible;
+            overscroll-behavior: auto;
+            scrollbar-gutter: auto;
+          }
         }
 
         .sidebar-title {
@@ -792,7 +897,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
 
       <div className="search-layout">
         {/* Sidebar Filters */}
-        <aside className="search-sidebar">
+        <aside className="search-sidebar" aria-label="Product filters" tabIndex="0">
           <h3 className="sidebar-title">Filters</h3>
 
           {/* Products Categories */}
@@ -800,7 +905,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
             <div className="sidebar-group">
               <h4 className="sidebar-group-title">Products</h4>
               <ul className="sidebar-list">
-                {PRODUCTS_CATEGORIES.map(cat => (
+                {productCategoryOptions.map(cat => (
                   <li key={cat.id}>
                     <button
                       className={`sidebar-item-btn ${selectedCategory === cat.id && !selectedSubcategory ? 'active' : ''}`}
@@ -836,7 +941,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
             <div className="sidebar-group">
               <h4 className="sidebar-group-title">Services</h4>
               <ul className="sidebar-list">
-                {SERVICES_CATEGORIES.map(cat => (
+                {serviceCategoryOptions.map(cat => (
                   <li key={cat.id}>
                     <button
                       className={`sidebar-item-btn ${selectedCategory === cat.id ? 'active' : ''}`}
@@ -858,7 +963,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
             <div className="sidebar-group">
               <h4 className="sidebar-group-title">Reagents & Kits</h4>
               <ul className="sidebar-list">
-                {ALL_REAGENT_CATEGORIES.map(cat => (
+                {reagentCategoryOptions.map(cat => (
                   <li key={cat.id}>
                     <button
                       className={`sidebar-item-btn ${selectedCategory === cat.id ? 'active' : ''}`}

@@ -596,7 +596,7 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
   );
 });
 
-function AdminProducts({ categoryFilter = null }) {
+function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialEditHandled }) {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -740,6 +740,14 @@ function AdminProducts({ categoryFilter = null }) {
       setError(err.message);
     }
   };
+
+  useEffect(() => {
+    if (initialEditId === null || initialEditId === undefined) return;
+
+    handleEdit(initialEditId).finally(() => {
+      onInitialEditHandled?.();
+    });
+  }, [initialEditId]);
 
   const handleCancelEdit = () => {
     setEditingProduct(null);

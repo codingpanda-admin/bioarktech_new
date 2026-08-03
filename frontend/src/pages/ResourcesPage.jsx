@@ -164,7 +164,6 @@ function ResourcesPage({ navigate, searchParams }) {
       const blogHref = `/blog/${blog.id}`;
       return (
         <section className="featured-blogs-section static">
-          <h2 className="featured-blogs-title">Featured Articles</h2>
           <div className="featured-carousel-container">
             <article 
               className="featured-blog-slide active" 
@@ -206,7 +205,6 @@ function ResourcesPage({ navigate, searchParams }) {
 
     return (
       <section className="featured-blogs-section carousel">
-        <h2 className="featured-blogs-title">Featured Articles</h2>
         <div className="featured-carousel-container">
           <button 
             className="featured-carousel-control prev" 
@@ -285,9 +283,11 @@ function ResourcesPage({ navigate, searchParams }) {
 
   return (
     <main className="blog-index-page">
-      <section className="blog-index-hero">
-        <h1>Explore insights on gene editing, delivery technologies, and BioArk news.</h1>
-      </section>
+      {featuredSection || (
+        <section className="blog-index-hero">
+          <h1>Explore insights on gene editing, delivery technologies, and BioArk news.</h1>
+        </section>
+      )}
 
       {/* Switcher Tab Pill Container */}
       <div 
@@ -344,8 +344,6 @@ function ResourcesPage({ navigate, searchParams }) {
           Technical Library & Documents
         </button>
       </div>
-
-      {featuredSection}
 
       <div className="blog-index-layout">
         <aside className="blog-sidebar" aria-label="Filters">

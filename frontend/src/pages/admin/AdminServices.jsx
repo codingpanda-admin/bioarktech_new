@@ -40,7 +40,7 @@ const PublicDetailLink = ({ identifier }) => {
   );
 };
 
-function AdminServices() {
+function AdminServices({ initialEditId = null, onInitialEditHandled }) {
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -172,6 +172,14 @@ function AdminServices() {
       setError(err.message);
     }
   };
+
+  useEffect(() => {
+    if (initialEditId === null || initialEditId === undefined) return;
+
+    handleEdit(initialEditId).finally(() => {
+      onInitialEditHandled?.();
+    });
+  }, [initialEditId]);
 
   const handleCancelEdit = () => {
     setEditingService(null);

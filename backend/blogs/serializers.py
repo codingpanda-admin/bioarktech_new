@@ -9,7 +9,7 @@ class BlogSerializer(serializers.ModelSerializer):
 class PreviewBlogSerializer(serializers.ModelSerializer):
     class Meta:
         model = Blog
-        fields = ['id', 'title', 'description', 'author', 'image', 'date_posted', 'is_featured']
+        fields = ['id', 'title', 'category', 'description', 'author', 'image', 'date_posted', 'is_featured']
 
 class ResourceDocumentSerializer(serializers.ModelSerializer):
     class Meta:

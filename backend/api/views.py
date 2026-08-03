@@ -447,10 +447,11 @@ def search_product(request):
         linked_products = Product.objects.filter(catalog_number__iexact=fp.catalog_number)
         linked_product = linked_products.filter(hidden=False).first()
 
-        # FeaturedProduct is a legacy detail/pricing record. If its canonical
-        # Product row is deactivated, it must not re-enter public search through
-        # the featured results path.
-        if not linked_product and linked_products.filter(hidden=True).exists():
+        # FeaturedProduct is legacy detail/pricing data, not an independently
+        # active catalog item. Only an active canonical Product may appear in
+        # public search, preventing deactivated or orphaned legacy rows from
+        # restoring inactive categories and products.
+        if not linked_product:
             continue
 
         sku = (fp.catalog_number or "").strip()
