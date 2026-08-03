@@ -10,3 +10,4 @@ dist/
 services-json
 .qwen
 full_inventory_and_services_export.json
+backups/
