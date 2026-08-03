@@ -1,0 +1,20 @@
+name: Apply production migrations (manual, approved only)
+
+# Separate from deploy-production.yml on purpose: code can ship without ever
+# touching the schema. This workflow is the only path that runs
+# `manage.py migrate` against the production database, and it always takes a
+# fresh pg_dump backup immediately before doing so.
+on:
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Backup + apply migrations (restricted script on server)
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRODUCTION_MIGRATE_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/deploy_key root@93.127.217.163 "true"
