@@ -247,6 +247,9 @@ CORS_ALLOWED_ORIGINS = [
    "http://93.127.217.163",
    "http://93.127.217.163:8080",
    "http://93.127.217.163:8001",
+   "http://93.127.217.163:8180",
+   "http://93.127.217.163:8101",
+   "https://staging.bioarktech.com",
 ]
 CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken', 'Access-Control-Allow-Origin']
 CORS_ALLOW_CREDENTIALS = True
