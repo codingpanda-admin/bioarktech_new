@@ -51,7 +51,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://93.127.217.163:8001
+        VITE_API_URL: https://www.bioarktech.com
     container_name: bioark_frontend
     restart: always
     ports:
