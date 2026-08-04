@@ -1,0 +1,13 @@
+{
+  "name": "bioarktech-db-conversion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone BioArk database conversion scripts.",
+  "scripts": {
+    "import:blogs": "node import_blogs.js",
+    "import:blogs:dry-run": "node import_blogs.js --dry-run"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}

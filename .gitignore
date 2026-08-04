@@ -1,0 +1,13 @@
+backend viejo/
+backend/debug-prod.log
+*.log
+__pycache__/
+*.pyc
+node_modules/
+dist/
+.env*
+.DS_Store
+services-json
+.qwen
+full_inventory_and_services_export.json
+backups/

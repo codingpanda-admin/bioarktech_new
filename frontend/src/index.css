@@ -2,15 +2,25 @@ html {
   scroll-behavior: smooth;
 }
 
+:root {
+  --font-body: "Inter", "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", "SF Pro Display", "Segoe UI", "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", ui-monospace, monospace;
+  --font: var(--font-body);
+}
+
 body {
   margin: 0;
   min-width: 320px;
-  font-family: "Aptos", "Segoe UI Variable", "Inter", "SF Pro Display", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
   color: #1f2f4a;
   background: #fff;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
 }
 
 #root {
