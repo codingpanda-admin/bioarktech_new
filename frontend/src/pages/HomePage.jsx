@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiFetch, mockResources, getCategoryIcon, formatAssetUrl } from '../utils/api';
 import { logo } from '../utils/api';
 import IconMark from '../components/IconMark';
 import ProductVisual from '../components/ProductVisual';
 
 const HOME_BLOG_CATEGORIES = ['All', 'BioArk News', 'Biotech Outlook', 'Business News'];
-const HOME_POPULAR_CATEGORY_LIMIT = 7;
 
 const inferHomeBlogCategory = (blog) => {
   const text = `${blog?.title || ''} ${blog?.description || ''} ${blog?.tag || ''}`.toLowerCase();
@@ -131,9 +130,12 @@ function HomePage({ navigate, searchParams }) {
   const [featuredStartIndex, setFeaturedStartIndex] = useState(0);
   const [generalProductsStartIndex, setGeneralProductsStartIndex] = useState(0);
   const [servicesStartIndex, setServicesStartIndex] = useState(0);
-  const [categoryStartIndex, setCategoryStartIndex] = useState(0);
+  const [hasPopularCategoryOverflow, setHasPopularCategoryOverflow] = useState(false);
+  const [canBrowseCategoriesLeft, setCanBrowseCategoriesLeft] = useState(false);
+  const [canBrowseCategoriesRight, setCanBrowseCategoriesRight] = useState(false);
   const [slides, setSlides] = useState([]);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+  const categoryCarouselViewportRef = useRef(null);
 
   // Smooth scroll logic
   useEffect(() => {
@@ -200,22 +202,39 @@ function HomePage({ navigate, searchParams }) {
     ))
   );
   const popularCategories = categories.filter((category) => category.show_on_homepage === true);
-  const hasPopularCategoryOverflow = popularCategories.length > HOME_POPULAR_CATEGORY_LIMIT;
-  const visiblePopularCategories = hasPopularCategoryOverflow
-    ? Array.from(
-        { length: HOME_POPULAR_CATEGORY_LIMIT },
-        (_, offset) => popularCategories[(categoryStartIndex + offset) % popularCategories.length]
-      )
-    : popularCategories;
 
-  const rollPopularCategories = (direction) => {
-    if (!hasPopularCategoryOverflow) return;
+  useEffect(() => {
+    const viewport = categoryCarouselViewportRef.current;
+    if (!viewport) return undefined;
 
-    setCategoryStartIndex((currentIndex) => (
-      direction === 'next'
-        ? (currentIndex + 1) % popularCategories.length
-        : (currentIndex - 1 + popularCategories.length) % popularCategories.length
-    ));
+    const updateCarouselState = () => {
+      const maxScrollLeft = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+      const hasOverflow = maxScrollLeft > 1;
+      setHasPopularCategoryOverflow(hasOverflow);
+      setCanBrowseCategoriesLeft(hasOverflow && viewport.scrollLeft > 1);
+      setCanBrowseCategoriesRight(hasOverflow && viewport.scrollLeft < maxScrollLeft - 1);
+    };
+
+    updateCarouselState();
+    viewport.addEventListener('scroll', updateCarouselState, { passive: true });
+
+    const resizeObserver = new ResizeObserver(updateCarouselState);
+    resizeObserver.observe(viewport);
+
+    return () => {
+      viewport.removeEventListener('scroll', updateCarouselState);
+      resizeObserver.disconnect();
+    };
+  }, [popularCategories.length]);
+
+  const browsePopularCategories = (direction) => {
+    const viewport = categoryCarouselViewportRef.current;
+    if (!viewport || !hasPopularCategoryOverflow) return;
+
+    viewport.scrollBy({
+      left: direction === 'next' ? viewport.clientWidth * 0.8 : viewport.clientWidth * -0.8,
+      behavior: 'smooth',
+    });
   };
 
   const handlePrevSlide = () => {
@@ -425,12 +444,13 @@ function HomePage({ navigate, searchParams }) {
                 className="product-carousel-control product-carousel-prev"
                 type="button"
                 aria-label="Previous popular category"
-                onClick={() => rollPopularCategories('prev')}
+                onClick={() => browsePopularCategories('prev')}
+                disabled={!canBrowseCategoriesLeft}
               />
             )}
-            <div className="product-carousel-viewport">
+            <div className="product-carousel-viewport" ref={categoryCarouselViewportRef}>
               <div className="category-row">
-                {visiblePopularCategories.map((cat, idx) => {
+                {popularCategories.map((cat, idx) => {
                   const name = cat.category_name;
                   const icon = cat.icon || getCategoryIcon(name);
                   const imageUrl = getCategoryImageUrl(cat.homepage_image);
@@ -463,7 +483,8 @@ function HomePage({ navigate, searchParams }) {
                 className="product-carousel-control product-carousel-next"
                 type="button"
                 aria-label="Next popular category"
-                onClick={() => rollPopularCategories('next')}
+                onClick={() => browsePopularCategories('next')}
+                disabled={!canBrowseCategoriesRight}
               />
             )}
           </div>
