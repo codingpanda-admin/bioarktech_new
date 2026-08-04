@@ -18,14 +18,11 @@ Flujo: se trabaja en `fusion-frontend-dev` -> PR a `main` -> merge a `main`
 es lo que se despliega a producción, disparando `deploy-production.yml`
 manualmente desde Actions (o automatizar en el futuro si se quiere).
 
-## Staging (fusion-frontend-dev -> /root/bioarktech-test) - Pendiente de confirmar
+## Staging (fusion-frontend-dev -> /root/bioarktech-test) - ACTIVO
 
-`ci_deploy_staging.sh` está instalado y probado manualmente en el
-servidor, y la llave restringida ya está en `authorized_keys`. Falta
-confirmar si `STAGING_DEPLOY_SSH_KEY` quedó bien agregado como secret de
-GitHub (hubo un intento previo que puede haberse corrompido al pegar,
-igual que pasó con las de producción la primera vez). Si no está
-funcionando, generar una llave nueva y repetir el proceso.
+`deploy-staging.yml` está funcionando: `STAGING_DEPLOY_SSH_KEY` confirmado
+en GitHub Secrets. Cada push a `fusion-frontend-dev` dispara deploy
+automático a staging, incluyendo migraciones (seguro, no es data real).
 
 Nota sobre corrupción de llaves SSH en GitHub Secrets: pasó dos veces en
 esta sesión ("error in libcrypto"). Causa probable: algo en el copy/paste
