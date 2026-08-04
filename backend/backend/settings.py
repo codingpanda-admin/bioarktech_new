@@ -141,7 +141,7 @@ else:
     SESSION_COOKIE_SECURE = True
 # CSRF_COOKIE_HTTPONLY = True
 # SESSION_COOKIE_HTTPONLY = True
-CSRF_TRUSTED_ORIGINS = ['http://localhost:4200', 'http://127.0.0.1:4200', 'http://localhost:5173', 'http://127.0.0.1:5173', 'https://bioarktech.com', 'https://www.bioarktech.com', 'https://api.bioarktech.com', 'https://store.bioarktech.com', 'http://93.127.217.163', 'http://93.127.217.163:8080', 'http://93.127.217.163:8001']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:4200', 'http://127.0.0.1:4200', 'http://localhost:5173', 'http://127.0.0.1:5173', 'https://bioarktech.com', 'https://www.bioarktech.com', 'https://api.bioarktech.com', 'https://store.bioarktech.com', 'http://93.127.217.163', 'http://93.127.217.163:8080', 'http://93.127.217.163:8001', 'http://93.127.217.163:8180', 'http://93.127.217.163:8101', 'https://staging.bioarktech.com']
 
 CART_SESSION_ID = 'cart'
 
