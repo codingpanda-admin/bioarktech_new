@@ -8,6 +8,7 @@
   --green: #22c86b;
   --panel: #f7fbff;
   --shadow: 0 18px 45px rgba(6, 23, 60, 0.12);
+  --public-content-width: 80%;
   --font-body: "Inter", "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
   --font-display: "Inter", "SF Pro Display", "Segoe UI", "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", ui-monospace, monospace;
@@ -219,9 +220,9 @@ label,
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 26px;
+  gap: 34px;
   min-height: 54px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
 }
 
@@ -1361,7 +1362,16 @@ label,
 }
 
 .featured-solutions-section .product-card {
-  height: 100%;
+  height: 400px;
+  min-height: 400px;
+}
+
+.featured-solutions-section .product-card h3 {
+  display: -webkit-box;
+  min-height: 41px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .featured-solutions-section .product-card-action {
@@ -1377,6 +1387,22 @@ label,
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.service-card-title {
+  display: -webkit-box;
+  min-height: 56px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.service-card-preview {
+  display: -webkit-box;
+  min-height: 72px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .view-all {
@@ -1778,7 +1804,13 @@ label,
 }
 
 .blog-index-page {
-  background: #f4f6f9;
+  background: linear-gradient(
+    180deg,
+    #ffffff 0,
+    #f8fafc 72px,
+    #f4f6f9 210px,
+    #f4f6f9 100%
+  );
 }
 
 .blog-index-page > .resources-tabs {
@@ -2170,7 +2202,7 @@ label,
 
 .blog-detail-layout {
   display: grid;
-  grid-template-columns: minmax(0, 980px) 280px;
+  grid-template-columns: minmax(0, 1fr) 280px;
   gap: 28px;
   align-items: start;
 }
@@ -2996,6 +3028,26 @@ label,
   font-weight: 600;
   text-decoration: underline;
   cursor: pointer;
+}
+
+.nav-trigger-label,
+.main-nav > .nav-link-plain {
+  position: relative;
+}
+
+.products-nav.is-open > .nav-trigger .nav-trigger-label::after,
+.products-nav.is-selected > .nav-trigger .nav-trigger-label::after,
+.nav-dropdown.is-open > .nav-trigger .nav-trigger-label::after,
+.nav-dropdown.is-selected > .nav-trigger .nav-trigger-label::after,
+.main-nav > .nav-link-plain.is-selected::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -8px;
+  left: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0066ed, #00b95c);
 }
 
 .team-bio-modal-backdrop {
@@ -4543,8 +4595,8 @@ label,
   }
 
   .main-nav {
-    gap: 18px;
-    font-size: 13px;
+    gap: 22px;
+    font-size: 14px;
   }
 
   .products-mega-menu {
@@ -5345,7 +5397,8 @@ label,
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center center;
 }
 
 .service-detail-banner.is-fallback {
@@ -7800,7 +7853,7 @@ label,
 
 /* Catalog Mega Menu Styles */
 .catalog-mega-menu {
-  --catalog-menu-width: 90vw;
+  --catalog-menu-width: 80vw;
   --catalog-menu-height: 75vh;
   --catalog-sidebar-width: 25%;
   display: flex !important; /* override grid layout */
@@ -8643,7 +8696,7 @@ label,
   overflow: hidden;
   background: #0f253e;
   box-shadow: 0 12px 36px rgba(6, 23, 60, 0.08);
-  border: 1px solid var(--line);
+  border: 1px solid rgba(6, 23, 60, 0.08);
 }
 
 .featured-blog-slide {
@@ -9002,5 +9055,30 @@ label,
 @media (max-width: 720px) {
   .services-carousel-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Shared public-page content frame. Full-width hero sections remain independent. */
+.home-page > section:not(.hero-section),
+.blog-index-page > .resources-tabs,
+.blog-index-layout,
+.featured-blogs-section,
+.blog-detail-page,
+.product-page,
+.service-page-breadcrumb,
+.service-detail-layout,
+.service-specifications,
+.search-results-section {
+  width: var(--public-content-width);
+  max-width: none;
+}
+
+.product-page {
+  margin: 40px auto;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --public-content-width: calc(100% - 28px);
   }
 }
