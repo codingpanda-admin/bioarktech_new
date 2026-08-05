@@ -31,7 +31,19 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
   const [selectedCategory, setSelectedCategory] = useState(initialSelectedCategory);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [groupFiltersExpanded, setGroupFiltersExpanded] = useState(false);
+  const [expandedFilterSections, setExpandedFilterSections] = useState({
+    products: true,
+    services: true,
+    reagents: true,
+  });
   const [catalog, setCatalog] = useState([]);
+
+  const toggleFilterSection = (section) => {
+    setExpandedFilterSections((current) => ({
+      ...current,
+      [section]: !current[section],
+    }));
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -222,20 +234,27 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
       {/* Localized Component CSS */}
       <style dangerouslySetInnerHTML={{ __html: `
         .search-container {
-          max-width: 1280px;
+          width: var(--public-content-width);
+          max-width: none;
           margin: 0 auto;
-          padding: 40px 20px;
+          padding: 40px 0;
           font-family: var(--font, 'Inter', sans-serif);
         }
 
         .search-header-banner {
           background: linear-gradient(135deg, #071936 0%, #0d2c5c 100%);
           border-radius: 20px;
-          padding: 50px 40px;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          width: 100%;
+          height: 200px;
+          padding: 40px;
           margin-bottom: 40px;
           color: white;
           position: relative;
           overflow: hidden;
+          box-sizing: border-box;
           box-shadow: 0 12px 30px rgba(7, 25, 54, 0.15);
         }
 
@@ -251,6 +270,8 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
         }
 
         .search-header-banner h1 {
+          position: relative;
+          z-index: 1;
           font-size: 2.2rem;
           font-weight: 600;
           margin: 0 0 10px 0;
@@ -259,10 +280,13 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
         }
 
         .search-header-banner p {
+          position: relative;
+          z-index: 1;
+          width: 100%;
           color: #a5b4fc;
           font-size: 1.1rem;
           margin: 0;
-          max-width: 700px;
+          max-width: none;
           line-height: 1.5;
         }
 
@@ -312,6 +336,12 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
         }
 
         @media (max-width: 992px) {
+          .search-header-banner {
+            height: auto;
+            min-height: 200px;
+            padding: 36px 28px;
+          }
+
           .search-layout {
             grid-template-columns: 1fr;
             gap: 30px;
@@ -379,7 +409,41 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
           text-transform: uppercase;
           letter-spacing: 0.05em;
           color: #64748b;
-          margin-bottom: 12px;
+          margin: 0 0 12px;
+        }
+
+        .sidebar-group-toggle {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 0;
+          border: 0;
+          color: inherit;
+          background: transparent;
+          font: inherit;
+          letter-spacing: inherit;
+          text-transform: inherit;
+          cursor: pointer;
+        }
+
+        .sidebar-group-toggle:hover {
+          color: #0f172a;
+        }
+
+        .sidebar-group-toggle:focus-visible {
+          border-radius: 4px;
+          outline: 2px solid #0284c7;
+          outline-offset: 3px;
+        }
+
+        .sidebar-group-toggle-symbol {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 16px;
+          font-size: 18px;
+          font-weight: 500;
+          line-height: 1;
         }
 
         .sidebar-list {
@@ -633,7 +697,8 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
           overflow: hidden;
           transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
           padding: 16px;
-          min-height: 400px;
+          height: 440px;
+          min-height: 440px;
         }
 
         .modern-product-card:hover {
@@ -903,8 +968,21 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
           {/* Products Categories */}
           {(!currentCategory || currentCategory === 'products' || currentCategory === 'featured') && (
             <div className="sidebar-group">
-              <h4 className="sidebar-group-title">Products</h4>
-              <ul className="sidebar-list">
+              <h4 className="sidebar-group-title">
+                <button
+                  className="sidebar-group-toggle"
+                  type="button"
+                  aria-expanded={expandedFilterSections.products}
+                  aria-controls="product-filter-options"
+                  onClick={() => toggleFilterSection('products')}
+                >
+                  <span>Products</span>
+                  <span className="sidebar-group-toggle-symbol" aria-hidden="true">
+                    {expandedFilterSections.products ? '−' : '+'}
+                  </span>
+                </button>
+              </h4>
+              {expandedFilterSections.products && <ul className="sidebar-list" id="product-filter-options">
                 {productCategoryOptions.map(cat => (
                   <li key={cat.id}>
                     <button
@@ -932,15 +1010,28 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
                     )}
                   </li>
                 ))}
-              </ul>
+              </ul>}
             </div>
           )}
 
           {/* Services Categories */}
           {(!currentCategory || currentCategory === 'services') && (
             <div className="sidebar-group">
-              <h4 className="sidebar-group-title">Services</h4>
-              <ul className="sidebar-list">
+              <h4 className="sidebar-group-title">
+                <button
+                  className="sidebar-group-toggle"
+                  type="button"
+                  aria-expanded={expandedFilterSections.services}
+                  aria-controls="service-filter-options"
+                  onClick={() => toggleFilterSection('services')}
+                >
+                  <span>Services</span>
+                  <span className="sidebar-group-toggle-symbol" aria-hidden="true">
+                    {expandedFilterSections.services ? '−' : '+'}
+                  </span>
+                </button>
+              </h4>
+              {expandedFilterSections.services && <ul className="sidebar-list" id="service-filter-options">
                 {serviceCategoryOptions.map(cat => (
                   <li key={cat.id}>
                     <button
@@ -954,15 +1045,28 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
                     </button>
                   </li>
                 ))}
-              </ul>
+              </ul>}
             </div>
           )}
 
           {/* Reagents Categories */}
           {(!currentCategory || currentCategory === 'reagents' || currentCategory === 'consumables' || currentCategory === 'featured') && (
             <div className="sidebar-group">
-              <h4 className="sidebar-group-title">Reagents & Kits</h4>
-              <ul className="sidebar-list">
+              <h4 className="sidebar-group-title">
+                <button
+                  className="sidebar-group-toggle"
+                  type="button"
+                  aria-expanded={expandedFilterSections.reagents}
+                  aria-controls="reagent-filter-options"
+                  onClick={() => toggleFilterSection('reagents')}
+                >
+                  <span>Reagents &amp; Kits</span>
+                  <span className="sidebar-group-toggle-symbol" aria-hidden="true">
+                    {expandedFilterSections.reagents ? '−' : '+'}
+                  </span>
+                </button>
+              </h4>
+              {expandedFilterSections.reagents && <ul className="sidebar-list" id="reagent-filter-options">
                 {reagentCategoryOptions.map(cat => (
                   <li key={cat.id}>
                     <button
@@ -976,7 +1080,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
                     </button>
                   </li>
                 ))}
-              </ul>
+              </ul>}
             </div>
           )}
         </aside>
@@ -1072,10 +1176,11 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
                 const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
                 const isConsumable = prod.category === 'Consumables';
                 const isReagent = prod.category === 'Reagents & Kits' || isConsumable;
+                const cardType = prod.category === 'Services' ? 'service' : (isReagent ? 'reagent' : 'product');
                 const shippingCost = prod.shipping_cost || (isConsumable ? 100 : 40);
 
                 return (
-                  <article className="modern-product-card" key={idx}>
+                  <article className={`modern-product-card ${cardType}-result-card`} key={idx}>
                     {/* Floating Badges */}
                     <div className="card-badges" style={{ flexWrap: 'wrap', gap: '4px' }}>
                       {prod.is_featured && (

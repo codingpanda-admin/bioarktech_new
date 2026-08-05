@@ -267,6 +267,8 @@ function App() {
       ) : (
         <SiteHeader 
           navigate={navigate} 
+          currentPath={currentPath}
+          searchParams={searchParams}
           currentUser={currentUser} 
           currentUserProfile={currentUserProfile}
           onOpenAuth={handleOpenAuth} 
