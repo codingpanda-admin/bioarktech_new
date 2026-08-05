@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef, useImperativeHandle } from 'react';
 import { apiFetch, API_URL, formatAssetUrl } from '../../utils/api';
 import { formatRichText } from '../../utils/richText';
+import { cleanRichTextPasteHtml, isMicrosoftOfficeHtml } from '../../utils/richTextPaste';
 
 const PRODUCTS_CATEGORIES = [
   { id: 'genome-editing', name: 'Genome Editing' },
@@ -96,7 +97,12 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
       return;
     }
 
-    const editorHtml = formatRichText(rawValue);
+    const normalizedValue = isMicrosoftOfficeHtml(rawValue)
+      ? cleanRichTextPasteHtml(rawValue)
+      : rawValue;
+    const editorHtml = /<\/?[a-z][\s\S]*>/i.test(normalizedValue)
+      ? normalizedValue
+      : formatRichText(normalizedValue);
     if (editorRef.current && editorRef.current.innerHTML !== editorHtml) {
       selectedImageRef.current = null;
       setSelectedImageWidth(null);
@@ -125,7 +131,10 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
         image.classList.remove('is-rich-image-selected');
         if (!image.className) image.removeAttribute('class');
       });
-      const nextHtml = cleanEditor.innerHTML;
+      const rawHtml = cleanEditor.innerHTML;
+      const nextHtml = isMicrosoftOfficeHtml(rawHtml)
+        ? cleanRichTextPasteHtml(rawHtml)
+        : rawHtml;
       lastEmittedHtmlRef.current = nextHtml;
       onChange(nextHtml);
     }
@@ -139,7 +148,10 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
         image.classList.remove('is-rich-image-selected');
         if (!image.className) image.removeAttribute('class');
       });
-      return cleanEditor.innerHTML;
+      const rawHtml = cleanEditor.innerHTML;
+      return isMicrosoftOfficeHtml(rawHtml)
+        ? cleanRichTextPasteHtml(rawHtml)
+        : rawHtml;
     },
     sync: () => syncValue(),
   }));
@@ -326,7 +338,19 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
     const plainText = event.clipboardData?.getData('text/plain') || '';
     const htmlText = event.clipboardData?.getData('text/html') || '';
 
-    if (!plainText || htmlText || !plainText.includes('|')) {
+    if (htmlText) {
+      const cleanedHtml = cleanRichTextPasteHtml(htmlText);
+      if (cleanedHtml) {
+        event.preventDefault();
+        focusEditor();
+        document.execCommand('insertHTML', false, cleanedHtml);
+        ensureTableWrappers();
+        syncValue();
+      }
+      return;
+    }
+
+    if (!plainText || !plainText.includes('|')) {
       return;
     }
 
