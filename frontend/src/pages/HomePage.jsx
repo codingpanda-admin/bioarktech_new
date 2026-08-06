@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiFetch, mockResources, getCategoryIcon, formatAssetUrl } from '../utils/api';
 import { logo } from '../utils/api';
+import { getCatalogCardPrice } from '../utils/catalogPrice';
 import IconMark from '../components/IconMark';
 import ProductVisual from '../components/ProductVisual';
 
@@ -519,14 +520,9 @@ function HomePage({ navigate, searchParams }) {
                     : itemType === 'reagent'
                       ? 'Reagent'
                       : 'Product';
-                  const rawPrice = prod.unit_price;
                   const priceStr = itemType === 'service'
                     ? 'Contact for Quote'
-                    : rawPrice
-                      ? (String(rawPrice).startsWith('$') || /^contact/i.test(String(rawPrice))
-                        ? rawPrice
-                        : `$${rawPrice}`)
-                      : '$29.00 - $129.00';
+                    : getCatalogCardPrice(prod);
                   const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
                   const productId = prod.externalId || prod.external_id || prod.catalog_number || prod.product_sku;
                   const productHref = productId ? `/product/${productId}` : `/search?q=${encodeURIComponent(name)}`;
@@ -589,7 +585,7 @@ function HomePage({ navigate, searchParams }) {
                   <div className="product-grid product-carousel-grid">
                     {visibleFeaturedGeneralProducts.map(({ product: prod, index }) => {
                       const name = prod.product_name;
-                      const priceStr = prod.unit_price ? `${prod.unit_price}` : (prod.list_price || 'Contact for Quote');
+                      const priceStr = getCatalogCardPrice(prod);
                       const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
                       const productId = prod.externalId || prod.external_id || prod.catalog_number;
                       const productHref = productId ? `/product/${productId}` : `/search?q=${encodeURIComponent(name)}`;

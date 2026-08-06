@@ -379,6 +379,16 @@ def classify_product(category_id, source_type):
         
     return 'products'
 
+def get_first_catalog_option_price(product, fallback=''):
+    options = product.options if isinstance(product.options, list) else []
+    option_prices = product.option_prices if isinstance(product.option_prices, dict) else {}
+
+    if options:
+        first_option = str(options[0] or '').strip()
+        return option_prices.get(first_option) or fallback
+
+    return next((price for price in option_prices.values() if price not in [None, '']), fallback)
+
 def is_product_consumable(product):
     return product.category_external_id == 'category-1780539818236'
 
@@ -482,7 +492,6 @@ def search_product(request):
 
         up = UnitPrice.objects.filter(union=fp.union).first()
         price = float(up.unit_price) if up else 0.0
-        list_p = float(up.list_price) if up else 0.0
         
         img = Image.objects.filter(union=fp.union).first()
         if img and img.image:
@@ -505,7 +514,10 @@ def search_product(request):
             'product_name': fp.product_name,
             'description': fp.description,
             'unit_price': price,
-            'list_price': list_p,
+            'list_price': linked_product.list_price or '',
+            'options': linked_product.options or [],
+            'option_prices': linked_product.option_prices or {},
+            'first_option_price': get_first_catalog_option_price(linked_product, price),
             'image': img_url,
             'category': prod_cat,
             'category_external_id': linked_cat_id,
@@ -549,7 +561,10 @@ def search_product(request):
             'product_name': p.product_name,
             'description': p.description,
             'unit_price': 0.0,
-            'list_price': p.list_price or p.price_range or '',
+            'list_price': p.list_price or '',
+            'options': p.options or [],
+            'option_prices': p.option_prices or {},
+            'first_option_price': get_first_catalog_option_price(p),
             'image': p.image_url or (p.images[0] if p.images else None),
             'category': prod_cat,
             'category_external_id': p.category_external_id,

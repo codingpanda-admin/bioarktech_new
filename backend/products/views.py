@@ -640,6 +640,10 @@ def load_product_by_external_id(request, external_id):
             data['product_group'] = source_product.product_group
             data['source_type'] = source_product.source_type
             data['availability'] = source_product.availability
+            data['quote_only'] = bool(source_product.quote_only)
+            data['quoteOnly'] = bool(source_product.quote_only)
+            data['list_price'] = source_product.list_price or ''
+            data['price_range'] = source_product.price_range or ''
             data['content_text'] = source_product.content_text
             data['raw_detail'] = source_product.raw_detail
             data['options'] = source_product.options or []

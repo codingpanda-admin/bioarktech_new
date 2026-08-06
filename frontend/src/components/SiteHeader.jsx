@@ -500,6 +500,7 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
   const [consumablesMenuOpen, setConsumablesMenuOpen] = useState(false);
   const [aboutMenuOpen, setAboutMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [catalog, setCatalog] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
   const profileMenuRef = React.useRef(null);
@@ -545,6 +546,23 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
     setAboutMenuOpen(false);
     setProfileMenuOpen(false);
   }, []);
+
+  const catalogMenuOpen = productMenuOpen || serviceMenuOpen || reagentMenuOpen;
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+    closeMenus();
+  }, [currentPath, closeMenus]);
+
+  useEffect(() => {
+    if (!catalogMenuOpen || !window.matchMedia('(max-width: 720px)').matches) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [catalogMenuOpen]);
 
   useEffect(() => {
     if (!profileMenuOpen) {
@@ -661,7 +679,12 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
     ) : 'products';
 
     return (
-      <div className={`products-mega-menu catalog-mega-menu ${menuType}-mega-menu`} id={`${menuType}-menu`}>
+      <div
+        className={`products-mega-menu catalog-mega-menu ${menuType}-mega-menu`}
+        id={`${menuType}-menu`}
+        role="region"
+        aria-label={`${menuType === 'reagent' ? 'Reagents' : menuType} catalog`}
+      >
         <MenuCloseButton label={menuCloseLabel} />
 
         {/* Category sidebar */}
@@ -785,11 +808,25 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
   };
 
   return (
-    <header className="site-header">
+    <header className={`site-header ${mobileNavOpen ? 'is-mobile-nav-open' : ''} ${catalogMenuOpen ? 'has-catalog-menu-open' : ''}`}>
       <div className="topbar">
         <a className="brand" href="/" onClick={(e) => { e.preventDefault(); navigate('/'); }} aria-label="Bio Ark Tech home">
           <img src={logo} alt="Bio Ark Tech" />
         </a>
+
+        <button
+          className="mobile-navigation-toggle"
+          type="button"
+          aria-expanded={mobileNavOpen}
+          aria-controls="primary-navigation"
+          onClick={() => {
+            if (mobileNavOpen) closeMenus();
+            setMobileNavOpen((isOpen) => !isOpen);
+          }}
+        >
+          <span className="mobile-navigation-toggle-icon" aria-hidden="true" />
+          <span>{mobileNavOpen ? 'Close' : 'Menu'}</span>
+        </button>
 
         <form className="search" role="search" onSubmit={handleSearchSubmit}>
           <input 
@@ -848,7 +885,14 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
         </div>
       </div>
 
-      <nav className="main-nav" aria-label="Primary navigation">
+      <nav
+        className="main-nav"
+        id="primary-navigation"
+        aria-label="Primary navigation"
+        onClick={(event) => {
+          if (event.target.closest('a')) setMobileNavOpen(false);
+        }}
+      >
         <div 
           className={`products-nav ${productMenuOpen ? 'is-open' : ''} ${productNavSelected ? 'is-selected' : ''}`}
           onMouseEnter={() => {

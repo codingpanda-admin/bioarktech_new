@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { apiFetch, formatAssetUrl } from '../utils/api';
+import { getCatalogCardPrice } from '../utils/catalogPrice';
 import ProductVisual from '../components/ProductVisual';
 import {
   CONSUMABLES_CATEGORIES,
@@ -657,6 +658,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
           .product-group-filter-label {
             padding-top: 0;
           }
+
         }
 
         .search-sort-select {
@@ -684,6 +686,13 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
           grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
           gap: 30px;
           margin-bottom: 40px;
+        }
+
+        @media (max-width: 720px) {
+          .modern-product-grid {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 18px;
+          }
         }
 
         .modern-product-card {
@@ -1225,15 +1234,8 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
                       
                       <div className="card-price-row">
                         <span className="card-price">
-                          {prod.unit_price && Number(prod.unit_price) > 0 
-                            ? `$${Number(prod.unit_price).toFixed(2)}` 
-                            : (prod.list_price || 'Contact for Quote')}
+                          {cardType === 'service' ? 'Contact for Quote' : getCatalogCardPrice(prod)}
                         </span>
-                        {prod.list_price && Number(prod.list_price) > Number(prod.unit_price) && Number(prod.unit_price) > 0 && (
-                          <span className="card-list-price">
-                            ${Number(prod.list_price).toFixed(2)}
-                          </span>
-                        )}
                       </div>
 
                       <a 
