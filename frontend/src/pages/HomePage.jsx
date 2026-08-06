@@ -608,7 +608,7 @@ function HomePage({ navigate, searchParams }) {
                               openProduct();
                             }
                           }}
-                          style={{ display: 'flex', flexDirection: 'column', height: '100%', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', border: '1px solid var(--line)', background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)', cursor: 'pointer' }}
+                          style={{ display: 'flex', flexDirection: 'column', height: '410px', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', border: '1px solid var(--line)', background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)', cursor: 'pointer' }}
                         >
                           {imgUrl ? (
                             <div style={{ height: '150px', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '10px 0 20px 0' }}>
@@ -676,7 +676,7 @@ function HomePage({ navigate, searchParams }) {
                       const serviceHref = `/product/${service.url}`;
 
                       return (
-                        <article key={`${service.id}-${index}`} className="service-card" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#fff', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(5, 31, 78, 0.04)', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}>
+                        <article key={`${service.id}-${index}`} className="service-card" style={{ display: 'flex', flexDirection: 'column', height: '470px', background: '#fff', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(5, 31, 78, 0.04)', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}>
                           {imgUrl ? (
                             <div style={{ height: '180px', overflow: 'hidden', position: 'relative' }}>
                               <img src={imgUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }} />
@@ -694,8 +694,8 @@ function HomePage({ navigate, searchParams }) {
                           )}
                           <div style={{ padding: '24px 24px 12px', display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'space-between' }}>
                             <div>
-                              <h3 style={{ fontSize: '1.25rem', fontWeight: '700', margin: '0 0 12px 0', color: 'var(--blue-dark)', lineHeight: '1.4' }}>{name}</h3>
-                              <p style={{ fontSize: '0.95rem', color: 'var(--ink-light)', lineHeight: '1.6', margin: '0 0 24px 0' }}>{cleanText}</p>
+                              <h3 className="service-card-title" style={{ fontSize: '1.25rem', fontWeight: '700', margin: '0 0 12px 0', color: 'var(--blue-dark)', lineHeight: '1.4' }}>{name}</h3>
+                              <p className="service-card-preview" style={{ fontSize: '0.95rem', color: 'var(--ink-light)', lineHeight: '1.6', margin: '0 0 24px 0' }}>{cleanText}</p>
                             </div>
                             <div className="service-card-actions">
                               <a href={serviceHref} className="product-card-action" onClick={(e) => { e.preventDefault(); navigate(serviceHref); }}>Explore Service <span>→</span></a>

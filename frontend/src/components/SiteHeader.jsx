@@ -146,6 +146,21 @@ const sortMenuItemsByCatalogNumber = (items) => (
     .map(({ item }) => item)
 );
 
+const sortMenuSubcategories = (subcategories) => (
+  [...(subcategories || [])].sort((left, right) => {
+    const leftName = String(left?.name || '').trim();
+    const rightName = String(right?.name || '').trim();
+
+    if (!leftName && rightName) return 1;
+    if (leftName && !rightName) return -1;
+
+    return leftName.localeCompare(rightName, undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    });
+  })
+);
+
 const getCategorySubcategories = (cat) => {
   if (cat.subcategories && cat.subcategories.length > 0) {
     return cat.subcategories;
@@ -477,7 +492,7 @@ const getCategorySubcategories = (cat) => {
 };
 
 
-function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onLogout, cartCount }) {
+function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentUserProfile, onOpenAuth, onLogout, cartCount }) {
   const [query, setQuery] = useState('');
   const [productMenuOpen, setProductMenuOpen] = useState(false);
   const [serviceMenuOpen, setServiceMenuOpen] = useState(false);
@@ -585,6 +600,40 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
   }
   const consumableCategories = consumablesCat ? [consumablesCat] : [];
 
+  const detailMenuType = React.useMemo(() => {
+    if (!currentPath?.startsWith('/product/')) return '';
+
+    const detailIdentifier = decodeURIComponent(currentPath.slice('/product/'.length)).toLowerCase();
+    const matchingCategory = catalog.find((category) => {
+      const subcategories = Array.isArray(category.subcategories)
+        ? category.subcategories
+        : getCategorySubcategories(category);
+
+      return subcategories.some((subcategory) => (
+        (subcategory.products || []).some((item) => (
+          [item.externalId, item.external_id, item.catalog_number]
+            .filter(Boolean)
+            .some((identifier) => String(identifier).toLowerCase() === detailIdentifier)
+        ))
+      ));
+    });
+
+    return matchingCategory?.product_type || '';
+  }, [catalog, currentPath]);
+
+  const selectedSearchCategory = currentPath === '/search'
+    ? String(searchParams?.get('category') || '').toLowerCase()
+    : '';
+  const productNavSelected = selectedSearchCategory === 'products'
+    || detailMenuType === 'product'
+    || detailMenuType === 'both';
+  const serviceNavSelected = selectedSearchCategory === 'services' || detailMenuType === 'service';
+  const reagentNavSelected = ['reagents', 'consumables'].includes(selectedSearchCategory)
+    || ['reagent', 'consumable'].includes(detailMenuType);
+  const designNavSelected = currentPath === '/design';
+  const resourcesNavSelected = currentPath === '/blogs' || currentPath?.startsWith('/blog/');
+  const aboutNavSelected = currentPath === '/investors' || currentPath === '/about-bioark';
+
   const renderMegaMenu = (menuOpenState, menuType, menuCategories, menuCloseLabel) => {
     if (!menuOpenState) return null;
 
@@ -594,10 +643,12 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
         ? activeEntry.subcategories
         : getCategorySubcategories(activeEntry))
       : [];
-    const activeSubcategories = rawActiveSubcategories.map((subcategory) => ({
-      ...subcategory,
-      products: sortMenuItemsByCatalogNumber(subcategory.products),
-    }));
+    const activeSubcategories = sortMenuSubcategories(
+      rawActiveSubcategories.map((subcategory) => ({
+        ...subcategory,
+        products: sortMenuItemsByCatalogNumber(subcategory.products),
+      })),
+    );
     
     const totalCount = activeEntry ? (activeEntry.product_count > 0
       ? activeEntry.product_count
@@ -799,7 +850,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
 
       <nav className="main-nav" aria-label="Primary navigation">
         <div 
-          className={`products-nav ${productMenuOpen ? 'is-open' : ''}`}
+          className={`products-nav ${productMenuOpen ? 'is-open' : ''} ${productNavSelected ? 'is-selected' : ''}`}
           onMouseEnter={() => {
             closeMenus();
             setProductMenuOpen(true);
@@ -824,13 +875,13 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
               }
             }}
           >
-            Products
+            <span className="nav-trigger-label">Products</span>
           </button>
           {productMenuOpen && renderMegaMenu(productMenuOpen, 'product', productCategories, 'Close products menu')}
         </div>
 
         <div 
-          className={`products-nav services-nav ${serviceMenuOpen ? 'is-open' : ''}`}
+          className={`products-nav services-nav ${serviceMenuOpen ? 'is-open' : ''} ${serviceNavSelected ? 'is-selected' : ''}`}
           onMouseEnter={() => {
             closeMenus();
             setServiceMenuOpen(true);
@@ -855,13 +906,13 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
               }
             }}
           >
-            Services
+            <span className="nav-trigger-label">Services</span>
           </button>
           {serviceMenuOpen && renderMegaMenu(serviceMenuOpen, 'service', serviceCategories, 'Close services menu')}
         </div>
 
         <div 
-          className={`products-nav reagents-nav ${reagentMenuOpen ? 'is-open' : ''}`}
+          className={`products-nav reagents-nav ${reagentMenuOpen ? 'is-open' : ''} ${reagentNavSelected ? 'is-selected' : ''}`}
           onMouseEnter={() => {
             closeMenus();
             setReagentMenuOpen(true);
@@ -886,17 +937,17 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
               }
             }}
           >
-            Reagents & Kits
+            <span className="nav-trigger-label">Reagents &amp; Kits</span>
           </button>
           {reagentMenuOpen && renderMegaMenu(reagentMenuOpen, 'reagent', reagentCategories, 'Close reagents menu')}
         </div>
         {/* Consumables link is now placed inside Reagents & Kits below Cell Reagents */}
 
-        <a className="nav-link-plain" href="/design" onMouseEnter={closeMenus} onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/design'); }}>Design</a>
-        <a className="nav-link-plain" href="/blogs" onMouseEnter={closeMenus} onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/blogs'); }}>Resources & Blogs</a>
+        <a className={`nav-link-plain ${designNavSelected ? 'is-selected' : ''}`} href="/design" onMouseEnter={closeMenus} onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/design'); }}>Design</a>
+        <a className={`nav-link-plain ${resourcesNavSelected ? 'is-selected' : ''}`} href="/blogs" onMouseEnter={closeMenus} onClick={(e) => { e.preventDefault(); closeMenus(); navigate('/blogs'); }}>Resources & Blogs</a>
 
         <div 
-          className={`nav-dropdown ${aboutMenuOpen ? 'is-open' : ''}`}
+          className={`nav-dropdown ${aboutMenuOpen ? 'is-open' : ''} ${aboutNavSelected ? 'is-selected' : ''}`}
           onMouseEnter={() => {
             closeMenus();
             setAboutMenuOpen(true);
@@ -913,7 +964,7 @@ function SiteHeader({ navigate, currentUser, currentUserProfile, onOpenAuth, onL
               setAboutMenuOpen((isOpen) => !isOpen);
             }}
           >
-            About
+            <span className="nav-trigger-label">About</span>
           </button>
           {aboutMenuOpen && (
             <div className="dropdown-menu" id="about-menu">

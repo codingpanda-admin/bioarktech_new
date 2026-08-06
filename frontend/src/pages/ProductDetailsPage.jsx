@@ -652,7 +652,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   }
 
   return (
-    <main className="product-page" style={{ width: 'min(1200px, calc(100% - 48px))', margin: '40px auto' }}>
+    <main className="product-page">
       <nav className="product-breadcrumb product-page-breadcrumb" aria-label="Breadcrumb">
         <a href="/" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Home</a>
         <span aria-hidden="true">/</span>

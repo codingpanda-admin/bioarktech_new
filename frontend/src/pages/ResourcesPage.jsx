@@ -92,13 +92,21 @@ function ResourcesPage({ navigate, searchParams }) {
     }
   }, [activeTab, resources]);
 
+  const featuredBlogs = useMemo(() => (
+    enrichedBlogs.filter((blog) => blog.is_featured)
+  ), [enrichedBlogs]);
+
+  const regularBlogs = useMemo(() => (
+    enrichedBlogs.filter((blog) => !blog.is_featured)
+  ), [enrichedBlogs]);
+
   const categoryCounts = useMemo(() => {
     if (activeTab === 'blogs') {
       return BLOG_CATEGORIES.reduce((counts, category) => ({
         ...counts,
         [category]: category === 'All'
-          ? enrichedBlogs.length
-          : enrichedBlogs.filter((blog) => blog.category === category).length,
+          ? regularBlogs.length
+          : regularBlogs.filter((blog) => blog.category === category).length,
       }), {});
     } else {
       const docCats = ['All', ...Array.from(new Set(resources.map((r) => r.category)))];
@@ -109,13 +117,9 @@ function ResourcesPage({ navigate, searchParams }) {
           : resources.filter((r) => r.category === category).length,
       }), {});
     }
-  }, [activeTab, enrichedBlogs, resources]);
+  }, [activeTab, regularBlogs, resources]);
 
-  const showFeatured = activeTab === 'blogs' && searchTerm === '' && activeCategory === 'All';
-
-  const featuredBlogs = useMemo(() => (
-    enrichedBlogs.filter((blog) => blog.is_featured)
-  ), [enrichedBlogs]);
+  const showFeatured = activeTab === 'blogs';
 
   // Reset index if it gets out of bounds when length changes
   useEffect(() => {
@@ -133,15 +137,10 @@ function ResourcesPage({ navigate, searchParams }) {
     return () => clearInterval(timer);
   }, [showFeatured, featuredBlogs.length]);
 
-  const visibleBlogs = enrichedBlogs.filter((blog) => {
+  const visibleBlogs = regularBlogs.filter((blog) => {
     const matchesCategory = activeCategory === 'All' || blog.category === activeCategory;
     const searchableText = `${blog.title || ''} ${blog.description || ''} ${blog.author || ''}`.toLowerCase();
     const matchesSearch = searchableText.includes(searchTerm.trim().toLowerCase());
-
-    if (showFeatured && blog.is_featured) {
-      return false;
-    }
-
     return matchesCategory && matchesSearch;
   });
 
