@@ -1,8 +1,8 @@
 #!/bin/bash
 # Restricted script for the GitHub Actions PRODUCTION MIGRATE deploy key.
-# NOT active yet - see README.md in this directory. The only script in this
-# repo that is ever allowed to run `manage.py migrate` against the
-# production database. Always backs up first.
+# Active. The only script in this repo that is ever allowed to run
+# `manage.py migrate` against the production database. Always backs up
+# first (backup_postgres.sh rotates old dumps by count).
 set -euo pipefail
 
 /root/scripts/backup_postgres.sh
