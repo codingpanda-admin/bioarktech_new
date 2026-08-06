@@ -36,10 +36,6 @@ services:
     command: >
       sh -c "python wait_for_db.py &&
              python manage.py migrate --fake-initial &&
-             python populate_product.py &&
-             python populate_reagents.py &&
-             python populate_services.py &&
-             python populate_blogs.py &&
              python manage.py collectstatic --noinput;
              gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
     depends_on:
