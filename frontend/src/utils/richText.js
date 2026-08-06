@@ -9,6 +9,11 @@ const escapeHtml = (value) => String(value)
 
 const hasHtmlTags = (value) => /<\/?[a-z][\s\S]*>/i.test(value);
 
+// HTML emitted by the admin rich-text editor is already canonical. Running
+// structured elements back through the Markdown parser strips table cells and
+// inline formatting whenever unrelated text happens to resemble Markdown.
+const hasStructuredRichHtml = (value) => /<(?:a|b|blockquote|em|h[1-6]|i|img|li|ol|s|strong|table|tbody|td|tfoot|th|thead|tr|u|ul)\b/i.test(value);
+
 const hasMarkdownSyntax = (value) => /(\*\*|__|!\[[^\]]*]\(|\[[^\]]+]\([^)]+\)|(?:^|\s)-\s+(?:\*\*)?[A-Za-z0-9]|(?:^|\s)#{1,4}\s*|\s---\s|^\s*\|?.+\|.+(?:\n|\r\n?)\s*\|?\s*:?-{3,}|^\s*\|?[^|\n]+(?:\|[^|\n]+){2,}\|?\s*$)/m.test(value);
 
 const decodeHtmlEntities = (value) => String(value)
@@ -383,7 +388,9 @@ export const formatRichText = (value) => {
   if (!content) return '';
   if (hasHtmlTags(content)) {
     const embeddedTables = formatEmbeddedMarkdownTables(content);
-    if (embeddedTables.convertedTable) return embeddedTables.html;
+    if (embeddedTables.convertedTable || hasStructuredRichHtml(embeddedTables.html)) {
+      return embeddedTables.html;
+    }
   }
 
   const richTextSource = hasHtmlTags(content) ? htmlToRichTextSource(content) : content;

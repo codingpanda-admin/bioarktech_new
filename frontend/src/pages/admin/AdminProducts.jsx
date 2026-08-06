@@ -69,6 +69,7 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
   const editorRef = useRef(null);
   const lastEmittedHtmlRef = useRef(null);
   const selectedImageRef = useRef(null);
+  const savedSelectionRangeRef = useRef(null);
   const [isImageDragActive, setIsImageDragActive] = useState(false);
   const [imageUploadsInProgress, setImageUploadsInProgress] = useState(0);
   const [imageUploadError, setImageUploadError] = useState('');
@@ -204,26 +205,10 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
     }
   };
 
-  const preventFocusLoss = (event) => {
-    event.preventDefault();
-  };
-
   const focusEditor = () => {
     if (editorRef.current) {
-      editorRef.current.focus();
+      editorRef.current.focus({ preventScroll: true });
     }
-  };
-
-  const runCommand = (command, commandValue = null) => {
-    focusEditor();
-    document.execCommand(command, false, commandValue);
-    syncValue();
-  };
-
-  const handleLink = () => {
-    const url = window.prompt('Enter link URL');
-    if (!url) return;
-    runCommand('createLink', url);
   };
 
   const getEditorSelectionRange = () => {
@@ -236,6 +221,88 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
       ? range.commonAncestorContainer.parentElement
       : range.commonAncestorContainer;
     return editor.contains(container) ? range.cloneRange() : null;
+  };
+
+  const rememberEditorSelection = () => {
+    const range = getEditorSelectionRange();
+    if (range) savedSelectionRangeRef.current = range;
+    return range;
+  };
+
+  const restoreEditorSelection = (requestedRange) => {
+    const editor = editorRef.current;
+    const range = requestedRange || savedSelectionRangeRef.current;
+    if (!editor || !range) return false;
+
+    const container = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
+      ? range.commonAncestorContainer.parentElement
+      : range.commonAncestorContainer;
+    if (!container || !editor.contains(container)) return false;
+
+    focusEditor();
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    return true;
+  };
+
+  const preventFocusLoss = (event) => {
+    rememberEditorSelection();
+    event.preventDefault();
+  };
+
+  const applyBoldFallback = (range) => {
+    const editor = editorRef.current;
+    if (!editor || !range || range.collapsed || !restoreEditorSelection(range)) return false;
+
+    const strong = document.createElement('strong');
+    const selectedContent = range.extractContents();
+    strong.appendChild(selectedContent);
+    range.insertNode(strong);
+    editor.normalize();
+
+    const nextRange = document.createRange();
+    nextRange.selectNodeContents(strong);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(nextRange);
+    savedSelectionRangeRef.current = nextRange.cloneRange();
+    return true;
+  };
+
+  const runCommand = (command, commandValue = null) => {
+    const range = getEditorSelectionRange() || savedSelectionRangeRef.current;
+    restoreEditorSelection(range);
+    const htmlBeforeCommand = editorRef.current?.innerHTML;
+    document.execCommand(command, false, commandValue);
+
+    // execCommand is deprecated and returns without changing the document in
+    // some browser builds. Bold still needs to update the selected text now.
+    if (
+      command === 'bold'
+      && range
+      && !range.collapsed
+      && editorRef.current?.innerHTML === htmlBeforeCommand
+    ) {
+      applyBoldFallback(range);
+    }
+
+    rememberEditorSelection();
+    syncValue();
+  };
+
+  const handleBoldMouseDown = (event) => {
+    rememberEditorSelection();
+    event.preventDefault();
+    runCommand('bold');
+  };
+
+  const handleLink = () => {
+    const range = getEditorSelectionRange() || savedSelectionRangeRef.current;
+    const url = window.prompt('Enter link URL');
+    if (!url) return;
+    restoreEditorSelection(range);
+    runCommand('createLink', url);
   };
 
   const getDropRange = (event) => {
@@ -539,13 +606,13 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
   return (
     <div className="admin-rich-text admin-product-rich-text">
       <div className="admin-rich-text-toolbar" aria-label="Product content formatting tools">
-        <select aria-label="Text style" defaultValue="p" onChange={handleBlockChange}>
+        <select aria-label="Text style" defaultValue="p" onMouseDown={rememberEditorSelection} onChange={handleBlockChange}>
           <option value="p">Paragraph</option>
           <option value="h2">Heading 2</option>
           <option value="h3">Heading 3</option>
           <option value="blockquote">Quote</option>
         </select>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('bold')}><strong>B</strong></button>
+        <button type="button" aria-label="Bold" onMouseDown={handleBoldMouseDown}><strong>B</strong></button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('italic')}><em>I</em></button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('underline')}><span className="admin-rich-underline">U</span></button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertUnorderedList')}>Bullet List</button>
@@ -581,6 +648,8 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
         onInput={syncValue}
         onBlur={syncValue}
         onClick={handleEditorClick}
+        onMouseUp={rememberEditorSelection}
+        onKeyUp={rememberEditorSelection}
         onPaste={handlePaste}
         onDragEnter={handleImageDragOver}
         onDragOver={handleImageDragOver}
