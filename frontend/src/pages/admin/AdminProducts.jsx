@@ -3,23 +3,6 @@ import { apiFetch, API_URL, formatAssetUrl } from '../../utils/api';
 import { formatRichText } from '../../utils/richText';
 import { cleanRichTextPasteHtml, isMicrosoftOfficeHtml } from '../../utils/richTextPaste';
 
-const PRODUCTS_CATEGORIES = [
-  { id: 'genome-editing', name: 'Genome Editing' },
-  { id: 'vector-clones', name: 'Vector Stock' },
-  { id: 'category-1764975611348', name: 'IVT mRNA' },
-  { id: 'category-1764975769330', name: 'Purified Protein' },
-  { id: 'lentivirus', name: 'Virus Product' },
-  { id: 'stable-cell-lines', name: 'Cell Lines' }
-];
-
-const REAGENTS_CATEGORIES = [
-  { id: 'category-1765063995229', name: 'DNA Reagents' },
-  { id: 'category-1766675380397', name: 'RNA Reagents' },
-  { id: 'category-1766675365489', name: 'Protein Reagents' },
-  { id: 'category-1765995504911', name: 'Cell Reagents' },
-  { id: 'category-1780539818236', name: 'Consumables' }
-];
-
 const richTextToPlainText = (value) => {
   const source = String(value || '');
   if (!/<[^>]+>/.test(source)) return source;
@@ -1158,10 +1141,6 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
   };
 
 
-  const fallbackCategories = (
-    categoryFilter === 'products' ? PRODUCTS_CATEGORIES : REAGENTS_CATEGORIES
-  ).filter((cat) => !cat.id.startsWith('all-'));
-  const fallbackCategoryIds = fallbackCategories.map((cat) => cat.id);
   const currentProductType = categoryFilter === 'products' ? 'product' : 'reagent';
   const normalizeCategory = (cat) => ({
     id: cat.external_id || cat.externalId || cat.id,
@@ -1172,35 +1151,24 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
     show_on_homepage: !!cat.show_on_homepage,
     homepage_image: cat.homepage_image || '',
     product_count: cat.product_count ?? products.filter(p => p.category_external_id === (cat.external_id || cat.externalId || cat.id)).length,
-    isFallback: !cat.category_id,
   });
   const dbMatchedCategories = categories
     .filter((cat) => {
       const type = (cat.product_type || '').toLowerCase();
       return type === currentProductType
         || (currentProductType === 'product' && type === 'both')
-        || (
-          currentProductType === 'reagent'
-          && type === 'consumable'
-          && fallbackCategoryIds.includes(cat.external_id)
-        )
-        || (!type && fallbackCategoryIds.includes(cat.external_id));
+        || (currentProductType === 'reagent' && type === 'consumable')
+        || (!type && currentProductType === 'product');
     })
     .map(normalizeCategory);
-  const categoryMap = new Map(dbMatchedCategories.map((cat) => [cat.id, cat]));
-  fallbackCategories.forEach((cat, index) => {
-    if (!categoryMap.has(cat.id)) {
-      categoryMap.set(cat.id, normalizeCategory({ ...cat, priority: index + 1, product_type: currentProductType }));
-    }
-  });
-  const matchedCategories = Array.from(categoryMap.values())
+  const matchedCategories = dbMatchedCategories
     .filter((cat) => cat.id)
     .sort((a, b) => (a.priority || 0) - (b.priority || 0) || a.name.localeCompare(b.name));
 
   const openCatalogEditor = () => {
     setError('');
     setCatalogRows(matchedCategories.map((cat, index) => ({
-      category_id: cat.isFallback ? null : cat.category_id,
+      category_id: cat.category_id,
       category_name: cat.name,
       external_id: cat.id,
       priority: cat.priority || index + 1,

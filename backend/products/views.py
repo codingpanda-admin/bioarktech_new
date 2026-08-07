@@ -556,11 +556,19 @@ def _get_product_documents(product=None, featured_product=None):
         path = urlparse(str(value or '')).path
         return unquote(os.path.basename(path)) or 'Product document'
 
+    def document_identity(value):
+        """Match equivalent stored paths regardless of media prefix or URL encoding."""
+        path = unquote(urlparse(str(value or '')).path).replace('\\', '/').strip()
+        path = path.lstrip('/')
+        if path.casefold().startswith('media/'):
+            path = path[len('media/'):]
+        return path.casefold()
+
     def add_document(name, url, document_type='Product Document'):
         normalized_name = str(name or '').strip() or file_name(url)
         normalized_url = str(url or '').strip()
         key = (
-            'url', normalized_url.lower().removeprefix('/media/')
+            'url', document_identity(normalized_url)
         ) if normalized_url else ('name', normalized_name.lower())
         if key in seen:
             return
@@ -594,6 +602,45 @@ def _get_product_documents(product=None, featured_product=None):
             if manual_url and str(manual_value).strip() == str(manual_url).strip():
                 manual_name = file_name(manual_url)
             add_document(manual_name, manual_url, 'Product Document')
+
+    return documents
+
+
+def _get_service_documents(manuals):
+    """Normalize current and legacy service documents for the public detail page."""
+    import os
+    from urllib.parse import unquote, urlparse
+
+    documents = []
+    seen = set()
+
+    for item in manuals or []:
+        if isinstance(item, dict):
+            url = str(item.get('manual') or item.get('url') or '').strip()
+            name = str(item.get('name') or item.get('title') or '').strip()
+        else:
+            url = str(item or '').strip()
+            name = ''
+
+        if not url:
+            continue
+
+        path = unquote(urlparse(url).path).replace('\\', '/').lstrip('/')
+        if path.casefold().startswith('media/'):
+            path = path[len('media/'):]
+        identity = path.casefold()
+        if identity in seen:
+            continue
+        seen.add(identity)
+
+        if not name or name == url:
+            name = unquote(os.path.basename(urlparse(url).path)) or 'Service Document'
+
+        documents.append({
+            'name': name,
+            'url': url,
+            'type': 'Service Document',
+        })
 
     return documents
 
@@ -709,15 +756,7 @@ def load_product_by_external_id(request, external_id):
         # Clean HTML content for description snippet
         import re
         clean_desc = re.sub(r'<[^>]*>', '', service.content)[:250] + "..." if service.content else ""
-        service_documents = [
-            {
-                'name': document.get('name') or 'Service Document',
-                'url': document.get('manual') or document.get('url'),
-                'type': 'Service Document',
-            }
-            for document in (service.manuals or [])
-            if isinstance(document, dict) and (document.get('manual') or document.get('url'))
-        ]
+        service_documents = _get_service_documents(service.manuals)
 
         service_data = {
             'product_id': f"svc-{service.id}",

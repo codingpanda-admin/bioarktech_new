@@ -319,7 +319,32 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
       }, index);
     });
   })();
-  const productDocuments = apiDocuments.length > 0 ? apiDocuments : legacyDocuments;
+  const dedupeDocuments = (documents) => {
+    const seen = new Set();
+
+    return documents.filter((document) => {
+      const rawIdentity = document.url || document.name || '';
+      let identity = String(rawIdentity).split('?')[0].split('#')[0];
+      try {
+        identity = decodeURIComponent(identity);
+      } catch {
+        // Keep malformed legacy URLs usable and compare their raw value.
+      }
+      identity = identity
+        .replace(/^https?:\/\/[^/]+/i, '')
+        .replaceAll('\\', '/')
+        .replace(/^\/+/, '')
+        .replace(/^media\//i, '')
+        .toLowerCase();
+
+      if (seen.has(identity)) return false;
+      seen.add(identity);
+      return true;
+    });
+  };
+  const productDocuments = dedupeDocuments(
+    apiDocuments.length > 0 ? apiDocuments : legacyDocuments
+  );
   const getImageUrl = (image) => {
     if (!image) return '';
     if (typeof image === 'string') return image;
