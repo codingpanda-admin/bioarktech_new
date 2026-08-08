@@ -38,6 +38,7 @@ urlpatterns = [
     path('users/', include('users.urls')),
     path('orders/', include('orders.urls')),
     path('blogs/', include('blogs.urls')),
+    path('genes/', include('genes.urls')),
     path('interface/', include('interface.urls')),
     path('csrf/', views.get_csrf, name='api-csrf'),
     path('signup/', views.signup_view, name='api-signup'),
