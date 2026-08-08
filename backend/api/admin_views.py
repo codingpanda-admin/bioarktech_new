@@ -336,6 +336,64 @@ def admin_list_products(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+def _product_manual_file_name(value):
+    from urllib.parse import unquote, urlparse
+
+    path = urlparse(str(value or '')).path.replace('\\', '/')
+    return unquote(path.rsplit('/', 1)[-1]) or 'Product document'
+
+
+def _normalize_product_manual_payload(value):
+    """Preserve document display names separately from their stored paths."""
+    original = []
+    names = []
+    urls = []
+
+    for item in value or []:
+        if isinstance(item, dict):
+            manual_path = str(item.get('manual') or item.get('url') or '').strip()
+            name = str(item.get('name') or item.get('title') or '').strip()
+        else:
+            manual_path = str(item or '').strip()
+            name = ''
+
+        if not manual_path:
+            continue
+        if not name or name == manual_path:
+            name = _product_manual_file_name(manual_path)
+
+        original.append({'name': name, 'manual': manual_path})
+        names.append(name)
+        urls.append(manual_path)
+
+    return original, names, urls
+
+
+def _serialize_product_manuals(product):
+    """Return editor-friendly document objects from current and legacy rows."""
+    names = list(product.manuals or [])
+    urls = list(product.manual_urls or [])
+    documents = []
+
+    for index in range(max(len(names), len(urls))):
+        name = str(names[index] if index < len(names) else '').strip()
+        manual_path = str(urls[index] if index < len(urls) else '').strip()
+
+        # Older admin saves wrote the path into both arrays. Some older imports
+        # also stored a path only in manuals.
+        if not manual_path and name and (
+            '/' in name or '\\' in name or name.lower().endswith(('.pdf', '.doc', '.docx', '.xls', '.xlsx'))
+        ):
+            manual_path = name
+        if manual_path and (not name or name == manual_path):
+            name = _product_manual_file_name(manual_path)
+
+        if name or manual_path:
+            documents.append({'name': name, 'manual': manual_path})
+
+    return documents
+
+
 @api_view(['GET'])
 def admin_get_product(request, product_id):
     err = _check_admin(request)
@@ -437,14 +495,10 @@ def admin_get_product(request, product_id):
                         'name': man_obj.name,
                         'manual': man_obj.manual.name
                     })
-            data['manuals'] = manuals_list if manuals_list else [
-                {'name': m.split('/')[-1] if '/' in m else m, 'manual': m} for m in p.manuals
-            ]
+            data['manuals'] = manuals_list if manuals_list else _serialize_product_manuals(p)
         else:
             # For standard products, format manuals list as objects for frontend editor consistency
-            data['manuals'] = [
-                {'name': m.split('/')[-1] if '/' in m else m, 'manual': m} for m in p.manuals
-            ]
+            data['manuals'] = _serialize_product_manuals(p)
 
         return Response(data)
     except Product.DoesNotExist:
@@ -547,17 +601,10 @@ def admin_create_product(request):
     try:
         d = dict(request.data)
         if 'manuals' in d:
-            d['manuals_original'] = d['manuals']
-            normalized = []
-            for item in d['manuals']:
-                if isinstance(item, dict):
-                    path = item.get('manual', '')
-                else:
-                    path = str(item)
-                if path:
-                    normalized.append(path)
-            d['manuals'] = normalized
-            d['manual_urls'] = normalized
+            originals, names, urls = _normalize_product_manual_payload(d['manuals'])
+            d['manuals_original'] = originals
+            d['manuals'] = names
+            d['manual_urls'] = urls
 
         raw_detail = d.get('raw_detail')
         if isinstance(raw_detail, dict) and 'content_text' in d:
@@ -614,17 +661,10 @@ def admin_update_product(request, product_id):
         p = Product.objects.get(product_id=product_id)
         d = dict(request.data)
         if 'manuals' in d:
-            d['manuals_original'] = d['manuals']
-            normalized = []
-            for item in d['manuals']:
-                if isinstance(item, dict):
-                    path = item.get('manual', '')
-                else:
-                    path = str(item)
-                if path:
-                    normalized.append(path)
-            d['manuals'] = normalized
-            d['manual_urls'] = normalized
+            originals, names, urls = _normalize_product_manual_payload(d['manuals'])
+            d['manuals_original'] = originals
+            d['manuals'] = names
+            d['manual_urls'] = urls
 
         updatable_fields = [
             'external_id', 'product_name', 'description', 'image_url',
@@ -1507,11 +1547,11 @@ def _normalize_service_manuals(value):
             manual = str(item.get('manual') or item.get('url') or '').strip()
         else:
             manual = str(item or '').strip()
-            name = manual.replace('\\', '/').split('/')[-1] if manual else ''
+            name = ''
 
         if manual:
             documents.append({
-                'name': name or manual.replace('\\', '/').split('/')[-1],
+                'name': name if name and name != manual else _product_manual_file_name(manual),
                 'manual': manual,
             })
 
@@ -1545,7 +1585,7 @@ def admin_list_services(request):
                 'content': s.content,
                 'price': s.price,
                 'performance_data': s.performance_data,
-                'manuals': s.manuals,
+                'manuals': _normalize_service_manuals(s.manuals),
                 'image': request.build_absolute_uri(s.image.url) if s.image else None,
                 'category': s.category,
                 'service_group': s.service_group,
@@ -1575,7 +1615,7 @@ def admin_get_service(request, service_id):
             'content': s.content,
             'price': s.price,
             'performance_data': s.performance_data,
-            'manuals': s.manuals,
+            'manuals': _normalize_service_manuals(s.manuals),
             'image': request.build_absolute_uri(s.image.url) if s.image else None,
             'category': s.category,
             'service_group': s.service_group,
@@ -1731,6 +1771,7 @@ def admin_upload_service_document(request):
         saved_path = default_storage.save(f'manual_files/{document_file.name}', document_file)
         return Response({
             'document_path': f'media/{saved_path}',
+            'original_name': document_file.name,
             'url': request.build_absolute_uri(default_storage.url(saved_path)),
             'message': 'Document uploaded successfully',
         }, status=status.HTTP_201_CREATED)

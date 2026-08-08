@@ -52,7 +52,41 @@ const parseProductPrice = (value) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
+const getOptionPriceOrListPrice = (optionPrice, listPrice) => {
+  const optionText = String(optionPrice ?? '').trim();
+  const numericOptionPrice = parseProductPrice(optionPrice);
+  const hasOptionPrice = (
+    optionText
+    && !/^contact(?:\s+us)?(?:\s+for)?\s+(?:a\s+)?quote$/i.test(optionText)
+    && (numericOptionPrice === null || numericOptionPrice > 0)
+  );
+
+  return hasOptionPrice ? optionPrice : (listPrice ?? '');
+};
+
+const getProductListPrice = (product) => (
+  product?.list_price
+  || product?.listPrice
+  || product?.raw_detail?.listPrice
+  || product?.raw_detail?.list_price
+  || ''
+);
+
+const isEnabledFlag = (value) => (
+  value === true
+  || value === 1
+  || ['true', '1', 'yes', 'on'].includes(String(value ?? '').trim().toLowerCase())
+);
+
+const isQuoteOnlyProduct = (product) => [
+  product?.quote_only,
+  product?.quoteOnly,
+  product?.raw_detail?.quote_only,
+  product?.raw_detail?.quoteOnly,
+].some(isEnabledFlag);
+
 const getProductPriceOptions = (product) => {
+  const productListPrice = getProductListPrice(product);
   const options = Array.isArray(product?.options) ? product.options : [];
   const rawOptionPrices = (
     product?.option_prices
@@ -73,7 +107,7 @@ const getProductPriceOptions = (product) => {
     return optionNames.map((option, index) => ({
       id: `catalog-option-${index}-${option}`,
       unit_size: option,
-      unit_price: optionPrices[option] ?? '',
+      unit_price: getOptionPriceOrListPrice(optionPrices[option], productListPrice),
       list_price: '',
       on_discount: false,
     }));
@@ -84,13 +118,14 @@ const getProductPriceOptions = (product) => {
     return unitPrices.map((unit, index) => ({
       ...unit,
       id: unit.id || `unit-price-${index}-${unit.unit_size || 'option'}`,
+      unit_price: getOptionPriceOrListPrice(unit.unit_price, productListPrice),
     }));
   }
 
   return optionNames.map((option, index) => ({
     id: `catalog-option-${index}-${option}`,
     unit_size: option,
-    unit_price: '',
+    unit_price: getOptionPriceOrListPrice('', productListPrice),
     list_price: '',
     on_discount: false,
   }));
@@ -166,7 +201,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   }, []);
 
   const handleAddToCart = () => {
-    if (product?.quote_only || product?.quoteOnly) {
+    if (isQuoteOnlyProduct(product)) {
       return;
     }
 
@@ -200,11 +235,6 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
     || REAGENT_CATEGORY_IDS.has(categoryExternalId)
     || normalizedCategoryLabel.includes('reagent')
     || normalizedCategoryLabel.includes('consumable');
-  const reagentKeyFeatures = isReagent && Array.isArray(product.key_features)
-    ? (product.key_features.length === 1
-      ? product.key_features[0]
-      : product.key_features.map((feature) => `- ${feature}`).join('\n'))
-    : '';
   const name = product.product_name || product.externalId || product.external_id;
   const breadcrumbSection = isReagent
     ? { label: 'Reagents', href: '/search?category=reagents' }
@@ -230,11 +260,15 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
       || serviceCategoryValues.includes(category.label.toLowerCase())
     ));
   const availabilityLabel = product.availability;
-  const quoteOnly = Boolean(product.quote_only || product.quoteOnly);
+  const quoteOnly = isQuoteOnlyProduct(product);
   const productCode = product.catalog_number || product.product_sku || product.external_id || product.externalId || '';
   const detailsContent = formatRichText(
     product.content_text || product.contentText || product.raw_detail?.contentText || ''
   );
+  const specificationKeyFeatures = Array.isArray(product.key_features)
+    ? product.key_features.map((feature) => `- ${feature}`).join('\n')
+    : product.key_features || '';
+  const specificationStorage = product.storage_info || product.storage_stability || '';
   const documentFileName = (value) => {
     const cleanValue = String(value || '').split('?')[0].split('#')[0];
     const fileName = cleanValue.split('/').filter(Boolean).pop();
@@ -285,7 +319,32 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
       }, index);
     });
   })();
-  const productDocuments = apiDocuments.length > 0 ? apiDocuments : legacyDocuments;
+  const dedupeDocuments = (documents) => {
+    const seen = new Set();
+
+    return documents.filter((document) => {
+      const rawIdentity = document.url || document.name || '';
+      let identity = String(rawIdentity).split('?')[0].split('#')[0];
+      try {
+        identity = decodeURIComponent(identity);
+      } catch {
+        // Keep malformed legacy URLs usable and compare their raw value.
+      }
+      identity = identity
+        .replace(/^https?:\/\/[^/]+/i, '')
+        .replaceAll('\\', '/')
+        .replace(/^\/+/, '')
+        .replace(/^media\//i, '')
+        .toLowerCase();
+
+      if (seen.has(identity)) return false;
+      seen.add(identity);
+      return true;
+    });
+  };
+  const productDocuments = dedupeDocuments(
+    apiDocuments.length > 0 ? apiDocuments : legacyDocuments
+  );
   const getImageUrl = (image) => {
     if (!image) return '';
     if (typeof image === 'string') return image;
@@ -355,7 +414,8 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   const productPriceOptions = getProductPriceOptions(product);
   const hasProductPriceOptions = productPriceOptions.length > 0;
   const selectedPrice = hasProductPriceOptions ? selectedUnitSize?.unit_price : price;
-  const listPrice = hasProductPriceOptions ? selectedUnitSize?.list_price : product.list_price;
+  const productListPrice = getProductListPrice(product);
+  const listPrice = hasProductPriceOptions ? selectedUnitSize?.list_price : productListPrice;
   const onDiscount = hasProductPriceOptions ? selectedUnitSize?.on_discount : false;
   const numericSelectedPrice = parseProductPrice(selectedPrice);
   const numericListPrice = parseProductPrice(listPrice);
@@ -367,7 +427,10 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   ) ? Math.round(((numericListPrice - numericSelectedPrice) / numericListPrice) * 100) : 0;
   const showDiscount = discountPercent > 0;
   const displayPrice = formatProductPrice(
-    selectedPrice || product.price_range || product.list_price
+    selectedPrice
+    || product.price_range
+    || product.raw_detail?.priceRange
+    || productListPrice
   ) || 'Contact for Quote';
 
   const quoteModal = showQuoteModal && (
@@ -888,88 +951,29 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
             <div className="tab-header" style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Product Information</div>
             <table className="product-specifications-table">
               <tbody>
-                {isFeatured ? (
-                  <>
-                    <tr>
-                      <td>Description</td>
-                      <td dangerouslySetInnerHTML={{ __html: product.description }}></td>
-                    </tr>
-                    {product.key_features && (
-                      <tr>
-                        <td>Key Features</td>
-                        <td dangerouslySetInnerHTML={{ __html: product.key_features }}></td>
-                      </tr>
-                    )}
-                    {product.storage_info && (
-                      <tr>
-                        <td>Storage & Stability</td>
-                        <td dangerouslySetInnerHTML={{ __html: product.storage_info }}></td>
-                      </tr>
-                    )}
-                    {product.ship_info && (
-                      <tr>
-                        <td>Shipping Info</td>
-                        <td dangerouslySetInnerHTML={{ __html: product.ship_info }}></td>
-                      </tr>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {product.description && (
-                      <tr>
-                        <td>Description</td>
-                        {isReagent ? (
-                          <td dangerouslySetInnerHTML={{ __html: formatRichText(product.description) }} />
-                        ) : (
-                          <td>{product.description}</td>
-                        )}
-                      </tr>
-                    )}
-                    {categoryLabel && (
-                      <tr>
-                        <td>Product Category</td>
-                        <td>{categoryLabel}</td>
-                      </tr>
-                    )}
-                    {(product.product_group || product.productGroup) && (
-                      <tr>
-                        <td>Product Group</td>
-                        <td>{product.product_group || product.productGroup}</td>
-                      </tr>
-                    )}
-                    {product.catalog_number && (
-                      <tr>
-                        <td>Catalog Number</td>
-                        <td>{product.catalog_number}</td>
-                      </tr>
-                    )}
-                    {product.key_features && product.key_features.length > 0 && (
-                      <tr>
-                        <td>Key Features</td>
-                        {isReagent ? (
-                          <td dangerouslySetInnerHTML={{ __html: formatRichText(reagentKeyFeatures) }} />
-                        ) : (
-                          <td>
-                            <ul>
-                              {product.key_features.map((feature, idx) => (
-                                <li key={idx}>{feature}</li>
-                              ))}
-                            </ul>
-                          </td>
-                        )}
-                      </tr>
-                    )}
-                    {product.storage_stability && (
-                      <tr>
-                        <td>Storage & Stability</td>
-                        {isReagent ? (
-                          <td dangerouslySetInnerHTML={{ __html: formatRichText(product.storage_stability) }} />
-                        ) : (
-                          <td>{product.storage_stability}</td>
-                        )}
-                      </tr>
-                    )}
-                  </>
+                {product.description && (
+                  <tr>
+                    <td>Description</td>
+                    <td dangerouslySetInnerHTML={{ __html: formatRichText(product.description) }} />
+                  </tr>
+                )}
+                {specificationKeyFeatures && (
+                  <tr>
+                    <td>Key Features</td>
+                    <td dangerouslySetInnerHTML={{ __html: formatRichText(specificationKeyFeatures) }} />
+                  </tr>
+                )}
+                {specificationStorage && (
+                  <tr>
+                    <td>Storage &amp; Stability</td>
+                    <td dangerouslySetInnerHTML={{ __html: formatRichText(specificationStorage) }} />
+                  </tr>
+                )}
+                {product.ship_info && (
+                  <tr>
+                    <td>Shipping Info</td>
+                    <td dangerouslySetInnerHTML={{ __html: formatRichText(product.ship_info) }} />
+                  </tr>
                 )}
               </tbody>
             </table>

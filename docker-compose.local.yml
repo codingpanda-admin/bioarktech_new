@@ -37,10 +37,6 @@ services:
     command: >
       sh -c "python wait_for_db.py &&
              python manage.py migrate --fake-initial &&
-             python populate_product.py &&
-             python populate_reagents.py &&
-             python populate_services.py &&
-             python populate_blogs.py &&
              python manage.py collectstatic --noinput;
              python manage.py runserver 0.0.0.0:8000"
     depends_on:

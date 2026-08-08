@@ -3,23 +3,6 @@ import { apiFetch, API_URL, formatAssetUrl } from '../../utils/api';
 import { formatRichText } from '../../utils/richText';
 import { cleanRichTextPasteHtml, isMicrosoftOfficeHtml } from '../../utils/richTextPaste';
 
-const PRODUCTS_CATEGORIES = [
-  { id: 'genome-editing', name: 'Genome Editing' },
-  { id: 'vector-clones', name: 'Vector Stock' },
-  { id: 'category-1764975611348', name: 'IVT mRNA' },
-  { id: 'category-1764975769330', name: 'Purified Protein' },
-  { id: 'lentivirus', name: 'Virus Product' },
-  { id: 'stable-cell-lines', name: 'Cell Lines' }
-];
-
-const REAGENTS_CATEGORIES = [
-  { id: 'category-1765063995229', name: 'DNA Reagents' },
-  { id: 'category-1766675380397', name: 'RNA Reagents' },
-  { id: 'category-1766675365489', name: 'Protein Reagents' },
-  { id: 'category-1765995504911', name: 'Cell Reagents' },
-  { id: 'category-1780539818236', name: 'Consumables' }
-];
-
 const richTextToPlainText = (value) => {
   const source = String(value || '');
   if (!/<[^>]+>/.test(source)) return source;
@@ -69,6 +52,7 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
   const editorRef = useRef(null);
   const lastEmittedHtmlRef = useRef(null);
   const selectedImageRef = useRef(null);
+  const savedSelectionRangeRef = useRef(null);
   const [isImageDragActive, setIsImageDragActive] = useState(false);
   const [imageUploadsInProgress, setImageUploadsInProgress] = useState(0);
   const [imageUploadError, setImageUploadError] = useState('');
@@ -204,26 +188,10 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
     }
   };
 
-  const preventFocusLoss = (event) => {
-    event.preventDefault();
-  };
-
   const focusEditor = () => {
     if (editorRef.current) {
-      editorRef.current.focus();
+      editorRef.current.focus({ preventScroll: true });
     }
-  };
-
-  const runCommand = (command, commandValue = null) => {
-    focusEditor();
-    document.execCommand(command, false, commandValue);
-    syncValue();
-  };
-
-  const handleLink = () => {
-    const url = window.prompt('Enter link URL');
-    if (!url) return;
-    runCommand('createLink', url);
   };
 
   const getEditorSelectionRange = () => {
@@ -236,6 +204,88 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
       ? range.commonAncestorContainer.parentElement
       : range.commonAncestorContainer;
     return editor.contains(container) ? range.cloneRange() : null;
+  };
+
+  const rememberEditorSelection = () => {
+    const range = getEditorSelectionRange();
+    if (range) savedSelectionRangeRef.current = range;
+    return range;
+  };
+
+  const restoreEditorSelection = (requestedRange) => {
+    const editor = editorRef.current;
+    const range = requestedRange || savedSelectionRangeRef.current;
+    if (!editor || !range) return false;
+
+    const container = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
+      ? range.commonAncestorContainer.parentElement
+      : range.commonAncestorContainer;
+    if (!container || !editor.contains(container)) return false;
+
+    focusEditor();
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    return true;
+  };
+
+  const preventFocusLoss = (event) => {
+    rememberEditorSelection();
+    event.preventDefault();
+  };
+
+  const applyBoldFallback = (range) => {
+    const editor = editorRef.current;
+    if (!editor || !range || range.collapsed || !restoreEditorSelection(range)) return false;
+
+    const strong = document.createElement('strong');
+    const selectedContent = range.extractContents();
+    strong.appendChild(selectedContent);
+    range.insertNode(strong);
+    editor.normalize();
+
+    const nextRange = document.createRange();
+    nextRange.selectNodeContents(strong);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(nextRange);
+    savedSelectionRangeRef.current = nextRange.cloneRange();
+    return true;
+  };
+
+  const runCommand = (command, commandValue = null) => {
+    const range = getEditorSelectionRange() || savedSelectionRangeRef.current;
+    restoreEditorSelection(range);
+    const htmlBeforeCommand = editorRef.current?.innerHTML;
+    document.execCommand(command, false, commandValue);
+
+    // execCommand is deprecated and returns without changing the document in
+    // some browser builds. Bold still needs to update the selected text now.
+    if (
+      command === 'bold'
+      && range
+      && !range.collapsed
+      && editorRef.current?.innerHTML === htmlBeforeCommand
+    ) {
+      applyBoldFallback(range);
+    }
+
+    rememberEditorSelection();
+    syncValue();
+  };
+
+  const handleBoldMouseDown = (event) => {
+    rememberEditorSelection();
+    event.preventDefault();
+    runCommand('bold');
+  };
+
+  const handleLink = () => {
+    const range = getEditorSelectionRange() || savedSelectionRangeRef.current;
+    const url = window.prompt('Enter link URL');
+    if (!url) return;
+    restoreEditorSelection(range);
+    runCommand('createLink', url);
   };
 
   const getDropRange = (event) => {
@@ -539,13 +589,13 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
   return (
     <div className="admin-rich-text admin-product-rich-text">
       <div className="admin-rich-text-toolbar" aria-label="Product content formatting tools">
-        <select aria-label="Text style" defaultValue="p" onChange={handleBlockChange}>
+        <select aria-label="Text style" defaultValue="p" onMouseDown={rememberEditorSelection} onChange={handleBlockChange}>
           <option value="p">Paragraph</option>
           <option value="h2">Heading 2</option>
           <option value="h3">Heading 3</option>
           <option value="blockquote">Quote</option>
         </select>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('bold')}><strong>B</strong></button>
+        <button type="button" aria-label="Bold" onMouseDown={handleBoldMouseDown}><strong>B</strong></button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('italic')}><em>I</em></button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('underline')}><span className="admin-rich-underline">U</span></button>
         <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertUnorderedList')}>Bullet List</button>
@@ -581,6 +631,8 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
         onInput={syncValue}
         onBlur={syncValue}
         onClick={handleEditorClick}
+        onMouseUp={rememberEditorSelection}
+        onKeyUp={rememberEditorSelection}
         onPaste={handlePaste}
         onDragEnter={handleImageDragOver}
         onDragOver={handleImageDragOver}
@@ -1089,10 +1141,6 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
   };
 
 
-  const fallbackCategories = (
-    categoryFilter === 'products' ? PRODUCTS_CATEGORIES : REAGENTS_CATEGORIES
-  ).filter((cat) => !cat.id.startsWith('all-'));
-  const fallbackCategoryIds = fallbackCategories.map((cat) => cat.id);
   const currentProductType = categoryFilter === 'products' ? 'product' : 'reagent';
   const normalizeCategory = (cat) => ({
     id: cat.external_id || cat.externalId || cat.id,
@@ -1103,35 +1151,24 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
     show_on_homepage: !!cat.show_on_homepage,
     homepage_image: cat.homepage_image || '',
     product_count: cat.product_count ?? products.filter(p => p.category_external_id === (cat.external_id || cat.externalId || cat.id)).length,
-    isFallback: !cat.category_id,
   });
   const dbMatchedCategories = categories
     .filter((cat) => {
       const type = (cat.product_type || '').toLowerCase();
       return type === currentProductType
         || (currentProductType === 'product' && type === 'both')
-        || (
-          currentProductType === 'reagent'
-          && type === 'consumable'
-          && fallbackCategoryIds.includes(cat.external_id)
-        )
-        || (!type && fallbackCategoryIds.includes(cat.external_id));
+        || (currentProductType === 'reagent' && type === 'consumable')
+        || (!type && currentProductType === 'product');
     })
     .map(normalizeCategory);
-  const categoryMap = new Map(dbMatchedCategories.map((cat) => [cat.id, cat]));
-  fallbackCategories.forEach((cat, index) => {
-    if (!categoryMap.has(cat.id)) {
-      categoryMap.set(cat.id, normalizeCategory({ ...cat, priority: index + 1, product_type: currentProductType }));
-    }
-  });
-  const matchedCategories = Array.from(categoryMap.values())
+  const matchedCategories = dbMatchedCategories
     .filter((cat) => cat.id)
     .sort((a, b) => (a.priority || 0) - (b.priority || 0) || a.name.localeCompare(b.name));
 
   const openCatalogEditor = () => {
     setError('');
     setCatalogRows(matchedCategories.map((cat, index) => ({
-      category_id: cat.isFallback ? null : cat.category_id,
+      category_id: cat.category_id,
       category_name: cat.name,
       external_id: cat.id,
       priority: cat.priority || index + 1,

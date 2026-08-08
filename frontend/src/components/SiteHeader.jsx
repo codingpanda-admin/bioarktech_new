@@ -1,36 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { apiFetch, logo } from '../utils/api';
 
-const defaultProductCategories = [
-  // Products
-  { category_name: 'Genome Editing', external_id: 'genome-editing', product_type: 'product' },
-  { category_name: 'Vector Stock', external_id: 'vector-clones', product_type: 'product' },
-  { category_name: 'IVT mRNA', external_id: 'category-1764975611348', product_type: 'product' },
-  { category_name: 'Purified Protein', external_id: 'category-1764975769330', product_type: 'product' },
-  { category_name: 'Virus Product', external_id: 'lentivirus', product_type: 'product' },
-  { category_name: 'Cell Lines', external_id: 'stable-cell-lines', product_type: 'product' },
-
-  // Services
-  { category_name: 'Genome Editing Services', external_id: 'genome-editing-services', product_type: 'service' },
-  { category_name: 'Custom Cloning Services', external_id: 'synthesis-cloning-services', product_type: 'service' },
-  { category_name: 'Stable Cell Line Services', external_id: 'cell-line-services', product_type: 'service' },
-  { category_name: 'Lentivirus Package Services', external_id: 'virus-packaging-services', product_type: 'service' },
-  { category_name: 'Vector Construction Support', external_id: 'vector-construction-services', product_type: 'service' },
-  { category_name: 'Functional Testing', external_id: 'functional-testing-services', product_type: 'service' },
-  { category_name: 'Experiment Services', external_id: 'experiment-services', product_type: 'service' },
-  { category_name: 'Lab Supplies', external_id: 'lab-supplies-services', product_type: 'service' },
-  { category_name: 'Project Consultation', external_id: 'project-consultation-services', product_type: 'service' },
-
-  // Reagents
-  { category_name: 'DNA Reagents', external_id: 'category-1765063995229', product_type: 'reagent' },
-  { category_name: 'RNA Reagents', external_id: 'category-1766675380397', product_type: 'reagent' },
-  { category_name: 'Protein Reagents', external_id: 'category-1766675365489', product_type: 'reagent' },
-  { category_name: 'Cell Reagents', external_id: 'category-1765995504911', product_type: 'reagent' },
-
-  // Consumables
-  { category_name: 'Consumables', external_id: 'category-1780539818236', product_type: 'consumable' },
-];
-
 const categoryIcons = {
   'Genome Editing': (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -500,6 +470,7 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
   const [consumablesMenuOpen, setConsumablesMenuOpen] = useState(false);
   const [aboutMenuOpen, setAboutMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [catalog, setCatalog] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
   const profileMenuRef = React.useRef(null);
@@ -545,6 +516,23 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
     setAboutMenuOpen(false);
     setProfileMenuOpen(false);
   }, []);
+
+  const catalogMenuOpen = productMenuOpen || serviceMenuOpen || reagentMenuOpen;
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+    closeMenus();
+  }, [currentPath, closeMenus]);
+
+  useEffect(() => {
+    if (!catalogMenuOpen || !window.matchMedia('(max-width: 720px)').matches) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [catalogMenuOpen]);
 
   useEffect(() => {
     if (!profileMenuOpen) {
@@ -661,7 +649,12 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
     ) : 'products';
 
     return (
-      <div className={`products-mega-menu catalog-mega-menu ${menuType}-mega-menu`} id={`${menuType}-menu`}>
+      <div
+        className={`products-mega-menu catalog-mega-menu ${menuType}-mega-menu`}
+        id={`${menuType}-menu`}
+        role="region"
+        aria-label={`${menuType === 'reagent' ? 'Reagents' : menuType} catalog`}
+      >
         <MenuCloseButton label={menuCloseLabel} />
 
         {/* Category sidebar */}
@@ -714,7 +707,8 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
                 </a>
               </div>
 
-              {totalCount === 0 ? (
+              <div className="catalog-detail-scroll">
+                {totalCount === 0 ? (
                 <div className="catalog-empty">
                   <div className="catalog-empty-icon">🧬</div>
                   <p>Products coming soon</p>
@@ -762,7 +756,8 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
                     </div>
                   ))}
                 </div>
-              )}
+                )}
+              </div>
 
               <div className="catalog-detail-footer">
                 <a
@@ -785,11 +780,25 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
   };
 
   return (
-    <header className="site-header">
+    <header className={`site-header ${mobileNavOpen ? 'is-mobile-nav-open' : ''} ${catalogMenuOpen ? 'has-catalog-menu-open' : ''}`}>
       <div className="topbar">
         <a className="brand" href="/" onClick={(e) => { e.preventDefault(); navigate('/'); }} aria-label="Bio Ark Tech home">
           <img src={logo} alt="Bio Ark Tech" />
         </a>
+
+        <button
+          className="mobile-navigation-toggle"
+          type="button"
+          aria-expanded={mobileNavOpen}
+          aria-controls="primary-navigation"
+          onClick={() => {
+            if (mobileNavOpen) closeMenus();
+            setMobileNavOpen((isOpen) => !isOpen);
+          }}
+        >
+          <span className="mobile-navigation-toggle-icon" aria-hidden="true" />
+          <span>{mobileNavOpen ? 'Close' : 'Menu'}</span>
+        </button>
 
         <form className="search" role="search" onSubmit={handleSearchSubmit}>
           <input 
@@ -848,7 +857,14 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
         </div>
       </div>
 
-      <nav className="main-nav" aria-label="Primary navigation">
+      <nav
+        className="main-nav"
+        id="primary-navigation"
+        aria-label="Primary navigation"
+        onClick={(event) => {
+          if (event.target.closest('a')) setMobileNavOpen(false);
+        }}
+      >
         <div 
           className={`products-nav ${productMenuOpen ? 'is-open' : ''} ${productNavSelected ? 'is-selected' : ''}`}
           onMouseEnter={() => {

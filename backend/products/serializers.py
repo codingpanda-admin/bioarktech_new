@@ -122,13 +122,18 @@ class FeaturedProductSerializer(serializers.ModelSerializer):
 class PreviewFeaturedProductSerializer(serializers.ModelSerializer):
     externalId = serializers.CharField(source='external_id', read_only=True)
     unit_price = serializers.SerializerMethodField()
+    first_option_price = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     product_name = serializers.SerializerMethodField()
     catalog_number = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
-        fields = ['product_name', 'external_id', 'externalId', 'catalog_number', 'unit_price', 'image', 'show_on_screen']
+        fields = [
+            'product_name', 'external_id', 'externalId', 'catalog_number', 'unit_price',
+            'list_price', 'options', 'option_prices', 'first_option_price', 'image',
+            'show_on_screen',
+        ]
 
     def get_product_name(self, product):
         return product.product_name
@@ -154,6 +159,37 @@ class PreviewFeaturedProductSerializer(serializers.ModelSerializer):
                     return f"{min_str} - {max_str}"
                 return fp.on_discount
         return product.list_price or product.price_range
+
+    def get_first_option_price(self, product):
+        options = product.options if isinstance(product.options, list) else []
+        option_prices = product.option_prices if isinstance(product.option_prices, dict) else {}
+
+        if options:
+            first_option = str(options[0] or '').strip()
+            first_price = option_prices.get(first_option)
+            if first_price not in [None, '']:
+                return first_price
+
+        for option_price in option_prices.values():
+            if option_price not in [None, '']:
+                return option_price
+
+        featured_product = None
+        if product.external_id and product.external_id.startswith('fp-'):
+            featured_product = FeaturedProduct.objects.filter(
+                catalog_number__iexact=product.external_id[3:].upper()
+            ).first()
+        elif product.catalog_number:
+            featured_product = FeaturedProduct.objects.filter(
+                catalog_number__iexact=product.catalog_number
+            ).first()
+
+        if featured_product:
+            unit_price = UnitPrice.objects.filter(union=featured_product.union).order_by('id').first()
+            if unit_price:
+                return unit_price.unit_price
+
+        return ''
 
     def get_image(self, product):
         fp = None

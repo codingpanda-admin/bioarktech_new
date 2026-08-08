@@ -6763,6 +6763,11 @@ label,
   text-decoration: underline;
 }
 
+.admin-rich-text-editor strong,
+.admin-rich-text-editor b {
+  font-weight: 700;
+}
+
 .admin-rich-text-editor img {
   display: block;
   max-width: 100%;
@@ -7969,18 +7974,30 @@ label,
   flex: 0 0 calc(100% - var(--catalog-sidebar-width));
   width: calc(100% - var(--catalog-sidebar-width));
   min-width: 0;
+  min-height: 0;
   padding: 30px;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   background: #ffffff;
   position: relative;
 }
 
 .catalog-detail-header {
+  flex: 0 0 auto;
   border-bottom: 1.5px solid #f2f4f7;
   padding-bottom: 14px;
   margin-bottom: 20px;
+}
+
+.catalog-detail-scroll {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-gutter: stable;
 }
 
 .catalog-detail-title {
@@ -8009,9 +8026,10 @@ label,
 
 .catalog-subcategories {
   display: grid;
+  width: 100%;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
-  flex-grow: 1;
+  align-content: start;
 }
 
 .catalog-subcategory {
@@ -8077,9 +8095,12 @@ label,
 }
 
 .catalog-detail-footer {
-  margin-top: 24px;
+  flex: 0 0 auto;
+  margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid #f2f4f7;
+  background: #ffffff;
+  box-shadow: 0 -10px 18px -18px rgba(16, 24, 40, 0.45);
 }
 
 .catalog-view-all {
@@ -8125,6 +8146,223 @@ label,
   font-weight: 600;
   color: var(--blue-dark, #094cb4);
   text-decoration: none;
+}
+
+.mobile-navigation-toggle {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .brand img {
+    width: min(205px, 58vw);
+  }
+
+  .mobile-navigation-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 8px 13px;
+    border: 1px solid #c7d7ea;
+    border-radius: 8px;
+    color: var(--blue-dark);
+    background: #f7fbff;
+    font-size: 13px;
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  .mobile-navigation-toggle-icon,
+  .mobile-navigation-toggle-icon::before,
+  .mobile-navigation-toggle-icon::after {
+    display: block;
+    width: 17px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  .mobile-navigation-toggle-icon {
+    position: relative;
+  }
+
+  .mobile-navigation-toggle-icon::before,
+  .mobile-navigation-toggle-icon::after {
+    position: absolute;
+    left: 0;
+    content: "";
+  }
+
+  .mobile-navigation-toggle-icon::before {
+    top: -5px;
+  }
+
+  .mobile-navigation-toggle-icon::after {
+    top: 5px;
+  }
+
+  .topbar .search,
+  .topbar .header-actions {
+    grid-column: 1 / -1;
+  }
+
+  .site-header .main-nav {
+    display: none;
+  }
+
+  .site-header.is-mobile-nav-open .main-nav {
+    display: flex;
+    width: 100%;
+    max-height: calc(100dvh - 220px);
+    margin: 0;
+    padding: 8px 14px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-top: 1px solid var(--line);
+    background: #fff;
+  }
+
+  .site-header.is-mobile-nav-open .main-nav > *,
+  .site-header.is-mobile-nav-open .products-nav,
+  .site-header.is-mobile-nav-open .nav-dropdown {
+    width: 100%;
+    min-height: 44px;
+    justify-content: stretch;
+  }
+
+  .site-header.is-mobile-nav-open .nav-trigger,
+  .site-header.is-mobile-nav-open .nav-link-plain,
+  .site-header.is-mobile-nav-open .quote-button {
+    display: flex;
+    width: 100%;
+    min-height: 44px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 12px;
+    border-radius: 7px;
+    text-align: left;
+  }
+
+  .site-header.is-mobile-nav-open .nav-trigger:hover,
+  .site-header.is-mobile-nav-open .nav-trigger:focus-visible,
+  .site-header.is-mobile-nav-open .nav-link-plain:hover,
+  .site-header.is-mobile-nav-open .nav-link-plain:focus-visible {
+    background: #f0f6ff;
+    outline: 0;
+  }
+
+  .site-header.has-catalog-menu-open .main-nav {
+    overflow: visible;
+  }
+
+  .catalog-mega-menu {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 400 !important;
+    display: flex !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    flex-direction: column;
+    border: 0;
+    border-radius: 0;
+    transform: none !important;
+  }
+
+  .catalog-mega-menu .menu-panel-close {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 3;
+    width: 38px;
+    height: 38px;
+  }
+
+  .catalog-sidebar {
+    flex: 0 0 min(38dvh, 300px);
+    width: 100%;
+    max-width: none;
+    padding: 54px 12px 12px;
+    border-right: 0;
+    border-bottom: 1px solid #e4edf8;
+  }
+
+  .catalog-category-btn {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  .catalog-detail {
+    flex: 1 1 auto;
+    width: 100%;
+    padding: 18px 14px 24px;
+  }
+
+  .catalog-detail-title {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 18px;
+  }
+
+  .catalog-subcategories {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .catalog-product-link {
+    min-height: 42px;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 8px;
+  }
+
+  .catalog-product-name {
+    max-width: none;
+    white-space: normal;
+  }
+
+  .product-grid,
+  .services-carousel-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .product-carousel-grid > :not(:first-child),
+  .services-carousel-grid > :not(:first-child) {
+    display: none;
+  }
+
+  .products-carousel {
+    display: block;
+    width: calc(100% - 28px);
+  }
+
+  .product-carousel-control {
+    position: absolute;
+    top: 50%;
+    z-index: 5;
+    width: 40px;
+    height: 40px;
+    transform: translateY(-50%);
+  }
+
+  .product-carousel-prev {
+    left: -12px;
+  }
+
+  .product-carousel-next {
+    right: -12px;
+  }
 }
 
 /* Tailored Product Design */
@@ -9054,7 +9292,7 @@ label,
 
 @media (max-width: 720px) {
   .services-carousel-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
