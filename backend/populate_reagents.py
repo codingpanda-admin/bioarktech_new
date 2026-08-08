@@ -9,6 +9,23 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 
 def main():
+    # Guardrail: this DELETES all products in reagent/consumable categories
+    # before reloading from the static reagents.json. It used to run on
+    # every container restart via docker-compose's startup command and
+    # silently destroyed manually-curated data (see incident 2026-08-06).
+    # It's no longer wired into any automatic path - if you're running this
+    # by hand, you need to mean it.
+    if os.environ.get('CONFIRM_DESTRUCTIVE_RESET') != 'yes':
+        print(
+            "REFUSING TO RUN: this script deletes all products in reagent/"
+            "consumable categories, then reloads only what's in "
+            "reagents.json - any reagent added or edited outside that file "
+            "is gone permanently.\n"
+            "If you really mean to do this, re-run with "
+            "CONFIRM_DESTRUCTIVE_RESET=yes."
+        )
+        sys.exit(1)
+
     print("Populating reagents and consumables from reagents.json...")
     from products.models import ProductCategory, Product, Img, ProductImage
     
