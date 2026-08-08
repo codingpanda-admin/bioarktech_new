@@ -38,6 +38,22 @@ for item in data:
 
 print(f"Loaded {len(data)} items from JSON.")
 
+# Guardrail: this DELETES FeaturedProduct/UnitPrice/Image/ManualFile/
+# ProductsUnion before reloading from the JSON export. Not wired into any
+# automatic path, but a standalone destructive script like this is exactly
+# what caused the 2026-08-06 data-loss incident when it was - if you're
+# running this by hand, you need to mean it.
+if os.environ.get('CONFIRM_DESTRUCTIVE_RESET') != 'yes':
+    print(
+        "REFUSING TO RUN: this script deletes FeaturedProduct, UnitPrice, "
+        "Image, ManualFile, and ProductsUnion records, then reloads only "
+        "what's in the JSON export - anything added or edited outside "
+        "that file is gone permanently.\n"
+        "If you really mean to do this, re-run with "
+        "CONFIRM_DESTRUCTIVE_RESET=yes."
+    )
+    sys.exit(1)
+
 # Truncate tables to ensure clean reload of relational data
 print("Clearing existing relational tables...")
 with transaction.atomic():

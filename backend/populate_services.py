@@ -127,10 +127,26 @@ def markdown_to_html(md):
     return html
 
 def main():
+    # Guardrail: this DELETES ALL services before reloading from the static
+    # services.json. It used to run on every container restart via
+    # docker-compose's startup command and silently destroyed
+    # manually-curated data (see incident 2026-08-06). It's no longer wired
+    # into any automatic path - if you're running this by hand, you need to
+    # mean it.
+    if os.environ.get('CONFIRM_DESTRUCTIVE_RESET') != 'yes':
+        print(
+            "REFUSING TO RUN: this script deletes ALL services, then "
+            "reloads only what's in services.json - any service added or "
+            "edited outside that file is gone permanently.\n"
+            "If you really mean to do this, re-run with "
+            "CONFIRM_DESTRUCTIVE_RESET=yes."
+        )
+        sys.exit(1)
+
     print("Resetting database to services.json content...")
     from interface.models import ServiceMode
     from products.models import ProductCategory
-    
+
     # 1. Clear existing ServiceMode
     ServiceMode.objects.all().delete()
     

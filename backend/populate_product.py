@@ -9,9 +9,25 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 
 def main():
+    # Guardrail: this DELETES ALL products, categories, and images before
+    # reloading from the static products.json. It used to run on every
+    # container restart via docker-compose's startup command and silently
+    # destroyed manually-curated data (see incident 2026-08-06). It's no
+    # longer wired into any automatic path - if you're running this by
+    # hand, you need to mean it.
+    if os.environ.get('CONFIRM_DESTRUCTIVE_RESET') != 'yes':
+        print(
+            "REFUSING TO RUN: this script deletes ALL products, categories, "
+            "and images, then reloads only what's in products.json - any "
+            "product added or edited outside that file is gone permanently.\n"
+            "If you really mean to do this, re-run with "
+            "CONFIRM_DESTRUCTIVE_RESET=yes."
+        )
+        sys.exit(1)
+
     print("Resetting database to products.json content...")
     from products.models import ProductCategory, Product, Img, ProductImage
-    
+
     # 1. Clear existing products and categories
     ProductImage.objects.all().delete()
     Product.objects.all().delete()
