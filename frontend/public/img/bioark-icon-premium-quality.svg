@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Premium Quality</title>
+  <desc id="desc">Shield with a check mark</desc>
+  <defs>
+    <radialGradient id="bg" cx="38%" cy="30%" r="76%">
+      <stop offset="0" stop-color="#F9FCFF"/>
+      <stop offset="1" stop-color="#EAF2FF"/>
+    </radialGradient>
+    <linearGradient id="stroke" x1="66" y1="54" x2="190" y2="202" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1F55B5"/>
+      <stop offset="1" stop-color="#2D74E6"/>
+    </linearGradient>
+  </defs>
+  <circle cx="128" cy="128" r="108" fill="url(#bg)"/>
+  <path d="M128 52C144 63 161 68 181 72V116C181 151 160 178 128 194C96 178 75 151 75 116V72C95 68 112 63 128 52Z" stroke="url(#stroke)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M100 123L119 142L158 100" stroke="url(#stroke)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
