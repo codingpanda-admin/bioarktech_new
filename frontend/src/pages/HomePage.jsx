@@ -1,11 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiFetch, mockResources, getCategoryIcon, formatAssetUrl } from '../utils/api';
-import { logo } from '../utils/api';
 import { getCatalogCardPrice } from '../utils/catalogPrice';
 import IconMark from '../components/IconMark';
 import ProductVisual from '../components/ProductVisual';
 
 const HOME_BLOG_CATEGORIES = ['All', 'BioArk News', 'Biotech Outlook', 'Business News'];
+
+const ABOUT_CALLOUTS = [
+  {
+    icon: 'premium-quality',
+    title: 'Premium Quality',
+    description: 'Rigorous quality control ensures exceptional products you can trust.',
+  },
+  {
+    icon: 'reliable-results',
+    title: 'Reliable Results',
+    description: 'Consistent performance and reproducibility to support your research.',
+  },
+  {
+    icon: 'fast-shipping',
+    title: 'Fast Shipping',
+    description: 'Quick processing and delivery to keep your research moving.',
+  },
+  {
+    icon: 'expert-support',
+    title: 'Expert Support',
+    description: 'Knowledgeable experts here to support you every step of the way.',
+  },
+];
 
 const inferHomeBlogCategory = (blog) => {
   const text = `${blog?.title || ''} ${blog?.description || ''} ${blog?.tag || ''}`.toLowerCase();
@@ -715,24 +737,36 @@ function HomePage({ navigate, searchParams }) {
         )}
 
         <section className="about-section" aria-labelledby="about-title">
-          <div className="about-copy">
-            <h2 id="about-title">About BioArkTech</h2>
-            <p>
-              BioArkTech is dedicated to empowering life science research with innovative,
-              high-quality products. From molecular biology reagents to advanced instruments,
-              we provide reliable solutions that drive discovery and accelerate breakthroughs.
-            </p>
-            <div className="trust-row">
-              <span>Premium Quality</span>
-              <span>Reliable Results</span>
-              <span>Fast Shipping</span>
-              <span>Expert Support</span>
+          <div className="about-main">
+            <div className="about-copy">
+              <h2 id="about-title">About BioArkTech</h2>
+              <p>
+                BioArkTech is dedicated to empowering life science research with innovative,
+                high-quality products. From molecular biology reagents to advanced instruments,
+                we provide reliable solutions that drive discovery and accelerate breakthroughs.
+              </p>
+            </div>
+            <div className="video-card">
+              <video controls preload="metadata" playsInline aria-label="BioArk Tech introduction">
+                <source src="/bioark-tech-intro-1280x540.mp4" type="video/mp4" />
+                Your browser does not support embedded video.
+              </video>
             </div>
           </div>
-          <div className="video-card" aria-label="Bio Ark Tech video preview">
-            <img src={logo} alt="" />
-            <div className="video-line" />
-            <div className="video-controls"><span /> 0:00 / 1:25 <b /></div>
+
+          <div className="trust-row">
+            {ABOUT_CALLOUTS.map((callout) => (
+              <article className={`trust-callout trust-${callout.icon}`} key={callout.title}>
+                <div className="trust-callout-icon" aria-hidden="true">
+                  <img src={`/img/bioark-icon-${callout.icon}.svg`} alt="" />
+                </div>
+                <div className="trust-callout-body">
+                  <h3>{callout.title}</h3>
+                  <p>{callout.description}</p>
+                  <span className="trust-callout-accent" aria-hidden="true" />
+                </div>
+              </article>
+            ))}
           </div>
         </section>
 

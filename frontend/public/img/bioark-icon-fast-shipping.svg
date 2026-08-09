@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Fast Shipping</title>
+  <desc id="desc">Delivery truck with speed lines</desc>
+  <defs>
+    <radialGradient id="bg" cx="38%" cy="30%" r="76%">
+      <stop offset="0" stop-color="#F9FCFF"/>
+      <stop offset="1" stop-color="#EAF2FF"/>
+    </radialGradient>
+    <linearGradient id="stroke" x1="54" y1="72" x2="202" y2="184" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1F55B5"/>
+      <stop offset="1" stop-color="#2D74E6"/>
+    </linearGradient>
+  </defs>
+  <circle cx="128" cy="128" r="108" fill="url(#bg)"/>
+  <path d="M77 84H151V163H77" stroke="url(#stroke)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M151 108H178L201 134V163H151V108Z" stroke="url(#stroke)" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M178 108V135H201" stroke="url(#stroke)" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M53 103H91M45 123H81M56 143H91" stroke="url(#stroke)" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="107" cy="165" r="14" fill="#F6FAFF" stroke="url(#stroke)" stroke-width="7"/>
+  <circle cx="178" cy="165" r="14" fill="#F6FAFF" stroke="url(#stroke)" stroke-width="7"/>
+  <path d="M61 163H93M121 163H164M192 163H202" stroke="url(#stroke)" stroke-width="7" stroke-linecap="round"/>
+</svg>
