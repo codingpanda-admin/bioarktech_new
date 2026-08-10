@@ -1,6 +1,15 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
+import { apiFetch, formatAssetUrl } from '../utils/api';
+import { formatRichText } from '../utils/richText';
 
-const strategyCards = [
+const RichContent = ({ value, className = '' }) => (
+  <div
+    className={`page-rich-text ${className}`.trim()}
+    dangerouslySetInnerHTML={{ __html: formatRichText(value) }}
+  />
+);
+
+const defaultStrategyCards = [
   {
     icon: '▣',
     title: 'Tier I: Solid Foundation',
@@ -36,7 +45,7 @@ const strategyCards = [
   },
 ];
 
-const roadmapCards = [
+const defaultRoadmapCards = [
   {
     phase: 'Phase 1',
     goal: 'CRISPR Trinity product development — a unified platform for complex gene-editing.',
@@ -54,32 +63,88 @@ const roadmapCards = [
   },
 ];
 
+const defaultOverview = {
+  page_title: 'Our Investors',
+  page_subtitle: 'Partnering with visionary supporters to transform gene editing technologies and advance genetic medicine.',
+  section_title: 'Company Overview & Vision',
+  paragraphs: [
+    'BioArk Technologies is an innovative biotechnology company committed to translating scientific breakthroughs into real-world healthcare solutions. We are evolving from a foundational service provider into an integrated medical solutions company.',
+    'We leverage artificial intelligence (AI) to accelerate service delivery, advance our proprietary platform, and drive the creation of next-generation therapies.',
+  ],
+  image_url: '',
+  image_alt: '',
+};
+
+const defaultPartner = {
+  section_title: 'Partner with BioArk',
+  text: 'We are seeking visionary partners to shape the future of genetic medicine. If you are interested in our business and share our commitment to innovation, we invite you to connect with us.',
+  button_text: 'Contact Investor Relations',
+  button_url: '/request-quote',
+  button_target: '_self',
+  button_style: 'primary',
+  contact_email: 'investor@bioarktech.com',
+};
+
 function InvestorsPage({ navigate }) {
+  const [overview, setOverview] = useState(defaultOverview);
+  const [strategyCards, setStrategyCards] = useState(defaultStrategyCards);
+  const [roadmapCards, setRoadmapCards] = useState(defaultRoadmapCards);
+  const [partner, setPartner] = useState(defaultPartner);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    apiFetch('/api/interface/investor-page/')
+      .then((data) => {
+        if (cancelled) return;
+        if (Object.hasOwn(data, 'overview')) setOverview(data.overview);
+        if (Array.isArray(data.strategy_tiers)) setStrategyCards(data.strategy_tiers);
+        if (Array.isArray(data.milestones)) {
+          setRoadmapCards(data.milestones.map((item) => ({
+            ...item,
+            period: item.period_and_funding,
+          })));
+        }
+        if (Object.hasOwn(data, 'partner')) setPartner(data.partner);
+      })
+      .catch(() => {
+        // Keep the bundled content available if the content API is temporarily unavailable.
+      });
+
+    return () => { cancelled = true; };
+  }, []);
+
+  const handlePartnerButton = () => {
+    const url = partner.button_url || '/request-quote';
+    if (partner.button_target === '_blank') {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else if (url.startsWith('/')) {
+      navigate(url);
+    } else {
+      window.location.assign(url);
+    }
+  };
+
   return (
     <main className="investors-page">
-      <section className="investors-hero">
-        <h1>Our Investors</h1>
-        <p>
-          Partnering with visionary supporters to transform gene editing technologies and advance
-          genetic medicine.
-        </p>
-      </section>
+      {overview && <section className="investors-hero">
+        <h1>{overview.page_title}</h1>
+        <p>{overview.page_subtitle}</p>
+      </section>}
 
-      <section className="investor-overview">
+      {overview && <section className="investor-overview">
         <div className="investor-overview-copy">
-          <h2>Company Overview & Vision</h2>
-          <p>
-            BioArk Technologies is an innovative biotechnology company committed to translating
-            scientific breakthroughs into real-world healthcare solutions. We are evolving from a
-            foundational service provider into an integrated medical solutions company.
-          </p>
-          <p>
-            We leverage artificial intelligence (AI) to accelerate service delivery, advance our
-            proprietary platform, and drive the creation of next-generation therapies.
-          </p>
+          <h2>{overview.section_title}</h2>
+          {(overview.paragraphs || []).map((paragraph, index) => (
+            <RichContent key={`${index}-${paragraph.slice(0, 24)}`} value={paragraph} />
+          ))}
         </div>
 
-        <div className="investor-visuals" aria-label="Business and market visuals">
+        {overview.image_url ? (
+          <div className="investor-visuals investor-overview-image-wrap">
+            <img src={formatAssetUrl(overview.image_url)} alt={overview.image_alt || ''} />
+          </div>
+        ) : <div className="investor-visuals" aria-label="Business and market visuals">
           <div className="business-timeline-card">
             <h3>BIOARK</h3>
             <p>Business Timeline</p>
@@ -117,8 +182,8 @@ function InvestorsPage({ navigate }) {
               <span>2028</span>
             </div>
           </div>
-        </div>
-      </section>
+        </div>}
+      </section>}
 
       <section className="investor-section">
         <h2>Our Three-Tiered Strategy</h2>
@@ -128,11 +193,14 @@ function InvestorsPage({ navigate }) {
               <h3><span>{card.icon}</span>{card.title}</h3>
               <p className="investor-card-subtitle">{card.subtitle}</p>
               <ul>
-                {card.items.map((item) => (
-                  <li key={item}>{item}</li>
+                {card.items.map((item, index) => (
+                  <li
+                    key={`${index}-${item.slice(0, 24)}`}
+                    dangerouslySetInnerHTML={{ __html: formatRichText(item) }}
+                  />
                 ))}
               </ul>
-              {card.note && <p className="investor-card-note">{card.note}</p>}
+              {card.note && <RichContent className="investor-card-note" value={card.note} />}
             </article>
           ))}
         </div>
@@ -144,27 +212,30 @@ function InvestorsPage({ navigate }) {
           {roadmapCards.map((card) => (
             <article className="investor-roadmap-card" key={card.phase}>
               <h3><span>□</span>{card.phase}</h3>
-              <p><strong>Goal:</strong> {card.goal}</p>
+              <p><strong>Goal:</strong></p>
+              <RichContent className="investor-roadmap-goal" value={card.goal} />
               <p><strong>Period & Funding:</strong> {card.period}</p>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="investor-partner-card">
-        <h2>Partner with BioArk</h2>
-        <p>
-          We are seeking visionary partners to shape the future of genetic medicine. If you are
-          interested in our business and share our commitment to innovation, we invite you to connect
-          with us.
-        </p>
+      {partner && <section className="investor-partner-card">
+        <h2>{partner.section_title}</h2>
+        <RichContent value={partner.text} />
         <div>
-          <button type="button" className="primary-button" onClick={() => navigate('/request-quote')}>
-            Contact Investor Relations
-          </button>
-          <a href="mailto:investor@bioarktech.com">investor@bioarktech.com</a>
+          {partner.button_text && (
+            <button
+              type="button"
+              className={partner.button_style === 'primary' ? 'primary-button' : `primary-button ${partner.button_style}`}
+              onClick={handlePartnerButton}
+            >
+              {partner.button_text}
+            </button>
+          )}
+          {partner.contact_email && <a href={`mailto:${partner.contact_email}`}>{partner.contact_email}</a>}
         </div>
-      </section>
+      </section>}
     </main>
   );
 }

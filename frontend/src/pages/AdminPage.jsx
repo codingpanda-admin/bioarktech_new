@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { apiFetch } from '../utils/api';
 
 // Sub-components
@@ -12,20 +12,15 @@ import AdminResources from './admin/AdminResources';
 import AdminQuotes from './admin/AdminQuotes';
 import AdminMedia from './admin/AdminMedia';
 import AdminHomepage from './admin/AdminHomepage';
+import { AdminAboutBioArk, AdminInvestors } from './admin/AdminPageContent';
 
-const adminLinks = [
-  'Overview',
-  'Homepage',
-  'Users',
-  'Products',
-  'Reagents',
-  'Services',
-  'Featured Solutions',
-  'Blogs',
-  'Documents',
-  'Quotes',
-  'Email (SMTP)',
-  'Media',
+const adminLinkGroups = [
+  ['Overview', 'Homepage', 'Users'],
+  ['Products', 'Reagents', 'Services'],
+  ['Featured Solutions'],
+  ['Blogs', 'About BioArk', 'Investors'],
+  ['Quotes'],
+  ['Documents', 'Email (SMTP)', 'Media'],
 ];
 
 function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSuccess, onLogout }) {
@@ -35,7 +30,6 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const homepageSettings = ['Background Images', 'Hero Text', 'CTA Button', 'Metrics'];
 
   const handleFeaturedItemEdit = (item) => {
     const section = item.item_type === 'service'
@@ -64,7 +58,7 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
       if (onLoginSuccess) {
         await onLoginSuccess(email);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to login, please check username and password again');
     } finally {
       setLoading(false);
@@ -158,18 +152,27 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
     <main className="admin-page" aria-label="Admin Console">
       <aside className="admin-sidebar" aria-label="Admin navigation">
         <nav>
-          {adminLinks.map((label) => (
-            <a
-              className={activeSection === label ? 'is-active' : undefined}
-              href={`#${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-              key={label}
-              onClick={(event) => {
-                event.preventDefault();
-                setActiveSection(label);
-              }}
+          {adminLinkGroups.map((group, groupIndex) => (
+            <div
+              className="admin-nav-group"
+              role="group"
+              aria-label={`Admin navigation group ${groupIndex + 1}`}
+              key={group.join('-')}
             >
-              {label}
-            </a>
+              {group.map((label) => (
+                <a
+                  className={activeSection === label ? 'is-active' : undefined}
+                  href={`#${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                  key={label}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setActiveSection(label);
+                  }}
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
           ))}
         </nav>
       </aside>
@@ -181,6 +184,14 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
 
         {activeSection === 'Homepage' && (
           <AdminHomepage />
+        )}
+
+        {activeSection === 'About BioArk' && (
+          <AdminAboutBioArk />
+        )}
+
+        {activeSection === 'Investors' && (
+          <AdminInvestors />
         )}
 
         {activeSection === 'Users' && (
