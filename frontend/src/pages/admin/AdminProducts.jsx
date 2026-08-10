@@ -48,7 +48,12 @@ const PublicDetailLink = ({ identifier }) => {
   );
 };
 
-export const ProductContentEditor = React.forwardRef(function ProductContentEditor({ value, onChange, ariaLabel = 'Product content text' }, ref) {
+export const ProductContentEditor = React.forwardRef(function ProductContentEditor({
+  value,
+  onChange,
+  ariaLabel = 'Product content text',
+  imageUploadEndpoint = '/api/admin-panel/products/upload-image/',
+}, ref) {
   const editorRef = useRef(null);
   const lastEmittedHtmlRef = useRef(null);
   const selectedImageRef = useRef(null);
@@ -358,7 +363,7 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
       try {
         const formData = new FormData();
         formData.append('image', file);
-        const response = await apiFetch('/api/admin-panel/products/upload-image/', {
+        const response = await apiFetch(imageUploadEndpoint, {
           method: 'POST',
           body: formData,
         });

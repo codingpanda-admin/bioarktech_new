@@ -1,7 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { formatAssetUrl } from '../utils/api';
+import { useEffect, useRef, useState } from 'react';
+import { apiFetch, formatAssetUrl } from '../utils/api';
+import { formatRichText } from '../utils/richText';
 
-const highlights = [
+const RichContent = ({ value, className = '' }) => (
+  <div
+    className={`page-rich-text ${className}`.trim()}
+    dangerouslySetInnerHTML={{ __html: formatRichText(value) }}
+  />
+);
+
+const defaultHighlights = [
   {
     icon: '▦',
     title: 'Founded 2025 • Rockville, MD',
@@ -29,7 +37,7 @@ const highlights = [
   },
 ];
 
-const teamMembers = [
+const defaultTeamMembers = [
   {
     initials: 'LW',
     name: 'Dr. Lipeng Wu',
@@ -84,7 +92,22 @@ const teamMembers = [
   },
 ];
 
+const defaultOverview = {
+  page_title: 'Why BioArk',
+  page_subtitle: 'Innovating genome engineering for real-world impact',
+  section_title: 'Who We Are',
+  paragraphs: [
+    'BioArk Technologies, established in January 2025 in Rockville, Maryland, is an innovative biotechnology company dedicated to transforming groundbreaking scientific discoveries into practical solutions. Our mission is to advance genome engineering and accelerate its clinical and translational applications.',
+    'We provide a comprehensive suite of services, including molecular cloning, viral packaging, and stable cell line development, designed to accelerate progress in gene editing. By integrating advanced AI technologies, we deliver streamlined, customized solutions that enhance efficiency and improve overall customer experience.',
+    'Our proprietary CRISPR Trinity Platform addresses complex genetic editing challenges and offers unique advantages in the development of universal CAR-T therapies and related applications. These capabilities are available through specialized services, licensing opportunities, and strategic partnerships.',
+    'By bridging cutting-edge research with clinical application, BioArk Technologies is committed to transforming pioneering scientific discoveries into real-world healthcare solutions.',
+  ],
+};
+
 function AboutBioArkPage() {
+  const [overview, setOverview] = useState(defaultOverview);
+  const [highlights, setHighlights] = useState(defaultHighlights);
+  const [teamMembers, setTeamMembers] = useState(defaultTeamMembers);
   const [selectedMember, setSelectedMember] = useState(null);
   const modalCloseButtonRef = useRef(null);
   const biographyTriggerRef = useRef(null);
@@ -93,6 +116,30 @@ function AboutBioArkPage() {
     setSelectedMember(null);
     window.setTimeout(() => biographyTriggerRef.current?.focus(), 0);
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    apiFetch('/api/interface/about-page/')
+      .then((data) => {
+        if (cancelled) return;
+        if (Object.hasOwn(data, 'overview')) setOverview(data.overview);
+        if (Array.isArray(data.highlights)) setHighlights(data.highlights);
+        if (Array.isArray(data.team_members)) {
+          setTeamMembers(data.team_members.map((member) => ({
+            ...member,
+            image: member.image_url,
+            bio: member.short_bio,
+            fullBio: Array.isArray(member.full_bio) ? member.full_bio : [],
+          })));
+        }
+      })
+      .catch(() => {
+        // Keep the bundled content available if the content API is temporarily unavailable.
+      });
+
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!selectedMember) return undefined;
@@ -116,37 +163,17 @@ function AboutBioArkPage() {
 
   return (
     <main className="why-bioark-page">
-      <section className="why-bioark-hero">
-        <h1>Why BioArk</h1>
-        <p>Innovating genome engineering for real-world impact</p>
-      </section>
+      {overview && <section className="why-bioark-hero">
+        <h1>{overview.page_title}</h1>
+        <p>{overview.page_subtitle}</p>
+      </section>}
 
-      <section className="why-bioark-intro">
+      {overview && <section className="why-bioark-intro">
         <div className="why-bioark-copy">
-          <h2>Who We Are</h2>
-          <p>
-            BioArk Technologies, established in January 2025 in Rockville, Maryland, is an
-            innovative biotechnology company dedicated to transforming groundbreaking scientific
-            discoveries into practical solutions. Our mission is to advance genome engineering and
-            accelerate its clinical and translational applications.
-          </p>
-          <p>
-            We provide a comprehensive suite of services, including molecular cloning, viral
-            packaging, and stable cell line development, designed to accelerate progress in gene
-            editing. By integrating advanced AI technologies, we deliver streamlined, customized
-            solutions that enhance efficiency and improve overall customer experience.
-          </p>
-          <p>
-            Our proprietary CRISPR Trinity Platform addresses complex genetic editing challenges
-            and offers unique advantages in the development of universal CAR-T therapies and related
-            applications. These capabilities are available through specialized services, licensing
-            opportunities, and strategic partnerships.
-          </p>
-          <p>
-            By bridging cutting-edge research with clinical application, BioArk Technologies is
-            committed to transforming pioneering scientific discoveries into real-world healthcare
-            solutions.
-          </p>
+          <h2>{overview.section_title}</h2>
+          {(overview.paragraphs || []).map((paragraph, index) => (
+            <RichContent key={`${index}-${paragraph.slice(0, 24)}`} value={paragraph} />
+          ))}
         </div>
 
         <div className="why-bioark-highlights" aria-label="BioArk highlights">
@@ -155,12 +182,12 @@ function AboutBioArkPage() {
               <span aria-hidden="true">{item.icon}</span>
               <div>
                 <h3>{item.title}</h3>
-                <p>{item.text}</p>
+                <RichContent value={item.text} />
               </div>
             </article>
           ))}
         </div>
-      </section>
+      </section>}
 
       <section className="team-section">
         <h2>Meet our Team</h2>
@@ -182,7 +209,7 @@ function AboutBioArkPage() {
                   <p>{member.role}</p>
                 </div>
               </div>
-              <p>{member.bio}</p>
+              <RichContent className="team-card-biography" value={member.bio} />
               {member.fullBio ? (
                 <button
                   type="button"
@@ -242,8 +269,8 @@ function AboutBioArkPage() {
               </div>
             </header>
             <div className="team-bio-modal-copy">
-              {selectedMember.fullBio.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
+              {selectedMember.fullBio.map((paragraph, index) => (
+                <RichContent key={`${index}-${paragraph.slice(0, 24)}`} value={paragraph} />
               ))}
             </div>
           </section>

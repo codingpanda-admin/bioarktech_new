@@ -7,4 +7,6 @@ urlpatterns = [
     path('get-homepage-slides/', views.get_homepage_slides),
     path('get-homepage-services/', views.get_homepage_services),
     path('get-featured-services/', views.get_featured_services),
+    path('about-page/', views.get_about_page_content),
+    path('investor-page/', views.get_investor_page_content),
 ]

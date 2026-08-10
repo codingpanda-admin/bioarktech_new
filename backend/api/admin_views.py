@@ -17,7 +17,27 @@ from products.models import (
 from blogs.models import Blog, ResourceDocument
 from users.models import User, Address
 from quote.models import Quote
-from interface.models import ProductMode, ServiceMode, HomepageSlide
+from interface.models import (
+    ProductMode,
+    ServiceMode,
+    HomepageSlide,
+    AboutWhoWeAre,
+    AboutHighlight,
+    AboutTeamMember,
+    InvestorCompanyOverview,
+    InvestorStrategyTier,
+    InvestorRoadmapMilestone,
+    InvestorPartnerSection,
+)
+from interface.serializers import (
+    AboutWhoWeAreSerializer,
+    AboutHighlightSerializer,
+    AboutTeamMemberSerializer,
+    InvestorCompanyOverviewSerializer,
+    InvestorStrategyTierSerializer,
+    InvestorRoadmapMilestoneSerializer,
+    InvestorPartnerSectionSerializer,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -2024,4 +2044,322 @@ def admin_delete_slide(request, slide_id):
         return Response({'error': 'Slide not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ===========================================================================
+#  ABOUT BIOARK AND INVESTOR PAGE CONTENT
+# ===========================================================================
+
+@api_view(['POST'])
+def admin_upload_page_content_image(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        image_file = request.FILES.get('image')
+        if not image_file:
+            return Response(
+                {'error': 'No image file provided.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        extension = image_file.name.rsplit('.', 1)[-1].lower() if '.' in image_file.name else ''
+        allowed_extensions = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
+        if extension not in allowed_extensions or not str(image_file.content_type).startswith('image/'):
+            return Response(
+                {'error': 'Upload a JPG, PNG, GIF, or WebP image.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if image_file.size > 10 * 1024 * 1024:
+            return Response(
+                {'error': 'The image must be 10 MB or smaller.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from django.core.files.storage import default_storage
+        from django.utils.text import get_valid_filename
+
+        safe_name = get_valid_filename(image_file.name)
+        saved_path = default_storage.save(f'page_content_images/{safe_name}', image_file)
+        return Response({
+            'image_path': f'media/{saved_path}',
+            'url': request.build_absolute_uri(default_storage.url(saved_path)),
+            'message': 'Image uploaded successfully.',
+        }, status=status.HTTP_201_CREATED)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+def _boolean_value(value, default=True):
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in ('true', '1', 'yes', 'on')
+
+
+def _integer_value(value, default=0):
+    try:
+        return max(0, int(value))
+    except (TypeError, ValueError):
+        return default
+
+
+INVESTOR_STRATEGY_ICON_CHOICES = {
+    '\u25a3',  # Foundation
+    '\u25a4',  # Platform
+    '\u2301',  # Future
+    '\u2697',  # Science
+    '\U0001f9ec',  # Gene editing
+    '\u25ce',  # Target
+    '\u2197',  # Growth
+    '\u2726',  # Innovation
+    '\u25c8',  # Partnership
+}
+
+ABOUT_HIGHLIGHT_ICON_CHOICES = {
+    '\u25a6',  # Company
+    '\u2697',  # Science
+    '\u2723',  # Platform
+    '\u2699',  # AI and engineering
+    '\u2662',  # Clinical
+    '\U0001f9ec',  # Gene editing
+    '\u25ce',  # Target
+    '\u2726',  # Innovation
+    '\u25c8',  # Partnership
+}
+
+
+def _text_list(value):
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip() for item in value if str(item).strip()]
+
+
+def _about_page_payload():
+    overview = AboutWhoWeAre.objects.order_by('id').first()
+    return {
+        'overview': AboutWhoWeAreSerializer(overview).data if overview else None,
+        'highlights': AboutHighlightSerializer(
+            AboutHighlight.objects.all().order_by('display_order', 'id'),
+            many=True,
+        ).data,
+        'team_members': AboutTeamMemberSerializer(
+            AboutTeamMember.objects.all().order_by('display_order', 'id'),
+            many=True,
+        ).data,
+    }
+
+
+def _investor_page_payload():
+    overview = InvestorCompanyOverview.objects.order_by('id').first()
+    partner = InvestorPartnerSection.objects.order_by('id').first()
+    return {
+        'overview': (
+            InvestorCompanyOverviewSerializer(overview).data if overview else None
+        ),
+        'strategy_tiers': InvestorStrategyTierSerializer(
+            InvestorStrategyTier.objects.all().order_by('display_order', 'id'),
+            many=True,
+        ).data,
+        'milestones': InvestorRoadmapMilestoneSerializer(
+            InvestorRoadmapMilestone.objects.all().order_by('display_order', 'id'),
+            many=True,
+        ).data,
+        'partner': InvestorPartnerSectionSerializer(partner).data if partner else None,
+    }
+
+
+def _sync_repeatable_rows(model, rows, allowed_fields, required_field):
+    if not isinstance(rows, list):
+        raise ValueError('Repeatable section content must be a list.')
+
+    retained_ids = []
+    for index, row in enumerate(rows, start=1):
+        if not isinstance(row, dict):
+            raise ValueError('Each repeatable section item must be an object.')
+
+        required_value = str(row.get(required_field) or '').strip()
+        if not required_value:
+            raise ValueError(f'{required_field.replace("_", " ").title()} is required.')
+
+        row_id = row.get('id')
+        instance = model.objects.filter(id=row_id).first() if row_id else model()
+        if row_id and not instance:
+            raise ValueError(f'{model.__name__} record {row_id} does not exist.')
+
+        for field in allowed_fields:
+            if field == 'display_order':
+                setattr(instance, field, _integer_value(row.get(field), index))
+            elif field == 'is_active':
+                setattr(instance, field, _boolean_value(row.get(field), True))
+            elif field in ('items', 'full_bio'):
+                setattr(instance, field, _text_list(row.get(field)))
+            else:
+                setattr(instance, field, str(row.get(field) or '').strip())
+
+        instance.save()
+        retained_ids.append(instance.id)
+
+    model.objects.exclude(id__in=retained_ids).delete()
+
+
+@api_view(['GET', 'PUT'])
+def admin_about_page_content(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    if request.method == 'GET':
+        return Response(_about_page_payload())
+
+    try:
+        data = request.data
+        overview_data = data.get('overview') or {}
+        if not str(overview_data.get('section_title') or '').strip():
+            return Response(
+                {'error': 'Who We Are section title is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        for highlight in data.get('highlights', []):
+            if str(highlight.get('icon') or '').strip() not in ABOUT_HIGHLIGHT_ICON_CHOICES:
+                return Response(
+                    {'error': 'Select a valid icon for every About BioArk highlight.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        with transaction.atomic():
+            AboutWhoWeAre.objects.update_or_create(
+                slug='main',
+                defaults={
+                    'page_title': str(overview_data.get('page_title') or '').strip(),
+                    'page_subtitle': str(overview_data.get('page_subtitle') or '').strip(),
+                    'section_title': str(overview_data.get('section_title') or '').strip(),
+                    'paragraphs': _text_list(overview_data.get('paragraphs')),
+                    'is_active': _boolean_value(overview_data.get('is_active'), True),
+                },
+            )
+            _sync_repeatable_rows(
+                AboutHighlight,
+                data.get('highlights', []),
+                ('icon', 'title', 'text', 'display_order', 'is_active'),
+                'title',
+            )
+            _sync_repeatable_rows(
+                AboutTeamMember,
+                data.get('team_members', []),
+                (
+                    'initials',
+                    'name',
+                    'role',
+                    'image_url',
+                    'short_bio',
+                    'full_bio',
+                    'display_order',
+                    'is_active',
+                ),
+                'name',
+            )
+
+        return Response({
+            'message': 'About BioArk page content updated successfully.',
+            **_about_page_payload(),
+        })
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET', 'PUT'])
+def admin_investor_page_content(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    if request.method == 'GET':
+        return Response(_investor_page_payload())
+
+    try:
+        data = request.data
+        overview_data = data.get('overview') or {}
+        partner_data = data.get('partner') or {}
+        if not str(overview_data.get('section_title') or '').strip():
+            return Response(
+                {'error': 'Company Overview & Vision section title is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not str(partner_data.get('section_title') or '').strip():
+            return Response(
+                {'error': 'Partner section title is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        for tier in data.get('strategy_tiers', []):
+            if str(tier.get('icon') or '').strip() not in INVESTOR_STRATEGY_ICON_CHOICES:
+                return Response(
+                    {'error': 'Select a valid icon for every strategy tier.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        button_target = str(partner_data.get('button_target') or '_self').strip()
+        if button_target not in ('_self', '_blank'):
+            button_target = '_self'
+
+        with transaction.atomic():
+            InvestorCompanyOverview.objects.update_or_create(
+                slug='main',
+                defaults={
+                    'page_title': str(overview_data.get('page_title') or '').strip(),
+                    'page_subtitle': str(overview_data.get('page_subtitle') or '').strip(),
+                    'section_title': str(overview_data.get('section_title') or '').strip(),
+                    'paragraphs': _text_list(overview_data.get('paragraphs')),
+                    'image_url': str(overview_data.get('image_url') or '').strip(),
+                    'image_alt': str(overview_data.get('image_alt') or '').strip(),
+                    'is_active': _boolean_value(overview_data.get('is_active'), True),
+                },
+            )
+            _sync_repeatable_rows(
+                InvestorStrategyTier,
+                data.get('strategy_tiers', []),
+                (
+                    'icon',
+                    'title',
+                    'subtitle',
+                    'items',
+                    'note',
+                    'display_order',
+                    'is_active',
+                ),
+                'title',
+            )
+            _sync_repeatable_rows(
+                InvestorRoadmapMilestone,
+                data.get('milestones', []),
+                ('phase', 'goal', 'period_and_funding', 'display_order', 'is_active'),
+                'phase',
+            )
+            InvestorPartnerSection.objects.update_or_create(
+                slug='main',
+                defaults={
+                    'section_title': str(partner_data.get('section_title') or '').strip(),
+                    'text': str(partner_data.get('text') or '').strip(),
+                    'button_text': str(partner_data.get('button_text') or '').strip(),
+                    'button_url': str(partner_data.get('button_url') or '').strip(),
+                    'button_target': button_target,
+                    'button_style': str(partner_data.get('button_style') or 'primary').strip(),
+                    'contact_email': str(partner_data.get('contact_email') or '').strip(),
+                    'is_active': _boolean_value(partner_data.get('is_active'), True),
+                },
+            )
+
+        return Response({
+            'message': 'Investor page content updated successfully.',
+            **_investor_page_payload(),
+        })
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
