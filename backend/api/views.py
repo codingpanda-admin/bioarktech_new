@@ -1,6 +1,9 @@
 import json
 import logging
 import os
+import re
+import unicodedata
+from html import unescape
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.password_validation import validate_password
@@ -17,6 +20,7 @@ from django.conf import settings
 from django.db.models import Q
 from django.core.paginator import Paginator
 from django.utils import timezone
+from django.utils.html import strip_tags
 
 
 from rest_framework.decorators import api_view
@@ -399,6 +403,103 @@ def is_featured_product_consumable(fp):
         return linked_product.category_external_id == 'category-1780539818236'
     return 'wet ice' not in (fp.ship_info or "").lower()
 
+
+def _search_text(value):
+    """Return readable text for scalar, HTML, array, and JSON catalog fields."""
+    if value in (None, ''):
+        return ''
+    if isinstance(value, dict):
+        value = ' '.join(f'{key} {item}' for key, item in value.items())
+    elif isinstance(value, (list, tuple, set)):
+        value = ' '.join(str(item) for item in value if item not in (None, ''))
+    return unescape(strip_tags(str(value)))
+
+
+def _normalize_search_text(value):
+    """Normalize case, accents, HTML, whitespace, and catalog-code punctuation."""
+    decomposed = unicodedata.normalize('NFKD', _search_text(value).casefold())
+    without_accents = ''.join(char for char in decomposed if not unicodedata.combining(char))
+    return ' '.join(re.findall(r'[^\W_]+', without_accents, flags=re.UNICODE))
+
+
+def _search_match_score(query, search_fields):
+    """Score a catalog item while requiring every supplied search term to match.
+
+    Codes are also compared without punctuation, so RNDT-021k, RNDT 021k, and
+    rndt021k resolve to the same item. Fields are intentionally weighted so an
+    exact name/code always ranks above a mention in long-form description text.
+    """
+    normalized_query = _normalize_search_text(query)
+    if not normalized_query:
+        return 0
+
+    query_tokens = normalized_query.split()
+    compact_query = ''.join(query_tokens)
+    field_weights = {
+        'identifiers': 500,
+        'names': 300,
+        'groups': 90,
+        'keywords': 25,
+    }
+    normalized_fields = {
+        field_name: [
+            normalized
+            for value in values
+            if (normalized := _normalize_search_text(value))
+        ]
+        for field_name, values in search_fields.items()
+    }
+    all_values = [value for values in normalized_fields.values() for value in values]
+    all_words = [word for value in all_values for word in value.split()]
+    compact_values = [''.join(value.split()) for value in all_values]
+
+    def token_matches(token):
+        if token in all_words:
+            return True
+        return len(token) >= 3 and any(token in word for word in all_words)
+
+    compact_match = len(compact_query) >= 3 and any(
+        compact_query in value for value in compact_values
+    )
+    if not compact_match and not all(token_matches(token) for token in query_tokens):
+        return None
+
+    identifier_values = normalized_fields.get('identifiers', [])
+    name_values = normalized_fields.get('names', [])
+    identifier_compact = [''.join(value.split()) for value in identifier_values]
+    name_compact = [''.join(value.split()) for value in name_values]
+
+    score = 0
+    if compact_query in identifier_compact:
+        score += 10000
+    elif len(compact_query) >= 3 and any(compact_query in value for value in identifier_compact):
+        score += 6500
+
+    if normalized_query in name_values:
+        score += 9000
+    elif compact_query in name_compact:
+        score += 8500
+
+    for field_name, values in normalized_fields.items():
+        weight = field_weights.get(field_name, 10)
+        for value in values:
+            words = value.split()
+            compact_value = ''.join(words)
+            if value.startswith(normalized_query):
+                score += weight * 8
+            elif normalized_query in value:
+                score += weight * 6
+            elif len(compact_query) >= 3 and compact_query in compact_value:
+                score += weight * 5
+
+            for token in query_tokens:
+                if token in words:
+                    score += weight * 2
+                elif len(token) >= 3 and any(token in word for word in words):
+                    score += weight
+
+    return score
+
 @api_view(['GET'])
 def search_product(request):
     query = request.query_params.get('q', '').strip()
@@ -420,42 +521,23 @@ def search_product(request):
         category_filter = 'services'
         query = ''
 
-    list_keywords = query.split()
-
-    if list_keywords:
-        # Query Product table
-        search_query = Q()
-        for keyword in list_keywords:
-            search_query |= Q(product_name__icontains=keyword)
-            search_query |= Q(external_id__icontains=keyword)
-            search_query |= Q(catalog_number__icontains=keyword)
-            search_query |= Q(category_external_id__icontains=keyword)
-            search_query |= Q(product_group__icontains=keyword)
-            search_query |= Q(source_type__icontains=keyword)
-            search_query |= Q(description__icontains=keyword)
-            search_query |= Q(content_text__icontains=keyword)
-
-        products = Product.objects.filter(search_query, hidden=False)
-
-        # Query FeaturedProduct table
-        featured_search_query = Q()
-        for keyword in list_keywords:
-            featured_search_query |= Q(product_name__icontains=keyword)
-            featured_search_query |= Q(catalog_number__icontains=keyword)
-            featured_search_query |= Q(description__icontains=keyword)
-
-        featured_products = FeaturedProduct.objects.filter(featured_search_query)
-    else:
-        products = Product.objects.filter(hidden=False)
-        featured_products = FeaturedProduct.objects.all()
+    # The public catalog is intentionally small enough to score in memory. This
+    # avoids database-specific punctuation/case behavior and lets catalog codes,
+    # rich text, arrays, and JSON metadata share one consistent matching policy.
+    products = list(Product.objects.filter(hidden=False).select_related('category'))
+    featured_products = FeaturedProduct.objects.all()
+    active_products_by_catalog = {
+        (product.catalog_number or '').strip().casefold(): product
+        for product in products
+        if (product.catalog_number or '').strip()
+    }
 
     combined_results = []
     seen_skus = set()
     
     # 1. Add featured products first to prioritize rich featured data (prices/images)
     for fp in featured_products:
-        linked_products = Product.objects.filter(catalog_number__iexact=fp.catalog_number)
-        linked_product = linked_products.filter(hidden=False).first()
+        linked_product = active_products_by_catalog.get((fp.catalog_number or '').strip().casefold())
 
         # FeaturedProduct is legacy detail/pricing data, not an independently
         # active catalog item. Only an active canonical Product may appear in
@@ -509,6 +591,7 @@ def search_product(request):
         combined_results.append({
             'product_id': fp.id,
             'product_sku': fp.catalog_number,
+            'catalog_number': fp.catalog_number,
             'external_id': linked_product.external_id if linked_product else None,
             'externalId': linked_product.external_id if linked_product else None,
             'product_name': fp.product_name,
@@ -523,7 +606,29 @@ def search_product(request):
             'category_external_id': linked_cat_id,
             'product_group': linked_group,
             'shipping_cost': 100.0 if category_type == 'consumables' else 60.0,
-            'is_featured': True
+            'is_featured': True,
+            '_search_fields': {
+                'identifiers': [fp.catalog_number, linked_product.catalog_number, linked_product.external_id],
+                'names': [fp.product_name, linked_product.product_name],
+                'groups': [
+                    linked_product.product_group,
+                    linked_product.source_type,
+                    linked_product.category_external_id,
+                    linked_product.category.category_name if linked_product.category else '',
+                ],
+                'keywords': [
+                    fp.description,
+                    fp.key_features,
+                    fp.performance_data,
+                    linked_product.description,
+                    linked_product.content_text,
+                    linked_product.key_features,
+                    linked_product.options,
+                    linked_product.raw_product,
+                    linked_product.raw_override,
+                    linked_product.raw_detail,
+                ],
+            },
         })
         
     # 2. Add general products next, skipping any that were already added as featured
@@ -570,7 +675,26 @@ def search_product(request):
             'category_external_id': p.category_external_id,
             'product_group': p.product_group,
             'shipping_cost': 100.0 if category_type == 'consumables' else 60.0,
-            'is_featured': p.is_featured or p.show_in_featured
+            'is_featured': p.is_featured or p.show_in_featured,
+            '_search_fields': {
+                'identifiers': [p.catalog_number, p.external_id],
+                'names': [p.product_name],
+                'groups': [
+                    p.product_group,
+                    p.source_type,
+                    p.category_external_id,
+                    p.category.category_name if p.category else '',
+                ],
+                'keywords': [
+                    p.description,
+                    p.content_text,
+                    p.key_features,
+                    p.options,
+                    p.raw_product,
+                    p.raw_override,
+                    p.raw_detail,
+                ],
+            },
         })
 
 
@@ -581,21 +705,10 @@ def search_product(request):
         if category_filter == 'featured':
             service_filters['is_featured'] = True
 
-        if list_keywords:
-            service_query = Q()
-            for keyword in list_keywords:
-                service_query |= Q(title__icontains=keyword)
-                service_query |= Q(url__icontains=keyword)
-                service_query |= Q(content__icontains=keyword)
-                service_query |= Q(category__icontains=keyword)
-                service_query |= Q(service_group__icontains=keyword)
-            services = ServiceMode.objects.filter(service_query, **service_filters)
-        else:
-            services = ServiceMode.objects.filter(**service_filters)
+        services = ServiceMode.objects.filter(**service_filters)
 
         for s in services:
             # Clean HTML content for description snippet
-            import re
             clean_desc = re.sub(r'<[^>]*>', '', s.content)[:180] + "..." if s.content else ""
             
             # Map category to service category external ID
@@ -613,10 +726,10 @@ def search_product(request):
 
             combined_results.append({
                 'product_id': f"svc-{s.id}",
-                'product_sku': s.url.upper(),
+                'product_sku': s.catalog_number or s.url.upper(),
                 'external_id': s.url,
                 'externalId': s.url,
-                'catalog_number': s.url.upper(),
+                'catalog_number': s.catalog_number or s.url.upper(),
                 'product_name': s.title,
                 'description': clean_desc,
                 'unit_price': 0.0,
@@ -626,11 +739,34 @@ def search_product(request):
                 'category_external_id': svc_cat,
                 'product_group': s.service_group or None,
                 'shipping_cost': 0.0,
-                'is_featured': s.is_featured
+                'is_featured': s.is_featured,
+                '_search_fields': {
+                    'identifiers': [s.catalog_number, s.url],
+                    'names': [s.title],
+                    'groups': [s.category, s.service_group],
+                    'keywords': [s.content, s.price, s.performance_data, s.manuals],
+                },
             })
 
-    # Sort all results alphabetically by name
-    combined_results.sort(key=lambda x: x['product_name'].lower())
+    if query:
+        scored_results = []
+        for result in combined_results:
+            score = _search_match_score(query, result.pop('_search_fields', {}))
+            if score is None:
+                continue
+            result['search_score'] = score
+            scored_results.append(result)
+        combined_results = scored_results
+        combined_results.sort(key=lambda item: (
+            -item['search_score'],
+            not item['is_featured'],
+            item['product_name'].casefold(),
+        ))
+    else:
+        for result in combined_results:
+            result.pop('_search_fields', None)
+            result['search_score'] = 0
+        combined_results.sort(key=lambda item: item['product_name'].casefold())
 
     paginator = Paginator(combined_results, page_size)
 

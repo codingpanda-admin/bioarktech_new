@@ -241,6 +241,7 @@ class Product(models.Model):
     manuals = ArrayField(models.TextField(), default=list, blank=True)
     manual_urls = ArrayField(models.TextField(), default=list, blank=True)
     images = ArrayField(models.TextField(), default=list, blank=True)
+    videos = ArrayField(models.TextField(), default=list, blank=True)
     store_link = models.TextField(blank=True, null=True)
     content_text = models.TextField(blank=True, null=True)
     hidden = models.BooleanField(default=False)

@@ -4,15 +4,26 @@ from tinymce.models import HTMLField
 
 
 # Create your models here.
-class Blog(models.Model):
-    CATEGORY_CHOICES = [
-        ('BioArk News', 'BioArk News'),
-        ('Biotech Outlook', 'Biotech Outlook'),
-        ('Business News', 'Business News'),
-    ]
+class BlogCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=120, unique=True)
+    description = models.TextField(blank=True, default='')
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'blog_category'
+        ordering = ('display_order', 'name')
+
+
+class Blog(models.Model):
     title = models.CharField(max_length=200)
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='Biotech Outlook')
+    category = models.ForeignKey(BlogCategory, on_delete=models.PROTECT, related_name='blogs')
     description = models.CharField(max_length=500)
     author = models.CharField(max_length=30)
     image = models.ImageField(upload_to='blog_images', blank=True, null=True)
@@ -23,6 +34,21 @@ class Blog(models.Model):
 
     class Meta:
         db_table = 'blog'
+
+
+class BlogAttachment(models.Model):
+    blog = models.ForeignKey(Blog, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(upload_to='blog_attachments/')
+    original_name = models.CharField(max_length=255)
+    display_order = models.PositiveIntegerField(default=0)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'blog_attachment'
+        ordering = ('display_order', 'id')
+
+    def __str__(self):
+        return self.original_name
 
 
 class ResourceDocument(models.Model):

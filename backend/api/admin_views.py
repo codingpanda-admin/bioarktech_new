@@ -3,7 +3,7 @@ import traceback
 
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import F, Q, Max
+from django.db.models import Count, F, Q, Max
 from django.utils.text import slugify
 
 from rest_framework.decorators import api_view
@@ -14,7 +14,7 @@ from products.models import (
     Product, FeaturedProduct, ProductsUnion, Image,
     UnitPrice, ManualFile, ProductCategory,
 )
-from blogs.models import Blog, ResourceDocument
+from blogs.models import Blog, BlogAttachment, BlogCategory, ResourceDocument
 from users.models import User, Address
 from quote.models import Quote
 from interface.models import (
@@ -462,6 +462,7 @@ def admin_get_product(request, product_id):
             'manuals': p.manuals,
             'manual_urls': p.manual_urls,
             'images': p.images,
+            'videos': p.videos,
             'store_link': p.store_link,
             'content_text': p.content_text,
             'hidden': p.hidden,
@@ -620,6 +621,8 @@ def admin_create_product(request):
 
     try:
         d = dict(request.data)
+        if 'videos' in d:
+            d['videos'] = _normalize_catalog_videos(d['videos'])
         if 'manuals' in d:
             originals, names, urls = _normalize_product_manual_payload(d['manuals'])
             d['manuals_original'] = originals
@@ -658,6 +661,7 @@ def admin_create_product(request):
             manuals=d.get('manuals', []),
             manual_urls=d.get('manual_urls', []),
             images=d.get('images', []),
+            videos=d.get('videos', []),
             store_link=d.get('store_link', ''),
             content_text=d.get('content_text', ''),
             hidden=d.get('hidden', False),
@@ -680,6 +684,8 @@ def admin_update_product(request, product_id):
     try:
         p = Product.objects.get(product_id=product_id)
         d = dict(request.data)
+        if 'videos' in d:
+            d['videos'] = _normalize_catalog_videos(d['videos'])
         if 'manuals' in d:
             originals, names, urls = _normalize_product_manual_payload(d['manuals'])
             d['manuals_original'] = originals
@@ -694,7 +700,7 @@ def admin_update_product(request, product_id):
             'show_in_featured', 'show_in_gene_editing', 'key_features',
             'options', 'option_prices', 'storage_stability', 'performance_data',
             'data_description', 'manuals', 'manual_urls', 'images',
-            'store_link', 'content_text', 'hidden', 'raw_product',
+            'videos', 'store_link', 'content_text', 'hidden', 'raw_product',
             'raw_override', 'raw_detail',
         ]
 
@@ -988,6 +994,193 @@ def admin_delete_featured_product(request, fp_id):
 #  BLOGS CRUD
 # ===========================================================================
 
+def _serialize_blog_category(category):
+    return {
+        'id': category.id,
+        'name': category.name,
+        'slug': category.slug,
+        'description': category.description,
+        'display_order': category.display_order,
+        'is_active': category.is_active,
+        'blog_count': getattr(category, 'blog_count', category.blogs.count()),
+    }
+
+
+def _serialize_blog_attachments(blog, request=None):
+    attachments = []
+    for attachment in blog.attachments.all():
+        file_url = attachment.file.url if attachment.file else ''
+        attachments.append({
+            'id': attachment.id,
+            'name': attachment.original_name,
+            'original_name': attachment.original_name,
+            'url': request.build_absolute_uri(file_url) if request and file_url else file_url,
+            'display_order': attachment.display_order,
+            'uploaded_at': attachment.uploaded_at,
+        })
+    return attachments
+
+
+def _validate_blog_attachment_files(files):
+    allowed_extensions = {
+        'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+        'csv', 'txt', 'zip', 'png', 'jpg', 'jpeg', 'gif', 'webp',
+    }
+    for attachment_file in files:
+        extension = attachment_file.name.rsplit('.', 1)[-1].lower() if '.' in attachment_file.name else ''
+        if extension not in allowed_extensions:
+            raise ValueError(
+                f'Unsupported attachment type for {attachment_file.name}. '
+                'Upload a document, spreadsheet, presentation, archive, text file, or image.'
+            )
+        if attachment_file.size > 50 * 1024 * 1024:
+            raise ValueError(f'{attachment_file.name} must be 50 MB or smaller.')
+
+
+def _save_blog_attachments(blog, files):
+    next_order = blog.attachments.aggregate(Max('display_order'))['display_order__max']
+    next_order = (next_order if next_order is not None else -1) + 1
+    for offset, attachment_file in enumerate(files):
+        original_name = str(attachment_file.name or 'Blog attachment').replace('\\', '/').rsplit('/', 1)[-1]
+        BlogAttachment.objects.create(
+            blog=blog,
+            file=attachment_file,
+            original_name=original_name,
+            display_order=next_order + offset,
+        )
+
+
+def _parse_blog_attachment_ids(value):
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            value = []
+    if not isinstance(value, list):
+        return []
+
+    attachment_ids = []
+    for item in value:
+        try:
+            attachment_ids.append(int(item))
+        except (TypeError, ValueError):
+            continue
+    return attachment_ids
+
+
+def _blog_category_boolean(value, default=True):
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in ('true', '1', 'yes', 'on')
+
+
+def _validate_blog_category_payload(data, category=None):
+    name = str(data.get('name', category.name if category else '') or '').strip()
+    if not name:
+        raise ValueError('Blog category name is required.')
+
+    duplicate_names = BlogCategory.objects.filter(name__iexact=name)
+    if category:
+        duplicate_names = duplicate_names.exclude(pk=category.pk)
+    if duplicate_names.exists():
+        raise ValueError('A blog category with this name already exists.')
+
+    requested_slug = data.get('slug')
+    if requested_slug is None and category:
+        category_slug = category.slug
+    else:
+        category_slug = slugify(requested_slug or name)
+    if not category_slug:
+        raise ValueError('Enter a valid blog category name or URL slug.')
+
+    duplicate_slugs = BlogCategory.objects.filter(slug__iexact=category_slug)
+    if category:
+        duplicate_slugs = duplicate_slugs.exclude(pk=category.pk)
+    if duplicate_slugs.exists():
+        raise ValueError('A blog category with this URL slug already exists.')
+
+    try:
+        display_order = int(data.get(
+            'display_order',
+            category.display_order if category else (BlogCategory.objects.aggregate(Max('display_order'))['display_order__max'] or 0) + 1,
+        ))
+    except (TypeError, ValueError):
+        raise ValueError('Display order must be a whole number.')
+    if display_order < 0:
+        raise ValueError('Display order cannot be negative.')
+
+    return {
+        'name': name,
+        'slug': category_slug,
+        'description': str(data.get('description', category.description if category else '') or '').strip(),
+        'display_order': display_order,
+        'is_active': _blog_category_boolean(
+            data.get('is_active'),
+            category.is_active if category else True,
+        ),
+    }
+
+
+@api_view(['GET'])
+def admin_list_blog_categories(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    categories = BlogCategory.objects.annotate(blog_count=Count('blogs')).order_by('display_order', 'name')
+    return Response({'results': [_serialize_blog_category(category) for category in categories]})
+
+
+@api_view(['POST'])
+def admin_create_blog_category(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        payload = _validate_blog_category_payload(request.data)
+        category = BlogCategory.objects.create(**payload)
+        return Response(_serialize_blog_category(category), status=status.HTTP_201_CREATED)
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def admin_update_blog_category(request, category_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        category = BlogCategory.objects.get(pk=category_id)
+        payload = _validate_blog_category_payload(request.data, category)
+        for field, value in payload.items():
+            setattr(category, field, value)
+        category.save()
+        return Response(_serialize_blog_category(category))
+    except BlogCategory.DoesNotExist:
+        return Response({'error': 'Blog category not found.'}, status=status.HTTP_404_NOT_FOUND)
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def _resolve_blog_category(value):
+    """Resolve a category id while accepting legacy name and slug values."""
+    if value is None or not str(value).strip():
+        return None
+
+    normalized_value = str(value).strip()
+    query = Q(name__iexact=normalized_value) | Q(slug__iexact=normalized_value)
+    if normalized_value.isdigit():
+        query |= Q(pk=int(normalized_value))
+    return BlogCategory.objects.filter(query, is_active=True).first()
+
 @api_view(['GET'])
 def admin_list_blogs(request):
     err = _check_admin(request)
@@ -995,13 +1188,15 @@ def admin_list_blogs(request):
         return err
 
     try:
-        blogs = Blog.objects.all().order_by('-date_posted')
+        blogs = Blog.objects.select_related('category').annotate(attachment_count=Count('attachments')).order_by('-date_posted')
         data = []
         for b in blogs:
             data.append({
                 'id': b.id,
                 'title': b.title,
-                'category': b.category,
+                'category': b.category.name,
+                'category_id': b.category_id,
+                'category_slug': b.category.slug,
                 'description': b.description,
                 'author': b.author,
                 'content': b.content,
@@ -1009,6 +1204,7 @@ def admin_list_blogs(request):
                 'date_posted': b.date_posted,
                 'date_modified': b.date_modified,
                 'is_featured': b.is_featured,
+                'attachment_count': b.attachment_count,
             })
         return Response({'results': data})
     except Exception as e:
@@ -1022,11 +1218,13 @@ def admin_get_blog(request, blog_id):
         return err
 
     try:
-        b = Blog.objects.get(id=blog_id)
+        b = Blog.objects.select_related('category').prefetch_related('attachments').get(id=blog_id)
         data = {
             'id': b.id,
             'title': b.title,
-            'category': b.category,
+            'category': b.category.name,
+            'category_id': b.category_id,
+            'category_slug': b.category.slug,
             'description': b.description,
             'author': b.author,
             'content': b.content,
@@ -1034,6 +1232,7 @@ def admin_get_blog(request, blog_id):
             'date_posted': b.date_posted,
             'date_modified': b.date_modified,
             'is_featured': b.is_featured,
+            'attachments': _serialize_blog_attachments(b, request),
         }
         return Response(data)
     except Blog.DoesNotExist:
@@ -1050,11 +1249,13 @@ def admin_create_blog(request):
 
     try:
         d = request.data
-        category = str(d.get('category', '')).strip()
-        valid_categories = {value for value, _label in Blog.CATEGORY_CHOICES}
-        if not category:
+        attachment_files = request.FILES.getlist('attachments')
+        _validate_blog_attachment_files(attachment_files)
+        category_value = d.get('category_id') or d.get('category')
+        if category_value is None or not str(category_value).strip():
             return Response({'error': 'Blog category is required.'}, status=status.HTTP_400_BAD_REQUEST)
-        if category not in valid_categories:
+        category = _resolve_blog_category(category_value)
+        if category is None:
             return Response({'error': 'Select a valid blog category.'}, status=status.HTTP_400_BAD_REQUEST)
 
         b = Blog(
@@ -1067,7 +1268,9 @@ def admin_create_blog(request):
         )
         if request.FILES.get('image'):
             b.image = request.FILES['image']
-        b.save()
+        with transaction.atomic():
+            b.save()
+            _save_blog_attachments(b, attachment_files)
         return Response({'id': b.id, 'message': 'Blog created successfully'}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -1080,19 +1283,21 @@ def admin_update_blog(request, blog_id):
         return err
 
     try:
-        b = Blog.objects.get(id=blog_id)
+        b = Blog.objects.select_related('category').get(id=blog_id)
         d = request.data
+        attachment_files = request.FILES.getlist('attachments')
+        _validate_blog_attachment_files(attachment_files)
 
         for field in ['title', 'description', 'author', 'content']:
             if field in d:
                 setattr(b, field, d[field])
 
-        if 'category' in d:
-            category = str(d.get('category', '')).strip()
-            valid_categories = {value for value, _label in Blog.CATEGORY_CHOICES}
-            if not category:
+        if 'category_id' in d or 'category' in d:
+            category_value = d.get('category_id') or d.get('category')
+            if category_value is None or not str(category_value).strip():
                 return Response({'error': 'Blog category is required.'}, status=status.HTTP_400_BAD_REQUEST)
-            if category not in valid_categories:
+            category = _resolve_blog_category(category_value)
+            if category is None:
                 return Response({'error': 'Select a valid blog category.'}, status=status.HTTP_400_BAD_REQUEST)
             b.category = category
 
@@ -1102,7 +1307,17 @@ def admin_update_blog(request, blog_id):
         if request.FILES.get('image'):
             b.image = request.FILES['image']
 
-        b.save()
+        remove_attachment_ids = _parse_blog_attachment_ids(d.get('remove_attachment_ids', []))
+        with transaction.atomic():
+            b.save()
+            attachments_to_remove = list(b.attachments.filter(id__in=remove_attachment_ids))
+            for attachment in attachments_to_remove:
+                if attachment.file:
+                    file_name = attachment.file.name
+                    file_storage = attachment.file.storage
+                    transaction.on_commit(lambda name=file_name, storage=file_storage: storage.delete(name))
+                attachment.delete()
+            _save_blog_attachments(b, attachment_files)
         return Response({'message': 'Blog updated successfully'})
     except Blog.DoesNotExist:
         return Response({'error': 'Blog not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -1117,8 +1332,16 @@ def admin_delete_blog(request, blog_id):
         return err
 
     try:
-        b = Blog.objects.get(id=blog_id)
-        b.delete()
+        b = Blog.objects.prefetch_related('attachments').get(id=blog_id)
+        attachment_files = [
+            (attachment.file.name, attachment.file.storage)
+            for attachment in b.attachments.all()
+            if attachment.file
+        ]
+        with transaction.atomic():
+            b.delete()
+            for file_name, file_storage in attachment_files:
+                transaction.on_commit(lambda name=file_name, storage=file_storage: storage.delete(name))
         return Response({'message': 'Blog deleted successfully'})
     except Blog.DoesNotExist:
         return Response({'error': 'Blog not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -1578,6 +1801,24 @@ def _normalize_service_manuals(value):
     return documents
 
 
+def _normalize_catalog_videos(value):
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            value = [value]
+
+    if not isinstance(value, list):
+        return []
+
+    videos = []
+    for item in value:
+        video_path = str(item or '').strip()
+        if video_path and video_path not in videos:
+            videos.append(video_path)
+    return videos
+
+
 @api_view(['GET'])
 def admin_list_services(request):
     err = _check_admin(request)
@@ -1606,6 +1847,7 @@ def admin_list_services(request):
                 'price': s.price,
                 'performance_data': s.performance_data,
                 'manuals': _normalize_service_manuals(s.manuals),
+                'videos': _normalize_catalog_videos(s.videos),
                 'image': request.build_absolute_uri(s.image.url) if s.image else None,
                 'category': s.category,
                 'service_group': s.service_group,
@@ -1636,6 +1878,7 @@ def admin_get_service(request, service_id):
             'price': s.price,
             'performance_data': s.performance_data,
             'manuals': _normalize_service_manuals(s.manuals),
+            'videos': _normalize_catalog_videos(s.videos),
             'image': request.build_absolute_uri(s.image.url) if s.image else None,
             'category': s.category,
             'service_group': s.service_group,
@@ -1675,6 +1918,7 @@ def admin_create_service(request):
             price=d.get('price', ''),
             performance_data=d.get('performance_data', ''),
             manuals=_normalize_service_manuals(d.get('manuals', [])),
+            videos=_normalize_catalog_videos(d.get('videos', [])),
             category=d.get('category', ''),
             service_group=d.get('service_group', ''),
             is_featured=is_featured_val,
@@ -1709,6 +1953,9 @@ def admin_update_service(request, service_id):
 
         if 'manuals' in d:
             s.manuals = _normalize_service_manuals(d['manuals'])
+
+        if 'videos' in d:
+            s.videos = _normalize_catalog_videos(d['videos'])
 
         if 'is_featured' in d:
             is_featured_val = d['is_featured']
@@ -1797,6 +2044,43 @@ def admin_upload_service_document(request):
         }, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def admin_upload_catalog_video(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        video_file = request.FILES.get('video')
+        if not video_file:
+            return Response({'error': 'No video file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        extension = video_file.name.rsplit('.', 1)[-1].lower() if '.' in video_file.name else ''
+        if extension not in {'mp4', 'webm', 'ogg'} or not str(video_file.content_type).startswith('video/'):
+            return Response(
+                {'error': 'Upload an MP4, WebM, or Ogg video.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if video_file.size > 200 * 1024 * 1024:
+            return Response(
+                {'error': 'The video must be 200 MB or smaller.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from django.core.files.storage import default_storage
+        from django.utils.text import get_valid_filename
+
+        safe_name = get_valid_filename(video_file.name)
+        saved_path = default_storage.save(f'catalog_videos/{safe_name}', video_file)
+        return Response({
+            'video_path': f'media/{saved_path}',
+            'url': request.build_absolute_uri(default_storage.url(saved_path)),
+            'message': 'Video uploaded successfully.',
+        }, status=status.HTTP_201_CREATED)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ===========================================================================
@@ -1894,6 +2178,46 @@ def admin_delete_media(request, image_id):
 #  HOMEPAGE SLIDES CRUD (HomepageSlide)
 # ===========================================================================
 
+@api_view(['POST'])
+def admin_upload_homepage_slide_video(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        video_file = request.FILES.get('video')
+        if not video_file:
+            return Response(
+                {'error': 'No video file provided.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        extension = video_file.name.rsplit('.', 1)[-1].lower() if '.' in video_file.name else ''
+        allowed_extensions = {'mp4', 'webm', 'ogg'}
+        if extension not in allowed_extensions or not str(video_file.content_type).startswith('video/'):
+            return Response(
+                {'error': 'Upload an MP4, WebM, or Ogg video.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if video_file.size > 200 * 1024 * 1024:
+            return Response(
+                {'error': 'The video must be 200 MB or smaller.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from django.core.files.storage import default_storage
+        from django.utils.text import get_valid_filename
+
+        safe_name = get_valid_filename(video_file.name)
+        saved_path = default_storage.save(f'homepage_videos/{safe_name}', video_file)
+        return Response({
+            'video_path': f'media/{saved_path}',
+            'url': request.build_absolute_uri(default_storage.url(saved_path)),
+            'message': 'Video uploaded successfully.',
+        }, status=status.HTTP_201_CREATED)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['GET'])
 def admin_list_slides(request):
     err = _check_admin(request)
@@ -1914,6 +2238,7 @@ def admin_list_slides(request):
                 'secondary_button_text': s.secondary_button_text,
                 'secondary_button_link': s.secondary_button_link,
                 'image_url': s.image_url,
+                'video_url': s.video_url,
                 'display_order': s.display_order,
                 'is_active': s.is_active,
             })
@@ -1940,6 +2265,7 @@ def admin_get_slide(request, slide_id):
             'secondary_button_text': s.secondary_button_text,
             'secondary_button_link': s.secondary_button_link,
             'image_url': s.image_url,
+            'video_url': s.video_url,
             'display_order': s.display_order,
             'is_active': s.is_active,
         })
@@ -1971,6 +2297,7 @@ def admin_create_slide(request):
             secondary_button_text=data.get('secondary_button_text', ''),
             secondary_button_link=data.get('secondary_button_link', ''),
             image_url=data.get('image_url', ''),
+            video_url=data.get('video_url', ''),
             display_order=display_order,
             is_active=bool(data.get('is_active', True)),
         )
@@ -1997,6 +2324,7 @@ def admin_update_slide(request, slide_id):
         s.secondary_button_text = data.get('secondary_button_text', s.secondary_button_text)
         s.secondary_button_link = data.get('secondary_button_link', s.secondary_button_link)
         s.image_url = data.get('image_url', s.image_url)
+        s.video_url = data.get('video_url', s.video_url)
         try:
             s.display_order = int(data.get('display_order', s.display_order))
         except (ValueError, TypeError):

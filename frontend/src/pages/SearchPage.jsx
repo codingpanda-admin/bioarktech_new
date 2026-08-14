@@ -28,7 +28,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [sortBy, setSortBy] = useState('name-asc');
+  const [sortBy, setSortBy] = useState(currentQuery ? 'relevance' : 'name-asc');
   const [selectedCategory, setSelectedCategory] = useState(initialSelectedCategory);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [groupFiltersExpanded, setGroupFiltersExpanded] = useState(false);
@@ -120,6 +120,10 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
   }, [currentQuery, currentCategory]);
 
   useEffect(() => {
+    setSortBy(currentQuery ? 'relevance' : 'name-asc');
+  }, [currentQuery]);
+
+  useEffect(() => {
     if (currentQuery) {
       const matchedCat = [
         ...productCategoryOptions,
@@ -203,6 +207,10 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
 
   // Sort filtered products
   const sortedResults = [...filteredResults].sort((a, b) => {
+    if (sortBy === 'relevance') {
+      return (b.search_score || 0) - (a.search_score || 0)
+        || a.product_name.localeCompare(b.product_name);
+    }
     if (sortBy === 'name-asc') {
       return a.product_name.localeCompare(b.product_name);
     }
@@ -1108,6 +1116,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
                 onChange={(e) => setSortBy(e.target.value)}
                 aria-label="Sort products"
               >
+                {currentQuery && <option value="relevance">Most Relevant</option>}
                 <option value="name-asc">Alphabetical (A-Z)</option>
                 <option value="name-desc">Alphabetical (Z-A)</option>
                 <option value="price-asc">Price (Low to High)</option>
