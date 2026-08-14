@@ -695,6 +695,7 @@ def load_product_by_external_id(request, external_id):
             data['raw_detail'] = source_product.raw_detail
             data['options'] = source_product.options or []
             data['option_prices'] = source_product.option_prices or {}
+            data['videos'] = source_product.videos or []
 
             # Some imported catalog items also have a legacy FeaturedProduct
             # record whose union contains no images. Keep the featured images
@@ -777,6 +778,7 @@ def load_product_by_external_id(request, external_id):
             'content_text': service.content,
             'price': service.price,
             'performance_data': service.performance_data,
+            'videos': service.videos or [],
             'documents': service_documents,
             'unit_prices': []
         }

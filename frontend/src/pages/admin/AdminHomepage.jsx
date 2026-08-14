@@ -22,11 +22,13 @@ function AdminHomepage() {
   const [secondaryBtnText, setSecondaryBtnText] = useState('');
   const [secondaryBtnLink, setSecondaryBtnLink] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
   const [displayOrder, setDisplayOrder] = useState(0);
   const [isActive, setIsActive] = useState(true);
 
   // File upload state
   const [uploading, setUploading] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const fetchSlides = async () => {
@@ -57,6 +59,7 @@ function AdminHomepage() {
     setSecondaryBtnText('');
     setSecondaryBtnLink('');
     setImageUrl('');
+    setVideoUrl('');
     setDisplayOrder(slides.length + 1);
     setIsActive(true);
     setIsModalOpen(true);
@@ -72,6 +75,7 @@ function AdminHomepage() {
     setSecondaryBtnText(slide.secondary_button_text || '');
     setSecondaryBtnLink(slide.secondary_button_link || '');
     setImageUrl(slide.image_url || '');
+    setVideoUrl(slide.video_url || '');
     setDisplayOrder(slide.display_order || 0);
     setIsActive(slide.is_active);
     setIsModalOpen(true);
@@ -102,9 +106,34 @@ function AdminHomepage() {
     }
   };
 
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingVideo(true);
+    setError('');
+    const formData = new FormData();
+    formData.append('video', file);
+
+    try {
+      const response = await apiFetch('/api/admin-panel/homepage-slides/upload-video/', {
+        method: 'POST',
+        body: formData,
+      });
+      setVideoUrl(response.video_path);
+      setSuccess('Video uploaded successfully');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError('Failed to upload video: ' + err.message);
+    } finally {
+      setUploadingVideo(false);
+      e.target.value = '';
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
-    if (saving || uploading) return;
+    if (saving || uploading || uploadingVideo) return;
     if (!title.trim()) {
       setError('Title is required');
       return;
@@ -128,6 +157,7 @@ function AdminHomepage() {
       secondary_button_text: secondaryBtnText,
       secondary_button_link: secondaryBtnLink,
       image_url: imageUrl,
+      video_url: videoUrl,
       display_order: orderNum,
       is_active: isActive
     };
@@ -244,6 +274,12 @@ function AdminHomepage() {
     return formatAssetUrl(url); // served from media
   };
 
+  const getSlideVideoUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('/') && !url.startsWith('/media/')) return url;
+    return formatAssetUrl(url);
+  };
+
   return (
     <>
       <div className="admin-section-header admin-homepage-header">
@@ -337,6 +373,11 @@ function AdminHomepage() {
                         />
                       ) : (
                         <span style={{ fontSize: '12px', color: '#888' }}>Default Art</span>
+                      )}
+                      {slide.video_url && (
+                        <span className="admin-tag" style={{ display: 'table', marginTop: '6px' }}>
+                          Video attached
+                        </span>
                       )}
                     </td>
                     <td>{slide.eyebrow || <em style={{ color: '#666' }}>None</em>}</td>
@@ -552,6 +593,92 @@ function AdminHomepage() {
                 </div>
               )}
 
+              <div className="form-group" style={{ marginTop: '18px' }}>
+                <label>Hero Video</label>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    placeholder="Upload an MP4, WebM, or Ogg video"
+                    style={{ flex: 1 }}
+                  />
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      className="admin-btn-secondary"
+                      disabled={uploadingVideo}
+                      style={{ minHeight: '38px', whiteSpace: 'nowrap' }}
+                    >
+                      {uploadingVideo ? 'Uploading...' : 'Upload Video'}
+                    </button>
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/ogg"
+                      onChange={handleVideoUpload}
+                      disabled={uploadingVideo}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        opacity: 0,
+                        width: '100%',
+                        height: '100%',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </div>
+                </div>
+                <small style={{ color: '#888', marginTop: '4px', display: 'block' }}>
+                  Optional. The video HUD is hidden when this field is empty. Maximum file size: 200 MB.
+                </small>
+              </div>
+
+              {videoUrl && (
+                <div style={{ marginTop: '12px' }}>
+                  <span style={{ fontSize: '12px', color: '#aaa', display: 'block', marginBottom: '4px' }}>Video Preview:</span>
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <video
+                      src={getSlideVideoUrl(videoUrl)}
+                      controls
+                      preload="metadata"
+                      style={{
+                        width: '280px',
+                        maxWidth: '100%',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        display: 'block',
+                        background: '#050b18'
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setVideoUrl('')}
+                      style={{
+                        position: 'absolute',
+                        top: '-8px',
+                        right: '-8px',
+                        background: '#dc2626',
+                        color: 'white',
+                        border: 'none',
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        lineHeight: '20px',
+                        textAlign: 'center',
+                        fontWeight: 'bold',
+                        padding: 0
+                      }}
+                      title="Remove video from this slide"
+                      aria-label="Remove video from this slide"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="form-group" style={{ marginTop: '16px' }}>
                 <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                   <input
@@ -569,14 +696,14 @@ function AdminHomepage() {
                   type="button" 
                   className="admin-btn-secondary" 
                   onClick={() => setIsModalOpen(false)}
-                  disabled={saving || uploading}
+                  disabled={saving || uploading || uploadingVideo}
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
                   className="admin-btn-primary"
-                  disabled={saving || uploading}
+                  disabled={saving || uploading || uploadingVideo}
                 >
                   {saving ? 'Saving...' : (editingSlide ? 'Save Changes' : 'Create Slide')}
                 </button>

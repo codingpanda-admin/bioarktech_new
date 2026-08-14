@@ -677,6 +677,62 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
   );
 });
 
+export const CatalogVideoEditor = ({ videos = [], onChange, onUpload, itemLabel }) => (
+  <div className="admin-form-field span-3 admin-catalog-video-editor">
+    <span className="admin-catalog-media-title">{itemLabel} Videos</span>
+    <div className="admin-catalog-video-grid">
+      {videos.map((videoUrl, index) => (
+        <div className="admin-catalog-video-card" key={`${videoUrl}-${index}`}>
+          {videoUrl ? (
+            <video src={formatAssetUrl(videoUrl)} controls preload="metadata" />
+          ) : (
+            <span className="admin-catalog-video-empty">Empty path</span>
+          )}
+          <input
+            type="text"
+            value={videoUrl || ''}
+            onChange={(event) => {
+              const nextVideos = [...videos];
+              nextVideos[index] = event.target.value;
+              onChange(nextVideos);
+            }}
+            placeholder="Video path"
+            aria-label={`${itemLabel} video ${index + 1} path`}
+          />
+          <button
+            type="button"
+            className="admin-catalog-media-remove"
+            onClick={() => onChange(videos.filter((_, videoIndex) => videoIndex !== index))}
+            aria-label={`Remove ${itemLabel.toLowerCase()} video ${index + 1}`}
+            title="Remove video"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+
+      <div className="admin-catalog-video-add-card">
+        <button
+          type="button"
+          className="secondary-admin-button"
+          onClick={() => onChange([...videos, ''])}
+        >
+          + Add Path
+        </button>
+        <label className="primary-button">
+          + Upload Video
+          <input
+            type="file"
+            accept="video/mp4,video/webm,video/ogg"
+            onChange={onUpload}
+          />
+        </label>
+        <small>MP4, WebM, or Ogg; maximum 200 MB.</small>
+      </div>
+    </div>
+  </div>
+);
+
 function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialEditHandled }) {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -776,6 +832,8 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
       catalog_number: '',
       description: '',
       image_url: '',
+      images: [],
+      videos: [],
       category_external_id: selectedCategory !== 'All' && selectedCategory !== 'uncategorized' ? selectedCategory : '',
       product_group: '',
       source_type: categoryFilter === 'products' ? 'quote' : 'reagent',
@@ -986,6 +1044,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
         performance_data: latestPerformanceData,
         options: normalizedOptions,
         option_prices: normalizedOptionPrices,
+        videos: (editingProduct.videos || []).filter(Boolean),
         manuals: (editingProduct.manuals || []).filter(man => man.name && man.manual),
         raw_detail: updatedRawDetail,
         category_external_id: editingProduct.category_external_id === 'uncategorized' ? '' : editingProduct.category_external_id
@@ -1233,6 +1292,28 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
       setError(err.message || 'Homepage image upload failed.');
     } finally {
       setCatalogImageUploading((current) => ({ ...current, [index]: false }));
+      fileInput.value = '';
+    }
+  };
+
+  const handleVideoUpload = async (event) => {
+    const fileInput = event.currentTarget;
+    const file = fileInput.files?.[0];
+    if (!file) return;
+
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('video', file);
+      const data = await apiFetch('/api/admin-panel/catalog/upload-video/', {
+        method: 'POST',
+        body: formData,
+      });
+      updateField('videos', [...(editingProduct.videos || []), data.video_path]);
+      showSuccess('Video uploaded successfully.');
+    } catch (err) {
+      setError(err.message || 'Video upload failed.');
+    } finally {
       fileInput.value = '';
     }
   };
@@ -1766,6 +1847,13 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                 </div>
               </div>
             </div>
+
+            <CatalogVideoEditor
+              videos={editingProduct.videos || []}
+              onChange={(videos) => updateField('videos', videos)}
+              onUpload={handleVideoUpload}
+              itemLabel={categoryFilter === 'products' ? 'Product' : 'Reagent'}
+            />
 
             <div className="admin-form-field span-3" style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--line)', paddingTop: '15px', marginTop: '10px' }}>
               <span style={{ fontWeight: '600', color: 'var(--ink)' }}>Product Manuals (PDFs)</span>
@@ -2356,6 +2444,13 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                     </div>
                   </div>
                 </div>
+
+                <CatalogVideoEditor
+                  videos={editingProduct.videos || []}
+                  onChange={(videos) => updateField('videos', videos)}
+                  onUpload={handleVideoUpload}
+                  itemLabel={categoryFilter === 'products' ? 'Product' : 'Reagent'}
+                />
 
                 <div className="admin-form-field span-3" style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--line)', paddingTop: '15px', marginTop: '10px' }}>
                   <span style={{ fontWeight: '600', color: 'var(--ink)' }}>Product Manuals (PDFs)</span>

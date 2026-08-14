@@ -1,9 +1,13 @@
-import React, { useEffect, useState, useCallback, useRef, useImperativeHandle } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef, useImperativeHandle } from 'react';
 import { apiFetch, API_URL, formatAssetUrl } from '../../utils/api';
 import { formatRichText } from '../../utils/richText';
 import { ProductContentEditor as BlogContentEditor } from './AdminProducts';
 
-const BLOG_CATEGORIES = ['BioArk News', 'Biotech Outlook', 'Business News'];
+const formatAttachmentSize = (bytes) => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '';
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
 
 const LegacyBlogContentEditor = React.forwardRef(function LegacyBlogContentEditor({ value, onChange }, ref) {
   const editorRef = useRef(null);
@@ -217,12 +221,19 @@ const LegacyBlogContentEditor = React.forwardRef(function LegacyBlogContentEdito
 
 function AdminBlogs() {
   const [blogs, setBlogs] = useState([]);
+  const [blogCategories, setBlogCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editingBlog, setEditingBlog] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [categorySaving, setCategorySaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [imageFile, setImageFile] = useState(null);
+  const [attachmentFiles, setAttachmentFiles] = useState([]);
+  const [removedAttachmentIds, setRemovedAttachmentIds] = useState([]);
   const blogContentEditorRef = useRef(null);
 
   const loadBlogs = useCallback(async () => {
@@ -238,24 +249,109 @@ function AdminBlogs() {
     }
   }, []);
 
-  useEffect(() => { loadBlogs(); }, [loadBlogs]);
+  const loadBlogCategories = useCallback(async () => {
+    setCategoriesLoading(true);
+    try {
+      const data = await apiFetch('/api/admin-panel/blog-categories/');
+      setBlogCategories(Array.isArray(data) ? data : (data.results || []));
+    } catch (err) {
+      setError(err.message || 'Failed to load blog categories.');
+    } finally {
+      setCategoriesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadBlogs();
+    loadBlogCategories();
+  }, [loadBlogs, loadBlogCategories]);
 
   const showSuccess = (msg) => {
     setSuccessMsg(msg);
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
+  const openCategoryManager = () => {
+    setEditingCategory(null);
+    setIsCategoryManagerOpen(true);
+    setError('');
+    loadBlogCategories();
+  };
+
+  const closeCategoryManager = () => {
+    if (categorySaving) return;
+    setIsCategoryManagerOpen(false);
+    setEditingCategory(null);
+    setError('');
+  };
+
+  const startCreateCategory = () => {
+    const nextOrder = blogCategories.reduce(
+      (highest, category) => Math.max(highest, Number(category.display_order) || 0),
+      0,
+    ) + 1;
+    setEditingCategory({
+      name: '',
+      slug: '',
+      description: '',
+      display_order: nextOrder,
+      is_active: true,
+    });
+  };
+
+  const startEditCategory = (category) => {
+    setEditingCategory({ ...category });
+    setError('');
+  };
+
+  const updateCategoryField = (field, value) => {
+    setEditingCategory((previous) => ({ ...previous, [field]: value }));
+  };
+
+  const handleSaveCategory = async (event) => {
+    event.preventDefault();
+    setCategorySaving(true);
+    setError('');
+
+    try {
+      const isNew = !editingCategory.id;
+      const endpoint = isNew
+        ? '/api/admin-panel/blog-categories/create/'
+        : `/api/admin-panel/blog-categories/${editingCategory.id}/update/`;
+      await apiFetch(endpoint, {
+        method: 'POST',
+        body: {
+          name: editingCategory.name,
+          slug: editingCategory.slug,
+          description: editingCategory.description,
+          display_order: editingCategory.display_order,
+          is_active: !!editingCategory.is_active,
+        },
+      });
+      await loadBlogCategories();
+      setEditingCategory(null);
+      showSuccess(isNew ? 'Blog category created!' : 'Blog category updated!');
+    } catch (err) {
+      setError(err.message || 'Failed to save blog category.');
+    } finally {
+      setCategorySaving(false);
+    }
+  };
+
   const handleCreate = () => {
     setEditingBlog({
       title: '',
-      category: '',
+      category_id: '',
       description: '',
       author: '',
       content: '',
+      attachments: [],
     });
     setError('');
     setSuccessMsg('');
     setImageFile(null);
+    setAttachmentFiles([]);
+    setRemovedAttachmentIds([]);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -266,6 +362,8 @@ function AdminBlogs() {
       const data = await apiFetch(`/api/admin-panel/blogs/${blogId}/`);
       setEditingBlog(data.blog || data);
       setImageFile(null);
+      setAttachmentFiles([]);
+      setRemovedAttachmentIds([]);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setError(err.message);
@@ -275,6 +373,8 @@ function AdminBlogs() {
   const handleCancelEdit = () => {
     setEditingBlog(null);
     setImageFile(null);
+    setAttachmentFiles([]);
+    setRemovedAttachmentIds([]);
     setError('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -330,16 +430,22 @@ function AdminBlogs() {
         ? '/api/admin-panel/blogs/create/'
         : `/api/admin-panel/blogs/${editingBlog.id}/update/`;
 
-      // Use FormData if there's an image file
-      if (imageFile) {
+      const hasFileChanges = imageFile || attachmentFiles.length > 0 || removedAttachmentIds.length > 0;
+
+      // Use FormData whenever image or attachment files are changing.
+      if (hasFileChanges) {
         const formData = new FormData();
         formData.append('title', editingBlog.title);
-        formData.append('category', editingBlog.category);
+        formData.append('category_id', editingBlog.category_id);
         formData.append('description', editingBlog.description);
         formData.append('author', editingBlog.author);
         formData.append('content', latestContent);
         formData.append('image', imageFile);
         formData.append('is_featured', String(!!editingBlog.is_featured));
+        formData.append('remove_attachment_ids', JSON.stringify(removedAttachmentIds));
+        attachmentFiles.forEach((attachmentFile) => {
+          formData.append('attachments', attachmentFile);
+        });
 
         // For FormData, we need to handle CSRF manually and not set Content-Type
         let csrfToken = document.cookie
@@ -369,11 +475,12 @@ function AdminBlogs() {
           method: 'POST',
           body: {
             title: editingBlog.title,
-            category: editingBlog.category,
+            category_id: editingBlog.category_id,
             description: editingBlog.description,
             author: editingBlog.author,
             content: latestContent,
             is_featured: !!editingBlog.is_featured,
+            remove_attachment_ids: removedAttachmentIds,
           },
         });
       }
@@ -381,6 +488,8 @@ function AdminBlogs() {
       showSuccess(isNew ? 'Blog post created!' : 'Blog post updated!');
       setEditingBlog(null);
       setImageFile(null);
+      setAttachmentFiles([]);
+      setRemovedAttachmentIds([]);
       loadBlogs();
     } catch (err) {
       setError(err.message);
@@ -393,10 +502,58 @@ function AdminBlogs() {
     setEditingBlog(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleAttachmentSelection = (event) => {
+    const selectedFiles = Array.from(event.target.files || []);
+    if (selectedFiles.length > 0) {
+      setAttachmentFiles((previous) => [...previous, ...selectedFiles]);
+    }
+    event.target.value = '';
+  };
+
+  const removePendingAttachment = (index) => {
+    setAttachmentFiles((previous) => previous.filter((_, fileIndex) => fileIndex !== index));
+  };
+
+  const removeSavedAttachment = (attachmentId) => {
+    setRemovedAttachmentIds((previous) => (
+      previous.includes(attachmentId) ? previous : [...previous, attachmentId]
+    ));
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
+
+  const groupedBlogs = useMemo(() => {
+    const groups = new Map();
+
+    blogCategories.forEach((category) => {
+      groups.set(`category-${category.id}`, {
+        id: category.id,
+        name: category.name,
+        isActive: category.is_active,
+        blogs: [],
+      });
+    });
+
+    blogs.forEach((blog) => {
+      const categoryKey = blog.category_id
+        ? `category-${blog.category_id}`
+        : `name-${blog.category || 'Uncategorized'}`;
+      if (!groups.has(categoryKey)) {
+        groups.set(categoryKey, {
+          id: blog.category_id || categoryKey,
+          name: blog.category || 'Uncategorized',
+          isActive: true,
+          blogs: [],
+        });
+      }
+      groups.get(categoryKey).blogs.push(blog);
+    });
+
+    return Array.from(groups.values()).filter((group) => group.blogs.length > 0);
+  }, [blogCategories, blogs]);
 
   if (editingBlog) {
     return (
@@ -426,10 +583,21 @@ function AdminBlogs() {
             </label>
             <label className="admin-form-field span-2">
               <span>Blog Category *</span>
-              <select value={editingBlog.category || ''} onChange={(e) => updateField('category', e.target.value)} required>
-                <option value="" disabled>Select a blog category</option>
-                {BLOG_CATEGORIES.map((category) => (
-                  <option key={category} value={category}>{category}</option>
+              <select
+                value={editingBlog.category_id || ''}
+                onChange={(e) => updateField('category_id', e.target.value)}
+                required
+                disabled={categoriesLoading}
+              >
+                <option value="" disabled>
+                  {categoriesLoading ? 'Loading blog categories...' : 'Select a blog category'}
+                </option>
+                {blogCategories.map((category) => (
+                  (category.is_active || String(category.id) === String(editingBlog.category_id)) && (
+                    <option key={category.id} value={category.id}>
+                      {category.name}{category.is_active ? '' : ' (Inactive)'}
+                    </option>
+                  )
                 ))}
               </select>
             </label>
@@ -451,6 +619,56 @@ function AdminBlogs() {
                 </div>
               )}
             </label>
+            <div className="admin-form-field span-3 admin-blog-attachments-editor">
+              <div className="admin-blog-attachments-heading">
+                <div>
+                  <span>Attachments</span>
+                  <small>Files will be available to view and download from the published blog post.</small>
+                </div>
+                <label className="secondary-admin-button admin-blog-attachment-upload">
+                  + Upload Attachments
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.zip,.png,.jpg,.jpeg,.gif,.webp"
+                    onChange={handleAttachmentSelection}
+                  />
+                </label>
+              </div>
+
+              <div className="admin-blog-attachment-list">
+                {(editingBlog.attachments || [])
+                  .filter((attachment) => !removedAttachmentIds.includes(attachment.id))
+                  .map((attachment) => (
+                    <div className="admin-blog-attachment-row" key={attachment.id}>
+                      <span className="admin-blog-attachment-icon" aria-hidden="true">DOC</span>
+                      <div>
+                        <strong>{attachment.name || attachment.original_name}</strong>
+                        <span>Saved attachment</span>
+                      </div>
+                      <a href={formatAssetUrl(attachment.url)} target="_blank" rel="noopener noreferrer">View</a>
+                      <button type="button" className="admin-action-btn delete" onClick={() => removeSavedAttachment(attachment.id)}>Remove</button>
+                    </div>
+                  ))}
+
+                {attachmentFiles.map((attachmentFile, index) => (
+                  <div className="admin-blog-attachment-row is-pending" key={`${attachmentFile.name}-${attachmentFile.lastModified}-${index}`}>
+                    <span className="admin-blog-attachment-icon" aria-hidden="true">NEW</span>
+                    <div>
+                      <strong>{attachmentFile.name}</strong>
+                      <span>{formatAttachmentSize(attachmentFile.size)} · Uploads when this post is saved</span>
+                    </div>
+                    <button type="button" className="admin-action-btn delete" onClick={() => removePendingAttachment(index)}>Remove</button>
+                  </div>
+                ))}
+
+                {(editingBlog.attachments || []).filter((attachment) => !removedAttachmentIds.includes(attachment.id)).length === 0
+                  && attachmentFiles.length === 0 && (
+                    <p className="admin-blog-attachment-empty">No attachments added.</p>
+                  )}
+              </div>
+              <small className="admin-blog-attachment-help">Maximum 50 MB per file.</small>
+            </div>
             <label className="admin-form-field span-3" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '5px 0' }}>
               <input 
                 type="checkbox" 
@@ -480,7 +698,10 @@ function AdminBlogs() {
     <>
       <div className="admin-section-header">
         <h2 id="admin-content-title">Blog Posts</h2>
-        <button className="primary-button" onClick={handleCreate}>+ Add Blog Post</button>
+        <div className="admin-blog-header-actions">
+          <button type="button" className="secondary-admin-button" onClick={openCategoryManager}>Manage Blog Categories</button>
+          <button type="button" className="primary-button" onClick={handleCreate}>+ Add Blog Post</button>
+        </div>
       </div>
 
       {successMsg && <div className="admin-alert success">{successMsg}</div>}
@@ -491,8 +712,18 @@ function AdminBlogs() {
       ) : blogs.length === 0 ? (
         <div className="admin-empty-table">No blog posts found.</div>
       ) : (
-        <div className="admin-cards-grid">
-          {blogs.map((blog) => (
+        <div className="admin-blog-groups">
+          {groupedBlogs.map((group) => (
+            <section className="admin-blog-group" key={group.id} aria-labelledby={`admin-blog-category-${group.id}`}>
+              <div className="admin-blog-group-header">
+                <h3 id={`admin-blog-category-${group.id}`}>{group.name}</h3>
+                {!group.isActive && <span className="admin-category-status is-inactive">Inactive</span>}
+                <span className="admin-blog-group-count">
+                  {group.blogs.length} {group.blogs.length === 1 ? 'post' : 'posts'}
+                </span>
+              </div>
+              <div className="admin-cards-grid">
+                {group.blogs.map((blog) => (
             <article key={blog.id} className="admin-card">
               {blog.image && (
                 <div className="admin-card-image">
@@ -530,7 +761,152 @@ function AdminBlogs() {
                 </div>
               </div>
             </article>
+                ))}
+              </div>
+            </section>
           ))}
+        </div>
+      )}
+
+      {isCategoryManagerOpen && (
+        <div className="admin-modal-overlay" onClick={closeCategoryManager}>
+          <div
+            className="admin-modal admin-modal-lg admin-blog-category-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="blog-category-manager-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="admin-modal-header">
+              <div>
+                <h3 id="blog-category-manager-title">Blog Categories</h3>
+                <p>Create categories or update how they appear on the public Blogs page.</p>
+              </div>
+              <button
+                type="button"
+                className="admin-modal-close"
+                aria-label="Close blog category manager"
+                disabled={categorySaving}
+                onClick={closeCategoryManager}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="admin-modal-body">
+              {error && <div className="admin-alert error" role="alert">{error}</div>}
+
+              <div className="admin-blog-category-toolbar">
+                <p>{blogCategories.length} {blogCategories.length === 1 ? 'category' : 'categories'}</p>
+                <button type="button" className="primary-button" onClick={startCreateCategory}>+ Add Category</button>
+              </div>
+
+              {editingCategory && (
+                <form id="admin-blog-category-form" className="admin-blog-category-form" onSubmit={handleSaveCategory}>
+                  <div className="admin-form-grid">
+                    <label className="admin-form-field">
+                      <span>Category Name *</span>
+                      <input
+                        type="text"
+                        value={editingCategory.name || ''}
+                        maxLength="100"
+                        required
+                        autoFocus
+                        onChange={(event) => updateCategoryField('name', event.target.value)}
+                      />
+                    </label>
+                    <label className="admin-form-field">
+                      <span>URL Slug</span>
+                      <input
+                        type="text"
+                        value={editingCategory.slug || ''}
+                        maxLength="120"
+                        placeholder="Generated from the category name"
+                        onChange={(event) => updateCategoryField('slug', event.target.value)}
+                      />
+                    </label>
+                    <label className="admin-form-field">
+                      <span>Display Order</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editingCategory.display_order ?? 0}
+                        onChange={(event) => updateCategoryField('display_order', event.target.value)}
+                      />
+                    </label>
+                    <label className="admin-form-field span-3">
+                      <span>Description</span>
+                      <textarea
+                        rows="3"
+                        value={editingCategory.description || ''}
+                        onChange={(event) => updateCategoryField('description', event.target.value)}
+                      />
+                    </label>
+                    <label className="admin-toggle admin-blog-category-active">
+                      <input
+                        type="checkbox"
+                        checked={!!editingCategory.is_active}
+                        onChange={(event) => updateCategoryField('is_active', event.target.checked)}
+                      />
+                      <span>Active on public Blogs page</span>
+                    </label>
+                  </div>
+                  <div className="admin-blog-category-form-actions">
+                    <button type="button" className="secondary-admin-button" disabled={categorySaving} onClick={() => setEditingCategory(null)}>Cancel</button>
+                    <button type="submit" className="primary-button" disabled={categorySaving}>
+                      {categorySaving ? 'Saving...' : (editingCategory.id ? 'Update Category' : 'Create Category')}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {categoriesLoading ? (
+                <div className="admin-empty-table">Loading blog categories...</div>
+              ) : blogCategories.length === 0 ? (
+                <div className="admin-empty-table">No blog categories found. Add the first category above.</div>
+              ) : (
+                <div className="admin-data-table-wrap">
+                  <table className="admin-data-table admin-blog-category-table">
+                    <thead>
+                      <tr>
+                        <th>Order</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th>Posts</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {blogCategories.map((category) => (
+                        <tr key={category.id}>
+                          <td>{category.display_order}</td>
+                          <td>
+                            <strong>{category.name}</strong>
+                            <code>/{category.slug}</code>
+                          </td>
+                          <td>{category.description || '—'}</td>
+                          <td>
+                            <span className={`admin-category-status ${category.is_active ? 'is-active' : 'is-inactive'}`}>
+                              {category.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td>{category.blog_count || 0}</td>
+                          <td>
+                            <button type="button" className="admin-action-btn edit" onClick={() => startEditCategory(category)}>Edit</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="admin-modal-footer">
+              <button type="button" className="secondary-admin-button" disabled={categorySaving} onClick={closeCategoryManager}>Close</button>
+            </div>
+          </div>
         </div>
       )}
 

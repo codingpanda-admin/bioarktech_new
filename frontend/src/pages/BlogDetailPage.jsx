@@ -91,6 +91,13 @@ function BlogDetailPage({ blogId, navigate }) {
   const content = formatRichText(
     blog.content || 'Explore BioArkTech updates, technical guidance, and research workflow insights.'
   );
+  const attachments = (Array.isArray(blog.attachments) ? blog.attachments : [])
+    .map((attachment) => ({
+      ...attachment,
+      name: attachment.original_name || attachment.name || 'Blog attachment',
+      url: formatAssetUrl(attachment.url || attachment.file || ''),
+    }))
+    .filter((attachment) => attachment.url);
 
   return (
     <main className="blog-detail-page">
@@ -120,6 +127,33 @@ function BlogDetailPage({ blogId, navigate }) {
             className="blog-detail-content"
             dangerouslySetInnerHTML={{ __html: content }}
           />
+
+          {attachments.length > 0 && (
+            <section className="blog-attachments" aria-labelledby="blog-attachments-title">
+              <div className="blog-attachments-header">
+                <div>
+                  <p>Supporting files</p>
+                  <h2 id="blog-attachments-title">Attachments</h2>
+                </div>
+                <span>{attachments.length} {attachments.length === 1 ? 'file' : 'files'}</span>
+              </div>
+              <div className="blog-attachments-list">
+                {attachments.map((attachment) => (
+                  <article className="blog-attachment-item" key={attachment.id || attachment.url}>
+                    <span className="blog-attachment-file-icon" aria-hidden="true">DOC</span>
+                    <div>
+                      <h3>{attachment.name}</h3>
+                      <p>Blog attachment</p>
+                    </div>
+                    <div className="blog-attachment-actions">
+                      <a href={attachment.url} target="_blank" rel="noopener noreferrer">View</a>
+                      <a href={attachment.url} download={attachment.name}>Download</a>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
         </article>
 
         {recentBlogs.length > 0 && (

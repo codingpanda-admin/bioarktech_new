@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { apiFetch, API_URL, formatAssetUrl } from '../../utils/api';
-import { ProductContentEditor } from './AdminProducts';
+import { CatalogVideoEditor, ProductContentEditor } from './AdminProducts';
 
 const SERVICE_FALLBACK_CATEGORIES = [
   { id: 'genome-editing-services', name: 'Genome Editing Services' },
@@ -144,6 +144,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
       price: '',
       performance_data: '',
       manuals: [],
+      videos: [],
       category: selectedCategory !== 'All' ? selectedCategory : 'uncategorized',
       service_group: '',
       is_featured: false,
@@ -298,6 +299,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
       formData.append('price', latestPrice);
       formData.append('performance_data', latestPerformanceData);
       formData.append('manuals', JSON.stringify(serviceManuals));
+      formData.append('videos', JSON.stringify((editingService.videos || []).filter(Boolean)));
       formData.append('category', editingService.category || 'uncategorized');
       formData.append('service_group', editingService.service_group || '');
       formData.append('is_featured', editingService.is_featured ? 'true' : 'false');
@@ -329,6 +331,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
           price: latestPrice,
           performance_data: latestPerformanceData,
           manuals: serviceManuals,
+          videos: (prev?.videos || []).filter(Boolean),
           id: prev?.id || saveResponse?.id || saveResponse?.service?.id,
           image: saveResponse?.image ?? saveResponse?.service?.image ?? (removeImage ? null : prev?.image),
         }));
@@ -377,6 +380,28 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
     imagePreviewRequestRef.current += 1;
     setRemoveImage(true);
     setEditingService((prev) => ({ ...prev, image: null }));
+  };
+
+  const handleServiceVideoUpload = async (event) => {
+    const fileInput = event.currentTarget;
+    const file = fileInput.files?.[0];
+    if (!file) return;
+
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('video', file);
+      const data = await apiFetch('/api/admin-panel/catalog/upload-video/', {
+        method: 'POST',
+        body: formData,
+      });
+      updateField('videos', [...(editingService.videos || []), data.video_path]);
+      showSuccess('Service video uploaded successfully.');
+    } catch (err) {
+      setError(err.message || 'Service video upload failed.');
+    } finally {
+      fileInput.value = '';
+    }
   };
 
   const handleServiceDocumentUpload = async (event, index) => {
@@ -740,6 +765,12 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                 </span>
               )}
             </div>
+            <CatalogVideoEditor
+              videos={editingService.videos || []}
+              onChange={(videos) => updateField('videos', videos)}
+              onUpload={handleServiceVideoUpload}
+              itemLabel="Service"
+            />
             <div className="admin-form-field span-3" style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--line)', paddingTop: '15px', marginTop: '10px' }}>
               <span style={{ fontWeight: '600', color: 'var(--ink)' }}>Service Documents</span>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px', marginTop: '5px' }}>

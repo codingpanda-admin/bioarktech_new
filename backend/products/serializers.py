@@ -87,7 +87,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'quote_only', 'is_featured', 'show_on_screen', 'show_in_featured', 'show_in_gene_editing',
             'key_features', 'options', 'option_prices', 'storage_stability',
             'performance_data', 'data_description', 'manuals', 'manual_urls',
-            'images', 'store_link', 'content_text', 'hidden', 'raw_product', 'category_name',
+            'images', 'videos', 'store_link', 'content_text', 'hidden', 'raw_product', 'category_name',
             'raw_override', 'raw_detail', 'created_at', 'updated_at'
         ]
 

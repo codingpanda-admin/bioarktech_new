@@ -19,6 +19,7 @@ class ServiceMode(models.Model):
     price = HTMLField(blank=True, default='')
     performance_data = models.TextField(blank=True, default='')
     manuals = models.JSONField(default=list, blank=True)
+    videos = models.JSONField(default=list, blank=True)
     image = models.ImageField(blank=True, null=True)
     category = models.CharField(max_length=100, blank=True, null=True)
     service_group = models.CharField(max_length=100, blank=True, null=True)
@@ -39,6 +40,7 @@ class HomepageSlide(models.Model):
     secondary_button_text = models.CharField(max_length=100, blank=True, null=True)
     secondary_button_link = models.CharField(max_length=255, blank=True, null=True)
     image_url = models.TextField(blank=True, null=True)
+    video_url = models.TextField(blank=True, null=True)
     display_order = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
 

@@ -139,7 +139,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   const [activeTab, setActiveTab] = useState('details');
   
   // Featured product specific states
-  const [mainImage, setMainImage] = useState(logo);
+  const [selectedMedia, setSelectedMedia] = useState({ type: 'image', url: logo });
   const [selectedUnitSize, setSelectedUnitSize] = useState(null);
   const [cartAdded, setCartAdded] = useState(false);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
@@ -162,12 +162,20 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
         setProduct(productDetail);
         const priceOptions = getProductPriceOptions(productDetail);
         setSelectedUnitSize(priceOptions[0] || null);
-        setMainImage(
-          productDetail.image_url
-            ? formatAssetUrl(productDetail.image_url)
-            : productDetail.images?.[0]
-              ? formatAssetUrl(typeof productDetail.images[0] === 'string' ? productDetail.images[0] : productDetail.images[0].image)
-              : logo
+        const primaryImage = productDetail.image_url
+          ? formatAssetUrl(productDetail.image_url)
+          : productDetail.images?.[0]
+            ? formatAssetUrl(typeof productDetail.images[0] === 'string' ? productDetail.images[0] : productDetail.images[0].image)
+            : '';
+        const primaryVideo = Array.isArray(productDetail.videos)
+          ? productDetail.videos.find(Boolean)
+          : '';
+        setSelectedMedia(
+          primaryImage
+            ? { type: 'image', url: primaryImage }
+            : primaryVideo
+              ? { type: 'video', url: formatAssetUrl(primaryVideo) }
+              : { type: 'image', url: logo }
         );
       } catch (err) {
         console.error(err);
@@ -354,7 +362,14 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
     product.image_url,
     ...(Array.isArray(product.images) ? product.images.map(getImageUrl) : []),
   ].filter(Boolean)));
-  const showThumbnailNav = productImages.length > 4;
+  const productVideos = Array.from(new Set(
+    (Array.isArray(product.videos) ? product.videos : []).filter(Boolean)
+  ));
+  const productMedia = [
+    ...productImages.map((url) => ({ type: 'image', url: formatAssetUrl(url) })),
+    ...productVideos.map((url) => ({ type: 'video', url: formatAssetUrl(url) })),
+  ];
+  const showThumbnailNav = productMedia.length > 4;
 
   const scrollThumbnails = (direction) => {
     if (!thumbnailStripRef.current) return;
@@ -363,6 +378,71 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
       behavior: 'smooth',
     });
   };
+
+  const renderSelectedMedia = (imageClassName = '') => (
+    selectedMedia.type === 'video' ? (
+      <video
+        key={selectedMedia.url}
+        className={`product-main-video ${imageClassName}`.trim()}
+        src={selectedMedia.url}
+        poster={productMedia.find((media) => media.type === 'image')?.url}
+        controls
+        playsInline
+        preload="metadata"
+      >
+        Your browser does not support embedded video.
+      </video>
+    ) : (
+      <img src={selectedMedia.url} className={imageClassName} alt={name} />
+    )
+  );
+
+  const renderMediaThumbnails = (itemLabel) => (
+    productMedia.length > 1 && (
+      <div className={`product-thumbnail-carousel ${showThumbnailNav ? 'has-nav' : 'no-nav'}`}>
+        {showThumbnailNav && (
+          <button
+            type="button"
+            className="product-thumbnail-nav"
+            aria-label={`Previous ${itemLabel} media`}
+            onClick={() => scrollThumbnails(-1)}
+          >
+            <span className="product-thumbnail-chevron prev" aria-hidden="true" />
+          </button>
+        )}
+        <div className="product-thumbnail-strip" ref={thumbnailStripRef}>
+          {productMedia.map((media, index) => (
+            <button
+              key={`${media.type}-${media.url}-${index}`}
+              type="button"
+              className={`product-thumbnail-button ${selectedMedia.type === media.type && selectedMedia.url === media.url ? 'active' : ''}`}
+              onClick={() => setSelectedMedia(media)}
+              aria-label={`${media.type === 'video' ? 'Play' : 'View'} ${itemLabel} ${media.type} ${index + 1}`}
+            >
+              {media.type === 'video' ? (
+                <span className="product-video-thumbnail">
+                  <video src={media.url} muted playsInline preload="metadata" />
+                  <span aria-hidden="true">▶</span>
+                </span>
+              ) : (
+                <img src={media.url} alt="" />
+              )}
+            </button>
+          ))}
+        </div>
+        {showThumbnailNav && (
+          <button
+            type="button"
+            className="product-thumbnail-nav"
+            aria-label={`Next ${itemLabel} media`}
+            onClick={() => scrollThumbnails(1)}
+          >
+            <span className="product-thumbnail-chevron next" aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    )
+  );
 
   const getProductQuoteDescription = () => (
     isService
@@ -472,7 +552,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   );
 
   if (isService) {
-    const hasServiceImage = Boolean(product.image_url || productImages.length > 0);
+    const hasServiceMedia = productMedia.length > 0;
 
     return (
       <main className="service-detail-page">
@@ -527,9 +607,10 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
           </aside>
 
           <div className="service-detail-main">
-            <div className={`service-detail-banner ${hasServiceImage ? '' : 'is-fallback'}`}>
-              <img src={mainImage} alt={name} />
+            <div className={`service-detail-banner ${hasServiceMedia ? '' : 'is-fallback'}`}>
+              {renderSelectedMedia()}
             </div>
+            {renderMediaThumbnails('service')}
 
             <header className="service-detail-heading">
               <h1>{name}</h1>
@@ -737,48 +818,9 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
         {/* Gallery Section */}
         <div className="product-detail-gallery">
           <div className="product-main-image-frame">
-            <img src={mainImage} className="product-main-image" alt={name} />
+            {renderSelectedMedia('product-main-image')}
           </div>
-          {productImages.length > 1 && (
-            <div className={`product-thumbnail-carousel ${showThumbnailNav ? 'has-nav' : 'no-nav'}`}>
-              {showThumbnailNav && (
-                <button
-                  type="button"
-                  className="product-thumbnail-nav"
-                  aria-label="Previous product images"
-                  onClick={() => scrollThumbnails(-1)}
-                >
-                  <span className="product-thumbnail-chevron prev" aria-hidden="true" />
-                </button>
-              )}
-              <div className="product-thumbnail-strip" ref={thumbnailStripRef}>
-                {productImages.map((imageUrl, idx) => {
-                  const thumbnailUrl = formatAssetUrl(imageUrl);
-                  return (
-                    <button
-                      key={`${imageUrl}-${idx}`}
-                      type="button"
-                      className={`product-thumbnail-button ${mainImage === thumbnailUrl ? 'active' : ''}`}
-                      onClick={() => setMainImage(thumbnailUrl)}
-                      aria-label={`View product image ${idx + 1}`}
-                    >
-                      <img src={thumbnailUrl} alt="" />
-                    </button>
-                  );
-                })}
-              </div>
-              {showThumbnailNav && (
-                <button
-                  type="button"
-                  className="product-thumbnail-nav"
-                  aria-label="Next product images"
-                  onClick={() => scrollThumbnails(1)}
-                >
-                  <span className="product-thumbnail-chevron next" aria-hidden="true" />
-                </button>
-              )}
-            </div>
-          )}
+          {renderMediaThumbnails(isReagent ? 'reagent' : 'product')}
         </div>
 
         {/* Info Panel Section */}

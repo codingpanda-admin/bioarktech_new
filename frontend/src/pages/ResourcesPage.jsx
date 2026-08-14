@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { apiFetch, formatAssetUrl, mockResources } from '../utils/api';
 
-const BLOG_CATEGORIES = ['All', 'BioArk News', 'Biotech Outlook', 'Business News'];
-
 const formatBlogDate = (datePosted) => {
   if (!datePosted) return '';
 
@@ -33,6 +31,7 @@ const inferBlogCategory = (blog) => {
 
 function ResourcesPage({ navigate, searchParams }) {
   const [blogs, setBlogs] = useState([]);
+  const [blogCategories, setBlogCategories] = useState([]);
   const [resources, setResources] = useState([]);
   const [activeTab, setActiveTab] = useState(searchParams?.get('tab') === 'documents' ? 'documents' : 'blogs');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -44,11 +43,13 @@ function ResourcesPage({ navigate, searchParams }) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [blogData, resourceData] = await Promise.all([
+        const [blogData, blogCategoryData, resourceData] = await Promise.all([
           apiFetch('/api/blogs/get-all-blogs/').catch(() => mockResources),
+          apiFetch('/api/blogs/get-blog-categories/').catch(() => []),
           apiFetch('/api/blogs/get-all-resources/').catch(() => [])
         ]);
         setBlogs(blogData.length > 0 ? blogData : mockResources);
+        setBlogCategories(Array.isArray(blogCategoryData) ? blogCategoryData : []);
         setResources(resourceData);
       } catch (err) {
         setBlogs(mockResources);
@@ -85,12 +86,15 @@ function ResourcesPage({ navigate, searchParams }) {
 
   const categoriesList = useMemo(() => {
     if (activeTab === 'blogs') {
-      return BLOG_CATEGORIES;
+      const storedCategories = blogCategories.map((category) => category.name).filter(Boolean);
+      const blogRecordCategories = enrichedBlogs.map((blog) => blog.category).filter(Boolean);
+      const availableCategories = storedCategories.length > 0 ? storedCategories : blogRecordCategories;
+      return ['All', ...Array.from(new Set(availableCategories))];
     } else {
       const cats = new Set(resources.map((r) => r.category));
       return ['All', ...Array.from(cats)];
     }
-  }, [activeTab, resources]);
+  }, [activeTab, blogCategories, enrichedBlogs, resources]);
 
   const featuredBlogs = useMemo(() => (
     enrichedBlogs.filter((blog) => blog.is_featured)
@@ -102,7 +106,7 @@ function ResourcesPage({ navigate, searchParams }) {
 
   const categoryCounts = useMemo(() => {
     if (activeTab === 'blogs') {
-      return BLOG_CATEGORIES.reduce((counts, category) => ({
+      return categoriesList.reduce((counts, category) => ({
         ...counts,
         [category]: category === 'All'
           ? regularBlogs.length
@@ -117,7 +121,7 @@ function ResourcesPage({ navigate, searchParams }) {
           : resources.filter((r) => r.category === category).length,
       }), {});
     }
-  }, [activeTab, regularBlogs, resources]);
+  }, [activeTab, categoriesList, regularBlogs, resources]);
 
   const showFeatured = activeTab === 'blogs';
 
