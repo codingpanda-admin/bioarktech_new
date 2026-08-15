@@ -1,3 +1,7 @@
+from decimal import Decimal, InvalidOperation
+import re
+
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.contrib.postgres.fields import ArrayField
@@ -226,6 +230,7 @@ class Product(models.Model):
     catalog_number = models.CharField(max_length=100, blank=True, null=True)
     availability = models.CharField(max_length=100, blank=True, null=True)
     list_price = models.CharField(max_length=100, blank=True, null=True)
+    discounted_price = models.CharField(max_length=100, blank=True, null=True)
     price_range = models.CharField(max_length=100, blank=True, null=True)
     quote_only = models.BooleanField(default=False)
     is_featured = models.BooleanField(default=False)
@@ -235,6 +240,7 @@ class Product(models.Model):
     key_features = ArrayField(models.TextField(), default=list, blank=True)
     options = ArrayField(models.TextField(), default=list, blank=True)
     option_prices = models.JSONField(default=dict, blank=True)
+    option_discounted_prices = models.JSONField(default=dict, blank=True)
     storage_stability = models.TextField(blank=True, null=True)
     performance_data = models.TextField(blank=True, null=True)
     data_description = models.TextField(blank=True, null=True)
@@ -254,6 +260,77 @@ class Product(models.Model):
 
     class Meta:
         db_table = 'product'
+
+    @staticmethod
+    def _numeric_catalog_price(value):
+        """Return a Decimal only for a single, non-negative catalog price."""
+        if value in (None, ''):
+            return None
+        if isinstance(value, (int, float, Decimal)):
+            try:
+                parsed = Decimal(str(value))
+            except (InvalidOperation, ValueError):
+                return None
+            return parsed if parsed.is_finite() and parsed >= 0 else None
+
+        text = str(value).strip()
+        if not re.fullmatch(r'\$?\s*(?:\d+(?:,\d{3})*|\d+)(?:\.\d+)?', text):
+            return None
+        try:
+            parsed = Decimal(text.replace('$', '').replace(',', '').strip())
+        except InvalidOperation:
+            return None
+        return parsed if parsed.is_finite() and parsed >= 0 else None
+
+    def clean(self):
+        super().clean()
+        errors = {}
+
+        discounted_price_text = str(self.discounted_price or '').strip()
+        if discounted_price_text:
+            discounted_price = self._numeric_catalog_price(discounted_price_text)
+            list_price = self._numeric_catalog_price(self.list_price)
+            if discounted_price is None:
+                errors['discounted_price'] = 'Discounted Price must be a non-negative numeric price.'
+            elif list_price is None:
+                errors['discounted_price'] = 'A numeric List Price is required when Discounted Price is set.'
+            elif discounted_price > list_price:
+                errors['discounted_price'] = 'Discounted Price cannot exceed List Price.'
+
+        option_prices = self.option_prices if isinstance(self.option_prices, dict) else {}
+        option_discounts = (
+            self.option_discounted_prices
+            if isinstance(self.option_discounted_prices, dict)
+            else {}
+        )
+        top_level_list_price = self._numeric_catalog_price(self.list_price)
+        option_errors = []
+        for option_name, value in option_discounts.items():
+            value_text = '' if value is None else str(value).strip()
+            if not value_text:
+                continue
+
+            discounted_price = self._numeric_catalog_price(value_text)
+            option_list_price = self._numeric_catalog_price(option_prices.get(option_name))
+            effective_list_price = option_list_price if option_list_price is not None else top_level_list_price
+            label = str(option_name or 'Unnamed option').strip() or 'Unnamed option'
+            if discounted_price is None:
+                option_errors.append(f'{label}: Discounted Price must be a non-negative numeric price.')
+            elif effective_list_price is None:
+                option_errors.append(f'{label}: a numeric option price or product List Price is required.')
+            elif discounted_price > effective_list_price:
+                option_errors.append(f'{label}: Discounted Price cannot exceed its List Price.')
+
+        if option_errors:
+            errors['option_discounted_prices'] = option_errors
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        # Keep the discount ceiling invariant for every normal Product write,
+        # not only writes coming from the admin editor.
+        self.clean()
+        return super().save(*args, **kwargs)
 
 
 class ProductImage(models.Model):

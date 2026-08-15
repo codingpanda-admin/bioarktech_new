@@ -100,17 +100,17 @@ function ResourcesPage({ navigate, searchParams }) {
     enrichedBlogs.filter((blog) => blog.is_featured)
   ), [enrichedBlogs]);
 
-  const regularBlogs = useMemo(() => (
-    enrichedBlogs.filter((blog) => !blog.is_featured)
-  ), [enrichedBlogs]);
+  // Featured posts remain highlighted above, but they also belong in the
+  // complete article listing and participate in its category/search filters.
+  const listingBlogs = enrichedBlogs;
 
   const categoryCounts = useMemo(() => {
     if (activeTab === 'blogs') {
       return categoriesList.reduce((counts, category) => ({
         ...counts,
         [category]: category === 'All'
-          ? regularBlogs.length
-          : regularBlogs.filter((blog) => blog.category === category).length,
+          ? listingBlogs.length
+          : listingBlogs.filter((blog) => blog.category === category).length,
       }), {});
     } else {
       const docCats = ['All', ...Array.from(new Set(resources.map((r) => r.category)))];
@@ -121,7 +121,7 @@ function ResourcesPage({ navigate, searchParams }) {
           : resources.filter((r) => r.category === category).length,
       }), {});
     }
-  }, [activeTab, categoriesList, regularBlogs, resources]);
+  }, [activeTab, categoriesList, listingBlogs, resources]);
 
   const showFeatured = activeTab === 'blogs';
 
@@ -141,7 +141,7 @@ function ResourcesPage({ navigate, searchParams }) {
     return () => clearInterval(timer);
   }, [showFeatured, featuredBlogs.length]);
 
-  const visibleBlogs = regularBlogs.filter((blog) => {
+  const visibleBlogs = listingBlogs.filter((blog) => {
     const matchesCategory = activeCategory === 'All' || blog.category === activeCategory;
     const searchableText = `${blog.title || ''} ${blog.description || ''} ${blog.author || ''}`.toLowerCase();
     const matchesSearch = searchableText.includes(searchTerm.trim().toLowerCase());

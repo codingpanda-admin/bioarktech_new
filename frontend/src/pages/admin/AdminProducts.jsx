@@ -25,6 +25,32 @@ const reagentKeyFeaturesToPlainText = (value) => (
     .join('\n')
 );
 
+const parseNumericCatalogPrice = (value) => {
+  const text = String(value ?? '').trim();
+  if (!text) return null;
+  const normalized = text.replace(/^\$\s*/, '').replace(/,/g, '');
+  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return Number.NaN;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : Number.NaN;
+};
+
+const validateDiscountedPrice = (discountValue, listValue, label) => {
+  const discountText = String(discountValue ?? '').trim();
+  if (!discountText) return;
+
+  const discount = parseNumericCatalogPrice(discountText);
+  const listPrice = parseNumericCatalogPrice(listValue);
+  if (Number.isNaN(discount)) {
+    throw new Error(`${label} must be a non-negative numeric price.`);
+  }
+  if (listPrice === null || Number.isNaN(listPrice)) {
+    throw new Error(`${label} requires a numeric List Price.`);
+  }
+  if (discount > listPrice) {
+    throw new Error(`${label} cannot exceed its List Price.`);
+  }
+};
+
 const FilledHomeIcon = () => (
   <svg className="admin-home-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path d="M3 10.5 12 3l9 7.5v9A1.5 1.5 0 0 1 19.5 21H15v-6h-6v6H4.5A1.5 1.5 0 0 1 3 19.5v-9Z" />
@@ -793,17 +819,27 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
-  const createOptionRows = (options = [], optionPrices = {}) => {
+  const createOptionRows = (options = [], optionPrices = {}, optionDiscountedPrices = {}) => {
     const optionNames = Array.isArray(options) ? options : [];
     const priceMap = optionPrices && typeof optionPrices === 'object' && !Array.isArray(optionPrices)
       ? optionPrices
       : {};
-    const names = [...new Set([...optionNames, ...Object.keys(priceMap)])];
+    const discountedPriceMap = (
+      optionDiscountedPrices
+      && typeof optionDiscountedPrices === 'object'
+      && !Array.isArray(optionDiscountedPrices)
+    ) ? optionDiscountedPrices : {};
+    const names = [...new Set([
+      ...optionNames,
+      ...Object.keys(priceMap),
+      ...Object.keys(discountedPriceMap),
+    ])];
 
     return names.map((name) => ({
       id: `option-row-${++optionRowIdRef.current}`,
       name,
       price: priceMap[name] ?? '',
+      discountedPrice: discountedPriceMap[name] ?? '',
     }));
   };
 
@@ -816,7 +852,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
   const addOptionRow = () => {
     setOptionRows((rows) => [
       ...rows,
-      { id: `option-row-${++optionRowIdRef.current}`, name: '', price: '' },
+      { id: `option-row-${++optionRowIdRef.current}`, name: '', price: '', discountedPrice: '' },
     ]);
   };
 
@@ -838,6 +874,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
       product_group: '',
       source_type: categoryFilter === 'products' ? 'quote' : 'reagent',
       list_price: '',
+      discounted_price: '',
       price_range: '',
       availability: '',
       hidden: false,
@@ -866,7 +903,11 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
             storage_stability: richTextToPlainText(productData.storage_stability),
           }
         : {};
-      setOptionRows(createOptionRows(productData.options, productData.option_prices));
+      setOptionRows(createOptionRows(
+        productData.options,
+        productData.option_prices,
+        productData.option_discounted_prices,
+      ));
       setEditingProduct({
         ...productData,
         ...reagentPlainTextFields,
@@ -1020,8 +1061,9 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
         .map((row) => ({
           name: String(row.name || '').trim(),
           price: String(row.price ?? '').trim(),
+          discountedPrice: String(row.discountedPrice ?? '').trim(),
         }))
-        .filter((row) => row.name || row.price);
+        .filter((row) => row.name || row.price || row.discountedPrice);
       const unnamedOption = normalizedOptionRows.find((row) => !row.name);
       if (unnamedOption) {
         throw new Error('Each option price must have an option name.');
@@ -1033,6 +1075,27 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
       const normalizedOptionPrices = Object.fromEntries(
         normalizedOptionRows.map((row) => [row.name, row.price])
       );
+      const normalizedOptionDiscountedPrices = Object.fromEntries(
+        normalizedOptionRows
+          .filter((row) => row.discountedPrice)
+          .map((row) => [row.name, row.discountedPrice])
+      );
+
+      validateDiscountedPrice(
+        editingProduct.discounted_price,
+        editingProduct.list_price,
+        'Discounted Price',
+      );
+      normalizedOptionRows.forEach((row) => {
+        const effectiveListPrice = parseNumericCatalogPrice(row.price) === null
+          ? editingProduct.list_price
+          : row.price;
+        validateDiscountedPrice(
+          row.discountedPrice,
+          effectiveListPrice,
+          `Discounted Price for option "${row.name}"`,
+        );
+      });
       
       // Map 'uncategorized' option back to null or empty string for DB submission
       const payload = {
@@ -1044,6 +1107,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
         performance_data: latestPerformanceData,
         options: normalizedOptions,
         option_prices: normalizedOptionPrices,
+        option_discounted_prices: normalizedOptionDiscountedPrices,
         videos: (editingProduct.videos || []).filter(Boolean),
         manuals: (editingProduct.manuals || []).filter(man => man.name && man.manual),
         raw_detail: updatedRawDetail,
@@ -1060,7 +1124,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
         setEditingProduct(null);
         setOptionRows([]);
       } else if (isNew) {
-        setOptionRows(createOptionRows(normalizedOptions, normalizedOptionPrices));
+        setOptionRows(createOptionRows(normalizedOptions, normalizedOptionPrices, normalizedOptionDiscountedPrices));
         setEditingProduct((prev) => ({
           ...prev,
           ...payload,
@@ -1068,7 +1132,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
           id: saveResponse?.id,
         }));
       } else {
-        setOptionRows(createOptionRows(normalizedOptions, normalizedOptionPrices));
+        setOptionRows(createOptionRows(normalizedOptions, normalizedOptionPrices, normalizedOptionDiscountedPrices));
         setEditingProduct((prev) => ({
           ...prev,
           ...payload,
@@ -1683,6 +1747,15 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
               <span>List Price</span>
               <input type="text" value={editingProduct.list_price || ''} onChange={(e) => updateField('list_price', e.target.value)} />
             </label>
+            <label className="admin-form-field">
+              <span>Discounted Price</span>
+              <input
+                type="text"
+                value={editingProduct.discounted_price || ''}
+                onChange={(e) => updateField('discounted_price', e.target.value)}
+                placeholder="Must not exceed List Price"
+              />
+            </label>
 
             <div className="admin-form-field span-3 admin-options-editor">
               <div className="admin-options-editor-header">
@@ -1701,7 +1774,8 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                 <div className="admin-options-list">
                   <div className="admin-option-row admin-option-row-heading" aria-hidden="true">
                     <span>Option</span>
-                    <span>Price</span>
+                    <span>List Price</span>
+                    <span>Discounted Price</span>
                     <span>Action</span>
                   </div>
                   {optionRows.map((row, index) => (
@@ -1719,6 +1793,13 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                         onChange={(e) => updateOptionRow(row.id, 'price', e.target.value)}
                         placeholder="e.g. $39.00"
                         aria-label={`Option ${index + 1} price`}
+                      />
+                      <input
+                        type="text"
+                        value={row.discountedPrice}
+                        onChange={(e) => updateOptionRow(row.id, 'discountedPrice', e.target.value)}
+                        placeholder="Optional discounted price"
+                        aria-label={`Option ${index + 1} discounted price`}
                       />
                       <button
                         type="button"
@@ -2329,6 +2410,15 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                 <label className="admin-form-field">
                   <span>List Price</span>
                   <input type="text" value={editingProduct.list_price || ''} onChange={(e) => updateField('list_price', e.target.value)} />
+                </label>
+                <label className="admin-form-field">
+                  <span>Discounted Price</span>
+                  <input
+                    type="text"
+                    value={editingProduct.discounted_price || ''}
+                    onChange={(e) => updateField('discounted_price', e.target.value)}
+                    placeholder="Must not exceed List Price"
+                  />
                 </label>
                 <div className="admin-form-field span-2" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <span style={{ fontWeight: '500', color: 'var(--ink)' }}>Main Image</span>

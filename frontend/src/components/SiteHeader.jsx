@@ -473,6 +473,8 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [catalog, setCatalog] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
+  const [expandedCatalogGroups, setExpandedCatalogGroups] = useState(() => new Set());
+  const [hiddenCatalogNumberGroups, setHiddenCatalogNumberGroups] = useState(() => new Set());
   const profileMenuRef = React.useRef(null);
 
   useEffect(() => {
@@ -515,7 +517,33 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
     setConsumablesMenuOpen(false);
     setAboutMenuOpen(false);
     setProfileMenuOpen(false);
+    setExpandedCatalogGroups(new Set());
+    setHiddenCatalogNumberGroups(new Set());
   }, []);
+
+  const toggleCatalogGroup = (groupKey) => {
+    setExpandedCatalogGroups((current) => {
+      const next = new Set(current);
+      if (next.has(groupKey)) {
+        next.delete(groupKey);
+      } else {
+        next.add(groupKey);
+      }
+      return next;
+    });
+  };
+
+  const toggleCatalogNumbers = (groupKey) => {
+    setHiddenCatalogNumberGroups((current) => {
+      const next = new Set(current);
+      if (next.has(groupKey)) {
+        next.delete(groupKey);
+      } else {
+        next.add(groupKey);
+      }
+      return next;
+    });
+  };
 
   const catalogMenuOpen = productMenuOpen || serviceMenuOpen || reagentMenuOpen;
 
@@ -726,35 +754,68 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
                 </div>
               ) : (
                 <div className="catalog-subcategories">
-                  {activeSubcategories.map((sub) => (
-                    <div className="catalog-subcategory" key={sub.name || '__default'}>
-                      {sub.name && (
-                        <div className="catalog-subcategory-name">
-                          <span className="catalog-sub-dot" />
-                          {sub.name}
-                        </div>
-                      )}
-                      <div className="catalog-products-list">
-                        {(sub.products || []).map((product) => (
-                          <a
-                            key={product.external_id}
-                            className="catalog-product-link"
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              closeMenus();
-                              navigate(`/product/${product.externalId || product.external_id}`);
-                            }}
+                  {activeSubcategories.map((sub, subcategoryIndex) => {
+                    const products = sub.products || [];
+                    const groupKey = `${menuType}:${activeEntry.external_id}:${sub.name || subcategoryIndex}`;
+                    const groupIsExpanded = expandedCatalogGroups.has(groupKey);
+                    const showCatalogNumbers = !hiddenCatalogNumberGroups.has(groupKey);
+                    const visibleProducts = groupIsExpanded ? products : products.slice(0, 4);
+                    const productListId = `${menuType}-catalog-group-${subcategoryIndex}`;
+
+                    return (
+                      <div className="catalog-subcategory" key={groupKey}>
+                        <div className="catalog-subcategory-heading">
+                          {sub.name && (
+                            <div className="catalog-subcategory-name">
+                              <span className="catalog-sub-dot" />
+                              {sub.name}
+                            </div>
+                          )}
+                          <button
+                            className="catalog-number-toggle"
+                            type="button"
+                            aria-pressed={showCatalogNumbers}
+                            onClick={() => toggleCatalogNumbers(groupKey)}
                           >
-                            <span className="catalog-product-name">{product.product_name}</span>
-                            {product.catalog_number && (
-                              <span className="catalog-product-sku">{product.catalog_number}</span>
-                            )}
-                          </a>
-                        ))}
+                            {showCatalogNumbers ? 'Hide Cat. No.' : 'Show Cat. No.'}
+                          </button>
+                        </div>
+                        <div
+                          className={`catalog-products-list ${showCatalogNumbers ? '' : 'catalog-numbers-hidden'}`}
+                          id={productListId}
+                        >
+                          {visibleProducts.map((product) => (
+                            <a
+                              key={product.external_id}
+                              className="catalog-product-link"
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                closeMenus();
+                                navigate(`/product/${product.externalId || product.external_id}`);
+                              }}
+                            >
+                              <span className="catalog-product-name">{product.product_name}</span>
+                              {showCatalogNumbers && product.catalog_number && (
+                                <span className="catalog-product-sku">{product.catalog_number}</span>
+                              )}
+                            </a>
+                          ))}
+                          {products.length > 4 && (
+                            <button
+                              className="catalog-group-toggle"
+                              type="button"
+                              aria-expanded={groupIsExpanded}
+                              aria-controls={productListId}
+                              onClick={() => toggleCatalogGroup(groupKey)}
+                            >
+                              {groupIsExpanded ? 'Hide' : 'More...'}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 )}
               </div>

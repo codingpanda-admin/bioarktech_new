@@ -72,6 +72,31 @@ const getProductListPrice = (product) => (
   || ''
 );
 
+const getProductDiscountedPrice = (product) => (
+  product?.discounted_price
+  || product?.discountedPrice
+  || product?.raw_detail?.discountedPrice
+  || product?.raw_detail?.discounted_price
+  || ''
+);
+
+const getDiscountPriceState = (listPrice, discountedPrice) => {
+  const numericListPrice = parseProductPrice(listPrice);
+  const numericDiscountedPrice = parseProductPrice(discountedPrice);
+  const isDiscounted = (
+    numericListPrice !== null
+    && numericListPrice > 0
+    && numericDiscountedPrice !== null
+    && numericDiscountedPrice < numericListPrice
+  );
+
+  return {
+    unit_price: isDiscounted ? discountedPrice : listPrice,
+    list_price: isDiscounted ? listPrice : '',
+    on_discount: isDiscounted,
+  };
+};
+
 const isEnabledFlag = (value) => (
   value === true
   || value === 1
@@ -98,19 +123,31 @@ const getProductPriceOptions = (product) => {
       .map(([option, optionPrice]) => [String(option || '').trim(), optionPrice])
       .filter(([option]) => Boolean(option))
   );
+  const rawOptionDiscounts = (
+    product?.option_discounted_prices
+    && typeof product.option_discounted_prices === 'object'
+    && !Array.isArray(product.option_discounted_prices)
+  ) ? product.option_discounted_prices : {};
+  const optionDiscounts = Object.fromEntries(
+    Object.entries(rawOptionDiscounts)
+      .map(([option, optionPrice]) => [String(option || '').trim(), optionPrice])
+      .filter(([option]) => Boolean(option))
+  );
   const optionNames = [...new Set([
     ...options.map((option) => String(option || '').trim()).filter(Boolean),
     ...Object.keys(optionPrices).map((option) => String(option || '').trim()).filter(Boolean),
+    ...Object.keys(optionDiscounts).map((option) => String(option || '').trim()).filter(Boolean),
   ])];
 
-  if (Object.keys(optionPrices).length > 0) {
-    return optionNames.map((option, index) => ({
-      id: `catalog-option-${index}-${option}`,
-      unit_size: option,
-      unit_price: getOptionPriceOrListPrice(optionPrices[option], productListPrice),
-      list_price: '',
-      on_discount: false,
-    }));
+  if (Object.keys(optionPrices).length > 0 || Object.keys(optionDiscounts).length > 0) {
+    return optionNames.map((option, index) => {
+      const optionListPrice = getOptionPriceOrListPrice(optionPrices[option], productListPrice);
+      return {
+        id: `catalog-option-${index}-${option}`,
+        unit_size: option,
+        ...getDiscountPriceState(optionListPrice, optionDiscounts[option]),
+      };
+    });
   }
 
   const unitPrices = Array.isArray(product?.unit_prices) ? product.unit_prices : [];
@@ -234,7 +271,6 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
 
   if (!product) return null;
 
-  const isFeatured = product && Array.isArray(product.unit_prices);
   const categoryExternalId = product.category_external_id || product.categoryExternalId || '';
   const normalizedCategoryLabel = String(
     product.category_name || product.categoryName || product.product_category || ''
@@ -490,13 +526,17 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   };
   
   // Calculate price dynamically for featured products based on selected unit size
-  const price = isFeatured ? selectedUnitSize?.unit_price : product.unit_price;
+  const topLevelPriceState = getDiscountPriceState(
+    getProductListPrice(product),
+    getProductDiscountedPrice(product),
+  );
+  const price = selectedUnitSize?.unit_price || product.unit_price || topLevelPriceState.unit_price;
   const productPriceOptions = getProductPriceOptions(product);
   const hasProductPriceOptions = productPriceOptions.length > 0;
   const selectedPrice = hasProductPriceOptions ? selectedUnitSize?.unit_price : price;
   const productListPrice = getProductListPrice(product);
-  const listPrice = hasProductPriceOptions ? selectedUnitSize?.list_price : productListPrice;
-  const onDiscount = hasProductPriceOptions ? selectedUnitSize?.on_discount : false;
+  const listPrice = hasProductPriceOptions ? selectedUnitSize?.list_price : topLevelPriceState.list_price;
+  const onDiscount = hasProductPriceOptions ? selectedUnitSize?.on_discount : topLevelPriceState.on_discount;
   const numericSelectedPrice = parseProductPrice(selectedPrice);
   const numericListPrice = parseProductPrice(listPrice);
   const discountPercent = (
@@ -544,6 +584,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
             currentUserProfile={currentUserProfile}
             initialProjectDescription={getProductQuoteDescription()}
             initialServiceType={getQuoteServiceType()}
+            initialServiceCategoryId={product.category_external_id || product.categoryExternalId || ''}
             onSubmitted={() => setShowQuoteConfirmation(true)}
           />
         </div>
@@ -632,7 +673,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
             </header>
 
             <section className="service-detail-copy" aria-label="Service information">
-            <div className="service-detail-tabs" role="tablist" aria-label="Service information">
+            <div className="service-detail-tabs" role="tablist" aria-label="Service information" aria-orientation="vertical">
               <button
                 type="button"
                 id="service-details-tab"
@@ -642,7 +683,18 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 aria-controls="service-details-panel"
                 onClick={() => setActiveTab('details')}
               >
-                Detail
+                Service
+              </button>
+              <button
+                type="button"
+                id="service-technique-tab"
+                className={activeTab === 'technique' ? 'is-active' : ''}
+                role="tab"
+                aria-selected={activeTab === 'technique'}
+                aria-controls="service-technique-panel"
+                onClick={() => setActiveTab('technique')}
+              >
+                Technique
               </button>
               <button
                 type="button"
@@ -679,6 +731,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
               </button>
             </div>
 
+            <div className="service-detail-tab-content">
             {activeTab === 'details' && (
               <div
                 id="service-details-panel"
@@ -694,6 +747,26 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 ) : (
                   <div className="admin-empty-table service-detail-empty">
                     No additional details available.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'technique' && (
+              <div
+                id="service-technique-panel"
+                className="service-detail-tab-panel"
+                role="tabpanel"
+                aria-labelledby="service-technique-tab"
+              >
+                {product.technique ? (
+                  <div
+                    className="blog-detail-content product-detail-content"
+                    dangerouslySetInnerHTML={{ __html: formatRichText(product.technique) }}
+                  />
+                ) : (
+                  <div className="admin-empty-table service-detail-empty">
+                    No technique information available.
                   </div>
                 )}
               </div>
@@ -786,6 +859,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 )}
               </div>
             )}
+            </div>
             </section>
           </div>
         </div>
@@ -865,8 +939,13 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                   >
                     <span>{unit.unit_size}</span>
                     {formatProductPrice(unit.unit_price) && (
-                      <span style={{ color: 'var(--blue)', fontSize: '13px', fontWeight: 600 }}>
+                      <span className={unit.on_discount ? 'product-option-price is-discounted' : 'product-option-price'}>
                         {formatProductPrice(unit.unit_price)}
+                      </span>
+                    )}
+                    {unit.on_discount && (
+                      <span className="product-option-list-price">
+                        {formatProductPrice(unit.list_price)}
                       </span>
                     )}
                   </button>

@@ -393,6 +393,40 @@ def get_first_catalog_option_price(product, fallback=''):
 
     return next((price for price in option_prices.values() if price not in [None, '']), fallback)
 
+
+def get_catalog_search_images(product=None, featured_product=None):
+    """Return canonical and legacy catalog images in reliable fallback order."""
+    candidates = []
+
+    def add_candidate(value):
+        if isinstance(value, dict):
+            value = value.get('image') or value.get('url') or value.get('image_url')
+        value = str(value or '').strip()
+        if value and value not in candidates:
+            candidates.append(value)
+
+    # The Product record is the Admin Console source of truth. This is also
+    # where imported product/reagent images are stored, including records that
+    # have an older FeaturedProduct row with no associated Image rows.
+    if product:
+        add_candidate(product.image_url)
+        for image_value in product.images or []:
+            add_candidate(image_value)
+
+    if featured_product and featured_product.union_id:
+        legacy_images = Image.objects.filter(union=featured_product.union).order_by(
+            '-main_display',
+            'id',
+        )
+        for legacy_image in legacy_images:
+            if legacy_image.image:
+                try:
+                    add_candidate(legacy_image.image.url)
+                except ValueError:
+                    add_candidate(f'/media/{legacy_image.image.name}')
+
+    return candidates
+
 def is_product_consumable(product):
     return product.category_external_id == 'category-1780539818236'
 
@@ -575,18 +609,8 @@ def search_product(request):
         up = UnitPrice.objects.filter(union=fp.union).first()
         price = float(up.unit_price) if up else 0.0
         
-        img = Image.objects.filter(union=fp.union).first()
-        if img and img.image:
-            import os
-            from django.conf import settings
-            filename = os.path.basename(img.image.name)
-            subfolder_path = os.path.join(settings.MEDIA_ROOT, 'product_images', filename)
-            if os.path.exists(subfolder_path):
-                img_url = f"/media/product_images/{filename}"
-            else:
-                img_url = f"/media/{filename}"
-        else:
-            img_url = None
+        image_candidates = get_catalog_search_images(linked_product, fp)
+        img_url = image_candidates[0] if image_candidates else None
         
         combined_results.append({
             'product_id': fp.id,
@@ -598,10 +622,13 @@ def search_product(request):
             'description': fp.description,
             'unit_price': price,
             'list_price': linked_product.list_price or '',
+            'discounted_price': linked_product.discounted_price or '',
             'options': linked_product.options or [],
             'option_prices': linked_product.option_prices or {},
+            'option_discounted_prices': linked_product.option_discounted_prices or {},
             'first_option_price': get_first_catalog_option_price(linked_product, price),
             'image': img_url,
+            'image_candidates': image_candidates,
             'category': prod_cat,
             'category_external_id': linked_cat_id,
             'product_group': linked_group,
@@ -657,6 +684,7 @@ def search_product(request):
 
         prod_cat = 'Consumables' if category_type == 'consumables' else ('Reagents & Kits' if category_type == 'reagents' else 'Products & Services')
 
+        image_candidates = get_catalog_search_images(p)
         combined_results.append({
             'product_id': p.product_id,
             'product_sku': p.catalog_number or p.external_id,
@@ -667,10 +695,13 @@ def search_product(request):
             'description': p.description,
             'unit_price': 0.0,
             'list_price': p.list_price or '',
+            'discounted_price': p.discounted_price or '',
             'options': p.options or [],
             'option_prices': p.option_prices or {},
+            'option_discounted_prices': p.option_discounted_prices or {},
             'first_option_price': get_first_catalog_option_price(p),
-            'image': p.image_url or (p.images[0] if p.images else None),
+            'image': image_candidates[0] if image_candidates else None,
+            'image_candidates': image_candidates,
             'category': prod_cat,
             'category_external_id': p.category_external_id,
             'product_group': p.product_group,
@@ -724,6 +755,7 @@ def search_product(request):
             elif svc_cat == 'functional-testing':
                 svc_cat = 'functional-testing-services'
 
+            image_candidates = [f"/media/{s.image.name}"] if s.image else []
             combined_results.append({
                 'product_id': f"svc-{s.id}",
                 'product_sku': s.catalog_number or s.url.upper(),
@@ -734,7 +766,8 @@ def search_product(request):
                 'description': clean_desc,
                 'unit_price': 0.0,
                 'list_price': 'Contact for Quote',
-                'image': f"/media/{s.image.name}" if s.image else None,
+                'image': image_candidates[0] if image_candidates else None,
+                'image_candidates': image_candidates,
                 'category': 'Services',
                 'category_external_id': svc_cat,
                 'product_group': s.service_group or None,
