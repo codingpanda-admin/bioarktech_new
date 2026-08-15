@@ -84,13 +84,77 @@ def admin_dashboard_stats(request):
         return err
 
     try:
+        reagent_category_ids = [
+            'category-1765063995229',
+            'category-1766675380397',
+            'category-1766675365489',
+            'category-1765995504911',
+            'category-1780539818236',
+        ]
+        reagent_products = (
+            Q(source_type='reagent')
+            | Q(category_external_id__in=reagent_category_ids)
+            | Q(category__product_type__in=['reagent', 'consumable'])
+        )
+
+        active_catalog = Product.objects.filter(hidden=False)
+        active_products = active_catalog.exclude(reagent_products).count()
+        active_reagents = active_catalog.filter(reagent_products).count()
+        active_services = ServiceMode.objects.filter(hidden=False).count()
+        inactive_catalog = (
+            Product.objects.filter(hidden=True).count()
+            + ServiceMode.objects.filter(hidden=True).count()
+        )
+        featured_solutions = (
+            active_catalog.filter(Q(is_featured=True) | Q(show_in_featured=True)).count()
+            + ServiceMode.objects.filter(hidden=False, is_featured=True).count()
+        )
+        recent_quotes = Quote.objects.order_by('-created_at')[:5]
+
+        total_blogs = Blog.objects.count()
+        total_documents = ResourceDocument.objects.count()
+        total_media = Image.objects.count()
+        total_catalog_items = active_products + active_reagents + active_services
+
         return Response({
-            'total_products': Product.objects.filter(hidden=False).count(),
-            'total_featured_products': FeaturedProduct.objects.count(),
-            'total_blogs': Blog.objects.count(),
+            'total_products': active_products,
+            'total_reagents': active_reagents,
+            'total_services': active_services,
+            'total_catalog_items': total_catalog_items,
+            'inactive_catalog_items': inactive_catalog,
+            'total_featured_products': featured_solutions,
+            'total_featured_solutions': featured_solutions,
+            'total_product_categories': ProductCategory.objects.count(),
+            'total_blogs': total_blogs,
+            'total_blog_categories': BlogCategory.objects.count(),
             'total_users': User.objects.count(),
             'total_quotes': Quote.objects.count(),
             'unread_quotes': Quote.objects.filter(read=False).count(),
+            'total_documents': total_documents,
+            'total_media': total_media,
+            'total_homepage_slides': HomepageSlide.objects.filter(is_active=True).count(),
+            'total_about_records': (
+                AboutWhoWeAre.objects.filter(is_active=True).count()
+                + AboutHighlight.objects.filter(is_active=True).count()
+                + AboutTeamMember.objects.filter(is_active=True).count()
+            ),
+            'total_investor_records': (
+                InvestorCompanyOverview.objects.filter(is_active=True).count()
+                + InvestorStrategyTier.objects.filter(is_active=True).count()
+                + InvestorRoadmapMilestone.objects.filter(is_active=True).count()
+                + InvestorPartnerSection.objects.filter(is_active=True).count()
+            ),
+            'total_content_assets': total_blogs + total_documents + total_media,
+            'recent_quotes': [
+                {
+                    'id': quote.id,
+                    'name': f'{quote.first_name} {quote.last_name}'.strip() or quote.email,
+                    'service_type': quote.service_type or 'General inquiry',
+                    'created_at': quote.created_at.isoformat() if quote.created_at else None,
+                    'read': quote.read,
+                }
+                for quote in recent_quotes
+            ],
         })
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -342,6 +406,7 @@ def admin_list_products(request):
                 'show_on_screen': p.show_on_screen,
                 'image_url': p_image,
                 'list_price': p.list_price,
+                'discounted_price': p.discounted_price,
                 'source_type': p.source_type,
                 'created_at': p.created_at,
             })
@@ -447,6 +512,7 @@ def admin_get_product(request, product_id):
             'catalog_number': p.catalog_number,
             'availability': p.availability,
             'list_price': p.list_price,
+            'discounted_price': p.discounted_price,
             'price_range': p.price_range,
             'quote_only': p.quote_only,
             'is_featured': p.is_featured,
@@ -456,6 +522,7 @@ def admin_get_product(request, product_id):
             'key_features': p.key_features,
             'options': p.options,
             'option_prices': p.option_prices,
+            'option_discounted_prices': p.option_discounted_prices,
             'storage_stability': p.storage_stability,
             'performance_data': p.performance_data,
             'data_description': p.data_description,
@@ -633,7 +700,7 @@ def admin_create_product(request):
         if isinstance(raw_detail, dict) and 'content_text' in d:
             raw_detail = {**raw_detail, 'contentText': d.get('content_text', '')}
 
-        p = Product.objects.create(
+        p = Product(
             external_id=d.get('external_id', ''),
             product_name=d.get('product_name', ''),
             description=d.get('description', ''),
@@ -646,6 +713,7 @@ def admin_create_product(request):
             catalog_number=d.get('catalog_number', ''),
             availability=d.get('availability', ''),
             list_price=d.get('list_price', ''),
+            discounted_price=d.get('discounted_price', ''),
             price_range=d.get('price_range', ''),
             quote_only=d.get('quote_only', False),
             is_featured=d.get('is_featured', False),
@@ -655,6 +723,7 @@ def admin_create_product(request):
             key_features=d.get('key_features', []),
             options=d.get('options', []),
             option_prices=d.get('option_prices', {}),
+            option_discounted_prices=d.get('option_discounted_prices', {}),
             storage_stability=d.get('storage_stability', ''),
             performance_data=d.get('performance_data', ''),
             data_description=d.get('data_description', ''),
@@ -669,6 +738,7 @@ def admin_create_product(request):
             raw_override=d.get('raw_override'),
             raw_detail=raw_detail,
         )
+        p.save()
         _sync_featured_product(p, d)
         return Response({'id': p.product_id, 'message': 'Product created successfully'}, status=status.HTTP_201_CREATED)
     except Exception as e:
@@ -696,9 +766,9 @@ def admin_update_product(request, product_id):
             'external_id', 'product_name', 'description', 'image_url',
             'product_link', 'category_external_id', 'product_group',
             'source_type', 'display_order', 'catalog_number', 'availability',
-            'list_price', 'price_range', 'quote_only', 'is_featured', 'show_on_screen',
+            'list_price', 'discounted_price', 'price_range', 'quote_only', 'is_featured', 'show_on_screen',
             'show_in_featured', 'show_in_gene_editing', 'key_features',
-            'options', 'option_prices', 'storage_stability', 'performance_data',
+            'options', 'option_prices', 'option_discounted_prices', 'storage_stability', 'performance_data',
             'data_description', 'manuals', 'manual_urls', 'images',
             'videos', 'store_link', 'content_text', 'hidden', 'raw_product',
             'raw_override', 'raw_detail',
@@ -1844,6 +1914,7 @@ def admin_list_services(request):
                 'title': s.title,
                 'catalog_number': s.catalog_number,
                 'content': s.content,
+                'technique': s.technique,
                 'price': s.price,
                 'performance_data': s.performance_data,
                 'manuals': _normalize_service_manuals(s.manuals),
@@ -1875,6 +1946,7 @@ def admin_get_service(request, service_id):
             'title': s.title,
             'catalog_number': s.catalog_number,
             'content': s.content,
+            'technique': s.technique,
             'price': s.price,
             'performance_data': s.performance_data,
             'manuals': _normalize_service_manuals(s.manuals),
@@ -1915,6 +1987,7 @@ def admin_create_service(request):
             title=d.get('title', ''),
             catalog_number=d.get('catalog_number', ''),
             content=d.get('content', ''),
+            technique=d.get('technique', ''),
             price=d.get('price', ''),
             performance_data=d.get('performance_data', ''),
             manuals=_normalize_service_manuals(d.get('manuals', [])),
@@ -1947,7 +2020,7 @@ def admin_update_service(request, service_id):
         s = ServiceMode.objects.get(id=service_id)
         d = request.data
 
-        for field in ['url', 'title', 'catalog_number', 'content', 'price', 'performance_data', 'category', 'service_group']:
+        for field in ['url', 'title', 'catalog_number', 'content', 'technique', 'price', 'performance_data', 'category', 'service_group']:
             if field in d:
                 setattr(s, field, d[field])
 

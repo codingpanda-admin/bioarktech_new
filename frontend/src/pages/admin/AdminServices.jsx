@@ -60,6 +60,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
   const [draggedCatalogIndex, setDraggedCatalogIndex] = useState(null);
   const [collapsedCatalogs, setCollapsedCatalogs] = useState(() => new Set());
   const serviceContentEditorRef = useRef(null);
+  const techniqueEditorRef = useRef(null);
   const priceEditorRef = useRef(null);
   const performanceDataEditorRef = useRef(null);
   const imagePreviewRequestRef = useRef(0);
@@ -141,6 +142,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
       title: '',
       catalog_number: '',
       content: '',
+      technique: '',
       price: '',
       performance_data: '',
       manuals: [],
@@ -281,6 +283,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
     setError('');
     try {
       const latestContent = serviceContentEditorRef.current?.getHtml?.() ?? editingService.content ?? '';
+      const latestTechnique = techniqueEditorRef.current?.getHtml?.() ?? editingService.technique ?? '';
       const latestPrice = priceEditorRef.current?.getHtml?.() ?? editingService.price ?? '';
       const latestPerformanceData = performanceDataEditorRef.current?.getHtml?.() ?? editingService.performance_data ?? '';
       const serviceManuals = (editingService.manuals || []).filter((document) => (
@@ -296,6 +299,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
       formData.append('title', editingService.title);
       formData.append('catalog_number', editingService.catalog_number || '');
       formData.append('content', latestContent);
+      formData.append('technique', latestTechnique);
       formData.append('price', latestPrice);
       formData.append('performance_data', latestPerformanceData);
       formData.append('manuals', JSON.stringify(serviceManuals));
@@ -328,6 +332,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
         setEditingService((prev) => ({
           ...prev,
           content: latestContent,
+          technique: latestTechnique,
           price: latestPrice,
           performance_data: latestPerformanceData,
           manuals: serviceManuals,
@@ -872,6 +877,15 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                 value={editingService.content || ''}
                 onChange={(value) => updateField('content', value)}
                 ariaLabel="Service content text"
+              />
+            </div>
+            <div className="admin-form-field span-3">
+              <span>Technique</span>
+              <ProductContentEditor
+                ref={techniqueEditorRef}
+                value={editingService.technique || ''}
+                onChange={(value) => updateField('technique', value)}
+                ariaLabel="Service technique"
               />
             </div>
             <div className="admin-form-field span-3">

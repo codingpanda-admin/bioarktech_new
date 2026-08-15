@@ -83,9 +83,9 @@ class ProductSerializer(serializers.ModelSerializer):
             'product_id', 'external_id', 'externalId', 'product_name', 'description', 'image_url',
             'product_link', 'category_external_id', 'product_group', 'source_type',
             'display_order', 'source_created_at_ms', 'source_created_at',
-            'catalog_number', 'availability', 'list_price', 'price_range',
+            'catalog_number', 'availability', 'list_price', 'discounted_price', 'price_range',
             'quote_only', 'is_featured', 'show_on_screen', 'show_in_featured', 'show_in_gene_editing',
-            'key_features', 'options', 'option_prices', 'storage_stability',
+            'key_features', 'options', 'option_prices', 'option_discounted_prices', 'storage_stability',
             'performance_data', 'data_description', 'manuals', 'manual_urls',
             'images', 'videos', 'store_link', 'content_text', 'hidden', 'raw_product', 'category_name',
             'raw_override', 'raw_detail', 'created_at', 'updated_at'
@@ -123,6 +123,7 @@ class PreviewFeaturedProductSerializer(serializers.ModelSerializer):
     externalId = serializers.CharField(source='external_id', read_only=True)
     unit_price = serializers.SerializerMethodField()
     first_option_price = serializers.SerializerMethodField()
+    first_option_discounted_price = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     product_name = serializers.SerializerMethodField()
     catalog_number = serializers.SerializerMethodField()
@@ -131,7 +132,9 @@ class PreviewFeaturedProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'product_name', 'external_id', 'externalId', 'catalog_number', 'unit_price',
-            'list_price', 'options', 'option_prices', 'first_option_price', 'image',
+            'list_price', 'discounted_price', 'options', 'option_prices',
+            'option_discounted_prices', 'first_option_price',
+            'first_option_discounted_price', 'image',
             'show_on_screen',
         ]
 
@@ -190,6 +193,25 @@ class PreviewFeaturedProductSerializer(serializers.ModelSerializer):
                 return unit_price.unit_price
 
         return ''
+
+    def get_first_option_discounted_price(self, product):
+        options = product.options if isinstance(product.options, list) else []
+        option_discounts = (
+            product.option_discounted_prices
+            if isinstance(product.option_discounted_prices, dict)
+            else {}
+        )
+
+        if options:
+            first_option = str(options[0] or '').strip()
+            first_discount = option_discounts.get(first_option)
+            if first_discount not in [None, '']:
+                return first_discount
+
+        return next(
+            (price for price in option_discounts.values() if price not in [None, '']),
+            '',
+        )
 
     def get_image(self, product):
         fp = None

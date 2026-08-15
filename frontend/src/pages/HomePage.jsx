@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiFetch, mockResources, getCategoryIcon, formatAssetUrl } from '../utils/api';
-import { getCatalogCardPrice } from '../utils/catalogPrice';
 import IconMark from '../components/IconMark';
 import ProductVisual from '../components/ProductVisual';
+import CatalogPrice from '../components/CatalogPrice';
 
 const ABOUT_CALLOUTS = [
   {
@@ -585,9 +585,6 @@ function HomePage({ navigate, searchParams }) {
                     : itemType === 'reagent'
                       ? 'Reagent'
                       : 'Product';
-                  const priceStr = itemType === 'service'
-                    ? 'Contact for Quote'
-                    : getCatalogCardPrice(prod);
                   const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
                   const productId = prod.externalId || prod.external_id || prod.catalog_number || prod.product_sku;
                   const productHref = productId ? `/product/${productId}` : `/search?q=${encodeURIComponent(name)}`;
@@ -606,7 +603,11 @@ function HomePage({ navigate, searchParams }) {
                       {itemType !== 'service' && (
                         <p className="rating">★★★★★ <span>({prod.reviews || '45'})</span></p>
                       )}
-                      <p className="price">{priceStr}</p>
+                      {itemType === 'service' ? (
+                        <p className="price">Contact for Quote</p>
+                      ) : (
+                        <CatalogPrice item={prod} className="price" />
+                      )}
                       <a className="product-card-action" href={productHref} onClick={(e) => { e.preventDefault(); navigate(productHref); }}>View {itemLabel} <span>→</span></a>
                     </article>
                   );
@@ -650,7 +651,6 @@ function HomePage({ navigate, searchParams }) {
                   <div className="product-grid product-carousel-grid">
                     {visibleFeaturedGeneralProducts.map(({ product: prod, index }) => {
                       const name = prod.product_name;
-                      const priceStr = getCatalogCardPrice(prod);
                       const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
                       const productId = prod.externalId || prod.external_id || prod.catalog_number;
                       const productHref = productId ? `/product/${productId}` : `/search?q=${encodeURIComponent(name)}`;
@@ -682,7 +682,7 @@ function HomePage({ navigate, searchParams }) {
                             <div>
                               <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: '0 0 10px 0', minHeight: '48px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', color: 'var(--ink)' }}>{name}</h3>
                               <p className="rating" style={{ margin: '0 0 12px 0' }}>★★★★★ <span style={{ color: 'var(--ink-light)', fontSize: '0.85rem' }}>(4.8)</span></p>
-                              <p className="price" style={{ margin: '0 0 20px 0', fontSize: '1.2rem', fontWeight: '700', color: 'var(--blue)' }}>{priceStr}</p>
+                              <CatalogPrice item={prod} className="price" />
                             </div>
                             <a className="product-card-action" href={productHref} onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(productHref); }}>View Details <span>→</span></a>
                           </div>

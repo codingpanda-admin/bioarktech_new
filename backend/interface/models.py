@@ -16,6 +16,7 @@ class ServiceMode(models.Model):
     title = models.CharField(max_length=60)
     catalog_number = models.CharField(max_length=100, blank=True, null=True)
     content = HTMLField()
+    technique = HTMLField(blank=True, default='')
     price = HTMLField(blank=True, default='')
     performance_data = models.TextField(blank=True, default='')
     manuals = models.JSONField(default=list, blank=True)

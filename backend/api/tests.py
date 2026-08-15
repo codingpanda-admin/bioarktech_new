@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from interface.models import ServiceMode
-from products.models import Product
+from products.models import FeaturedProduct, Product
 
 from .admin_views import (
     _normalize_product_manual_payload,
@@ -143,3 +143,32 @@ class CatalogSearchTests(TestCase):
 
     def test_hidden_items_are_excluded(self):
         self.assertEqual(self.search('privatekeyword'), [])
+
+    def test_featured_result_falls_back_to_canonical_product_image(self):
+        image_path = '/content-api/uploads/originals/gene-deletion-kit.png'
+        product = Product.objects.create(
+            external_id='gep-03',
+            product_name='CRISPR Gene Deletion Kit',
+            catalog_number='GEDT-012k',
+            source_type='product',
+            images=[image_path],
+            is_featured=True,
+        )
+        FeaturedProduct.objects.create(
+            catalog_number=product.catalog_number,
+            product_name=product.product_name,
+            description='',
+            key_features='',
+            performance_data='',
+            storage_info='',
+            ship_info='',
+            shelf_status=True,
+            units_in_stock=0,
+            units='',
+        )
+
+        results = self.search('CRISPR Gene Deletion Kit')
+        result = next(item for item in results if item['external_id'] == product.external_id)
+
+        self.assertEqual(result['image'], image_path)
+        self.assertEqual(result['image_candidates'], [image_path])

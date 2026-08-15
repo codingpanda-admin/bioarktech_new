@@ -690,11 +690,13 @@ def load_product_by_external_id(request, external_id):
             data['quote_only'] = bool(source_product.quote_only)
             data['quoteOnly'] = bool(source_product.quote_only)
             data['list_price'] = source_product.list_price or ''
+            data['discounted_price'] = source_product.discounted_price or ''
             data['price_range'] = source_product.price_range or ''
             data['content_text'] = source_product.content_text
             data['raw_detail'] = source_product.raw_detail
             data['options'] = source_product.options or []
             data['option_prices'] = source_product.option_prices or {}
+            data['option_discounted_prices'] = source_product.option_discounted_prices or {}
             data['videos'] = source_product.videos or []
 
             # Some imported catalog items also have a legacy FeaturedProduct
@@ -776,6 +778,7 @@ def load_product_by_external_id(request, external_id):
             'quoteOnly': True,
             'description': clean_desc,
             'content_text': service.content,
+            'technique': service.technique,
             'price': service.price,
             'performance_data': service.performance_data,
             'videos': service.videos or [],
