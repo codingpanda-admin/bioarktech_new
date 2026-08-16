@@ -67,6 +67,8 @@ const defaultOverview = {
   page_title: 'Our Investors',
   page_subtitle: 'Partnering with visionary supporters to transform gene editing technologies and advance genetic medicine.',
   section_title: 'Company Overview & Vision',
+  strategy_section_title: 'Our Three-Tiered Strategy',
+  roadmap_section_title: 'Development Roadmap & Milestones',
   paragraphs: [
     'BioArk Technologies is an innovative biotechnology company committed to translating scientific breakthroughs into real-world healthcare solutions. We are evolving from a foundational service provider into an integrated medical solutions company.',
     'We leverage artificial intelligence (AI) to accelerate service delivery, advance our proprietary platform, and drive the creation of next-generation therapies.',
@@ -186,7 +188,7 @@ function InvestorsPage({ navigate }) {
       </section>}
 
       <section className="investor-section">
-        <h2>Our Three-Tiered Strategy</h2>
+        <h2>{overview?.strategy_section_title || 'Our Three-Tiered Strategy'}</h2>
         <div className="investor-card-grid">
           {strategyCards.map((card) => (
             <article className="investor-info-card" key={card.title}>
@@ -207,7 +209,7 @@ function InvestorsPage({ navigate }) {
       </section>
 
       <section className="investor-section">
-        <h2>Development Roadmap & Milestones</h2>
+        <h2>{overview?.roadmap_section_title || 'Development Roadmap & Milestones'}</h2>
         <div className="investor-roadmap-grid">
           {roadmapCards.map((card) => (
             <article className="investor-roadmap-card" key={card.phase}>

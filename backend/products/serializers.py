@@ -41,11 +41,27 @@ def get_product_category_name(product):
 
 
 class ProductCategorySerializer(serializers.ModelSerializer):
+    groups = serializers.SerializerMethodField()
+
     class Meta:
         model = ProductCategory
         fields = [
-            'category_id', 'category_name', 'description', 'priority',
+            'category_id', 'category_name', 'description', 'summary', 'priority',
             'external_id', 'product_type', 'show_on_homepage', 'homepage_image',
+            'groups',
+        ]
+
+    def get_groups(self, category):
+        return [
+            {
+                'group_id': group.group_id,
+                'group_name': group.group_name,
+                'external_id': group.external_id,
+                'summary': group.summary,
+                'priority': group.priority,
+                'is_active': group.is_active,
+            }
+            for group in category.catalog_groups.filter(is_active=True).order_by('priority', 'group_name', 'group_id')
         ]
 
 class FunctionCategorySerializer(serializers.ModelSerializer):
@@ -76,14 +92,15 @@ class DeliveryFormatTableSerializer(serializers.BaseSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     externalId = serializers.CharField(source='external_id', read_only=True)
     category_name = serializers.SerializerMethodField()
+    catalog_group_id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Product
         fields = [
             'product_id', 'external_id', 'externalId', 'product_name', 'description', 'image_url',
-            'product_link', 'category_external_id', 'product_group', 'source_type',
+            'product_link', 'category_external_id', 'catalog_group_id', 'product_group', 'source_type',
             'display_order', 'source_created_at_ms', 'source_created_at',
-            'catalog_number', 'availability', 'list_price', 'discounted_price', 'price_range',
+            'catalog_number', 'show_catalog_number', 'availability', 'list_price', 'discounted_price', 'price_range',
             'quote_only', 'is_featured', 'show_on_screen', 'show_in_featured', 'show_in_gene_editing',
             'key_features', 'options', 'option_prices', 'option_discounted_prices', 'storage_stability',
             'performance_data', 'data_description', 'manuals', 'manual_urls',

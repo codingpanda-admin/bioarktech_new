@@ -127,68 +127,72 @@ function BlogDetailPage({ blogId, navigate }) {
             className="blog-detail-content"
             dangerouslySetInnerHTML={{ __html: content }}
           />
-
-          {attachments.length > 0 && (
-            <section className="blog-attachments" aria-labelledby="blog-attachments-title">
-              <div className="blog-attachments-header">
-                <div>
-                  <p>Supporting files</p>
-                  <h2 id="blog-attachments-title">Attachments</h2>
-                </div>
-                <span>{attachments.length} {attachments.length === 1 ? 'file' : 'files'}</span>
-              </div>
-              <div className="blog-attachments-list">
-                {attachments.map((attachment) => (
-                  <article className="blog-attachment-item" key={attachment.id || attachment.url}>
-                    <span className="blog-attachment-file-icon" aria-hidden="true">DOC</span>
-                    <div>
-                      <h3>{attachment.name}</h3>
-                      <p>Blog attachment</p>
-                    </div>
-                    <div className="blog-attachment-actions">
-                      <a href={attachment.url} target="_blank" rel="noopener noreferrer">View</a>
-                      <a href={attachment.url} download={attachment.name}>Download</a>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-          )}
         </article>
 
-        {recentBlogs.length > 0 && (
-          <aside className="recent-posts-panel" aria-labelledby="recent-posts-title">
-            <h2 id="recent-posts-title">Recent Posts</h2>
-            <div className="recent-posts-list">
-              {recentBlogs.map((recentBlog) => {
-                const recentTitle = recentBlog.title || recentBlog.name;
-                const recentImageUrl = recentBlog.image ? formatAssetUrl(recentBlog.image) : null;
-                const recentBlogHref = recentBlog.id
-                  ? `/blog/${recentBlog.id}`
-                  : `/blog/mock-${recentBlog.sourceIndex}`;
+        {(recentBlogs.length > 0 || attachments.length > 0) && (
+          <aside className="blog-detail-sidebar" aria-label="Related blog content">
+            {recentBlogs.length > 0 && (
+              <section className="recent-posts-panel" aria-labelledby="recent-posts-title">
+                <h2 id="recent-posts-title">Recent Posts</h2>
+                <div className="recent-posts-list">
+                  {recentBlogs.map((recentBlog) => {
+                    const recentTitle = recentBlog.title || recentBlog.name;
+                    const recentImageUrl = recentBlog.image ? formatAssetUrl(recentBlog.image) : null;
+                    const recentBlogHref = recentBlog.id
+                      ? `/blog/${recentBlog.id}`
+                      : `/blog/mock-${recentBlog.sourceIndex}`;
 
-                return (
-                  <a
-                    className="recent-post-link"
-                    href={recentBlogHref}
-                    key={recentBlog.id || `${recentTitle}-${recentBlog.sourceIndex}`}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      navigate(recentBlogHref);
-                    }}
-                  >
-                    <span className="recent-post-thumbnail">
-                      {recentImageUrl ? (
-                        <img src={recentImageUrl} alt="" />
-                      ) : (
-                        <span className="recent-post-thumbnail-fallback" aria-hidden="true">BIO</span>
-                      )}
-                    </span>
-                    <span className="recent-post-title">{recentTitle}</span>
-                  </a>
-                );
-              })}
-            </div>
+                    return (
+                      <a
+                        className="recent-post-link"
+                        href={recentBlogHref}
+                        key={recentBlog.id || `${recentTitle}-${recentBlog.sourceIndex}`}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          navigate(recentBlogHref);
+                        }}
+                      >
+                        <span className="recent-post-thumbnail">
+                          {recentImageUrl ? (
+                            <img src={recentImageUrl} alt="" />
+                          ) : (
+                            <span className="recent-post-thumbnail-fallback" aria-hidden="true">BIO</span>
+                          )}
+                        </span>
+                        <span className="recent-post-title">{recentTitle}</span>
+                      </a>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {attachments.length > 0 && (
+              <section className="blog-attachments blog-attachments-sidebar" aria-labelledby="blog-attachments-title">
+                <div className="blog-attachments-header">
+                  <div>
+                    <p>Supporting files</p>
+                    <h2 id="blog-attachments-title">Attachments</h2>
+                  </div>
+                  <span>{attachments.length} {attachments.length === 1 ? 'file' : 'files'}</span>
+                </div>
+                <div className="blog-attachments-list">
+                  {attachments.map((attachment) => (
+                    <article className="blog-attachment-item" key={attachment.id || attachment.url}>
+                      <span className="blog-attachment-file-icon" aria-hidden="true">DOC</span>
+                      <div>
+                        <h3>{attachment.name}</h3>
+                        <p>Blog attachment</p>
+                      </div>
+                      <div className="blog-attachment-actions">
+                        <a href={attachment.url} target="_blank" rel="noopener noreferrer">View</a>
+                        <a href={attachment.url} download={attachment.name}>Download</a>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
           </aside>
         )}
       </div>

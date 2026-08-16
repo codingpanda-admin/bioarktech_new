@@ -539,7 +539,17 @@ export function AdminInvestors() {
     try {
       const data = await apiFetch('/api/admin-panel/investor-page/');
       setContent({
-        overview: data.overview || { page_title: 'Our Investors', page_subtitle: '', section_title: 'Company Overview & Vision', paragraphs: [], image_url: '', image_alt: '', is_active: true },
+        overview: data.overview || {
+          page_title: 'Our Investors',
+          page_subtitle: '',
+          section_title: 'Company Overview & Vision',
+          strategy_section_title: 'Our Three-Tiered Strategy',
+          roadmap_section_title: 'Development Roadmap & Milestones',
+          paragraphs: [],
+          image_url: '',
+          image_alt: '',
+          is_active: true,
+        },
         strategy_tiers: data.strategy_tiers || [],
         milestones: data.milestones || [],
         partner: data.partner || { section_title: 'Partner with BioArk', text: '', button_text: '', button_url: '', button_target: '_self', button_style: 'primary', contact_email: '', is_active: true },
@@ -675,7 +685,10 @@ export function AdminInvestors() {
       </section>
 
       <section className="admin-content-panel">
-        <div className="admin-content-panel-title"><h3>Our Three-Tiered Strategy</h3><button type="button" className="admin-btn-secondary" onClick={addTier}>Add tier</button></div>
+        <div className="admin-content-panel-title"><h3>{content.overview.strategy_section_title || 'Our Three-Tiered Strategy'}</h3><button type="button" className="admin-btn-secondary" onClick={addTier}>Add tier</button></div>
+        <div className="admin-content-form-grid admin-investor-section-title-field">
+          <label>Section title<input value={content.overview.strategy_section_title || ''} onChange={(e) => updateObject('overview', 'strategy_section_title', e.target.value)} /></label>
+        </div>
         <div className="admin-content-record-list">
           {content.strategy_tiers.map((tier, index) => (
             <RecordCard
@@ -717,7 +730,10 @@ export function AdminInvestors() {
       </section>
 
       <section className="admin-content-panel">
-        <div className="admin-content-panel-title"><h3>Development Roadmap &amp; Milestones</h3><button type="button" className="admin-btn-secondary" onClick={addMilestone}>Add milestone</button></div>
+        <div className="admin-content-panel-title"><h3>{content.overview.roadmap_section_title || 'Development Roadmap & Milestones'}</h3><button type="button" className="admin-btn-secondary" onClick={addMilestone}>Add milestone</button></div>
+        <div className="admin-content-form-grid admin-investor-section-title-field">
+          <label>Section title<input value={content.overview.roadmap_section_title || ''} onChange={(e) => updateObject('overview', 'roadmap_section_title', e.target.value)} /></label>
+        </div>
         <div className="admin-content-record-list">
           {content.milestones.map((milestone, index) => (
             <RecordCard

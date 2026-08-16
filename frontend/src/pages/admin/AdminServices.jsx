@@ -1,6 +1,13 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { apiFetch, API_URL, formatAssetUrl } from '../../utils/api';
-import { CatalogVideoEditor, ProductContentEditor } from './AdminProducts';
+import {
+  CatalogCategoryEditorPage,
+  CatalogGroupEditorModal,
+  CatalogNumberDisplayToggle,
+  CatalogVideoEditor,
+  DeactivateIcon,
+  ProductContentEditor,
+} from './AdminProducts';
 
 const SERVICE_FALLBACK_CATEGORIES = [
   { id: 'genome-editing-services', name: 'Genome Editing Services' },
@@ -59,6 +66,8 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
   const [catalogImageUploading, setCatalogImageUploading] = useState({});
   const [draggedCatalogIndex, setDraggedCatalogIndex] = useState(null);
   const [collapsedCatalogs, setCollapsedCatalogs] = useState(() => new Set());
+  const [editingCatalogGroup, setEditingCatalogGroup] = useState(null);
+  const [editingCategory, setEditingCategory] = useState(null);
   const serviceContentEditorRef = useRef(null);
   const techniqueEditorRef = useRef(null);
   const priceEditorRef = useRef(null);
@@ -99,6 +108,8 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
       product_type: cat.product_type || 'service',
       show_on_homepage: !!cat.show_on_homepage,
       homepage_image: cat.homepage_image || '',
+      summary: cat.summary || '',
+      groups: (cat.groups || []).filter((group) => group.is_active !== false),
       service_count: cat.service_count ?? cat.product_count ?? services.filter(s => (s.category || 'uncategorized') === id).length,
       isFallback: !cat.category_id,
     };
@@ -133,6 +144,9 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
     .sort((a, b) => (a.priority || 0) - (b.priority || 0) || a.name.localeCompare(b.name));
 
   const displayCategories = [...serviceCategories, UNCATEGORIZED_SERVICE_CATEGORY];
+  const availableServiceGroups = serviceCategories
+    .find((category) => category.id === editingService?.category)
+    ?.groups || [];
 
   const handleCreate = () => {
     setError('');
@@ -141,6 +155,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
       url: '',
       title: '',
       catalog_number: '',
+      show_catalog_number: true,
       content: '',
       technique: '',
       price: '',
@@ -150,6 +165,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
       category: selectedCategory !== 'All' ? selectedCategory : 'uncategorized',
       service_group: '',
       is_featured: false,
+      presented_service: false,
       show_on_screen: false,
       hidden: false,
     });
@@ -248,6 +264,30 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
     }
   };
 
+  const handleTogglePresentedService = async (serviceId, currentStatus) => {
+    try {
+      const updatedStatus = !currentStatus;
+
+      setServices((currentServices) => currentServices.map((service) => (
+        service.id === serviceId
+          ? { ...service, presented_service: updatedStatus }
+          : service
+      )));
+
+      await apiFetch(`/api/admin-panel/services/${serviceId}/update/`, {
+        method: 'POST',
+        body: { presented_service: updatedStatus },
+      });
+      showSuccess(updatedStatus
+        ? 'Service was added to Recommended Services.'
+        : 'Service was removed from Recommended Services.');
+      await loadServices();
+    } catch (err) {
+      setError(err.message);
+      await loadServices();
+    }
+  };
+
   const handleToggleShowOnScreen = async (serviceId, currentStatus) => {
     try {
       const updatedStatus = !currentStatus;
@@ -298,6 +338,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
       formData.append('url', editingService.url);
       formData.append('title', editingService.title);
       formData.append('catalog_number', editingService.catalog_number || '');
+      formData.append('show_catalog_number', editingService.show_catalog_number === false ? 'false' : 'true');
       formData.append('content', latestContent);
       formData.append('technique', latestTechnique);
       formData.append('price', latestPrice);
@@ -305,8 +346,10 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
       formData.append('manuals', JSON.stringify(serviceManuals));
       formData.append('videos', JSON.stringify((editingService.videos || []).filter(Boolean)));
       formData.append('category', editingService.category || 'uncategorized');
+      formData.append('catalog_group_id', editingService.catalog_group_id || '');
       formData.append('service_group', editingService.service_group || '');
       formData.append('is_featured', editingService.is_featured ? 'true' : 'false');
+      formData.append('presented_service', editingService.presented_service ? 'true' : 'false');
       formData.append('show_on_screen', editingService.show_on_screen ? 'true' : 'false');
       formData.append('hidden', editingService.hidden ? 'true' : 'false');
       if (imageFile) {
@@ -468,6 +511,8 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
       product_type: 'service',
       show_on_homepage: !!cat.show_on_homepage,
       homepage_image: cat.homepage_image || '',
+      summary: cat.summary || '',
+      groups: cat.groups || [],
       service_count: services.filter(s => (s.category || 'uncategorized') === cat.id).length,
       isNew: false,
     })));
@@ -699,7 +744,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
         {error && <div className="admin-alert error">{error}</div>}
 
         <form id="admin-service-editor-form" onSubmit={handleSave} className="admin-editor-panel">
-          <div className="admin-form-grid">
+          <div className="admin-form-grid admin-catalog-editor-grid">
             <label className="admin-form-field span-2">
               <span>Title *</span>
               <input type="text" value={editingService.title || ''} onChange={(e) => updateField('title', e.target.value)} required maxLength="60" />
@@ -717,11 +762,21 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                 placeholder="e.g. GEDT-012"
               />
             </label>
+            <CatalogNumberDisplayToggle
+              checked={editingService.show_catalog_number !== false}
+              onChange={(checked) => updateField('show_catalog_number', checked)}
+            />
             <label className="admin-form-field">
               <span>Category *</span>
               <select
                 value={editingService.category || ''}
-                onChange={(e) => updateField('category', e.target.value)}
+                onChange={(e) => setEditingService((current) => ({
+                  ...current,
+                  category: e.target.value,
+                  category_id: null,
+                  catalog_group_id: null,
+                  service_group: '',
+                }))}
                 required
               >
                 <option value="">-- Select Category --</option>
@@ -734,12 +789,23 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
             </label>
             <label className="admin-form-field">
               <span>Service Sub Group</span>
-              <input
-                type="text"
-                value={editingService.service_group || ''}
-                onChange={(e) => updateField('service_group', e.target.value)}
-                placeholder="e.g. Gene Engineering"
-              />
+              <select
+                value={editingService.catalog_group_id || ''}
+                onChange={(e) => {
+                  const group = availableServiceGroups.find((item) => String(item.group_id) === e.target.value);
+                  setEditingService((current) => ({
+                    ...current,
+                    catalog_group_id: group?.group_id || null,
+                    service_group: group?.group_name || '',
+                  }));
+                }}
+                disabled={!editingService.category}
+              >
+                <option value="">-- No Group --</option>
+                {availableServiceGroups.map((group) => (
+                  <option key={group.group_id} value={group.group_id}>{group.group_name}</option>
+                ))}
+              </select>
             </label>
             <div className="admin-form-field span-3">
               <span>Service Image</span>
@@ -864,6 +930,14 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
               <label className="admin-toggle">
                 <input
                   type="checkbox"
+                  checked={!!editingService.presented_service}
+                  onChange={(e) => updateField('presented_service', e.target.checked)}
+                />
+                <span>Recommended Service</span>
+              </label>
+              <label className="admin-toggle">
+                <input
+                  type="checkbox"
                   checked={!!editingService.show_on_screen}
                   onChange={(e) => updateField('show_on_screen', e.target.checked)}
                 />
@@ -919,6 +993,21 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
           </div>
         </form>
       </div>
+    );
+  }
+
+  if (editingCategory) {
+    return (
+      <CatalogCategoryEditorPage
+        category={editingCategory}
+        itemType="service"
+        onCancel={() => setEditingCategory(null)}
+        onSaved={(savedCategory) => {
+          setEditingCategory(null);
+          showSuccess(`Service category ${savedCategory.category_name} saved.`);
+          loadServices();
+        }}
+      />
     );
   }
 
@@ -1015,14 +1104,17 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
               return null;
             }
 
-            const serviceSubgroups = groupList.reduce((subgroups, service) => {
-              const subgroupName = String(service.service_group || '').trim();
-              if (!subgroups[subgroupName]) {
-                subgroups[subgroupName] = [];
-              }
-              subgroups[subgroupName].push(service);
+            const serviceSubgroups = (cat.groups || []).reduce((subgroups, group) => {
+              subgroups[group.group_name] = [];
               return subgroups;
             }, {});
+            groupList.forEach((service) => {
+              const subgroupName = String(service.service_group || '').trim();
+              if (!serviceSubgroups[subgroupName]) {
+                serviceSubgroups[subgroupName] = [];
+              }
+              serviceSubgroups[subgroupName].push(service);
+            });
             const serviceSubgroupEntries = Object.entries(serviceSubgroups)
               .sort(([leftName], [rightName]) => {
                 if (!leftName && rightName) return 1;
@@ -1050,21 +1142,48 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                     </span>
                     <span>{cat.name}</span>
                   </button>
-                  <span className="admin-category-badge">{groupList.length} services</span>
+                  <span className="admin-category-title-actions">
+                    {cat.id !== 'uncategorized' && (
+                      <button
+                        type="button"
+                        className="admin-action-btn edit"
+                        onClick={() => setEditingCatalogGroup({ group: null, category: cat })}
+                      >
+                        + Add Group
+                      </button>
+                    )}
+                    <span className="admin-category-badge">{groupList.length} services</span>
+                  </span>
                 </h3>
 
                 {!isCollapsed && (
                   <div id={`service-catalog-panel-${cat.id}`} className="admin-category-panel">
-                    {groupList.length === 0 ? (
+                    {serviceSubgroupEntries.length === 0 ? (
                       <div className="admin-empty-table" style={{ minHeight: '80px', background: '#fcfdfd' }}>
                         No services in this category.
                       </div>
                     ) : (
                       <>
-                        {serviceSubgroupEntries.map(([subgroupName, subgroupServices]) => (
+                        {serviceSubgroupEntries.map(([subgroupName, subgroupServices]) => {
+                          const catalogGroup = cat.groups?.find((group) => group.group_name === subgroupName);
+                          return (
                           <div key={subgroupName || '__general'} className="admin-subgroup-group">
                             <h4 className="admin-subgroup-title">
-                              {subgroupName || 'General'} ({subgroupServices.length})
+                              <span className="admin-subgroup-identity">
+                                <span>{subgroupName || 'General'} ({subgroupServices.length})</span>
+                                {catalogGroup?.external_id && (
+                                  <code className="admin-subgroup-external-id">External ID: {catalogGroup.external_id}</code>
+                                )}
+                              </span>
+                              {catalogGroup && (
+                                <button
+                                  type="button"
+                                  className="admin-action-btn edit"
+                                  onClick={() => setEditingCatalogGroup({ group: catalogGroup, category: cat })}
+                                >
+                                  Edit Group
+                                </button>
+                              )}
                             </h4>
                       <div className="admin-data-table-wrap">
                     <table className="admin-data-table">
@@ -1099,6 +1218,11 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                                 {service.show_on_screen && (
                                   <span className="admin-badge badge-info" style={{ background: '#0284c7', color: '#fff', marginLeft: '4px' }}>
                                     Homepage
+                                  </span>
+                                )}
+                                {service.presented_service && (
+                                  <span className="admin-badge badge-success" style={{ marginLeft: '4px' }}>
+                                    Recommended
                                   </span>
                                 )}
                               </div>
@@ -1163,13 +1287,35 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                                 >
                                   <FilledHomeIcon />
                                 </button>
+                                <button
+                                  type="button"
+                                  className={`admin-action-btn admin-presented-service-action-btn ${service.presented_service ? 'is-active' : ''}`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleTogglePresentedService(service.id, service.presented_service);
+                                  }}
+                                  title={service.presented_service ? 'Remove from Recommended Services' : 'Add to Recommended Services'}
+                                  aria-label={service.presented_service ? 'Remove from Recommended Services' : 'Add to Recommended Services'}
+                                  aria-pressed={!!service.presented_service}
+                                >
+                                  <span aria-hidden="true">{'\u25C9'}</span>
+                                </button>
                                   </>
                                 )}
                                 <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(service.id); }}>Edit</button>
                                 {service.hidden ? (
                                   <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleActivate(service.id); }}>Activate</button>
                                 ) : (
-                                  <button type="button" className="admin-action-btn delete" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeactivate(service.id); }}>Deactivate</button>
+                                  <button
+                                    type="button"
+                                    className="admin-action-btn delete admin-deactivate-action-btn"
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeactivate(service.id); }}
+                                    title="Deactivate"
+                                    aria-label="Deactivate"
+                                  >
+                                    <DeactivateIcon />
+                                  </button>
                                 )}
                               </div>
                             </td>
@@ -1179,7 +1325,8 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                     </table>
                       </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </>
                     )}
                   </div>
@@ -1188,6 +1335,20 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
             );
           })}
         </div>
+      )}
+
+      {editingCatalogGroup?.category && (
+        <CatalogGroupEditorModal
+          group={editingCatalogGroup.group}
+          category={editingCatalogGroup.category}
+          itemType="service"
+          onClose={() => setEditingCatalogGroup(null)}
+          onSaved={(savedGroup) => {
+            setEditingCatalogGroup(null);
+            showSuccess(`Service group ${savedGroup.group_name} saved.`);
+            loadServices();
+          }}
+        />
       )}
 
       {isCatalogModalOpen && (
@@ -1210,6 +1371,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                       <th>External ID</th>
                       <th>Popular</th>
                       <th>Homepage Image</th>
+                      <th>Groups</th>
                       <th>Services</th>
                       <th>Reorder</th>
                       <th>Actions</th>
@@ -1281,6 +1443,54 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                             </div>
                           </div>
                         </td>
+                        <td>
+                          <div className="admin-catalog-group-actions">
+                            {(row.groups || []).map((group) => (
+                              <button
+                                key={group.group_id}
+                                type="button"
+                                className="admin-action-btn edit admin-catalog-group-edit-button"
+                                onClick={() => {
+                                  setEditingCatalogGroup({
+                                    group,
+                                    category: {
+                                      ...row,
+                                      id: row.external_id,
+                                      name: row.category_name,
+                                    },
+                                  });
+                                  setIsCatalogModalOpen(false);
+                                }}
+                                title={`Edit ${group.group_name}`}
+                              >
+                                <span>{group.group_name}</span>
+                                <code>{group.external_id}</code>
+                              </button>
+                            ))}
+                            {!row.isNew && row.category_id && (
+                              <button
+                                type="button"
+                                className="admin-action-btn admin-catalog-group-add-button"
+                                onClick={() => {
+                                  setEditingCatalogGroup({
+                                    group: null,
+                                    category: {
+                                      ...row,
+                                      id: row.external_id,
+                                      name: row.category_name,
+                                    },
+                                  });
+                                  setIsCatalogModalOpen(false);
+                                }}
+                              >
+                                + Add Group
+                              </button>
+                            )}
+                            {(row.groups || []).length === 0 && (row.isNew || !row.category_id) && (
+                              <span className="admin-catalog-groups-empty">Save category first</span>
+                            )}
+                          </div>
+                        </td>
                         <td>{row.service_count || 0}</td>
                         <td>
                           <div className="admin-row-actions">
@@ -1289,9 +1499,23 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                           </div>
                         </td>
                         <td>
-                          <button className="admin-action-btn delete" type="button" onClick={() => deleteCatalogRow(index)}>
-                            Delete
-                          </button>
+                          <div className="admin-row-actions">
+                            <button
+                              className="admin-action-btn edit"
+                              type="button"
+                              disabled={row.isNew || !row.category_id}
+                              title={row.isNew ? 'Save this category before editing its summary.' : 'Edit category'}
+                              onClick={() => {
+                                setEditingCategory(row);
+                                setIsCatalogModalOpen(false);
+                              }}
+                            >
+                              Edit
+                            </button>
+                            <button className="admin-action-btn delete" type="button" onClick={() => deleteCatalogRow(index)}>
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

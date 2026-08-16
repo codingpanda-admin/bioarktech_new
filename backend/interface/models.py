@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from tinymce.models import HTMLField
 
 # Create your models here.
@@ -15,6 +16,7 @@ class ServiceMode(models.Model):
     url = models.CharField()
     title = models.CharField(max_length=60)
     catalog_number = models.CharField(max_length=100, blank=True, null=True)
+    show_catalog_number = models.BooleanField(default=True)
     content = HTMLField()
     technique = HTMLField(blank=True, default='')
     price = HTMLField(blank=True, default='')
@@ -23,13 +25,60 @@ class ServiceMode(models.Model):
     videos = models.JSONField(default=list, blank=True)
     image = models.ImageField(blank=True, null=True)
     category = models.CharField(max_length=100, blank=True, null=True)
+    category_ref = models.ForeignKey(
+        'products.ProductCategory',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='services',
+    )
     service_group = models.CharField(max_length=100, blank=True, null=True)
+    catalog_group = models.ForeignKey(
+        'products.CatalogGroup',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='services',
+    )
     is_featured = models.BooleanField(default=False)
+    presented_service = models.BooleanField(default=False)
     show_on_screen = models.BooleanField(default=False)
     hidden = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'service_mode'
+
+    def save(self, *args, **kwargs):
+        from products.models import CatalogGroup, ProductCategory
+
+        if not self.category_ref_id and self.category:
+            self.category_ref = ProductCategory.objects.filter(external_id=self.category).first()
+
+        if self.catalog_group_id:
+            if self.category_ref_id and self.catalog_group.category_id != self.category_ref_id:
+                raise ValidationError({'catalog_group': 'The selected group must belong to the selected category.'})
+            self.category_ref = self.catalog_group.category
+            self.service_group = self.catalog_group.group_name
+        elif self.category_ref_id and self.service_group:
+            normalized_name = CatalogGroup.normalize_name(self.service_group)
+            if normalized_name:
+                self.catalog_group, _ = CatalogGroup.objects.get_or_create(
+                    category=self.category_ref,
+                    normalized_name=normalized_name,
+                    defaults={'group_name': str(self.service_group).strip()},
+                )
+                self.service_group = self.catalog_group.group_name
+
+        if self.category_ref_id:
+            category_type = str(self.category_ref.product_type or '').strip().lower()
+            if category_type and category_type != 'service':
+                raise ValidationError({'category_ref': 'A service must belong to a Service category.'})
+            self.category = self.category_ref.external_id
+
+        if self.catalog_group_id and self.category_ref_id != self.catalog_group.category_id:
+            raise ValidationError({'catalog_group': 'The selected group must belong to the selected category.'})
+
+        super().save(*args, **kwargs)
 
 class HomepageSlide(models.Model):
     id = models.AutoField(primary_key=True)
@@ -128,6 +177,14 @@ class InvestorCompanyOverview(models.Model):
     section_title = models.CharField(
         max_length=255,
         default='Company Overview & Vision',
+    )
+    strategy_section_title = models.CharField(
+        max_length=255,
+        default='Our Three-Tiered Strategy',
+    )
+    roadmap_section_title = models.CharField(
+        max_length=255,
+        default='Development Roadmap & Milestones',
     )
     paragraphs = models.JSONField(default=list, blank=True)
     image_url = models.TextField(blank=True, default='')
