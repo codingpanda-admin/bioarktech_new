@@ -204,6 +204,10 @@ def get_nav_catalog(request):
             cat_products = products_by_category.get(cat_id, [])
             cat_services = services_by_category.get(cat_id, [])
             total_items_count = len(cat_products) + len(cat_services)
+            catalog_groups_by_name = {
+                group.normalized_name: group
+                for group in cat.catalog_groups.filter(is_active=True)
+            }
             
             # Filter out empty orphaned seed categories (like CRISPR-Cas9, RNAi etc. which have no products and are not defaults)
             is_default = any(d['external_id'] == cat_id for d in DEFAULT_PRODUCT_CATEGORIES)
@@ -223,6 +227,7 @@ def get_nav_catalog(request):
                     'externalId': p.catalog_number or p.external_id,
                     'sort_external_id': p.external_id,
                     'catalog_number': p.catalog_number,
+                    'show_catalog_number': p.show_catalog_number,
                 })
 
             for service in cat_services:
@@ -236,9 +241,18 @@ def get_nav_catalog(request):
                     'externalId': service.url,
                     'sort_external_id': service.url,
                     'catalog_number': service.catalog_number,
+                    'show_catalog_number': service.show_catalog_number,
                 })
                 
-            subcategories = [{'name': name, 'products': products} for name, products in subcategories_map.items()]
+            subcategories = []
+            for name, products in subcategories_map.items():
+                catalog_group = catalog_groups_by_name.get(CatalogGroup.normalize_name(name))
+                subcategories.append({
+                    'name': name,
+                    'external_id': catalog_group.external_id if catalog_group else None,
+                    'summary': catalog_group.summary if catalog_group else '',
+                    'products': products,
+                })
             
             final_name = cat.category_name or (matched_default['category_name'] if matched_default else '')
             final_type = cat.product_type or (matched_default['product_type'] if matched_default else 'product')
@@ -250,6 +264,7 @@ def get_nav_catalog(request):
                 'externalId': cat_id,
                 'product_count': total_items_count,
                 'product_type': final_type,
+                'summary': cat.summary,
                 'show_on_homepage': cat.show_on_homepage,
                 'homepage_image': cat.homepage_image,
                 'subcategories': subcategories,
@@ -285,6 +300,7 @@ def get_nav_catalog(request):
                         'externalId': p.catalog_number or p.external_id,
                         'sort_external_id': p.external_id,
                         'catalog_number': p.catalog_number,
+                        'show_catalog_number': p.show_catalog_number,
                     })
 
                 for service in cat_services:
@@ -298,6 +314,7 @@ def get_nav_catalog(request):
                         'externalId': service.url,
                         'sort_external_id': service.url,
                         'catalog_number': service.catalog_number,
+                        'show_catalog_number': service.show_catalog_number,
                     })
                     
                 subcategories = [{'name': name, 'products': products} for name, products in subcategories_map.items()]
@@ -309,6 +326,7 @@ def get_nav_catalog(request):
                     'externalId': ext_id,
                     'product_count': total_items_count,
                     'product_type': cat['product_type'],
+                    'summary': '',
                     'show_on_homepage': False,
                     'homepage_image': None,
                     'subcategories': subcategories,
@@ -335,6 +353,7 @@ def get_nav_catalog(request):
                     'externalId': p.catalog_number or p.external_id,
                     'sort_external_id': p.external_id,
                     'catalog_number': p.catalog_number,
+                    'show_catalog_number': p.show_catalog_number,
                 })
                 
             subcategories = [{'name': name, 'products': products} for name, products in subcategories_map.items()]
@@ -346,12 +365,48 @@ def get_nav_catalog(request):
                 'externalId': 'uncategorized',
                 'product_count': len(uncategorized_products),
                 'product_type': 'product',
+                'summary': '',
                 'subcategories': subcategories,
             }
 
         return Response(list(merged_map.values()))
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def get_catalog_summary(request, kind, external_id):
+    if kind == 'category':
+        category = get_object_or_404(ProductCategory, external_id=external_id)
+        return Response({
+            'kind': 'category',
+            'external_id': category.external_id,
+            'name': category.category_name,
+            'summary': category.summary or '',
+            'product_type': category.product_type or 'product',
+            'category_external_id': category.external_id,
+            'category_name': category.category_name,
+            'category_summary': category.summary or '',
+        })
+
+    if kind == 'group':
+        group = get_object_or_404(
+            CatalogGroup.objects.select_related('category'),
+            external_id=external_id,
+            is_active=True,
+        )
+        return Response({
+            'kind': 'group',
+            'external_id': group.external_id,
+            'name': group.group_name,
+            'summary': group.summary or '',
+            'product_type': group.category.product_type or 'product',
+            'category_external_id': group.category.external_id,
+            'category_name': group.category.category_name,
+            'category_summary': group.category.summary or '',
+        })
+
+    return Response({'error': 'Catalog page type not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['GET'])

@@ -1,9 +1,10 @@
+from django.core.exceptions import ValidationError
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
 
 from interface.models import ServiceMode
-from products.models import FeaturedProduct, Product
+from products.models import CatalogGroup, FeaturedProduct, Product, ProductCategory
 
 from .admin_views import (
     _normalize_product_manual_payload,
@@ -172,3 +173,64 @@ class CatalogSearchTests(TestCase):
 
         self.assertEqual(result['image'], image_path)
         self.assertEqual(result['image_candidates'], [image_path])
+
+
+class CatalogHierarchyTests(TestCase):
+    def setUp(self):
+        self.product_category = ProductCategory.objects.create(
+            category_name='Hierarchy Products',
+            external_id='hierarchy-products',
+            product_type='product',
+        )
+        self.other_category = ProductCategory.objects.create(
+            category_name='Other Hierarchy Products',
+            external_id='other-hierarchy-products',
+            product_type='product',
+        )
+        self.service_category = ProductCategory.objects.create(
+            category_name='Hierarchy Services',
+            external_id='hierarchy-services',
+            product_type='service',
+        )
+
+    def test_product_text_group_is_normalized_under_its_category(self):
+        product = Product.objects.create(
+            external_id='normalized-product',
+            product_name='Normalized Product',
+            category_external_id=self.product_category.external_id,
+            product_group='Gene Editing Tools',
+            source_type='product',
+        )
+
+        self.assertEqual(product.category_id, self.product_category.category_id)
+        self.assertEqual(product.catalog_group.category_id, self.product_category.category_id)
+        self.assertEqual(product.catalog_group.normalized_name, 'gene-editing-tools')
+
+    def test_product_rejects_group_from_another_category(self):
+        other_group = CatalogGroup.objects.create(
+            category=self.other_category,
+            group_name='Other Group',
+        )
+        product = Product(
+            external_id='invalid-product-hierarchy',
+            product_name='Invalid Product Hierarchy',
+            category=self.product_category,
+            catalog_group=other_group,
+            source_type='product',
+        )
+
+        with self.assertRaises(ValidationError):
+            product.save()
+
+    def test_service_group_is_normalized_under_service_category(self):
+        service = ServiceMode.objects.create(
+            url='normalized-service',
+            title='Normalized Service',
+            content='',
+            category=self.service_category.external_id,
+            service_group='Cell Engineering',
+        )
+
+        self.assertEqual(service.category_ref_id, self.service_category.category_id)
+        self.assertEqual(service.catalog_group.category_id, self.service_category.category_id)
+        self.assertEqual(service.catalog_group.normalized_name, 'cell-engineering')

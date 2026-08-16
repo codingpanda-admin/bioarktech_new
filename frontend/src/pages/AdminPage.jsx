@@ -6,6 +6,7 @@ import AdminDashboard from './admin/AdminDashboard';
 import AdminUsers from './admin/AdminUsers';
 import AdminProducts from './admin/AdminProducts';
 import AdminFeaturedProducts from './admin/AdminFeaturedProducts';
+import AdminPresentedServices from './admin/AdminPresentedServices';
 import AdminServices from './admin/AdminServices';
 import AdminBlogs from './admin/AdminBlogs';
 import AdminResources from './admin/AdminResources';
@@ -17,7 +18,7 @@ import { AdminAboutBioArk, AdminInvestors } from './admin/AdminPageContent';
 const adminLinkGroups = [
   ['Overview', 'Homepage', 'Users'],
   ['Products', 'Reagents', 'Services'],
-  ['Featured Solutions'],
+  ['Featured Solutions', 'Recommended Services'],
   ['Blogs', 'About BioArk', 'Investors'],
   ['Quotes'],
   ['Documents', 'Email (SMTP)', 'Media'],
@@ -208,6 +209,10 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
 
         {activeSection === 'Featured Solutions' && (
           <AdminFeaturedProducts onEditItem={handleFeaturedItemEdit} />
+        )}
+
+        {activeSection === 'Recommended Services' && (
+          <AdminPresentedServices onEditItem={handleFeaturedItemEdit} />
         )}
 
         {activeSection === 'Reagents' && (

@@ -12,7 +12,7 @@ from rest_framework import status
 
 from products.models import (
     Product, FeaturedProduct, ProductsUnion, Image,
-    UnitPrice, ManualFile, ProductCategory,
+    UnitPrice, ManualFile, ProductCategory, CatalogGroup,
 )
 from blogs.models import Blog, BlogAttachment, BlogCategory, ResourceDocument
 from users.models import User, Address
@@ -173,14 +173,115 @@ def _serialize_product_category(category):
         'category_id': category.category_id,
         'category_name': category.category_name,
         'description': category.description,
+        'summary': category.summary,
         'priority': category.priority,
         'external_id': category.external_id,
         'product_type': category.product_type,
         'show_on_homepage': category.show_on_homepage,
         'homepage_image': category.homepage_image,
+        'groups': [
+            {
+                'group_id': group.group_id,
+                'group_name': group.group_name,
+                'external_id': group.external_id,
+                'summary': group.summary,
+                'priority': group.priority,
+                'is_active': group.is_active,
+            }
+            for group in category.catalog_groups.filter(is_active=True).order_by('priority', 'group_name', 'group_id')
+        ],
         'product_count': service_count if category.product_type == 'service' else product_count,
         'service_count': service_count,
     }
+
+
+def _validated_catalog_group(group_id, category):
+    if not group_id:
+        return None
+    group = CatalogGroup.objects.filter(group_id=group_id, is_active=True).first()
+    if not group:
+        raise ValueError('The selected group does not exist or is inactive.')
+    if not category or group.category_id != category.category_id:
+        raise ValueError('The selected group does not belong to the selected category.')
+    return group
+
+
+def _serialize_catalog_group(group):
+    return {
+        'group_id': group.group_id,
+        'category_id': group.category_id,
+        'category_external_id': group.category.external_id,
+        'group_name': group.group_name,
+        'external_id': group.external_id,
+        'summary': group.summary,
+        'priority': group.priority,
+        'is_active': group.is_active,
+    }
+
+
+@api_view(['POST'])
+def admin_create_catalog_group(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        category_external_id = (request.data.get('category_external_id') or '').strip()
+        group_name = (request.data.get('group_name') or '').strip()
+        if not category_external_id:
+            return Response({'error': 'Category is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not group_name:
+            return Response({'error': 'Group name is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        category = ProductCategory.objects.get(external_id=category_external_id)
+        max_priority = category.catalog_groups.aggregate(max_priority=Max('priority'))['max_priority'] or 0
+        group = CatalogGroup(
+            category=category,
+            group_name=group_name,
+            summary=request.data.get('summary') or '',
+            priority=request.data.get('priority') or max_priority + 1,
+            is_active=True,
+        )
+        # CatalogGroup generates the required External ID during this first save.
+        group.save()
+        return Response(_serialize_catalog_group(group), status=status.HTTP_201_CREATED)
+    except ProductCategory.DoesNotExist:
+        return Response({'error': 'Category not found.'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def admin_update_catalog_group(request, group_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        group = CatalogGroup.objects.select_related('category').get(group_id=group_id)
+        supplied_external_id = request.data.get('external_id')
+        if supplied_external_id is not None and str(supplied_external_id).strip() != group.external_id:
+            return Response(
+                {'error': 'External ID cannot be changed after the group is created.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if 'group_name' in request.data:
+            group_name = (request.data.get('group_name') or '').strip()
+            if not group_name:
+                return Response({'error': 'Group name is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            group.group_name = group_name
+        if 'summary' in request.data:
+            group.summary = request.data.get('summary') or ''
+        if 'priority' in request.data:
+            group.priority = request.data.get('priority') or 1
+
+        group.save()
+        return Response(_serialize_catalog_group(group))
+    except CatalogGroup.DoesNotExist:
+        return Response({'error': 'Group not found.'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -225,6 +326,7 @@ def admin_create_product_category(request):
             category_name=name,
             external_id=external_id,
             description=d.get('description') or '',
+            summary=d.get('summary') or '',
             priority=d.get('priority') or max_priority + 1,
             product_type=d.get('product_type') or 'product',
             show_on_homepage=str(d.get('show_on_homepage', 'false')).lower() == 'true',
@@ -256,6 +358,9 @@ def admin_update_product_category(request, category_id):
 
         if 'description' in d:
             category.description = d.get('description') or ''
+
+        if 'summary' in d:
+            category.summary = d.get('summary') or ''
 
         if 'product_type' in d:
             category.product_type = d.get('product_type') or category.product_type
@@ -399,7 +504,9 @@ def admin_list_products(request):
                 'product_name': p_name,
                 'external_id': p.external_id,
                 'catalog_number': p.catalog_number,
+                'show_catalog_number': p.show_catalog_number,
                 'category_external_id': p.category_external_id,
+                'catalog_group_id': p.catalog_group_id,
                 'product_group': p.product_group,
                 'hidden': p.hidden,
                 'is_featured': p_featured,
@@ -504,12 +611,14 @@ def admin_get_product(request, product_id):
             'image_url': p.image_url,
             'product_link': p.product_link,
             'category_external_id': p.category_external_id,
+            'catalog_group_id': p.catalog_group_id,
             'product_group': p.product_group,
             'source_type': p.source_type,
             'display_order': p.display_order,
             'source_created_at_ms': p.source_created_at_ms,
             'source_created_at': p.source_created_at,
             'catalog_number': p.catalog_number,
+            'show_catalog_number': p.show_catalog_number,
             'availability': p.availability,
             'list_price': p.list_price,
             'discounted_price': p.discounted_price,
@@ -711,6 +820,7 @@ def admin_create_product(request):
             source_type=d.get('source_type', ''),
             display_order=d.get('display_order'),
             catalog_number=d.get('catalog_number', ''),
+            show_catalog_number=d.get('show_catalog_number', True),
             availability=d.get('availability', ''),
             list_price=d.get('list_price', ''),
             discounted_price=d.get('discounted_price', ''),
@@ -738,6 +848,9 @@ def admin_create_product(request):
             raw_override=d.get('raw_override'),
             raw_detail=raw_detail,
         )
+        p.category = ProductCategory.objects.filter(external_id=p.category_external_id).first()
+        if d.get('catalog_group_id'):
+            p.catalog_group = _validated_catalog_group(d.get('catalog_group_id'), p.category)
         p.save()
         _sync_featured_product(p, d)
         return Response({'id': p.product_id, 'message': 'Product created successfully'}, status=status.HTTP_201_CREATED)
@@ -765,7 +878,7 @@ def admin_update_product(request, product_id):
         updatable_fields = [
             'external_id', 'product_name', 'description', 'image_url',
             'product_link', 'category_external_id', 'product_group',
-            'source_type', 'display_order', 'catalog_number', 'availability',
+            'source_type', 'display_order', 'catalog_number', 'show_catalog_number', 'availability',
             'list_price', 'discounted_price', 'price_range', 'quote_only', 'is_featured', 'show_on_screen',
             'show_in_featured', 'show_in_gene_editing', 'key_features',
             'options', 'option_prices', 'option_discounted_prices', 'storage_stability', 'performance_data',
@@ -777,6 +890,22 @@ def admin_update_product(request, product_id):
         for field in updatable_fields:
             if field in d:
                 setattr(p, field, d[field])
+
+        if 'category_external_id' in d:
+            p.category = ProductCategory.objects.filter(external_id=p.category_external_id).first()
+        if 'catalog_group_id' in d or 'product_group' in d or 'category_external_id' in d:
+            group_id = d.get('catalog_group_id')
+            group_name = str(d.get('product_group') or '').strip()
+            p.catalog_group = None
+            if group_id:
+                p.catalog_group = _validated_catalog_group(group_id, p.category)
+            elif p.category and group_name:
+                normalized_name = CatalogGroup.normalize_name(group_name)
+                p.catalog_group, _ = CatalogGroup.objects.get_or_create(
+                    category=p.category,
+                    normalized_name=normalized_name,
+                    defaults={'group_name': group_name},
+                )
 
         if 'content_text' in d and isinstance(p.raw_detail, dict):
             p.raw_detail = {**p.raw_detail, 'contentText': p.content_text or ''}
@@ -921,6 +1050,42 @@ def admin_list_featured_products(request):
             'buckets': buckets,
             'results': buckets['products'] + buckets['services'] + buckets['reagents'],
         })
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def admin_list_presented_services(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        category_names = {
+            category.external_id: category.category_name
+            for category in ProductCategory.objects.exclude(external_id__isnull=True).exclude(external_id='')
+        }
+        services = ServiceMode.objects.filter(
+            presented_service=True,
+            hidden=False,
+        ).order_by('title')
+
+        results = [
+            {
+                'id': service.id,
+                'edit_id': service.id,
+                'item_type': 'service',
+                'product_name': service.title,
+                'catalog_number': service.catalog_number or '',
+                'category_name': category_names.get(service.category) or service.category or 'Uncategorized',
+                'group_name': service.service_group or '',
+                'external_id': service.url,
+                'homepage_url': f'/product/{service.url}',
+                'image_url': request.build_absolute_uri(service.image.url) if service.image else None,
+            }
+            for service in services
+        ]
+        return Response({'results': results, 'total': len(results)})
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -1913,6 +2078,7 @@ def admin_list_services(request):
                 'external_id': s.url,
                 'title': s.title,
                 'catalog_number': s.catalog_number,
+                'show_catalog_number': s.show_catalog_number,
                 'content': s.content,
                 'technique': s.technique,
                 'price': s.price,
@@ -1921,8 +2087,11 @@ def admin_list_services(request):
                 'videos': _normalize_catalog_videos(s.videos),
                 'image': request.build_absolute_uri(s.image.url) if s.image else None,
                 'category': s.category,
+                'category_id': s.category_ref_id,
+                'catalog_group_id': s.catalog_group_id,
                 'service_group': s.service_group,
                 'is_featured': s.is_featured,
+                'presented_service': s.presented_service,
                 'show_on_screen': s.show_on_screen,
                 'hidden': s.hidden,
             })
@@ -1945,6 +2114,7 @@ def admin_get_service(request, service_id):
             'external_id': s.url,
             'title': s.title,
             'catalog_number': s.catalog_number,
+            'show_catalog_number': s.show_catalog_number,
             'content': s.content,
             'technique': s.technique,
             'price': s.price,
@@ -1953,8 +2123,11 @@ def admin_get_service(request, service_id):
             'videos': _normalize_catalog_videos(s.videos),
             'image': request.build_absolute_uri(s.image.url) if s.image else None,
             'category': s.category,
+            'category_id': s.category_ref_id,
+            'catalog_group_id': s.catalog_group_id,
             'service_group': s.service_group,
             'is_featured': s.is_featured,
+            'presented_service': s.presented_service,
             'show_on_screen': s.show_on_screen,
             'hidden': s.hidden,
         }
@@ -1976,16 +2149,23 @@ def admin_create_service(request):
         is_featured_val = d.get('is_featured', False)
         if isinstance(is_featured_val, str):
             is_featured_val = is_featured_val.lower() == 'true'
+        presented_service_val = d.get('presented_service', False)
+        if isinstance(presented_service_val, str):
+            presented_service_val = presented_service_val.lower() == 'true'
         show_on_screen_val = d.get('show_on_screen', False)
         if isinstance(show_on_screen_val, str):
             show_on_screen_val = show_on_screen_val.lower() == 'true'
         hidden_val = d.get('hidden', False)
         if isinstance(hidden_val, str):
             hidden_val = hidden_val.lower() == 'true'
+        show_catalog_number_val = d.get('show_catalog_number', True)
+        if isinstance(show_catalog_number_val, str):
+            show_catalog_number_val = show_catalog_number_val.lower() == 'true'
         s = ServiceMode(
             url=d.get('url', ''),
             title=d.get('title', ''),
             catalog_number=d.get('catalog_number', ''),
+            show_catalog_number=show_catalog_number_val,
             content=d.get('content', ''),
             technique=d.get('technique', ''),
             price=d.get('price', ''),
@@ -1995,9 +2175,13 @@ def admin_create_service(request):
             category=d.get('category', ''),
             service_group=d.get('service_group', ''),
             is_featured=is_featured_val,
+            presented_service=presented_service_val,
             show_on_screen=show_on_screen_val,
             hidden=hidden_val,
         )
+        s.category_ref = ProductCategory.objects.filter(external_id=s.category).first()
+        if d.get('catalog_group_id'):
+            s.catalog_group = _validated_catalog_group(d.get('catalog_group_id'), s.category_ref)
         if request.FILES.get('image'):
             s.image = request.FILES['image']
         s.save()
@@ -2024,6 +2208,22 @@ def admin_update_service(request, service_id):
             if field in d:
                 setattr(s, field, d[field])
 
+        if 'category' in d:
+            s.category_ref = ProductCategory.objects.filter(external_id=s.category).first()
+        if 'catalog_group_id' in d or 'service_group' in d or 'category' in d:
+            group_id = d.get('catalog_group_id')
+            group_name = str(d.get('service_group') or '').strip()
+            s.catalog_group = None
+            if group_id:
+                s.catalog_group = _validated_catalog_group(group_id, s.category_ref)
+            elif s.category_ref and group_name:
+                normalized_name = CatalogGroup.normalize_name(group_name)
+                s.catalog_group, _ = CatalogGroup.objects.get_or_create(
+                    category=s.category_ref,
+                    normalized_name=normalized_name,
+                    defaults={'group_name': group_name},
+                )
+
         if 'manuals' in d:
             s.manuals = _normalize_service_manuals(d['manuals'])
 
@@ -2036,11 +2236,23 @@ def admin_update_service(request, service_id):
                 is_featured_val = is_featured_val.lower() == 'true'
             s.is_featured = is_featured_val
 
+        if 'presented_service' in d:
+            presented_service_val = d['presented_service']
+            if isinstance(presented_service_val, str):
+                presented_service_val = presented_service_val.lower() == 'true'
+            s.presented_service = presented_service_val
+
         if 'show_on_screen' in d:
             show_on_screen_val = d['show_on_screen']
             if isinstance(show_on_screen_val, str):
                 show_on_screen_val = show_on_screen_val.lower() == 'true'
             s.show_on_screen = show_on_screen_val
+
+        if 'show_catalog_number' in d:
+            show_catalog_number_val = d['show_catalog_number']
+            if isinstance(show_catalog_number_val, str):
+                show_catalog_number_val = show_catalog_number_val.lower() == 'true'
+            s.show_catalog_number = show_catalog_number_val
 
         if 'hidden' in d:
             hidden_val = d['hidden']
@@ -2691,6 +2903,16 @@ def admin_investor_page_content(request):
                 {'error': 'Company Overview & Vision section title is required.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if not str(overview_data.get('strategy_section_title') or '').strip():
+            return Response(
+                {'error': 'Strategy section title is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not str(overview_data.get('roadmap_section_title') or '').strip():
+            return Response(
+                {'error': 'Roadmap section title is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if not str(partner_data.get('section_title') or '').strip():
             return Response(
                 {'error': 'Partner section title is required.'},
@@ -2715,6 +2937,8 @@ def admin_investor_page_content(request):
                     'page_title': str(overview_data.get('page_title') or '').strip(),
                     'page_subtitle': str(overview_data.get('page_subtitle') or '').strip(),
                     'section_title': str(overview_data.get('section_title') or '').strip(),
+                    'strategy_section_title': str(overview_data.get('strategy_section_title') or '').strip(),
+                    'roadmap_section_title': str(overview_data.get('roadmap_section_title') or '').strip(),
                     'paragraphs': _text_list(overview_data.get('paragraphs')),
                     'image_url': str(overview_data.get('image_url') or '').strip(),
                     'image_alt': str(overview_data.get('image_alt') or '').strip(),

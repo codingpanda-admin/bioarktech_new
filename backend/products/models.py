@@ -7,6 +7,7 @@ from django.db.models import Q
 from django.contrib.postgres.fields import ArrayField
 from django.dispatch import receiver
 from django.db.models.signals import pre_save
+from django.utils.text import slugify
 from tinymce.models import HTMLField
 
 
@@ -123,6 +124,7 @@ class ProductCategory(models.Model):
     category_id = models.AutoField(primary_key=True)
     category_name = models.CharField(unique=True)
     description = models.CharField(blank=True, null=True)
+    summary = HTMLField(blank=True, default='')
     priority = models.IntegerField(default=1)
     external_id = models.CharField(blank=True, null=True)
     product_type = models.CharField(blank=True, null=True)
@@ -131,6 +133,77 @@ class ProductCategory(models.Model):
 
     class Meta:
         db_table = 'product_category'
+
+
+class CatalogGroup(models.Model):
+    group_id = models.AutoField(primary_key=True)
+    category = models.ForeignKey(
+        ProductCategory,
+        on_delete=models.CASCADE,
+        related_name='catalog_groups',
+    )
+    group_name = models.CharField(max_length=100)
+    external_id = models.SlugField(max_length=160, unique=True)
+    normalized_name = models.SlugField(max_length=120)
+    description = models.TextField(blank=True, default='')
+    summary = HTMLField(blank=True, default='')
+    priority = models.IntegerField(default=1)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'catalog_group'
+        ordering = ['priority', 'group_name', 'group_id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['category', 'normalized_name'],
+                name='unique_catalog_group_per_category',
+            ),
+        ]
+
+    @staticmethod
+    def normalize_name(value):
+        normalized = slugify(str(value or '').strip())
+        return normalized[:120]
+
+    @staticmethod
+    def external_id_prefix(category):
+        category_type = str(getattr(category, 'product_type', '') or '').strip().lower()
+        if category_type in {'reagent', 'consumable'}:
+            return 'reagent'
+        if category_type == 'service':
+            return 'service'
+        return 'product'
+
+    @classmethod
+    def generate_external_id(cls, category, group_name):
+        prefix = cls.external_id_prefix(category)
+        name_slug = slugify(str(group_name or '').strip()) or 'group'
+        base = f'{prefix}-{name_slug}'[:160].rstrip('-')
+        candidate = base
+        suffix = 2
+        while cls.objects.filter(external_id=candidate).exists():
+            suffix_text = f'-{suffix}'
+            candidate = f'{base[:160 - len(suffix_text)].rstrip("-")}{suffix_text}'
+            suffix += 1
+        return candidate
+
+    def save(self, *args, **kwargs):
+        self.group_name = str(self.group_name or '').strip()
+        self.normalized_name = self.normalize_name(self.group_name)
+        if not self.normalized_name:
+            raise ValidationError({'group_name': 'Group name must contain letters or numbers.'})
+
+        if self._state.adding:
+            if not self.external_id:
+                self.external_id = self.generate_external_id(self.category, self.group_name)
+        else:
+            original_external_id = type(self).objects.filter(pk=self.pk).values_list('external_id', flat=True).first()
+            if original_external_id and self.external_id != original_external_id:
+                raise ValidationError({'external_id': 'External ID cannot be changed after the group is created.'})
+
+        if not self.external_id:
+            raise ValidationError({'external_id': 'External ID is required.'})
+        super().save(*args, **kwargs)
 
 class FunctionType(models.Model):
     function_type_id = models.AutoField(primary_key=True)
@@ -222,12 +295,14 @@ class Product(models.Model):
     product_link = models.TextField(blank=True, null=True)
     category_external_id = models.CharField(max_length=100, blank=True, null=True)
     category = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL, null=True, blank=True, db_column='category_id', related_name='products')
+    catalog_group = models.ForeignKey(CatalogGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name='products')
     product_group = models.CharField(max_length=100, blank=True, null=True)
     source_type = models.CharField(max_length=50, blank=True, null=True)
     display_order = models.IntegerField(blank=True, null=True)
     source_created_at_ms = models.BigIntegerField(blank=True, null=True)
     source_created_at = models.DateTimeField(blank=True, null=True)
     catalog_number = models.CharField(max_length=100, blank=True, null=True)
+    show_catalog_number = models.BooleanField(default=True)
     availability = models.CharField(max_length=100, blank=True, null=True)
     list_price = models.CharField(max_length=100, blank=True, null=True)
     discounted_price = models.CharField(max_length=100, blank=True, null=True)
@@ -286,6 +361,16 @@ class Product(models.Model):
         super().clean()
         errors = {}
 
+        if self.catalog_group_id and self.category_id and self.catalog_group.category_id != self.category_id:
+            errors['catalog_group'] = 'The selected group must belong to the selected category.'
+
+        if self.category_id:
+            category_type = str(self.category.product_type or '').strip().lower()
+            item_type = 'reagent' if str(self.source_type or '').strip().lower() == 'reagent' else 'product'
+            allowed_category_types = {'reagent', 'consumable'} if item_type == 'reagent' else {'product', 'both'}
+            if category_type and category_type not in allowed_category_types:
+                errors['category'] = f'This category cannot contain a {item_type} item.'
+
         discounted_price_text = str(self.discounted_price or '').strip()
         if discounted_price_text:
             discounted_price = self._numeric_catalog_price(discounted_price_text)
@@ -329,6 +414,27 @@ class Product(models.Model):
     def save(self, *args, **kwargs):
         # Keep the discount ceiling invariant for every normal Product write,
         # not only writes coming from the admin editor.
+        if not self.category_id and self.category_external_id:
+            self.category = ProductCategory.objects.filter(external_id=self.category_external_id).first()
+
+        if self.catalog_group_id:
+            if self.category_id and self.catalog_group.category_id != self.category_id:
+                raise ValidationError({'catalog_group': 'The selected group must belong to the selected category.'})
+            self.category = self.catalog_group.category
+            self.product_group = self.catalog_group.group_name
+        elif self.category_id and self.product_group:
+            normalized_name = CatalogGroup.normalize_name(self.product_group)
+            if normalized_name:
+                self.catalog_group, _ = CatalogGroup.objects.get_or_create(
+                    category=self.category,
+                    normalized_name=normalized_name,
+                    defaults={'group_name': str(self.product_group).strip()},
+                )
+                self.product_group = self.catalog_group.group_name
+
+        if self.category_id:
+            self.category_external_id = self.category.external_id
+
         self.clean()
         return super().save(*args, **kwargs)
 
@@ -397,6 +503,22 @@ class UnitPrice(models.Model):
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
+
+@receiver(post_save, sender=CatalogGroup)
+def sync_catalog_group_display_names(sender, instance, **kwargs):
+    Product.objects.filter(catalog_group=instance).exclude(product_group=instance.group_name).update(
+        product_group=instance.group_name,
+    )
+    try:
+        from interface.models import ServiceMode
+        ServiceMode.objects.filter(catalog_group_id=instance.group_id).exclude(
+            service_group=instance.group_name,
+        ).update(service_group=instance.group_name)
+    except Exception:
+        # Keep product catalog writes available during early migration states
+        # where the interface app may not yet contain the group relationship.
+        pass
 
 @receiver(post_save, sender=Product)
 def sync_product_relations(sender, instance, **kwargs):

@@ -183,6 +183,8 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   const [showQuoteConfirmation, setShowQuoteConfirmation] = useState(false);
   const [featuredServices, setFeaturedServices] = useState([]);
   const thumbnailStripRef = useRef(null);
+  const serviceTabsAnchorRef = useRef(null);
+  const [serviceTabsFloatingStyle, setServiceTabsFloatingStyle] = useState(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -244,6 +246,48 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
       isCurrent = false;
     };
   }, []);
+
+  useEffect(() => {
+    const tabsAnchor = serviceTabsAnchorRef.current;
+    if (!tabsAnchor) {
+      setServiceTabsFloatingStyle(null);
+      return undefined;
+    }
+
+    const updateFloatingTabs = () => {
+      const anchorRect = tabsAnchor.getBoundingClientRect();
+      const siteHeader = document.querySelector('.site-header');
+      const headerHeight = siteHeader?.getBoundingClientRect().height || (window.innerWidth <= 720 ? 72 : 96);
+      const top = Math.ceil(headerHeight + 8);
+      const shouldFloat = anchorRect.top <= top;
+
+      setServiceTabsFloatingStyle((currentStyle) => {
+        if (!shouldFloat) return currentStyle === null ? currentStyle : null;
+
+        const nextStyle = {
+          top,
+          left: anchorRect.left,
+          width: anchorRect.width,
+          height: tabsAnchor.offsetHeight,
+        };
+        const isUnchanged = currentStyle
+          && Math.abs(currentStyle.left - nextStyle.left) < 0.5
+          && Math.abs(currentStyle.width - nextStyle.width) < 0.5
+          && currentStyle.top === nextStyle.top
+          && currentStyle.height === nextStyle.height;
+        return isUnchanged ? currentStyle : nextStyle;
+      });
+    };
+
+    updateFloatingTabs();
+    window.addEventListener('scroll', updateFloatingTabs, { passive: true });
+    window.addEventListener('resize', updateFloatingTabs);
+
+    return () => {
+      window.removeEventListener('scroll', updateFloatingTabs);
+      window.removeEventListener('resize', updateFloatingTabs);
+    };
+  }, [product]);
 
   const handleAddToCart = () => {
     if (isQuoteOnlyProduct(product)) {
@@ -619,9 +663,9 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
 
         <div className="service-detail-layout">
           <aside className="service-detail-navigation" aria-labelledby="featured-services-heading">
-            <h2 id="featured-services-heading">Featured Services</h2>
+            <h2 id="featured-services-heading">Recommended Services</h2>
             {featuredServices.length > 0 ? (
-              <nav aria-label="Featured Services">
+              <nav aria-label="Recommended Services">
                 {featuredServices.map((service) => {
                   const serviceHref = `/product/${service.url}`;
                   const isActiveService = String(service.url) === String(skuOrCatalog);
@@ -643,7 +687,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 })}
               </nav>
             ) : (
-              <p className="service-detail-nav-empty">No featured services are available.</p>
+              <p className="service-detail-nav-empty">No recommended services are available.</p>
             )}
           </aside>
 
@@ -672,8 +716,22 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
               </button>
             </header>
 
-            <section className="service-detail-copy" aria-label="Service information">
-            <div className="service-detail-tabs" role="tablist" aria-label="Service information" aria-orientation="vertical">
+            <div
+              ref={serviceTabsAnchorRef}
+              className="service-detail-tabs-anchor"
+              style={serviceTabsFloatingStyle ? { minHeight: serviceTabsFloatingStyle.height } : undefined}
+            >
+            <div
+              className={`service-detail-tabs ${serviceTabsFloatingStyle ? 'is-floating' : ''}`}
+              style={serviceTabsFloatingStyle ? {
+                top: serviceTabsFloatingStyle.top,
+                left: serviceTabsFloatingStyle.left,
+                width: serviceTabsFloatingStyle.width,
+              } : undefined}
+              role="tablist"
+              aria-label="Service information"
+              aria-orientation="horizontal"
+            >
               <button
                 type="button"
                 id="service-details-tab"
@@ -730,7 +788,9 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 Documents
               </button>
             </div>
+            </div>
 
+            <section className="service-detail-copy" aria-label="Service information">
             <div className="service-detail-tab-content">
             {activeTab === 'details' && (
               <div

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { apiFetch, logo } from '../utils/api';
+import { hasVisibleRichText } from '../utils/richText';
 
 const categoryIcons = {
   'Genome Editing': (
@@ -474,7 +475,6 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
   const [catalog, setCatalog] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
   const [expandedCatalogGroups, setExpandedCatalogGroups] = useState(() => new Set());
-  const [hiddenCatalogNumberGroups, setHiddenCatalogNumberGroups] = useState(() => new Set());
   const profileMenuRef = React.useRef(null);
 
   useEffect(() => {
@@ -518,23 +518,10 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
     setAboutMenuOpen(false);
     setProfileMenuOpen(false);
     setExpandedCatalogGroups(new Set());
-    setHiddenCatalogNumberGroups(new Set());
   }, []);
 
   const toggleCatalogGroup = (groupKey) => {
     setExpandedCatalogGroups((current) => {
-      const next = new Set(current);
-      if (next.has(groupKey)) {
-        next.delete(groupKey);
-      } else {
-        next.add(groupKey);
-      }
-      return next;
-    });
-  };
-
-  const toggleCatalogNumbers = (groupKey) => {
-    setHiddenCatalogNumberGroups((current) => {
       const next = new Set(current);
       if (next.has(groupKey)) {
         next.delete(groupKey);
@@ -617,6 +604,24 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
   const consumableCategories = consumablesCat ? [consumablesCat] : [];
 
   const detailMenuType = React.useMemo(() => {
+    const catalogPageMatch = currentPath?.match(/^\/catalog\/(category|group)\/([^/]+)\/?$/);
+    if (catalogPageMatch) {
+      const [, catalogPageKind, encodedIdentifier] = catalogPageMatch;
+      const catalogIdentifier = decodeURIComponent(encodedIdentifier).toLowerCase();
+      const matchingCategory = catalog.find((category) => {
+        if (catalogPageKind === 'category') {
+          return String(category.external_id || '').toLowerCase() === catalogIdentifier;
+        }
+        const subcategories = Array.isArray(category.subcategories)
+          ? category.subcategories
+          : getCategorySubcategories(category);
+        return subcategories.some((subcategory) => (
+          String(subcategory.external_id || '').toLowerCase() === catalogIdentifier
+        ));
+      });
+      return matchingCategory?.product_type || '';
+    }
+
     if (!currentPath?.startsWith('/product/')) return '';
 
     const detailIdentifier = decodeURIComponent(currentPath.slice('/product/'.length)).toLowerCase();
@@ -675,6 +680,10 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
       (activeEntry.product_type === 'service' ? 'services' :
       (activeEntry.product_type === 'consumable' || activeEntry.external_id === 'category-1780539818236' ? 'consumables' : 'reagents'))
     ) : 'products';
+    const categorySummaryUrl = activeEntry
+      ? `/catalog/category/${encodeURIComponent(activeEntry.external_id)}`
+      : '';
+    const categoryHasSummary = hasVisibleRichText(activeEntry?.summary);
 
     return (
       <div
@@ -725,7 +734,9 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
                   onClick={(e) => {
                     e.preventDefault();
                     closeMenus();
-                    navigate(`/search?category=${targetCategoryParam}&cat=${activeEntry.external_id}`);
+                    navigate(categoryHasSummary
+                      ? categorySummaryUrl
+                      : `/search?category=${targetCategoryParam}&cat=${activeEntry.external_id}`);
                   }}
                 >
                   {activeEntry.category_name}
@@ -758,30 +769,39 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
                     const products = sub.products || [];
                     const groupKey = `${menuType}:${activeEntry.external_id}:${sub.name || subcategoryIndex}`;
                     const groupIsExpanded = expandedCatalogGroups.has(groupKey);
-                    const showCatalogNumbers = !hiddenCatalogNumberGroups.has(groupKey);
                     const visibleProducts = groupIsExpanded ? products : products.slice(0, 4);
                     const productListId = `${menuType}-catalog-group-${subcategoryIndex}`;
+                    const groupHasSummary = Boolean(sub.external_id) && hasVisibleRichText(sub.summary);
+                    const groupHeadingContent = (
+                      <>
+                        <span className="catalog-sub-dot" />
+                        {sub.name}
+                      </>
+                    );
 
                     return (
                       <div className="catalog-subcategory" key={groupKey}>
                         <div className="catalog-subcategory-heading">
                           {sub.name && (
-                            <div className="catalog-subcategory-name">
-                              <span className="catalog-sub-dot" />
-                              {sub.name}
-                            </div>
+                            groupHasSummary ? (
+                              <a
+                                className="catalog-subcategory-name is-summary-link"
+                                href={`/catalog/group/${encodeURIComponent(sub.external_id)}`}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  closeMenus();
+                                  navigate(`/catalog/group/${encodeURIComponent(sub.external_id)}`);
+                                }}
+                              >
+                                {groupHeadingContent}
+                              </a>
+                            ) : (
+                              <div className="catalog-subcategory-name">{groupHeadingContent}</div>
+                            )
                           )}
-                          <button
-                            className="catalog-number-toggle"
-                            type="button"
-                            aria-pressed={showCatalogNumbers}
-                            onClick={() => toggleCatalogNumbers(groupKey)}
-                          >
-                            {showCatalogNumbers ? 'Hide Cat. No.' : 'Show Cat. No.'}
-                          </button>
                         </div>
                         <div
-                          className={`catalog-products-list ${showCatalogNumbers ? '' : 'catalog-numbers-hidden'}`}
+                          className="catalog-products-list"
                           id={productListId}
                         >
                           {visibleProducts.map((product) => (
@@ -796,7 +816,7 @@ function SiteHeader({ navigate, currentPath, searchParams, currentUser, currentU
                               }}
                             >
                               <span className="catalog-product-name">{product.product_name}</span>
-                              {showCatalogNumbers && product.catalog_number && (
+                              {product.show_catalog_number !== false && product.catalog_number && (
                                 <span className="catalog-product-sku">{product.catalog_number}</span>
                               )}
                             </a>

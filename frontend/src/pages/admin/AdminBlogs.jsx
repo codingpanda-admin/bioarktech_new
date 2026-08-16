@@ -676,7 +676,7 @@ function AdminBlogs() {
                 onChange={(e) => updateField('is_featured', e.target.checked)} 
                 style={{ width: '20px', height: '20px', cursor: 'pointer', margin: 0 }} 
               />
-              <span style={{ fontWeight: '600', color: 'var(--ink)' }}>Featured Blog (Destacado)</span>
+              <span style={{ fontWeight: '600', color: 'var(--ink)' }}>Featured Blog</span>
             </label>
             <div className="admin-form-field span-3">
               <span>Blog Content *</span>
