@@ -14,6 +14,11 @@ from .models import (
     GeneDesignTargetGeneOption,
     GeneLibrary,
 )
+from .pricing import (
+    is_design_on_shelf as _is_design_on_shelf,
+    lookup_design_price_rule,
+    normalize_target_gene_code as _normalize_target_gene_code,
+)
 
 
 @api_view(['GET'])
@@ -171,3 +176,89 @@ def search_gene_library(request):
             for gene in page.object_list
         ],
     })
+
+
+@api_view(['POST'])
+def lookup_design_prices(request):
+    function_code = str(request.data.get('function_type_code') or '').strip()
+    delivery_code = str(request.data.get('delivery_type_code') or '').strip()
+    target_gene_code = str(request.data.get('target_gene_code') or '').strip()
+    formats = request.data.get('formats') or []
+
+    if not function_code or not delivery_code or not target_gene_code:
+        return Response(
+            {'error': 'Function Type, Delivery Type, and Target Gene are required.'},
+            status=400,
+        )
+    if not isinstance(formats, list) or not formats:
+        return Response({'error': 'Select at least one Format Type.'}, status=400)
+
+    results = []
+
+    for selection in formats:
+        format_code = str(selection.get('code_id') or '').strip()
+        unit_amount = str(selection.get('unit_amount') or '').strip()
+        format_type = GeneDesignFormatType.objects.filter(
+            code_id=format_code,
+            is_active=True,
+        ).first()
+        option_exists = GeneDesignFormatOption.objects.filter(
+            format_type=format_type,
+            unit_amount=unit_amount,
+            is_active=True,
+        ).exists() if format_type else False
+        if not format_type or not option_exists:
+            return Response(
+                {'error': f'Unknown Format Type or Unit Amount: {format_code} / {unit_amount}.'},
+                status=400,
+            )
+
+        shelf_status = _is_design_on_shelf(request.data, format_code)
+        price = lookup_design_price_rule(
+            function_code,
+            delivery_code,
+            target_gene_code,
+            format_type,
+            unit_amount,
+            shelf_status,
+        )
+
+        base = {
+            'format_code': format_code,
+            'format_name': format_type.name,
+            'unit_amount': unit_amount,
+            'currency': 'USD',
+        }
+        if not price:
+            results.append({
+                **base,
+                'status': 'unavailable',
+                'quote_only': True,
+                'list_price': None,
+                'discount_price': None,
+                'action': 'Submit Quote',
+            })
+        elif price.quote_only:
+            results.append({
+                **base,
+                'status': 'quote_only',
+                'quote_only': True,
+                'list_price': None,
+                'discount_price': None,
+                'action': 'Submit Quote',
+            })
+        else:
+            results.append({
+                **base,
+                'status': 'priced',
+                'quote_only': False,
+                'list_price': f'{price.list_price:.2f}',
+                'discount_price': (
+                    f'{price.discount_price:.2f}'
+                    if price.discount_price is not None
+                    else None
+                ),
+                'action': None,
+            })
+
+    return Response({'results': results})

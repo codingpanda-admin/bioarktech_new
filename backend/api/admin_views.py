@@ -38,6 +38,7 @@ from interface.serializers import (
     InvestorRoadmapMilestoneSerializer,
     InvestorPartnerSectionSerializer,
 )
+from .bulk_upload import import_catalog_workbook
 
 
 # ---------------------------------------------------------------------------
@@ -71,6 +72,46 @@ def _get_resolved_image_url(request, image_field):
     else:
         url = f"/media/{filename}"
     return request.build_absolute_uri(url)
+
+
+@api_view(['POST'])
+def admin_bulk_upload_catalog(request, item_type):
+    """Create or update catalog items from the matching Excel template."""
+    err = _check_admin(request)
+    if err:
+        return err
+
+    normalized_type = str(item_type or '').strip().lower()
+    if normalized_type not in {'product', 'reagent', 'service'}:
+        return Response(
+            {'error': 'Item type must be product, reagent, or service.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    uploaded_file = request.FILES.get('file')
+    if not uploaded_file:
+        return Response(
+            {'error': 'Select an Excel workbook to upload.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if not str(uploaded_file.name or '').lower().endswith('.xlsx'):
+        return Response(
+            {'error': 'Only .xlsx Excel workbooks are supported.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if uploaded_file.size > 10 * 1024 * 1024:
+        return Response(
+            {'error': 'The workbook cannot exceed 10 MB.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        result = import_catalog_workbook(uploaded_file, normalized_type)
+        return Response(result)
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # ===========================================================================

@@ -32,6 +32,12 @@ from .admin_views import (
     admin_upload_homepage_slide_video,
     admin_about_page_content, admin_investor_page_content,
     admin_upload_page_content_image,
+    admin_bulk_upload_catalog,
+)
+from genes.admin_views import (
+    admin_list_genes, admin_create_gene, admin_update_gene,
+    admin_list_gene_design_prices, admin_create_gene_design_price,
+    admin_update_gene_design_price,
 )
 
 admin.site.site_header = "Bioark Site Administration"
@@ -64,6 +70,15 @@ urlpatterns = [
 
     # ── Admin Panel API ──────────────────────────────────────────────────
     path('admin-panel/dashboard/', admin_dashboard_stats),
+    path('admin-panel/bulk-upload/<str:item_type>/', admin_bulk_upload_catalog),
+
+    # Gene Design
+    path('admin-panel/gene-library/', admin_list_genes),
+    path('admin-panel/gene-library/create/', admin_create_gene),
+    path('admin-panel/gene-library/<int:gene_id>/update/', admin_update_gene),
+    path('admin-panel/gene-design-prices/', admin_list_gene_design_prices),
+    path('admin-panel/gene-design-prices/create/', admin_create_gene_design_price),
+    path('admin-panel/gene-design-prices/<int:price_id>/update/', admin_update_gene_design_price),
 
     # Products
     path('admin-panel/product-categories/', admin_list_product_categories),
