@@ -13,12 +13,15 @@ import AdminResources from './admin/AdminResources';
 import AdminQuotes from './admin/AdminQuotes';
 import AdminMedia from './admin/AdminMedia';
 import AdminHomepage from './admin/AdminHomepage';
+import AdminBulkUpload from './admin/AdminBulkUpload';
+import { AdminGeneDatabase, AdminGenePricing } from './admin/AdminGeneDesign';
 import { AdminAboutBioArk, AdminInvestors } from './admin/AdminPageContent';
 
 const adminLinkGroups = [
   ['Overview', 'Homepage', 'Users'],
-  ['Products', 'Reagents', 'Services'],
+  ['Products', 'Reagents', 'Services', 'Bulk Upload'],
   ['Featured Solutions', 'Recommended Services'],
+  { title: 'Gene Design', items: ['Gene Database', 'Pricing Tables'] },
   ['Blogs', 'About BioArk', 'Investors'],
   ['Quotes'],
   ['Documents', 'Email (SMTP)', 'Media'],
@@ -158,9 +161,10 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
               className="admin-nav-group"
               role="group"
               aria-label={`Admin navigation group ${groupIndex + 1}`}
-              key={group.join('-')}
+              key={Array.isArray(group) ? group.join('-') : group.title}
             >
-              {group.map((label) => (
+              {!Array.isArray(group) && <span className="admin-nav-group-title">{group.title}</span>}
+              {(Array.isArray(group) ? group : group.items).map((label) => (
                 <a
                   className={activeSection === label ? 'is-active' : undefined}
                   href={`#${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
@@ -228,6 +232,18 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
             initialEditId={featuredEditRequest?.section === 'Services' ? featuredEditRequest.itemId : null}
             onInitialEditHandled={handleFeaturedEditOpened}
           />
+        )}
+
+        {activeSection === 'Bulk Upload' && (
+          <AdminBulkUpload />
+        )}
+
+        {activeSection === 'Gene Database' && (
+          <AdminGeneDatabase />
+        )}
+
+        {activeSection === 'Pricing Tables' && (
+          <AdminGenePricing />
         )}
 
         {activeSection === 'Blogs' && (

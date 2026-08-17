@@ -275,7 +275,7 @@ function App() {
           currentUser={currentUser} 
           currentUserProfile={currentUserProfile}
           onOpenAuth={handleOpenAuth} 
-          onLogout={handleAdminLogout}
+          onLogout={handleLogout}
           cartCount={cartCount}
         />
       )}
@@ -294,7 +294,7 @@ function App() {
               setCurrentUserProfile(null);
             }
           }} 
-          onLogout={handleLogout}
+          onLogout={handleAdminLogout}
         />
       ) : isRequestQuotePage ? (
         <RequestQuotePage
@@ -354,7 +354,11 @@ function App() {
       ) : isMyQuotesPage ? (
         <MyQuotesPage navigate={navigate} currentUser={currentUser} authChecked={authChecked} />
       ) : isDesignPage ? (
-        <DesignPage navigate={navigate} />
+        <DesignPage
+          navigate={navigate}
+          onAddToCart={handleAddToCart}
+          catalogNumber={searchParams.get('catalog') || ''}
+        />
       ) : isBlogPage ? (
         <BlogDetailPage
           navigate={navigate}

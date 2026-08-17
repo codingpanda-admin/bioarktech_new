@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../utils/api';
 
 const steps = [
@@ -26,7 +26,7 @@ const initialDesign = {
   targetGeneMode: '',
   targetGene: '',
   targetGeneRecord: null,
-  format: '',
+  format: {},
 };
 
 const emptyGeneSearch = {
@@ -36,6 +36,50 @@ const emptyGeneSearch = {
 };
 
 const makeFormatKey = (formatCode, unitAmount) => `${formatCode}::${unitAmount}`;
+const makePriceKey = (formatCode, unitAmount) => `${formatCode}::${unitAmount}`;
+
+const parseCatalogDesignPrefill = (catalogNumber) => {
+  const segments = String(catalogNumber || '')
+    .replace(/\s+/g, '')
+    .toUpperCase()
+    .split('-');
+  const selectionCode = segments[0] || '';
+  const structureCode = segments[1] || '';
+
+  if (!/^[A-Z]{2}[STLM]$/.test(selectionCode) || !/^[A-Z0-9]{6}$/.test(structureCode)) {
+    return null;
+  }
+
+  return {
+    functionType: selectionCode.slice(0, 2),
+    deliveryType: selectionCode.slice(2),
+    structureMap: Object.fromEntries(
+      [...structureCode].map((valueCode, index) => [`S${index + 1}`, valueCode]),
+    ),
+  };
+};
+
+const getEffectivePrice = (price) => {
+  if (price?.discount_price !== null && price?.discount_price !== '') {
+    const discountPrice = Number(price.discount_price);
+    if (Number.isFinite(discountPrice)) return discountPrice;
+  }
+  if (price?.list_price !== null && price?.list_price !== '') {
+    const listPrice = Number(price.list_price);
+    if (Number.isFinite(listPrice)) return listPrice;
+  }
+  return 0;
+};
+
+const formatUsd = (value) => {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return '';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+  }).format(amount);
+};
 
 const CubeIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -59,7 +103,7 @@ const SummaryIcon = () => (
   </svg>
 );
 
-function DesignPage({ navigate }) {
+function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
   const [activeStep, setActiveStep] = useState(0);
   const [metadata, setMetadata] = useState(emptyMetadata);
   const [metadataLoading, setMetadataLoading] = useState(true);
@@ -77,13 +121,44 @@ function DesignPage({ navigate }) {
   });
   const [geneSearchLoading, setGeneSearchLoading] = useState(false);
   const [geneSearchError, setGeneSearchError] = useState('');
+  const [priceLookup, setPriceLookup] = useState({ results: [] });
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [priceError, setPriceError] = useState('');
+  const [formatQuantities, setFormatQuantities] = useState({});
+  const [cartNotice, setCartNotice] = useState('');
 
   useEffect(() => {
     let isCurrent = true;
 
     apiFetch('/api/genes/design-metadata/')
       .then((data) => {
-        if (isCurrent) setMetadata({ ...emptyMetadata, ...data });
+        if (!isCurrent) return;
+
+        const nextMetadata = { ...emptyMetadata, ...data };
+        setMetadata(nextMetadata);
+
+        const prefill = parseCatalogDesignPrefill(catalogNumber);
+        const category = prefill && nextMetadata.categories.find((item) => (
+          item.function_types.some((functionType) => functionType.symbol_id === prefill.functionType)
+        ));
+        const hasDeliveryType = prefill && nextMetadata.delivery_types.some(
+          (deliveryType) => deliveryType.symbol_id === prefill.deliveryType,
+        );
+        const hasValidStructure = prefill && nextMetadata.structure_substeps.every((substep) => (
+          substep.options.some((option) => option.value_code === prefill.structureMap[substep.code])
+        ));
+
+        if (prefill && category && hasDeliveryType && hasValidStructure) {
+          setDesign((previous) => ({
+            ...previous,
+            category: category.code,
+            functionType: prefill.functionType,
+            deliveryType: prefill.deliveryType,
+            structureMap: prefill.structureMap,
+          }));
+          setActiveStep(0);
+          setShowSummary(false);
+        }
       })
       .catch(() => {
         if (isCurrent) {
@@ -97,7 +172,7 @@ function DesignPage({ navigate }) {
     return () => {
       isCurrent = false;
     };
-  }, []);
+  }, [catalogNumber]);
 
   useEffect(() => {
     if (design.targetGeneMode !== 'search') return undefined;
@@ -139,15 +214,30 @@ function DesignPage({ navigate }) {
   const selectedTargetGene = metadata.target_gene_options.find(
     (item) => item.code_id === design.targetGene,
   );
-  const selectedFormat = useMemo(() => {
-    for (const formatType of metadata.format_types) {
+  const selectedFormats = useMemo(() => {
+    const formatSelections = design.format || {};
+    return metadata.format_types.flatMap((formatType) => {
+      const selectedKey = formatSelections[formatType.code_id];
       const option = formatType.options.find(
-        (item) => makeFormatKey(formatType.code_id, item.unit_amount) === design.format,
+        (item) => makeFormatKey(formatType.code_id, item.unit_amount) === selectedKey,
       );
-      if (option) return { type: formatType, option };
-    }
-    return null;
+      return option ? [{ type: formatType, option }] : [];
+    });
   }, [design.format, metadata.format_types]);
+
+  useEffect(() => {
+    const activeKeys = new Set(selectedFormats.map(({ type, option }) => (
+      makePriceKey(type.code_id, option.unit_amount)
+    )));
+    setFormatQuantities((previous) => {
+      const next = {};
+      activeKeys.forEach((key) => {
+        next[key] = previous[key] || 1;
+      });
+      return next;
+    });
+    setCartNotice('');
+  }, [selectedFormats]);
 
   const structureSelections = metadata.structure_substeps.map((substep) => {
     const selectedCode = design.structureMap[substep.code];
@@ -187,6 +277,67 @@ function DesignPage({ navigate }) {
     });
   }, [bacterialValueCode, propertyValueCode]);
 
+  useEffect(() => {
+    const structureComplete = metadata.structure_substeps.length > 0
+      && metadata.structure_substeps.every((substep) => design.structureMap[substep.code]);
+    if (
+      metadataLoading
+      || metadataError
+      || !design.functionType
+      || !design.deliveryType
+      || !design.targetGene
+      || !structureComplete
+      || selectedFormats.length === 0
+    ) {
+      setPriceLookup({ results: [] });
+      setPriceError('');
+      setPriceLoading(false);
+      return undefined;
+    }
+
+    let isCurrent = true;
+    setPriceLoading(true);
+    setPriceError('');
+    apiFetch('/api/genes/design-price/', {
+      method: 'POST',
+      body: {
+        function_type_code: design.functionType,
+        delivery_type_code: design.deliveryType,
+        target_gene_code: design.targetGene,
+        structure_map: design.structureMap,
+        formats: selectedFormats.map(({ type, option }) => ({
+          code_id: type.code_id,
+          unit_amount: option.unit_amount,
+        })),
+      },
+    })
+      .then((data) => {
+        if (isCurrent) setPriceLookup(data);
+      })
+      .catch(() => {
+        if (isCurrent) {
+          setPriceLookup({ results: [] });
+          setPriceError('Pricing could not be loaded. You can still submit this design for a quote.');
+        }
+      })
+      .finally(() => {
+        if (isCurrent) setPriceLoading(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [
+    design.deliveryType,
+    design.functionType,
+    design.structureMap,
+    design.targetGene,
+    metadata.structure_substeps,
+    metadataError,
+    metadataLoading,
+    selectedFormats,
+  ]);
+
   const canGoBack = activeStep > 0;
   const canGoNext = activeStep < steps.length - 1;
   const isDesignComplete = Boolean(
@@ -196,7 +347,7 @@ function DesignPage({ navigate }) {
       && metadata.structure_substeps.length > 0
       && metadata.structure_substeps.every((substep) => design.structureMap[substep.code])
       && design.targetGene
-      && design.format,
+      && selectedFormats.length > 0,
   );
   const isCurrentStepComplete = (() => {
     if (metadataLoading || metadataError) return false;
@@ -204,6 +355,7 @@ function DesignPage({ navigate }) {
       return metadata.structure_substeps.length > 0
         && metadata.structure_substeps.every((substep) => design.structureMap[substep.code]);
     }
+    if (activeStepId === 'format') return selectedFormats.length > 0;
     return Boolean(design[activeStepId]);
   })();
 
@@ -216,9 +368,30 @@ function DesignPage({ navigate }) {
   const targetSequence = design.targetGeneRecord?.target_sequence
     || selectedTargetGene?.code_id
     || '';
-  const formatLabel = selectedFormat
-    ? `${selectedFormat.type.name} — ${selectedFormat.option.unit_amount}`
-    : '';
+  const formatLabels = selectedFormats.map(
+    ({ type, option }) => `${type.name} — ${option.unit_amount}`,
+  );
+  const formatLabel = formatLabels.join('; ');
+  const designStructureCode = Array.from({ length: 6 }, (_, index) => (
+    design.structureMap[`S${index + 1}`] || ''
+  )).join('').toUpperCase();
+  const buildDesignSku = (formatCode) => {
+    const targetCode = String(design.targetGene || '').trim().toUpperCase();
+    if (!design.functionType || !design.deliveryType || designStructureCode.length !== 6 || !targetCode || !formatCode) {
+      return '';
+    }
+    return `${design.functionType}${design.deliveryType}-${designStructureCode}-${targetCode}-${formatCode}`;
+  };
+  const formatSummaries = selectedFormats.map(({ type, option }) => ({
+    label: `${type.name} — ${option.unit_amount}`,
+    sku: buildDesignSku(type.code_id),
+  }));
+  const pricedSelections = priceLookup.results.filter((price) => !price.quote_only);
+  const quoteOnlySelections = priceLookup.results.filter((price) => price.quote_only);
+  const pricedOrderTotal = pricedSelections.reduce((total, price) => {
+    const key = makePriceKey(price.format_code, price.unit_amount);
+    return total + (getEffectivePrice(price) * (formatQuantities[key] || 1));
+  }, 0);
 
   const designDescription = useMemo(() => {
     const structureDescription = structureSelections
@@ -233,13 +406,18 @@ function DesignPage({ navigate }) {
       `Structure Map: ${structureDescription || '-'}`,
       `Target Gene: ${targetGeneLabel || '-'}`,
       `Target Sequence: ${targetSequence || '-'}`,
-      `Format: ${formatLabel || '-'}`,
+      `Format Types: ${selectedFormats.map(({ type, option }) => {
+        const key = makePriceKey(type.code_id, option.unit_amount);
+        return `${type.name} — ${option.unit_amount} x${formatQuantities[key] || 1} (SKU: ${buildDesignSku(type.code_id)})`;
+      }).join('; ') || '-'}`,
     ].join('\n');
   }, [
     categoryLabel,
     deliveryTypeLabel,
     formatLabel,
+    formatQuantities,
     functionTypeLabel,
+    selectedFormats,
     structureSelections,
     targetGeneLabel,
     targetSequence,
@@ -265,7 +443,7 @@ function DesignPage({ navigate }) {
           : targetGeneLabel,
       ].filter(Boolean),
     },
-    { step: 'Step 6', label: 'Format Type', values: [formatLabel].filter(Boolean) },
+    { step: 'Step 6', label: 'Format Type', values: formatLabels },
   ];
 
   const selectCategory = (code) => {
@@ -287,6 +465,19 @@ function DesignPage({ navigate }) {
     }));
   };
 
+  const selectFormatOption = (formatCode, optionKey) => {
+    setDesign((previous) => {
+      const format = { ...(previous.format || {}) };
+      if (format[formatCode] === optionKey) {
+        delete format[formatCode];
+      } else {
+        // A bucket can hold one unit amount while selections in other buckets remain intact.
+        format[formatCode] = optionKey;
+      }
+      return { ...previous, format };
+    });
+  };
+
   const selectStaticTargetGene = (codeId) => {
     setDesign((previous) => ({
       ...previous,
@@ -306,11 +497,20 @@ function DesignPage({ navigate }) {
   };
 
   const selectLibraryGene = (gene) => {
+    const vectorDefault = metadata.format_types
+      .find((formatType) => formatType.code_id === 'k')
+      ?.options.find((option) => option.unit_amount === '5ug DNA');
     setDesign((previous) => ({
       ...previous,
       targetGeneMode: 'search',
       targetGene: gene.target_sequence,
       targetGeneRecord: gene,
+      format: vectorDefault
+        ? {
+            ...(previous.format || {}),
+            k: makeFormatKey('k', vectorDefault.unit_amount),
+          }
+        : previous.format,
     }));
   };
 
@@ -349,12 +549,57 @@ function DesignPage({ navigate }) {
       setGeneSearchQuery({ ...emptyGeneSearch, page: 1 });
       return;
     }
+    if (activeStepId === 'format') {
+      setDesign((previous) => ({ ...previous, format: {} }));
+      return;
+    }
     setDesign((previous) => ({ ...previous, [activeStepId]: '' }));
   };
 
   const goToQuote = () => {
     const params = new URLSearchParams({ projectDescription: designDescription });
     navigate(`/request-quote?${params.toString()}`);
+  };
+
+  const updateFormatQuantity = (formatCode, unitAmount, value) => {
+    const numericValue = Number.parseInt(value, 10);
+    const quantity = Number.isFinite(numericValue) ? Math.min(999, Math.max(1, numericValue)) : 1;
+    const key = makePriceKey(formatCode, unitAmount);
+    setFormatQuantities((previous) => ({ ...previous, [key]: quantity }));
+    setCartNotice('');
+  };
+
+  const addDesignSelectionsToCart = () => {
+    if (!onAddToCart || pricedSelections.length === 0) return;
+
+    pricedSelections.forEach((price) => {
+      const key = makePriceKey(price.format_code, price.unit_amount);
+      const quantity = formatQuantities[key] || 1;
+      const sku = buildDesignSku(price.format_code);
+      const effectivePrice = getEffectivePrice(price);
+      onAddToCart(
+        {
+          product_sku: sku,
+          product_name: `Gene Design — ${price.format_name}`,
+          description: designDescription,
+          source_type: 'product',
+          shipping_cost: price.format_code === 'k' ? 100 : 60,
+        },
+        quantity,
+        {
+          unit_size: price.unit_amount,
+          unit_price: effectivePrice,
+          list_price: Number(price.list_price) || effectivePrice,
+        },
+      );
+    });
+
+    const skippedText = quoteOnlySelections.length > 0
+      ? ` ${quoteOnlySelections.length} quote-only selection${quoteOnlySelections.length === 1 ? ' was' : 's were'} not added.`
+      : '';
+    setCartNotice(
+      `${pricedSelections.length} selection${pricedSelections.length === 1 ? '' : 's'} added to your cart.${skippedText}`,
+    );
   };
 
   const renderMetadataOption = ({ key, selected, onClick, title, meta, description }) => (
@@ -622,39 +867,90 @@ function DesignPage({ navigate }) {
     }
 
     return (
-      <div className="design-format-grid">
-        {metadata.format_types.map((formatType) => {
-          const isSelected = selectedFormat?.type.code_id === formatType.code_id;
-          return (
-            <article className={`design-format-card ${isSelected ? 'is-selected' : ''}`} key={formatType.code_id}>
-              <span className="design-format-title">
-                {formatType.name}
-                <span className="design-option-code">{formatType.code_id}</span>
-              </span>
-              <span className="design-format-description">{formatType.description}</span>
-              <dl className="design-format-facts">
-                <div><dt>Shipping</dt><dd>{formatType.shipping_temperature}</dd></div>
-                <div><dt>Storage</dt><dd>{formatType.storage}</dd></div>
-                <div><dt>Stability</dt><dd>{formatType.stability}</dd></div>
-              </dl>
-              <div className="design-format-options" aria-label={`${formatType.name} unit amounts`}>
-                {formatType.options.map((option) => {
-                  const optionKey = makeFormatKey(formatType.code_id, option.unit_amount);
-                  return (
-                    <button
-                      key={optionKey}
-                      type="button"
-                      className={`design-format-option ${design.format === optionKey ? 'is-selected' : ''}`}
-                      onClick={() => setField('format', optionKey)}
-                    >
-                      {option.unit_amount}
+      <div className="design-format-step">
+        <p className="design-format-guidance">
+          Select one or more format types. Within each format, choose one unit amount.
+        </p>
+        <div className="design-format-grid">
+          {metadata.format_types.map((formatType) => {
+            const selectedKey = design.format?.[formatType.code_id];
+            const isSelected = Boolean(selectedKey);
+            return (
+              <article className={`design-format-card ${isSelected ? 'is-selected' : ''}`} key={formatType.code_id}>
+                <span className="design-format-title">
+                  {formatType.name}
+                  <span className="design-option-code">{formatType.code_id}</span>
+                </span>
+                <span className="design-format-description">{formatType.description}</span>
+                <dl className="design-format-facts">
+                  <div><dt>Shipping</dt><dd>{formatType.shipping_temperature}</dd></div>
+                  <div><dt>Storage</dt><dd>{formatType.storage}</dd></div>
+                  <div><dt>Stability</dt><dd>{formatType.stability}</dd></div>
+                </dl>
+                <div className="design-format-options" role="group" aria-label={`${formatType.name} unit amounts`}>
+                  {formatType.options.map((option) => {
+                    const optionKey = makeFormatKey(formatType.code_id, option.unit_amount);
+                    const optionSelected = selectedKey === optionKey;
+                    return (
+                      <button
+                        key={optionKey}
+                        type="button"
+                        aria-pressed={optionSelected}
+                        className={`design-format-option ${optionSelected ? 'is-selected' : ''}`}
+                        onClick={() => selectFormatOption(formatType.code_id, optionKey)}
+                      >
+                        {option.unit_amount}
+                      </button>
+                    );
+                  })}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+        <section className="design-price-lookup" aria-live="polite" aria-label="Gene Design price lookup">
+          <div className="design-price-heading">
+            <div>
+              <span className="design-price-eyebrow">Price lookup</span>
+              <h3>Selected Format Pricing</h3>
+            </div>
+            <span className="design-price-currency">USD</span>
+          </div>
+
+          {priceLoading && <p className="design-price-message">Checking current pricing…</p>}
+          {priceError && <p className="design-price-message is-error">{priceError}</p>}
+          {!priceLoading && !priceError && priceLookup.results.length === 0 && (
+            <p className="design-price-message">Select a unit amount to view its price.</p>
+          )}
+          {!priceLoading && priceLookup.results.length > 0 && (
+            <div className="design-price-list">
+              {priceLookup.results.map((price) => (
+                <article className="design-price-row" key={`${price.format_code}-${price.unit_amount}`}>
+                  <div className="design-price-format">
+                    <strong>{price.format_name}</strong>
+                    <span>{price.unit_amount}</span>
+                  </div>
+                  {price.quote_only ? (
+                    <button type="button" className="design-price-quote" onClick={goToQuote}>
+                      Submit Quote
                     </button>
-                  );
-                })}
-              </div>
-            </article>
-          );
-        })}
+                  ) : (
+                    <div className="design-price-values">
+                      <span>
+                        <small>List Price</small>
+                        <strong>{formatUsd(price.list_price)}</strong>
+                      </span>
+                      <span className="is-discount">
+                        <small>Discount Price</small>
+                        <strong>{formatUsd(price.discount_price)}</strong>
+                      </span>
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     );
   };
@@ -752,7 +1048,7 @@ function DesignPage({ navigate }) {
           aria-labelledby="design-summary-title"
         >
           <h2 id="design-summary-title"><SummaryIcon /> Design Summary</h2>
-          <dl>
+          <dl className="design-selection-summary-grid">
             <div><dt>Category</dt><dd>{categoryLabel || '-'}</dd></div>
             <div><dt>Function Type</dt><dd>{functionTypeLabel || '-'}</dd></div>
             <div><dt>Delivery Type</dt><dd>{deliveryTypeLabel || '-'}</dd></div>
@@ -764,8 +1060,120 @@ function DesignPage({ navigate }) {
             ))}
             <div><dt>Target Gene</dt><dd>{targetGeneLabel || '-'}</dd></div>
             <div><dt>Target Sequence</dt><dd>{targetSequence || '-'}</dd></div>
-            <div><dt>Format</dt><dd>{formatLabel || '-'}</dd></div>
+            <div className="span-2">
+              <dt>Formats / SKU Numbers</dt>
+              <dd className="design-summary-format-list">
+                {formatSummaries.length > 0 ? formatSummaries.map((item) => (
+                  <span key={item.sku || item.label}>
+                    <span>{item.label}</span>
+                    {item.sku && <code>{item.sku}</code>}
+                  </span>
+                )) : '-'}
+              </dd>
+            </div>
           </dl>
+          <section className="design-order-summary" aria-label="Selected formats and pricing">
+            <div className="design-order-summary-heading">
+              <div>
+                <span>Pricing</span>
+                <h3>Selected Formats</h3>
+              </div>
+              <span className="design-price-currency">USD</span>
+            </div>
+
+            {priceLoading && <p className="design-order-message">Calculating current pricing…</p>}
+            {priceError && <p className="design-order-message is-error">{priceError}</p>}
+            {!priceLoading && !priceError && priceLookup.results.map((price) => {
+              const key = makePriceKey(price.format_code, price.unit_amount);
+              const quantity = formatQuantities[key] || 1;
+              const effectivePrice = getEffectivePrice(price);
+              return (
+                <article className="design-order-row" key={`summary-price-${key}`}>
+                  <div className="design-order-format">
+                    <strong>{price.format_name}</strong>
+                    <span>{price.unit_amount}</span>
+                  </div>
+                  <div className="design-order-unit-price">
+                    <small>Unit Price</small>
+                    {price.quote_only ? (
+                      <button type="button" onClick={goToQuote}>Submit Quote</button>
+                    ) : (
+                      <>
+                        <strong>{formatUsd(effectivePrice)}</strong>
+                        {Number(price.list_price) > effectivePrice && (
+                          <span>List {formatUsd(price.list_price)}</span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <div className="design-order-quantity">
+                    <small># of Units</small>
+                    <div className="design-quantity-control">
+                      <button
+                        type="button"
+                        aria-label={`Decrease ${price.format_name} units`}
+                        disabled={quantity <= 1}
+                        onClick={() => updateFormatQuantity(price.format_code, price.unit_amount, quantity - 1)}
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        min="1"
+                        max="999"
+                        inputMode="numeric"
+                        aria-label={`${price.format_name} number of units`}
+                        value={quantity}
+                        onChange={(event) => updateFormatQuantity(
+                          price.format_code,
+                          price.unit_amount,
+                          event.target.value,
+                        )}
+                      />
+                      <button
+                        type="button"
+                        aria-label={`Increase ${price.format_name} units`}
+                        disabled={quantity >= 999}
+                        onClick={() => updateFormatQuantity(price.format_code, price.unit_amount, quantity + 1)}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  <div className="design-order-line-total">
+                    <small>Total</small>
+                    <strong>{price.quote_only ? 'Quote Only' : formatUsd(effectivePrice * quantity)}</strong>
+                  </div>
+                </article>
+              );
+            })}
+
+            {!priceLoading && priceLookup.results.length > 0 && (
+              <div className="design-order-footer">
+                <div className="design-order-total">
+                  <span>Purchasable Total</span>
+                  <strong>{formatUsd(pricedOrderTotal)}</strong>
+                </div>
+                {quoteOnlySelections.length > 0 && (
+                  <p>Quote-only selections are handled through the Request for Quote button.</p>
+                )}
+                <button
+                  type="button"
+                  className="design-add-cart-button"
+                  disabled={pricedSelections.length === 0}
+                  onClick={addDesignSelectionsToCart}
+                >
+                  Add Selection(s) to Cart
+                </button>
+                {cartNotice && (
+                  <div className="design-cart-notice" role="status">
+                    <span>{cartNotice}</span>
+                    <button type="button" onClick={() => navigate('/cart')}>View Cart</button>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
           <div className="design-summary-actions">
             <button
               type="button"

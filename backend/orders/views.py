@@ -659,6 +659,16 @@ def _lookup_db_price(sku, unit_size=None):
     if not sku:
         return 0.0
 
+    # Gene Design cart items encode Steps 2-5 plus the selected Step 6 format
+    # in their SKU. Always verify their price against the backend lookup table.
+    from genes.pricing import resolve_design_sku_price
+
+    design_price = resolve_design_sku_price(sku, unit_size)
+    if design_price is not None:
+        if design_price['quote_only'] or design_price['price'] is None:
+            return 0.0
+        return float(design_price['price'])
+
     # 1. Check if it's a FeaturedProduct
     featured_product = FeaturedProduct.objects.filter(catalog_number__iexact=sku).first()
     if featured_product:

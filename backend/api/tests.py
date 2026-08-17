@@ -12,6 +12,7 @@ from .admin_views import (
     _serialize_product_manuals,
 )
 from .views import _search_match_score
+from .bulk_upload import _import_product, _import_service
 
 
 class ProductManualPayloadTests(SimpleTestCase):
@@ -87,6 +88,120 @@ class SearchMatchingTests(SimpleTestCase):
             _search_match_score('THUNDERBIRD Probe qPCR Mix', exact_fields),
             _search_match_score('THUNDERBIRD Probe qPCR Mix', description_fields),
         )
+
+
+class CatalogBulkUploadTests(TestCase):
+    def setUp(self):
+        self.product_category = ProductCategory.objects.create(
+            category_name='Bulk Products',
+            external_id='bulk-products',
+            product_type='product',
+        )
+        self.reagent_category = ProductCategory.objects.create(
+            category_name='Bulk Reagents',
+            external_id='bulk-reagents',
+            product_type='reagent',
+        )
+        self.service_category = ProductCategory.objects.create(
+            category_name='Bulk Services',
+            external_id='bulk-services',
+            product_type='service',
+        )
+        self.product_group = CatalogGroup.objects.create(
+            category=self.product_category,
+            group_name='Bulk Product Group',
+        )
+        self.service_group = CatalogGroup.objects.create(
+            category=self.service_category,
+            group_name='Bulk Service Group',
+        )
+
+    def test_product_update_imports_one_option_and_preserves_media_documents(self):
+        product = Product.objects.create(
+            external_id='bulk-existing-product',
+            product_name='Old Name',
+            category=self.product_category,
+            source_type='quote',
+            options=['Old A', 'Old B'],
+            option_prices={'Old A': '10', 'Old B': '20'},
+            images=['media/product_images/keep.png'],
+            manuals=['Keep Manual'],
+            manual_urls=['media/manual_files/keep.pdf'],
+        )
+
+        created, _, _ = _import_product({
+            'external_id': product.external_id,
+            'product_name': 'Imported Product',
+            'category_external_id': self.product_category.external_id,
+            'group_external_id': self.product_group.external_id,
+            'details': 'Plain text details',
+            'list_price': '25',
+            'first_option_name': '100 tests',
+            'first_option_list_price': '20',
+            'active': 'Yes',
+        }, 'product')
+
+        product.refresh_from_db()
+        self.assertFalse(created)
+        self.assertEqual(product.options, ['100 tests'])
+        self.assertEqual(product.option_prices, {'100 tests': '20'})
+        self.assertEqual(product.images, ['media/product_images/keep.png'])
+        self.assertEqual(product.manuals, ['Keep Manual'])
+        self.assertEqual(product.manual_urls, ['media/manual_files/keep.pdf'])
+        self.assertEqual(product.content_text, 'Plain text details')
+
+    def test_reagent_import_creates_a_reagent(self):
+        created, external_id, _ = _import_product({
+            'external_id': 'bulk-new-reagent',
+            'product_name': 'Imported Reagent',
+            'category_external_id': self.reagent_category.external_id,
+        }, 'reagent')
+
+        reagent = Product.objects.get(external_id=external_id)
+        self.assertTrue(created)
+        self.assertEqual(reagent.source_type, 'reagent')
+        self.assertEqual(reagent.category_id, self.reagent_category.category_id)
+
+    def test_service_update_preserves_media_documents(self):
+        service = ServiceMode.objects.create(
+            url='bulk-existing-service',
+            title='Old Service',
+            content='Old content',
+            category_ref=self.service_category,
+            manuals=[{'name': 'Keep PDF', 'manual': 'media/manual_files/keep.pdf'}],
+            videos=['media/service-videos/keep.mp4'],
+        )
+
+        created, _, _ = _import_service({
+            'external_id': service.url,
+            'service_name': 'Imported Service',
+            'category_external_id': self.service_category.external_id,
+            'group_external_id': self.service_group.external_id,
+            'service_details': 'Plain service details',
+            'price': '$125',
+            'active': 'Yes',
+        })
+
+        service.refresh_from_db()
+        self.assertFalse(created)
+        self.assertEqual(service.content, 'Plain service details')
+        self.assertEqual(service.manuals, [{'name': 'Keep PDF', 'manual': 'media/manual_files/keep.pdf'}])
+        self.assertEqual(service.videos, ['media/service-videos/keep.mp4'])
+
+    def test_product_template_cannot_reclassify_a_reagent(self):
+        Product.objects.create(
+            external_id='bulk-type-guard',
+            product_name='Existing Reagent',
+            category=self.reagent_category,
+            source_type='reagent',
+        )
+
+        with self.assertRaisesMessage(ValueError, 'already belongs to a reagent'):
+            _import_product({
+                'external_id': 'bulk-type-guard',
+                'product_name': 'Wrong Type',
+                'category_external_id': self.product_category.external_id,
+            }, 'product')
 
 class CatalogSearchTests(TestCase):
     def setUp(self):
