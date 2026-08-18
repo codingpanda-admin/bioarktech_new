@@ -13,6 +13,7 @@ class CustomerShippingAddressSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     shipping_address = AddressSerializer()
+    billing_address = AddressSerializer(read_only=True)
     shipping_addresses = CustomerShippingAddressSerializer(many=True, read_only=True)
     isAdmin = serializers.BooleanField(source='is_admin', read_only=True)
     externalId = serializers.SerializerMethodField()
@@ -31,6 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
             'mobile',
             'telephone',
             'shipping_address',
+            'billing_address',
             'shipping_addresses',
             'is_admin',
             'isAdmin',

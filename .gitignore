@@ -12,3 +12,4 @@ services-json
 full_inventory_and_services_export.json
 backups/
 outputs/
+.tmp/

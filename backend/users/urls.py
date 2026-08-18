@@ -18,5 +18,6 @@ urlpatterns = [
     path('shipping-addresses/<int:pk>/update/', views.update_shipping_address),
     path('shipping-addresses/<int:pk>/delete/', views.delete_shipping_address),
     path('shipping-addresses/<int:pk>/set-default/', views.set_default_shipping_address),
+    path('billing-address/', views.upsert_billing_address),
 ]
 

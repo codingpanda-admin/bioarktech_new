@@ -40,6 +40,8 @@ from django.db import transaction
 
 import requests
 
+from .invoice_pdf import build_invoice_pdf, invoice_number_for
+
 load_dotenv()
 
 # Stripe Configuration
@@ -470,6 +472,33 @@ def get_invoice(request, order_number):
         return Response({"detail": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
+@api_view(['GET'])
+def download_order_invoice(request, order_id):
+    if not request.user.is_authenticated:
+        return Response(
+            {"detail": "Please sign in to generate an invoice."},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    try:
+        order = (
+            Order.objects
+            .select_related('user', 'billing_address', 'shipping_address')
+            .prefetch_related('orderitem_set')
+            .get(order_id=order_id, user=request.user)
+        )
+    except Order.DoesNotExist:
+        return Response({"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    pdf_content = build_invoice_pdf(order)
+    invoice_number = invoice_number_for(order)
+    response = HttpResponse(pdf_content, content_type='application/pdf')
+    disposition = 'inline' if request.query_params.get('view') == '1' else 'attachment'
+    response['Content-Disposition'] = f'{disposition}; filename="BioArk-Invoice-{invoice_number}.pdf"'
+    response['Cache-Control'] = 'private, no-store'
+    return response
+
+
 def invoice_repayment(request, order_number, payment_token):
     body = request.data
     total_price = body.get("total_price")
@@ -682,8 +711,8 @@ def _lookup_db_price(sku, unit_size=None):
             up = UnitPrice.objects.filter(union=featured_product.union).first()
             if up:
                 return float(up.unit_price)
-        # Fallback to 0 if not found
-        return 0.0
+        # Featured rows are presentation metadata. If their legacy UnitPrice
+        # record is absent, continue to the canonical Product price fields.
 
     # 2. Check if it's a general Product
     product = Product.objects.filter(catalog_number__iexact=sku, hidden=False).first()
@@ -700,20 +729,58 @@ def _lookup_db_price(sku, unit_size=None):
         if union:
             if unit_size:
                 up = UnitPrice.objects.filter(union=union, unit_size__iexact=unit_size).first()
-            if not up:
+            if not up and not unit_size:
                 up = UnitPrice.objects.filter(union=union).first()
                 
         if up:
             return float(up.unit_price)
-        else:
-            # Parse list_price
-            raw_lp = product.list_price or product.price_range or ""
-            try:
-                # Remove currency symbols and formatting
-                clean_lp = "".join(c for c in raw_lp if c.isdigit() or c == '.')
-                return float(clean_lp) if clean_lp else 0.0
-            except ValueError:
-                return 0.0
+
+        def parse_catalog_price(value):
+            parsed = Product._numeric_catalog_price(value)
+            return float(parsed) if parsed is not None else None
+
+        def option_value(values, selected_unit):
+            if not isinstance(values, dict) or not selected_unit:
+                return None
+            normalized_unit = selected_unit.strip().casefold()
+            for option_name, option_price in values.items():
+                if str(option_name or '').strip().casefold() == normalized_unit:
+                    return option_price
+            return None
+
+        # Current product/reagent records store option prices directly on the
+        # Product JSON fields rather than in the legacy UnitPrice table.
+        if unit_size:
+            option_list_price = parse_catalog_price(option_value(product.option_prices, unit_size))
+            if option_list_price is None:
+                option_list_price = parse_catalog_price(product.list_price)
+
+            option_discount_price = parse_catalog_price(
+                option_value(product.option_discounted_prices, unit_size)
+            )
+            if (
+                option_discount_price is not None
+                and option_list_price is not None
+                and option_discount_price < option_list_price
+            ):
+                return option_discount_price
+            if option_list_price is not None:
+                return option_list_price
+
+        list_price = parse_catalog_price(product.list_price)
+        discount_price = parse_catalog_price(product.discounted_price)
+        if (
+            discount_price is not None
+            and list_price is not None
+            and discount_price < list_price
+        ):
+            return discount_price
+        if list_price is not None:
+            return list_price
+
+        # A range is not a purchasable single price and must not be guessed.
+        range_price = parse_catalog_price(product.price_range)
+        return range_price if range_price is not None else 0.0
 
     # 3. Check if it's a service
     # Services in this app have URL as their identifier (e.g. s.url)
@@ -770,6 +837,27 @@ def create_stripe_checkout_session(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        checkout_user = User.objects.select_related("billing_address").get(id=request.user.id)
+        billing_address = checkout_user.billing_address
+        required_billing_fields = (
+            "address_line_1",
+            "city",
+            "state",
+            "zipcode",
+            "country",
+        )
+        if not billing_address or any(
+            not str(getattr(billing_address, field, "") or "").strip()
+            for field in required_billing_fields
+        ):
+            return Response(
+                {
+                    "error": "A complete billing address is required before checkout.",
+                    "code": "billing_address_required",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         line_items = []
         subtotal = 0
         total_quantity = 0
@@ -823,12 +911,25 @@ def create_stripe_checkout_session(request):
         shipping_amount = _calculate_shipping(cart_items, subtotal)
         grand_total = subtotal + shipping_amount
 
-        address_obj, _ = Address.objects.get_or_create(
+        # Preserve checkout addresses as immutable order snapshots. Profile edits
+        # must not change addresses shown on historical orders or invoices.
+        shipping_address_obj = Address.objects.create(
             address_line_1=address["address_line_1"],
+            address_line_2=address.get("address_line_2", ""),
             apt_suite=address.get("apt", ""),
             city=address["city"],
             state=address["state"],
-            zipcode=address["zipcode"]
+            zipcode=address["zipcode"],
+            country=address.get("country", "US") or "US",
+        )
+        billing_address_obj = Address.objects.create(
+            address_line_1=billing_address.address_line_1,
+            address_line_2=billing_address.address_line_2,
+            apt_suite=billing_address.apt_suite,
+            city=billing_address.city,
+            state=billing_address.state,
+            zipcode=billing_address.zipcode,
+            country=billing_address.country or "US",
         )
 
         save_to_profile = address.get("save_to_profile", False)
@@ -878,9 +979,9 @@ def create_stripe_checkout_session(request):
             "minimum_payment": calculate_minimum_payment(grand_total),
             "payment_source": "Pending Payment (Stripe)",
             "quantity": total_quantity,
-            "shipping_address": address_obj,
-            "billing_address": address_obj,
-            "user": request.user,
+            "shipping_address": shipping_address_obj,
+            "billing_address": billing_address_obj,
+            "user": checkout_user,
             "discount_code": discount_code,
             "transaction_status": "pending",
             "paid": False,
@@ -1169,9 +1270,19 @@ def stripe_checkout_success(request):
 
         if session.payment_status == "paid":
             # Fallback order creation if not already created by webhook
-            _process_successful_checkout(session)
-            
-            order_exists = Order.objects.filter(payment_token=session_id).exists()
+            _, order = _process_successful_checkout(session)
+            if order is None:
+                order = Order.objects.filter(
+                    payment_token=session_id,
+                    user=request.user,
+                ).first()
+
+            if order is None or order.user_id != request.user.id:
+                return Response(
+                    {"error": "Confirmed order not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
             return Response({
                 "status": "success",
                 "session_id": session_id,
@@ -1179,7 +1290,8 @@ def stripe_checkout_success(request):
                 "currency": session.currency,
                 "customer_email": session.customer_email,
                 "payment_status": session.payment_status,
-                "order_confirmed": order_exists,
+                "order_confirmed": True,
+                "order_id": order.order_id,
             })
         else:
             return Response({
@@ -1245,6 +1357,9 @@ def _calculate_shipping(cart_items, subtotal):
 
 def _get_frontend_url():
     """Determine the frontend URL based on environment."""
+    configured_url = os.getenv("FRONTEND_URL", "").strip()
+    if configured_url:
+        return configured_url.rstrip("/")
     if DEBUG and DEBUG == "True":
         return "http://localhost:5173"
     return "https://bioarktech.com"

@@ -28,6 +28,7 @@ services:
       - .env
     environment:
       DB_HOST: db
+      FRONTEND_URL: https://www.bioarktech.com
     ports:
       - "8001:8000"
     volumes:

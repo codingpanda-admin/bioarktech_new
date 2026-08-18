@@ -12,7 +12,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     order_placed_date = serializers.SerializerMethodField()
     class Meta:
         model = OrderItem
-        fields = ['order_class', 'order_id', 'order_placed_date', 'work_period', 'est_delivery_date', 'product_sku', 'product_name', 'unit_size', 'quantity', 'total_price', 'status', 'function_type_name', 'structure_type_name', 'promoter_name', 'protein_tag_name', 'fluorescene_marker_name', 'selection_marker_name', 'bacterial_marker_name', 'target_sequence', 'delivery_format_name', 'url']
+        fields = ['order_item_id', 'order_class', 'order_id', 'order_placed_date', 'work_period', 'est_delivery_date', 'product_sku', 'product_name', 'unit_size', 'quantity', 'total_price', 'status', 'function_type_name', 'structure_type_name', 'promoter_name', 'protein_tag_name', 'fluorescene_marker_name', 'selection_marker_name', 'bacterial_marker_name', 'target_sequence', 'delivery_format_name', 'url']
 
     def get_order_placed_date(self, obj):
         order = Order.objects.get(order_id=obj.order_id)

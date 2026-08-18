@@ -27,6 +27,14 @@ function CartPage({
 
   const savedAddresses = currentUserProfile?.shipping_addresses || [];
   const defaultAddress = savedAddresses.find(a => a.is_default) || savedAddresses[0];
+  const billingAddress = currentUserProfile?.billing_address || null;
+  const hasCompleteBillingAddress = Boolean(
+    billingAddress?.address_line_1?.trim() &&
+    billingAddress?.city?.trim() &&
+    billingAddress?.state?.trim() &&
+    billingAddress?.zipcode?.trim() &&
+    billingAddress?.country?.trim()
+  );
 
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState(defaultAddress ? String(defaultAddress.id) : 'new');
@@ -93,6 +101,12 @@ function CartPage({
   const handleStripeCheckout = async () => {
     if (!currentUser) {
       if (onOpenAuth) onOpenAuth();
+      return;
+    }
+
+    if (!hasCompleteBillingAddress) {
+      setShowAddressForm(true);
+      setCheckoutError('Please add a complete billing address before proceeding to payment.');
       return;
     }
 
@@ -675,6 +689,9 @@ function CartPage({
                           if (onOpenAuth) onOpenAuth();
                         } else {
                           setShowAddressForm(true);
+                          if (!hasCompleteBillingAddress) {
+                            setCheckoutError('Please add a complete billing address before proceeding to payment.');
+                          }
                         }
                       }}
                       style={{
@@ -885,6 +902,90 @@ function CartPage({
                         </div>
                       )}
 
+                      <div style={{
+                        marginTop: '16px',
+                        paddingTop: '16px',
+                        borderTop: '1px solid var(--line)',
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '12px',
+                          marginBottom: '10px',
+                        }}>
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink)' }}>
+                            Billing Address
+                          </div>
+                          {hasCompleteBillingAddress && (
+                            <button
+                              type="button"
+                              onClick={() => navigate('/profile?tab=billing')}
+                              style={{
+                                padding: 0,
+                                border: 'none',
+                                background: 'transparent',
+                                color: 'var(--blue)',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Edit
+                            </button>
+                          )}
+                        </div>
+
+                        {hasCompleteBillingAddress ? (
+                          <div style={{
+                            background: '#fff',
+                            border: '1px solid var(--line)',
+                            borderRadius: '8px',
+                            padding: '12px',
+                            fontSize: '13px',
+                            color: 'var(--muted)',
+                            lineHeight: '1.4',
+                          }}>
+                            <div style={{ fontWeight: 600, color: 'var(--ink)', marginBottom: '4px' }}>
+                              {currentUserProfile?.first_name} {currentUserProfile?.last_name}
+                            </div>
+                            {currentUserProfile?.company && <div style={{ marginBottom: '4px' }}>{currentUserProfile.company}</div>}
+                            <div>{billingAddress.address_line_1}</div>
+                            {billingAddress.address_line_2 && <div>{billingAddress.address_line_2}</div>}
+                            {billingAddress.apt_suite && <div>{billingAddress.apt_suite}</div>}
+                            <div>{billingAddress.city}, {billingAddress.state} {billingAddress.zipcode}</div>
+                            <div>{billingAddress.country}</div>
+                          </div>
+                        ) : (
+                          <div style={{
+                            padding: '12px',
+                            border: '1px solid rgba(220, 38, 38, 0.25)',
+                            borderRadius: '8px',
+                            background: 'rgba(239, 68, 68, 0.06)',
+                          }}>
+                            <div style={{ color: '#b91c1c', fontSize: '13px', marginBottom: '10px' }}>
+                              A billing address is required before payment.
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => navigate('/profile?tab=billing')}
+                              style={{
+                                padding: '9px 14px',
+                                border: 'none',
+                                borderRadius: '7px',
+                                background: 'var(--blue)',
+                                color: '#fff',
+                                fontSize: '13px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Add Billing Address
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
                       <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                         <button
                           type="button"
@@ -900,19 +1001,21 @@ function CartPage({
                         <button
                           type="button"
                           onClick={handleStripeCheckout}
-                          disabled={checkoutLoading}
+                          disabled={checkoutLoading || !hasCompleteBillingAddress}
                           style={{
                             flex: 2, padding: '12px', borderRadius: '8px',
                             border: 'none', fontSize: '14px', fontWeight: 600,
-                            cursor: checkoutLoading ? 'wait' : 'pointer',
-                            background: checkoutLoading
+                            cursor: checkoutLoading ? 'wait' : (!hasCompleteBillingAddress ? 'not-allowed' : 'pointer'),
+                            background: checkoutLoading || !hasCompleteBillingAddress
                               ? '#a5a5a5'
                               : 'linear-gradient(135deg, #635bff, #7c3aed)',
                             color: '#fff',
-                            opacity: checkoutLoading ? 0.7 : 1,
+                            opacity: checkoutLoading || !hasCompleteBillingAddress ? 0.7 : 1,
                           }}
                         >
-                          {checkoutLoading ? 'Processing...' : `Pay $${grandTotal.toFixed(2)}`}
+                          {checkoutLoading
+                            ? 'Processing...'
+                            : (!hasCompleteBillingAddress ? 'Billing Address Required' : `Pay $${grandTotal.toFixed(2)}`)}
                         </button>
                       </div>
 
