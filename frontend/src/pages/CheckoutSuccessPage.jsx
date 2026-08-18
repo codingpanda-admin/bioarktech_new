@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiFetch } from '../utils/api';
+import { API_URL, apiFetch } from '../utils/api';
 
 function CheckoutSuccessPage({ navigate, onClearCart }) {
   const [status, setStatus] = useState('loading');
@@ -60,7 +60,28 @@ function CheckoutSuccessPage({ navigate, onClearCart }) {
 
         {status === 'success' && (
           <>
-            <div style={{ fontSize: '64px', marginBottom: '16px' }}>✅</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }} aria-hidden="true">
+              <span style={{
+                width: '64px',
+                height: '64px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%',
+                border: '2px solid #00A866',
+                background: '#ECFDF5',
+              }}>
+                <span style={{
+                  width: '15px',
+                  height: '29px',
+                  marginTop: '-7px',
+                  borderRight: '5px solid #00A866',
+                  borderBottom: '5px solid #00A866',
+                  borderRadius: '2px',
+                  transform: 'rotate(45deg)',
+                }} />
+              </span>
+            </div>
             <h2 style={{ fontWeight: 700, marginBottom: '8px', color: '#059669' }}>Payment Successful!</h2>
             <p style={{ color: 'var(--muted)', marginBottom: '24px', lineHeight: 1.6 }}>
               Thank you for your purchase. Your order has been confirmed and is being processed.
@@ -90,6 +111,17 @@ function CheckoutSuccessPage({ navigate, onClearCart }) {
             )}
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              {sessionData?.order_id && (
+                <a
+                  href={`${API_URL}/api/orders/invoice/${sessionData.order_id}/pdf/?view=1`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="primary-button"
+                  style={{ padding: '12px 24px', borderRadius: '8px', fontWeight: 600, textDecoration: 'none' }}
+                >
+                  View Invoice
+                </a>
+              )}
               <button
                 type="button"
                 className="primary-button"
@@ -100,9 +132,9 @@ function CheckoutSuccessPage({ navigate, onClearCart }) {
               </button>
               <button
                 type="button"
-                className="secondary-button"
+                className="secondary-button checkout-secondary-button"
                 onClick={() => navigate('/')}
-                style={{ padding: '12px 24px', borderRadius: '8px', fontWeight: 600, border: '1px solid var(--line)', background: 'transparent' }}
+                style={{ padding: '12px 24px', borderRadius: '8px', fontWeight: 600 }}
               >
                 Continue Shopping
               </button>
@@ -144,9 +176,9 @@ function CheckoutSuccessPage({ navigate, onClearCart }) {
               </button>
               <button
                 type="button"
-                className="secondary-button"
+                className="secondary-button checkout-secondary-button"
                 onClick={() => navigate('/')}
-                style={{ padding: '12px 24px', borderRadius: '8px', fontWeight: 600, border: '1px solid var(--line)', background: 'transparent' }}
+                style={{ padding: '12px 24px', borderRadius: '8px', fontWeight: 600 }}
               >
                 Go Home
               </button>

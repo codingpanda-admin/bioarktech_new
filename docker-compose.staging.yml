@@ -30,6 +30,7 @@ services:
       - .env
     environment:
       DB_HOST: db
+      FRONTEND_URL: http://93.127.217.163:8180
     ports:
       - "8101:8000"
     volumes:

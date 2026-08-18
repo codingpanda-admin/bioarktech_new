@@ -802,6 +802,18 @@ label,
   transform: translateY(0);
 }
 
+.checkout-secondary-button {
+  color: var(--ink);
+  border-color: var(--line);
+  background: #fff;
+}
+
+.checkout-secondary-button:hover {
+  color: var(--blue-dark);
+  border-color: var(--blue);
+  background: #eef5ff;
+}
+
 .hero-content .secondary-button {
   color: var(--ink);
   border: 1px solid rgba(31, 47, 74, 0.35);
