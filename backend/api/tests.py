@@ -1,5 +1,9 @@
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from django.core import mail
 from django.core.exceptions import ValidationError
-from django.test import SimpleTestCase, TestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
 
@@ -14,6 +18,68 @@ from .admin_views import (
 from .views import _search_match_score
 from .bulk_upload import _import_product, _import_service
 
+
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    DEFAULT_FROM_EMAIL='sender@example.com',
+    EMAIL_NOTIFICATION_RECIPIENT='notifications@example.com',
+)
+class QuoteNotificationEmailTests(SimpleTestCase):
+    @patch('quote.views.create_quote_record')
+    def test_submitted_quote_notifies_internal_recipient_only(self, create_quote_record):
+        create_quote_record.return_value = SimpleNamespace(
+            id=17,
+            external_id='quote-notification-test',
+            first_name='Test',
+            last_name='Customer',
+            email='customer@example.com',
+            phone=None,
+            company=None,
+            department=None,
+            service_type=None,
+            timeline=None,
+            budget=None,
+            project_description='Test quote request',
+            additional_info=None,
+        )
+
+        response = APIClient().post(reverse('create-quote'), {
+            'externalId': 'quote-notification-test',
+            'firstName': 'Test',
+            'lastName': 'Customer',
+            'email': 'customer@example.com',
+            'projectDescription': 'Test quote request',
+        }, format='json')
+
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.json()['emailSent'])
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ['notifications@example.com'])
+
+    @patch('quote.views.send_quote_notification', side_effect=RuntimeError('SES unavailable'))
+    @patch('quote.views.create_quote_record')
+    def test_quote_remains_saved_when_notification_fails(self, create_quote_record, _send_notification):
+        create_quote_record.return_value = SimpleNamespace(
+            id=18,
+            external_id='quote-email-failure-test',
+        )
+
+        response = APIClient().post(reverse('create-quote'), {
+            'externalId': 'quote-email-failure-test',
+            'firstName': 'Test',
+            'lastName': 'Customer',
+            'email': 'customer@example.com',
+            'projectDescription': 'Test quote request',
+        }, format='json')
+
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(response.json()['emailSent'])
+        create_quote_record.assert_called_once()
+
+    def test_legacy_singular_quote_endpoint_is_retired(self):
+        response = APIClient().post('/api/quote/', {}, format='json')
+
+        self.assertEqual(response.status_code, 404)
 
 class ProductManualPayloadTests(SimpleTestCase):
     def test_uploaded_document_name_is_kept_separate_from_its_path(self):

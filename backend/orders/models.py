@@ -1,5 +1,6 @@
 from django.db import models
 from datetime import datetime
+import uuid
 from django.conf import settings
 from products.models import Product
 from products.serializers import ProductSerializer
@@ -55,6 +56,14 @@ class Invoice(models.Model):
 
 
 class Order(models.Model):
+    PURCHASE_EMAIL_STATUS_CHOICES = [
+        ('legacy', 'Legacy order'),
+        ('pending', 'Pending'),
+        ('sending', 'Sending'),
+        ('sent', 'Sent'),
+        ('failed', 'Failed'),
+    ]
+
     # required fields
     order_id = models.AutoField(primary_key=True)
     payment_token = models.CharField()
@@ -89,9 +98,35 @@ class Order(models.Model):
     po_number = models.CharField(blank=True, null=True)
     po_address = models.ForeignKey(Address, on_delete=models.CASCADE, related_name="po_orders", blank=True, null=True)
     receipt_number = models.CharField(blank=True, null=True)
+    purchase_email_status = models.CharField(
+        max_length=16,
+        choices=PURCHASE_EMAIL_STATUS_CHOICES,
+        default='pending',
+    )
+    purchase_email_attempted_at = models.DateTimeField(blank=True, null=True)
+    purchase_email_sent_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         db_table = 'orders'
+
+
+class StripeCheckoutAttempt(models.Model):
+    """Temporary checkout data that is not a purchase until Stripe confirms payment."""
+
+    checkout_attempt_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='stripe_checkout_attempts')
+    cart_items = models.JSONField(default=list)
+    shipping_address = models.JSONField(default=dict)
+    billing_address = models.JSONField(default=dict)
+    subtotal = models.DecimalField(max_digits=8, decimal_places=2)
+    shipping_amount = models.DecimalField(max_digits=8, decimal_places=2)
+    total_quantity = models.PositiveIntegerField(default=0)
+    discount_code = models.CharField(max_length=255, blank=True, default='')
+    stripe_session_id = models.CharField(max_length=255, blank=True, null=True, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'stripe_checkout_attempt'
 
 
 class OrderItem(models.Model):

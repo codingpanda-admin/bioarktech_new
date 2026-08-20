@@ -3,14 +3,16 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from django.urls import reverse
-from django.test import TestCase
+from django.core import mail
+from django.test import TestCase, override_settings
 from rest_framework.test import APITestCase
 
 from products.models import FeaturedProduct, Product
 from users.models import Address, User
 
-from .models import Order, OrderItem
-from .views import _lookup_db_price
+from .models import Order, OrderItem, StripeCheckoutAttempt
+from .purchase_email import send_purchase_confirmation_email
+from .views import _lookup_db_price, _process_successful_checkout
 
 
 class CatalogPriceLookupTests(TestCase):
@@ -90,6 +92,7 @@ class OrderInvoicePdfTests(APITestCase):
             paid=True,
         )
         OrderItem.objects.create(
+            order=self.order,
             order_class='Reagents',
             product_sku='TEST-001',
             product_name='Example Research Reagent',
@@ -152,6 +155,100 @@ class OrderInvoicePdfTests(APITestCase):
         self.assertEqual(response.status_code, 404)
 
 
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    DEFAULT_FROM_EMAIL='orders@example.com',
+    EMAIL_NOTIFICATION_RECIPIENT='notifications@example.com',
+)
+class PurchaseConfirmationEmailTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='purchase.customer@example.com',
+            password='test-password',
+            first_name='Morgan',
+            last_name='Scientist',
+        )
+        self.address = Address.objects.create(
+            address_line_1='13 Taft Court',
+            city='Rockville',
+            state='MD',
+            country='US',
+            zipcode='20850',
+        )
+        self.order = Order.objects.create(
+            payment_token='cs_test_purchase_email',
+            subtotal=Decimal('99.00'),
+            shipping_amount=Decimal('40.00'),
+            tax_amount=Decimal('0.00'),
+            total_price=Decimal('139.00'),
+            total_paid=Decimal('139.00'),
+            minimum_payment=Decimal('0.00'),
+            payment_source='Made with Stripe (Visa)',
+            quantity=1,
+            shipping_address=self.address,
+            billing_address=self.address,
+            user=self.user,
+            transaction_status='completed',
+            paid=True,
+        )
+        OrderItem.objects.create(
+            order=self.order,
+            order_class='Products',
+            product_sku='EMAIL-001',
+            product_name='Email Test Product',
+            unit_size='1 kit',
+            unit_price=Decimal('99.00'),
+            total_price=Decimal('99.00'),
+            quantity=1,
+            paid=True,
+        )
+
+    def test_success_email_contains_html_and_pdf_invoice(self):
+        self.assertTrue(send_purchase_confirmation_email(self.order.order_id))
+
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.purchase_email_status, 'sent')
+        self.assertIsNotNone(self.order.purchase_email_sent_at)
+        self.assertEqual(len(mail.outbox), 1)
+        message = mail.outbox[0]
+        self.assertEqual(message.to, [self.user.email])
+        self.assertEqual(message.cc, ['notifications@example.com'])
+        self.assertTrue(any(content_type == 'text/html' for _, content_type in message.alternatives))
+        pdf_attachments = [
+            attachment for attachment in message.attachments
+            if isinstance(attachment, tuple) and attachment[2] == 'application/pdf'
+        ]
+        self.assertEqual(len(pdf_attachments), 1)
+        self.assertTrue(pdf_attachments[0][1].startswith(b'%PDF'))
+
+    def test_repeat_processing_does_not_send_duplicate_email(self):
+        self.assertTrue(send_purchase_confirmation_email(self.order.order_id))
+        self.assertFalse(send_purchase_confirmation_email(self.order.order_id))
+        self.assertEqual(len(mail.outbox), 1)
+
+    @patch('orders.purchase_email.EmailMultiAlternatives.send', side_effect=RuntimeError('mail unavailable'))
+    def test_email_failure_does_not_change_paid_order(self, _send):
+        self.assertFalse(send_purchase_confirmation_email(self.order.order_id))
+
+        self.order.refresh_from_db()
+        self.assertTrue(self.order.paid)
+        self.assertEqual(self.order.transaction_status, 'completed')
+        self.assertEqual(self.order.purchase_email_status, 'failed')
+
+    @patch('orders.views.queue_purchase_confirmation_email')
+    def test_successful_checkout_queues_email_for_existing_paid_order(self, queue_email):
+        session = {
+            'id': self.order.payment_token,
+            'payment_intent': '',
+        }
+
+        success, order = _process_successful_checkout(session)
+
+        self.assertTrue(success)
+        self.assertEqual(order.order_id, self.order.order_id)
+        queue_email.assert_called_once_with(self.order.order_id)
+
+
 class StripeCheckoutBillingAddressTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -191,7 +288,7 @@ class StripeCheckoutBillingAddressTests(APITestCase):
     @patch('orders.views.STRIPE_SECRET_KEY', 'sk_test_placeholder')
     @patch('orders.views._lookup_db_price', return_value=10.0)
     @patch('orders.views.stripe.checkout.Session.create')
-    def test_checkout_snapshots_billing_address_without_changing_stripe_collection(self, create_session, _lookup_price):
+    def test_checkout_stores_attempt_without_creating_purchase(self, create_session, _lookup_price):
         profile_billing_address = Address.objects.create(
             address_line_1='200 Billing Avenue',
             address_line_2='Floor 3',
@@ -207,9 +304,103 @@ class StripeCheckoutBillingAddressTests(APITestCase):
         response = self.client.post(self.checkout_url, self.payload, format='json')
 
         self.assertEqual(response.status_code, 200)
-        order = Order.objects.get()
-        self.assertNotEqual(order.billing_address_id, profile_billing_address.id)
-        self.assertNotEqual(order.billing_address_id, order.shipping_address_id)
-        self.assertEqual(order.billing_address.address_line_1, '200 Billing Avenue')
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(OrderItem.objects.count(), 0)
+        checkout_attempt = StripeCheckoutAttempt.objects.get()
+        self.assertEqual(checkout_attempt.billing_address['address_line_1'], '200 Billing Avenue')
+        self.assertEqual(checkout_attempt.shipping_address['address_line_1'], '100 Shipping Way')
+        self.assertEqual(checkout_attempt.stripe_session_id, 'cs_test_billing')
         stripe_arguments = create_session.call_args.kwargs
         self.assertNotIn('billing_address_collection', stripe_arguments)
+        self.assertEqual(
+            stripe_arguments['metadata']['checkout_attempt_id'],
+            str(checkout_attempt.checkout_attempt_id),
+        )
+        self.assertIn(
+            f'attempt_id={checkout_attempt.checkout_attempt_id}',
+            stripe_arguments['cancel_url'],
+        )
+
+    @patch('orders.views.STRIPE_SECRET_KEY', 'sk_test_placeholder')
+    @patch('orders.views._lookup_db_price', return_value=10.0)
+    @patch('orders.views.stripe.checkout.Session.retrieve')
+    @patch('orders.views.stripe.checkout.Session.create')
+    def test_cancelled_checkout_deletes_attempt_without_creating_order(
+        self,
+        create_session,
+        retrieve_session,
+        _lookup_price,
+    ):
+        profile_billing_address = Address.objects.create(
+            address_line_1='200 Billing Avenue',
+            city='Bethesda',
+            state='MD',
+            country='US',
+            zipcode='20814',
+        )
+        self.user.billing_address = profile_billing_address
+        self.user.save(update_fields=['billing_address'])
+        create_session.return_value = SimpleNamespace(id='cs_test_cancelled', url='https://checkout.stripe.test/session')
+        retrieve_session.return_value = SimpleNamespace(payment_status='unpaid')
+
+        checkout_response = self.client.post(self.checkout_url, self.payload, format='json')
+        checkout_attempt = StripeCheckoutAttempt.objects.get()
+        cancel_response = self.client.post(
+            reverse('stripe_checkout_cancel'),
+            {'checkout_attempt_id': str(checkout_attempt.checkout_attempt_id)},
+            format='json',
+        )
+
+        self.assertEqual(checkout_response.status_code, 200)
+        self.assertEqual(cancel_response.status_code, 200)
+        self.assertEqual(cancel_response.data['status'], 'cancelled')
+        self.assertEqual(StripeCheckoutAttempt.objects.count(), 0)
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(OrderItem.objects.count(), 0)
+
+    @patch('orders.views.queue_purchase_confirmation_email')
+    @patch('orders.views._lookup_db_price', return_value=10.0)
+    def test_paid_checkout_attempt_becomes_order(self, _lookup_price, queue_email):
+        checkout_attempt = StripeCheckoutAttempt.objects.create(
+            user=self.user,
+            cart_items=self.payload['cart'],
+            shipping_address={
+                'address_line_1': '100 Shipping Way',
+                'apt_suite': 'Suite 1',
+                'city': 'Rockville',
+                'state': 'MD',
+                'zipcode': '20850',
+                'country': 'US',
+            },
+            billing_address={
+                'address_line_1': '200 Billing Avenue',
+                'city': 'Bethesda',
+                'state': 'MD',
+                'zipcode': '20814',
+                'country': 'US',
+            },
+            subtotal=10,
+            shipping_amount=0,
+            total_quantity=1,
+            stripe_session_id='cs_test_paid_attempt',
+        )
+        session = {
+            'id': 'cs_test_paid_attempt',
+            'payment_intent': '',
+            'metadata': {'checkout_attempt_id': str(checkout_attempt.checkout_attempt_id)},
+            'payment_status': 'paid',
+            'amount_total': 1000,
+            'payment_method_types': ['card'],
+        }
+
+        success, order = _process_successful_checkout(session)
+
+        self.assertTrue(success)
+        self.assertTrue(order.paid)
+        self.assertEqual(order.transaction_status, 'completed')
+        self.assertEqual(order.user_id, self.user.id)
+        self.assertEqual(order.shipping_address.address_line_1, '100 Shipping Way')
+        self.assertEqual(order.billing_address.address_line_1, '200 Billing Avenue')
+        self.assertEqual(OrderItem.objects.filter(order=order).count(), 1)
+        self.assertEqual(StripeCheckoutAttempt.objects.count(), 0)
+        queue_email.assert_called_once_with(order.order_id)

@@ -125,7 +125,7 @@ function CheckoutSuccessPage({ navigate, onClearCart }) {
               <button
                 type="button"
                 className="primary-button"
-                onClick={() => navigate('/profile')}
+                onClick={() => navigate('/profile?tab=orders')}
                 style={{ padding: '12px 24px', borderRadius: '8px', fontWeight: 600 }}
               >
                 View My Orders

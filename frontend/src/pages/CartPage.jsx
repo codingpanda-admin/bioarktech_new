@@ -1,16 +1,26 @@
 import { useState } from 'react';
 import { formatAssetUrl, logo, apiFetch } from '../utils/api';
+import { US_STATES, normalizeUsState } from '../utils/usStates';
 
-const getCheckoutAddress = (profile) => {
-  const shippingAddress = profile?.shipping_address;
+const normalizeBillingAddress = (address = {}) => ({
+  address_line_1: address.address_line_1 || '',
+  address_line_2: address.address_line_2 || '',
+  apt_suite: address.apt_suite || '',
+  city: address.city || '',
+  state: normalizeUsState(address.state),
+  zipcode: address.zipcode || address.postal_code || '',
+  country: address.country || 'US',
+});
 
-  return {
-    address_line_1: shippingAddress?.address_line_1 || '',
-    apt: shippingAddress?.apt_suite || shippingAddress?.address_line_2 || '',
-    city: shippingAddress?.city || '',
-    state: shippingAddress?.state || '',
-    zipcode: shippingAddress?.zipcode || '',
-  };
+const checkoutAddressFieldStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  borderRadius: '8px',
+  border: '1px solid var(--line)',
+  fontSize: '14px',
+  outline: 'none',
+  boxSizing: 'border-box',
+  background: '#fff',
 };
 
 function CartPage({
@@ -21,13 +31,22 @@ function CartPage({
   onClearCart,
   currentUser,
   currentUserProfile,
-  onOpenAuth
+  onOpenAuth,
+  onRefreshProfile,
 }) {
   const isCartEmpty = cart.length === 0;
 
   const savedAddresses = currentUserProfile?.shipping_addresses || [];
   const defaultAddress = savedAddresses.find(a => a.is_default) || savedAddresses[0];
-  const billingAddress = currentUserProfile?.billing_address || null;
+  const profileBillingAddress = currentUserProfile?.billing_address || null;
+  const [billingAddressOverride, setBillingAddressOverride] = useState(null);
+  const billingAddress = billingAddressOverride?.userKey === currentUser
+    ? billingAddressOverride.address
+    : profileBillingAddress;
+  const [billingAddressEdits, setBillingAddressEdits] = useState(() => normalizeBillingAddress(profileBillingAddress || {}));
+  const [billingSaving, setBillingSaving] = useState(false);
+  const [billingError, setBillingError] = useState('');
+
   const hasCompleteBillingAddress = Boolean(
     billingAddress?.address_line_1?.trim() &&
     billingAddress?.city?.trim() &&
@@ -37,7 +56,8 @@ function CartPage({
   );
 
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [selectedAddressId, setSelectedAddressId] = useState(defaultAddress ? String(defaultAddress.id) : 'new');
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const resolvedSelectedAddressId = selectedAddressId ?? (defaultAddress ? String(defaultAddress.id) : 'new');
   const [addressEdits, setAddressEdits] = useState({
     nickname: '',
     first_name: currentUserProfile?.first_name || '',
@@ -49,6 +69,7 @@ function CartPage({
     state: '',
     zipcode: '',
     save_to_profile: true,
+    country: 'US',
   });
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -59,8 +80,13 @@ function CartPage({
     setAddressEdits((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleBillingAddressChange = (field, value) => {
+    setBillingAddressEdits((prev) => ({ ...prev, [field]: value }));
+    setBillingError('');
+  };
+
   let activeAddress = {};
-  if (selectedAddressId === 'new') {
+  if (resolvedSelectedAddressId === 'new') {
     activeAddress = {
       first_name: addressEdits.first_name || '',
       last_name: addressEdits.last_name || '',
@@ -72,9 +98,10 @@ function CartPage({
       zipcode: addressEdits.zipcode || '',
       nickname: addressEdits.nickname || 'New Address',
       save_to_profile: addressEdits.save_to_profile ?? true,
+      country: addressEdits.country || 'US',
     };
   } else {
-    const matched = savedAddresses.find(a => String(a.id) === selectedAddressId);
+    const matched = savedAddresses.find(a => String(a.id) === resolvedSelectedAddressId);
     if (matched) {
       activeAddress = {
         first_name: matched.first_name || '',
@@ -87,6 +114,7 @@ function CartPage({
         zipcode: matched.postal_code || '',
         nickname: matched.nickname || '',
         save_to_profile: false,
+        country: matched.country || 'US',
       };
     }
   }
@@ -96,6 +124,48 @@ function CartPage({
            activeAddress.city?.trim() !== '' &&
            activeAddress.state?.trim() !== '' &&
            activeAddress.zipcode?.trim() !== '';
+  };
+
+  const handleUseShippingForBilling = () => {
+    setBillingAddressEdits({
+      address_line_1: activeAddress.address_line_1 || '',
+      address_line_2: '',
+      apt_suite: activeAddress.apt || '',
+      city: activeAddress.city || '',
+      state: normalizeUsState(activeAddress.state),
+      zipcode: activeAddress.zipcode || '',
+      country: activeAddress.country || 'US',
+    });
+    setBillingError('');
+  };
+
+  const handleSaveBillingAddress = async () => {
+    const requiredFields = ['address_line_1', 'city', 'state', 'zipcode', 'country'];
+    if (requiredFields.some((field) => !String(billingAddressEdits[field] || '').trim())) {
+      setBillingError('Please fill in all required billing address fields.');
+      return;
+    }
+
+    setBillingSaving(true);
+    setBillingError('');
+    try {
+      const response = await apiFetch('/api/users/billing-address/', {
+        method: billingAddress ? 'PUT' : 'POST',
+        body: billingAddressEdits,
+      });
+      const savedAddress = response.billing_address || response.user?.billing_address;
+      if (!savedAddress) {
+        throw new Error('The billing address was saved but could not be reloaded.');
+      }
+      setBillingAddressOverride({ userKey: currentUser, address: savedAddress });
+      setBillingAddressEdits(normalizeBillingAddress(savedAddress));
+      setCheckoutError('');
+      await onRefreshProfile?.();
+    } catch (err) {
+      setBillingError(err.message || 'Failed to save billing address.');
+    } finally {
+      setBillingSaving(false);
+    }
   };
 
   const handleStripeCheckout = async () => {
@@ -237,8 +307,16 @@ function CartPage({
           grid-template-columns: 1fr 1fr;
           gap: 16px;
         }
+        .checkout-address-city-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 10px;
+        }
         @media (max-width: 768px) {
           .shipping-rule-grid {
+            grid-template-columns: 1fr;
+          }
+          .checkout-address-city-grid {
             grid-template-columns: 1fr;
           }
         }
@@ -748,7 +826,7 @@ function CartPage({
                             Choose a saved address:
                           </label>
                           <select
-                            value={selectedAddressId}
+                            value={resolvedSelectedAddressId}
                             onChange={(e) => setSelectedAddressId(e.target.value)}
                             style={{
                               width: '100%', padding: '10px 12px', borderRadius: '8px',
@@ -767,7 +845,7 @@ function CartPage({
                       )}
 
                       {/* Saved Address Preview */}
-                      {selectedAddressId !== 'new' && (
+                      {resolvedSelectedAddressId !== 'new' && (
                         <div style={{
                           background: '#fff', border: '1px solid var(--line)',
                           borderRadius: '8px', padding: '12px', fontSize: '13px',
@@ -786,7 +864,7 @@ function CartPage({
                       )}
 
                       {/* New Address Form Fields */}
-                      {selectedAddressId === 'new' && (
+                      {resolvedSelectedAddressId === 'new' && (
                         <div style={{ display: 'grid', gap: '10px' }}>
                           <input
                             type="text"
@@ -856,7 +934,7 @@ function CartPage({
                               outline: 'none', boxSizing: 'border-box',
                             }}
                           />
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                          <div className="checkout-address-city-grid">
                             <input
                               type="text"
                               placeholder="City *"
@@ -868,17 +946,17 @@ function CartPage({
                                 outline: 'none', boxSizing: 'border-box',
                               }}
                             />
-                            <input
-                              type="text"
-                              placeholder="State *"
+                            <select
+                              aria-label="Shipping state"
                               value={addressEdits.state}
                               onChange={(e) => handleAddressChange('state', e.target.value)}
-                              style={{
-                                width: '100%', padding: '10px 12px', borderRadius: '8px',
-                                border: '1px solid var(--line)', fontSize: '14px',
-                                outline: 'none', boxSizing: 'border-box',
-                              }}
-                            />
+                              style={checkoutAddressFieldStyle}
+                            >
+                              <option value="">Select state *</option>
+                              {US_STATES.map(([code, name]) => (
+                                <option key={code} value={code}>{name}</option>
+                              ))}
+                            </select>
                             <input
                               type="text"
                               placeholder="ZIP *"
@@ -959,29 +1037,135 @@ function CartPage({
                         ) : (
                           <div style={{
                             padding: '12px',
-                            border: '1px solid rgba(220, 38, 38, 0.25)',
+                            border: '1px solid var(--line)',
                             borderRadius: '8px',
-                            background: 'rgba(239, 68, 68, 0.06)',
+                            background: '#fff',
                           }}>
-                            <div style={{ color: '#b91c1c', fontSize: '13px', marginBottom: '10px' }}>
-                              A billing address is required before payment.
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '10px',
+                              marginBottom: '12px',
+                            }}>
+                              <div style={{ color: 'var(--muted)', fontSize: '12px' }}>
+                                Enter and save your billing address to continue.
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleUseShippingForBilling}
+                                disabled={!isAddressValid()}
+                                style={{
+                                  flexShrink: 0,
+                                  padding: '7px 10px',
+                                  border: '1px solid var(--blue)',
+                                  borderRadius: '7px',
+                                  background: '#fff',
+                                  color: 'var(--blue)',
+                                  fontSize: '12px',
+                                  fontWeight: 600,
+                                  cursor: isAddressValid() ? 'pointer' : 'not-allowed',
+                                  opacity: isAddressValid() ? 1 : 0.55,
+                                }}
+                              >
+                                Same as Shipping
+                              </button>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => navigate('/profile?tab=billing')}
-                              style={{
-                                padding: '9px 14px',
-                                border: 'none',
+
+                            {billingError && (
+                              <div style={{
+                                background: 'rgba(239, 68, 68, 0.08)',
+                                color: '#dc2626',
+                                padding: '8px 10px',
                                 borderRadius: '7px',
-                                background: 'var(--blue)',
-                                color: '#fff',
-                                fontSize: '13px',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                              }}
-                            >
-                              Add Billing Address
-                            </button>
+                                fontSize: '12px',
+                                marginBottom: '10px',
+                              }}>
+                                {billingError}
+                              </div>
+                            )}
+
+                            <div style={{ display: 'grid', gap: '10px' }}>
+                              <input
+                                type="text"
+                                aria-label="Billing address line 1"
+                                placeholder="Address Line 1 *"
+                                value={billingAddressEdits.address_line_1}
+                                onChange={(e) => handleBillingAddressChange('address_line_1', e.target.value)}
+                                style={checkoutAddressFieldStyle}
+                              />
+                              <input
+                                type="text"
+                                aria-label="Billing address line 2"
+                                placeholder="Address Line 2 (optional)"
+                                value={billingAddressEdits.address_line_2}
+                                onChange={(e) => handleBillingAddressChange('address_line_2', e.target.value)}
+                                style={checkoutAddressFieldStyle}
+                              />
+                              <input
+                                type="text"
+                                aria-label="Billing apartment or suite"
+                                placeholder="Apt / Suite (optional)"
+                                value={billingAddressEdits.apt_suite}
+                                onChange={(e) => handleBillingAddressChange('apt_suite', e.target.value)}
+                                style={checkoutAddressFieldStyle}
+                              />
+                              <div className="checkout-address-city-grid">
+                                <input
+                                  type="text"
+                                  aria-label="Billing city"
+                                  placeholder="City *"
+                                  value={billingAddressEdits.city}
+                                  onChange={(e) => handleBillingAddressChange('city', e.target.value)}
+                                  style={checkoutAddressFieldStyle}
+                                />
+                                <select
+                                  aria-label="Billing state"
+                                  value={billingAddressEdits.state}
+                                  onChange={(e) => handleBillingAddressChange('state', e.target.value)}
+                                  style={checkoutAddressFieldStyle}
+                                >
+                                  <option value="">Select state *</option>
+                                  {US_STATES.map(([code, name]) => (
+                                    <option key={code} value={code}>{name}</option>
+                                  ))}
+                                </select>
+                                <input
+                                  type="text"
+                                  aria-label="Billing ZIP code"
+                                  placeholder="ZIP *"
+                                  value={billingAddressEdits.zipcode}
+                                  onChange={(e) => handleBillingAddressChange('zipcode', e.target.value)}
+                                  style={checkoutAddressFieldStyle}
+                                />
+                              </div>
+                              <select
+                                aria-label="Billing country"
+                                value={billingAddressEdits.country}
+                                onChange={(e) => handleBillingAddressChange('country', e.target.value)}
+                                style={checkoutAddressFieldStyle}
+                              >
+                                <option value="US">United States (US)</option>
+                              </select>
+                              <button
+                                type="button"
+                                onClick={handleSaveBillingAddress}
+                                disabled={billingSaving}
+                                style={{
+                                  padding: '10px 14px',
+                                  border: 'none',
+                                  borderRadius: '7px',
+                                  background: 'var(--blue)',
+                                  color: '#fff',
+                                  fontSize: '13px',
+                                  fontWeight: 600,
+                                  cursor: billingSaving ? 'wait' : 'pointer',
+                                  opacity: billingSaving ? 0.7 : 1,
+                                }}
+                              >
+                                {billingSaving ? 'Saving...' : 'Save Billing Address'}
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
