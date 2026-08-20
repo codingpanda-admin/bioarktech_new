@@ -19,7 +19,6 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.db.models import Q
 from django.core.paginator import Paginator
-from django.utils import timezone
 from django.utils.html import strip_tags
 
 
@@ -30,20 +29,11 @@ from rest_framework.response import Response
 from products.serializers import ProductSerializer
 from users.models import User
 from api.models import EmailVerificationToken, PasswordResetToken
-from quote.models import Quote
-from quote.services import create_quote_record
 from products.models import *
 
 FRONTEND_DOMAIN = os.environ.get('FRONTEND_DOMAIN') or 'http://localhost:5173'
 logger = logging.getLogger(__name__)
 
-
-def generate_quote_external_id(request):
-    if not request.session.session_key:
-        request.session.create()
-
-    timestamp = timezone.localtime(timezone.now()).strftime("%Y%m%d%M%S")
-    return f"q_{request.session.session_key}_{timestamp}"
 
 def get_csrf(request):
     response = JsonResponse({'detail': 'CSRF cookie set', 'csrftoken': get_token(request)})
@@ -207,7 +197,7 @@ def send_verification_email(user):
     send_mail(
         subject="Verify your email address",
         message=f"Click the link below to verify your email address:\n{verification_url}",
-        from_email=settings.EMAIL_HOST_USER,
+        from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user.email],
     )
 
@@ -244,114 +234,11 @@ def send_contact_form(request):
         subject=f"New message from Bioark Tech: {subject}",
         message=f"Customer: {last_name}, {first_name}\nEmail: {email}\nPhone: {phone}\n{message}\nProduct: {product}",
         html_message="<h1>New message from Bioark Tech</h1>",
-        from_email="no-reply@bioarktech.com",
-        recipient_list=["no-reply@bioarktech.com"],
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[settings.EMAIL_NOTIFICATION_RECIPIENT],
     )
 
     return JsonResponse({"detail": "Contact form sent."})
-
-@require_POST
-def send_quote_form(request):
-    data = json.loads(request.body)
-    email = data.get('email')
-    first_name = data.get('firstName')
-    last_name = data.get('lastName')
-    phone = data.get('phone')
-    company = data.get('company') or data.get('institution')
-    department = data.get('department')
-    timeline = data.get('timeline')
-    budget = data.get('budget')
-    project_description = data.get('projectDescription') or data.get('project_description')
-    additional_info = data.get('additionalInfo') or data.get('additionalInformation') or data.get('additional_info')
-    gene_sequence = data.get('geneSequence')
-    gene_species = data.get('geneSpecies')
-    institution = data.get('institution')
-    mammalian_cells = data.get('mammalianCells')
-    plasmid_amount = data.get('plasmidAmount')
-    product_type = data.get('productType')
-    service_type = data.get('serviceType')
-    cell_line_amount = data.get('cellLineAmount')
-    message = data.get('message')
-    user = request.user if request.user.is_authenticated else None
-
-    if not first_name or not last_name or not email:
-        return JsonResponse({'detail': 'First name, last name, and email are required.'}, status=400)
-
-    try:
-        validate_email(email)
-    except ValidationError:
-        return JsonResponse({'detail': 'Invalid email address.'}, status=400)
-
-    external_id = data.get('externalId') or data.get('external_id') or generate_quote_external_id(request)
-
-    quote = create_quote_record(
-        user=user,
-        external_id=external_id,
-        first_name=first_name,
-        last_name=last_name,
-        email=email,
-        phone=phone,
-        company=company,
-        department=department,
-        service_type=service_type or data.get('productType'),
-        timeline=timeline,
-        budget=budget,
-        project_description=project_description or message,
-        additional_info=additional_info,
-        read=False,
-    )
-    
-    email_message = ("New Quote Request from Bioark Tech\n"
-                     "Customer Information:\n"
-                     "-----------------------\n"
-                     f"Quote ID: {quote.id}\n"
-                     f"External ID: {quote.external_id}\n"
-                     f"Name: {first_name} {last_name}\n"
-                     f"Email: {email}\n")
-
-    def add_field(label, value):
-        return f"{label}: {value}\n" if value else ""
-
-    email_message += add_field("Phone", phone)
-    email_message += add_field("Company/Institution", company or institution)
-    email_message += add_field("Department", department)
-    email_message += add_field("Gene Sequence", gene_sequence)
-    email_message += add_field("Gene Species", gene_species)
-    email_message += add_field("Institution", institution if institution != company else None)
-    email_message += add_field("Mammalian Cells", mammalian_cells)
-    email_message += add_field("Plasmid Amount", plasmid_amount)
-    email_message += add_field("Product Type", product_type)
-    email_message += add_field("Service Type", service_type)
-    email_message += add_field("Cell Line Amount", cell_line_amount)
-    email_message += add_field("Timeline", timeline)
-    email_message += add_field("Budget", budget)
-
-    if project_description:
-        email_message += f"\nProject Description:\n-----------------------\n{project_description}\n"
-
-    if additional_info:
-        email_message += f"\nAdditional Information:\n-----------------------\n{additional_info}\n"
-
-    if message:
-        email_message += f"\nCustomer Message:\n-----------------------\n{message}\n"
-
-    try:
-        send_mail(
-            subject="New Quote from Bioark Tech",
-            message=email_message,
-            from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[settings.EMAIL_HOST_USER],
-        )
-    except Exception:
-        logger.exception("Quote %s was saved, but the notification email failed.", quote.id)
-        return JsonResponse({
-            "detail": "Quote request saved, but the notification email could not be sent.",
-            "id": quote.id,
-            "externalId": quote.external_id,
-            "emailSent": False,
-        }, status=201)
-
-    return JsonResponse({"detail": "Quote request saved.", "id": quote.id, "externalId": quote.external_id, "emailSent": True}, status=201)
 
 @require_POST
 def resend_verification(request):
@@ -845,7 +732,7 @@ def request_password_reset(request):
                 send_mail(
                     subject="Reset your password - Bioark Tech",
                     message=email_body,
-                    from_email=settings.EMAIL_HOST_USER,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[user.email],
                     fail_silently=False
                 )

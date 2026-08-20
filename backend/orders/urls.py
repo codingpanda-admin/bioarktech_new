@@ -15,6 +15,7 @@ urlpatterns = [
 
     # Stripe Payment Gateway
     path('stripe/create-checkout-session/', views.create_stripe_checkout_session, name='stripe_checkout'),
+    path('stripe/checkout-cancel/', views.stripe_checkout_cancel, name='stripe_checkout_cancel'),
     path('stripe/webhook/', views.stripe_webhook, name='stripe_webhook'),
     path('stripe/checkout-success/', views.stripe_checkout_success, name='stripe_checkout_success'),
     path('stripe/publishable-key/', views.stripe_publishable_key, name='stripe_publishable_key'),

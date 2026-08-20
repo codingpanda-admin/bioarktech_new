@@ -1,3 +1,5 @@
+import logging
+
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.http import JsonResponse
@@ -7,7 +9,10 @@ from rest_framework.response import Response
 
 from .models import Quote
 from .serializers import QuoteSerializer
-from .services import create_quote_record
+from .services import create_quote_record, send_quote_notification
+
+
+logger = logging.getLogger(__name__)
 
 
 def generate_quote_external_id(request):
@@ -90,4 +95,20 @@ def create_quote(request):
         read=False,
     )
 
-    return JsonResponse({'detail': 'Quote request saved.', 'id': quote.id, 'externalId': quote.external_id}, status=201)
+    try:
+        send_quote_notification(quote)
+    except Exception:
+        logger.exception('Quote %s was saved, but the notification email failed.', quote.id)
+        return JsonResponse({
+            'detail': 'Quote request saved, but the notification email could not be sent.',
+            'id': quote.id,
+            'externalId': quote.external_id,
+            'emailSent': False,
+        }, status=201)
+
+    return JsonResponse({
+        'detail': 'Quote request saved.',
+        'id': quote.id,
+        'externalId': quote.external_id,
+        'emailSent': True,
+    }, status=201)

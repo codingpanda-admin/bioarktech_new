@@ -65,7 +65,6 @@ urlpatterns = [
     path('password-reset-confirm/<str:token>/', views.confirm_password_reset, name='password_reset_confirm'),
     path('google-login/', views.google_login, name='google_login'),
     path('contact-us/', views.send_contact_form, name='contact-us'),
-    path('quote/', views.send_quote_form, name='quote'),
     path('search/', views.search_product, name='search'),
 
     # ── Admin Panel API ──────────────────────────────────────────────────

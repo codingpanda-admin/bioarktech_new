@@ -1,6 +1,7 @@
 from datetime import datetime, date, timedelta
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from rest_framework.views import APIView
@@ -41,6 +42,7 @@ from django.db import transaction
 import requests
 
 from .invoice_pdf import build_invoice_pdf, invoice_number_for
+from .purchase_email import queue_purchase_confirmation_email
 
 load_dotenv()
 
@@ -911,27 +913,6 @@ def create_stripe_checkout_session(request):
         shipping_amount = _calculate_shipping(cart_items, subtotal)
         grand_total = subtotal + shipping_amount
 
-        # Preserve checkout addresses as immutable order snapshots. Profile edits
-        # must not change addresses shown on historical orders or invoices.
-        shipping_address_obj = Address.objects.create(
-            address_line_1=address["address_line_1"],
-            address_line_2=address.get("address_line_2", ""),
-            apt_suite=address.get("apt", ""),
-            city=address["city"],
-            state=address["state"],
-            zipcode=address["zipcode"],
-            country=address.get("country", "US") or "US",
-        )
-        billing_address_obj = Address.objects.create(
-            address_line_1=billing_address.address_line_1,
-            address_line_2=billing_address.address_line_2,
-            apt_suite=billing_address.apt_suite,
-            city=billing_address.city,
-            state=billing_address.state,
-            zipcode=billing_address.zipcode,
-            country=billing_address.country or "US",
-        )
-
         save_to_profile = address.get("save_to_profile", False)
         if save_to_profile:
             try:
@@ -966,60 +947,69 @@ def create_stripe_checkout_session(request):
                 logger.error(f"Error saving checkout address to profile: {e}")
 
 
-        import uuid
-
-        # Create Order object in database as "pending"
-        order_data = {
-            "payment_token": f"pending-{uuid.uuid4()}",
-            "subtotal": subtotal,
-            "shipping_amount": shipping_amount,
-            "tax_amount": 0,
-            "total_price": grand_total,
-            "total_paid": 0.0,
-            "minimum_payment": calculate_minimum_payment(grand_total),
-            "payment_source": "Pending Payment (Stripe)",
-            "quantity": total_quantity,
-            "shipping_address": shipping_address_obj,
-            "billing_address": billing_address_obj,
-            "user": checkout_user,
-            "discount_code": discount_code,
-            "transaction_status": "pending",
-            "paid": False,
-        }
-        order_obj = Order.objects.create(**order_data)
-
-        # Create OrderItem objects
-        create_order_items(cart_items, order_obj)
+        checkout_attempt = StripeCheckoutAttempt.objects.create(
+            user=checkout_user,
+            cart_items=cart_items,
+            shipping_address={
+                "address_line_1": address["address_line_1"],
+                "address_line_2": address.get("address_line_2", ""),
+                "apt_suite": address.get("apt", ""),
+                "city": address["city"],
+                "state": address["state"],
+                "zipcode": address["zipcode"],
+                "country": address.get("country", "US") or "US",
+            },
+            billing_address={
+                "address_line_1": billing_address.address_line_1,
+                "address_line_2": billing_address.address_line_2,
+                "apt_suite": billing_address.apt_suite,
+                "city": billing_address.city,
+                "state": billing_address.state,
+                "zipcode": billing_address.zipcode,
+                "country": billing_address.country or "US",
+            },
+            subtotal=subtotal,
+            shipping_amount=shipping_amount,
+            total_quantity=total_quantity,
+            discount_code=discount_code,
+        )
 
         session_metadata = {
-            "order_id": str(order_obj.order_id),
+            "checkout_attempt_id": str(checkout_attempt.checkout_attempt_id),
         }
 
         frontend_url = _get_frontend_url()
 
-        checkout_session = stripe.checkout.Session.create(
-            payment_intent_data={
-                "metadata": session_metadata,
-            },
-            line_items=line_items,
-            mode="payment",
-            success_url=f"{frontend_url}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{frontend_url}/checkout/cancel",
-            customer_email=request.user.email,
-            metadata=session_metadata,
-            shipping_options=[
-                {
-                    "shipping_rate_data": {
-                        "type": "fixed_amount",
-                        "fixed_amount": {
-                            "amount": int(round(shipping_amount * 100)),
-                            "currency": "usd",
-                        },
-                        "display_name": "Standard Shipping",
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                payment_intent_data={
+                    "metadata": session_metadata,
+                },
+                line_items=line_items,
+                mode="payment",
+                success_url=f"{frontend_url}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=f"{frontend_url}/checkout/cancel?attempt_id={checkout_attempt.checkout_attempt_id}",
+                customer_email=request.user.email,
+                metadata=session_metadata,
+                shipping_options=[
+                    {
+                        "shipping_rate_data": {
+                            "type": "fixed_amount",
+                            "fixed_amount": {
+                                "amount": int(round(shipping_amount * 100)),
+                                "currency": "usd",
+                            },
+                            "display_name": "Standard Shipping",
+                        }
                     }
-                }
-            ] if shipping_amount > 0 else [],
-        )
+                ] if shipping_amount > 0 else [],
+            )
+        except Exception:
+            checkout_attempt.delete()
+            raise
+
+        checkout_attempt.stripe_session_id = checkout_session.id
+        checkout_attempt.save(update_fields=['stripe_session_id'])
 
         return Response({
             "session_id": checkout_session.id,
@@ -1041,6 +1031,61 @@ def create_stripe_checkout_session(request):
             {"error": "Failed to create checkout session."},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+@api_view(['POST'])
+def stripe_checkout_cancel(request):
+    """Discard an unpaid checkout attempt without creating or retaining a purchase."""
+    if not request.user.is_authenticated:
+        return Response(
+            {"error": "Please sign in."},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    checkout_attempt_id = request.data.get('checkout_attempt_id') or request.data.get('attempt_id')
+    if not checkout_attempt_id:
+        return Response(
+            {"error": "No checkout attempt ID provided."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        checkout_attempt = StripeCheckoutAttempt.objects.filter(
+            checkout_attempt_id=checkout_attempt_id,
+            user=request.user,
+        ).first()
+    except (TypeError, ValueError, ValidationError):
+        return Response(
+            {"error": "Invalid checkout attempt ID."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if checkout_attempt is None:
+        return Response({"status": "already_cancelled"})
+
+    if checkout_attempt.stripe_session_id:
+        try:
+            stripe_session = stripe.checkout.Session.retrieve(checkout_attempt.stripe_session_id)
+        except stripe.error.StripeError as exc:
+            logger.warning(
+                "Could not verify Stripe checkout attempt %s before cancellation: %s",
+                checkout_attempt.checkout_attempt_id,
+                exc,
+            )
+            return Response(
+                {"error": "Could not verify payment status before cancellation."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        if stripe_session.payment_status == 'paid':
+            success, order = _process_successful_checkout(stripe_session)
+            return Response({
+                "status": "completed" if success else "processing",
+                "order_id": order.order_id if order else None,
+            })
+
+    checkout_attempt.delete()
+    return Response({"status": "cancelled"})
 
 
 @csrf_exempt
@@ -1077,7 +1122,7 @@ def stripe_webhook(request):
 
     event_type = event_data.get("type", "")
 
-    if event_type == "checkout.session.completed":
+    if event_type in {"checkout.session.completed", "checkout.session.async_payment_succeeded"}:
         _handle_checkout_completed(event_data)
     elif event_type == "payment_intent.succeeded":
         pass
@@ -1085,6 +1130,18 @@ def stripe_webhook(request):
         _handle_dispute(event_data)
 
     return HttpResponse("ok", status=200)
+
+
+def _create_checkout_address_snapshot(address_data):
+    return Address.objects.create(
+        address_line_1=address_data.get('address_line_1', ''),
+        address_line_2=address_data.get('address_line_2', ''),
+        apt_suite=address_data.get('apt_suite', ''),
+        city=address_data.get('city', ''),
+        state=address_data.get('state', ''),
+        zipcode=address_data.get('zipcode', ''),
+        country=address_data.get('country', 'US') or 'US',
+    )
 
 
 def _process_successful_checkout(session):
@@ -1099,14 +1156,18 @@ def _process_successful_checkout(session):
     order_qs = Order.objects.filter(payment_token=session_id)
     if order_qs.exists():
         logger.info(f"Stripe order processing: order {session_id} already exists, skipping creation.")
-        return True, order_qs.first()
+        order_obj = order_qs.first()
+        queue_purchase_confirmation_email(order_obj.order_id)
+        return True, order_obj
 
     with transaction.atomic():
         # Re-check existence inside transaction lock
         order_qs = Order.objects.select_for_update().filter(payment_token=session_id)
         if order_qs.exists():
             logger.info(f"Stripe order processing: order {session_id} already exists inside transaction, skipping.")
-            return True, order_qs.first()
+            order_obj = order_qs.first()
+            queue_purchase_confirmation_email(order_obj.order_id)
+            return True, order_obj
 
         metadata = session.get("metadata", {})
         payment_intent_metadata = {}
@@ -1124,6 +1185,7 @@ def _process_successful_checkout(session):
                     pass
 
         effective_metadata = payment_intent_metadata or metadata
+        checkout_attempt_id = effective_metadata.get("checkout_attempt_id")
         order_id = effective_metadata.get("order_id")
 
         amount_received = session.get("amount_total", 0) / 100.0
@@ -1147,6 +1209,62 @@ def _process_successful_checkout(session):
                 except Exception:
                     pass
 
+        if checkout_attempt_id:
+            if session.get("payment_status") != "paid":
+                logger.info(
+                    "Stripe checkout attempt %s is not paid; no order was created.",
+                    checkout_attempt_id,
+                )
+                return False, None
+
+            checkout_attempt = (
+                StripeCheckoutAttempt.objects.select_for_update()
+                .select_related('user')
+                .filter(checkout_attempt_id=checkout_attempt_id)
+                .first()
+            )
+            if checkout_attempt is None:
+                order_obj = Order.objects.filter(payment_token=session_id).first()
+                if order_obj:
+                    queue_purchase_confirmation_email(order_obj.order_id)
+                    return True, order_obj
+                logger.error(
+                    "Stripe order processing: checkout attempt %s was not found.",
+                    checkout_attempt_id,
+                )
+                return False, None
+
+            shipping_address_obj = _create_checkout_address_snapshot(checkout_attempt.shipping_address)
+            billing_address_obj = _create_checkout_address_snapshot(checkout_attempt.billing_address)
+            order_obj = Order.objects.create(
+                payment_token=session_id,
+                subtotal=checkout_attempt.subtotal,
+                shipping_amount=checkout_attempt.shipping_amount,
+                tax_amount=0,
+                total_price=total_price,
+                total_paid=total_price,
+                minimum_payment=calculate_minimum_payment(total_price),
+                payment_source=payment_source,
+                quantity=checkout_attempt.total_quantity,
+                shipping_address=shipping_address_obj,
+                billing_address=billing_address_obj,
+                user=checkout_attempt.user,
+                last_digits=last_digits,
+                discount_code=checkout_attempt.discount_code,
+                transaction_status="completed",
+                paid=True,
+            )
+            create_order_items(checkout_attempt.cart_items, order_obj)
+            checkout_attempt.delete()
+
+            logger.info(
+                "Stripe order processing: order %s created after confirmed payment for session %s.",
+                order_obj.order_id,
+                session_id,
+            )
+            queue_purchase_confirmation_email(order_obj.order_id)
+            return True, order_obj
+
         if order_id:
             try:
                 order_obj = Order.objects.select_for_update().get(order_id=int(order_id))
@@ -1156,6 +1274,7 @@ def _process_successful_checkout(session):
 
             if order_obj.paid:
                 logger.info(f"Stripe order processing: order {order_id} is already marked as paid.")
+                queue_purchase_confirmation_email(order_obj.order_id)
                 return True, order_obj
 
             order_obj.payment_token = session_id
@@ -1169,6 +1288,7 @@ def _process_successful_checkout(session):
             order_obj.save()
 
             logger.info(f"Stripe order processing: order {order_id} successfully updated to paid/completed.")
+            queue_purchase_confirmation_email(order_obj.order_id)
             return True, order_obj
 
         else:
@@ -1224,6 +1344,7 @@ def _process_successful_checkout(session):
                 logger.error(f"Stripe order processing: error creating order items: {e}")
 
             logger.info(f"Stripe order processing: order {session_id} created for user {user_id}, total ${total_price}")
+            queue_purchase_confirmation_email(order_obj.order_id)
             return True, order_obj
 
 
