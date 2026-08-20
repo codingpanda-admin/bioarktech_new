@@ -297,49 +297,35 @@ def send_quote_form(request):
         read=False,
     )
     
-    email_message = ("New Quote Request from Bioark Tech\n"
-                     "Customer Information:\n"
-                     "-----------------------\n"
-                     f"Quote ID: {quote.id}\n"
-                     f"External ID: {quote.external_id}\n"
-                     f"Name: {first_name} {last_name}\n"
-                     f"Email: {email}\n")
+    template_type = data.get('templateType') or data.get('template_type')
+    if not template_type:
+        service_val = (quote.service_type or '').strip().lower()
+        if service_val == 'products' or data.get('catalogNumber') or data.get('catalog_number'):
+            template_type = 'product'
+        else:
+            template_type = 'full'
 
-    def add_field(label, value):
-        return f"{label}: {value}\n" if value else ""
+    email_context = {
+        'firstName': quote.first_name,
+        'lastName': quote.last_name,
+        'email': quote.email,
+        'phone': quote.phone or '',
+        'company': quote.company or '',
+        'department': quote.department or '',
+        'serviceType': quote.service_type or '',
+        'timeline': quote.timeline or '',
+        'budget': quote.budget or '',
+        'projectDescription': quote.project_description or '',
+        'additionalInfo': quote.additional_info or '',
+        'catalogNumber': data.get('catalogNumber') or data.get('catalog_number') or '',
+        'createdAt': quote.created_at.strftime('%Y-%m-%d %H:%M:%S') if quote.created_at else '',
+    }
 
-    email_message += add_field("Phone", phone)
-    email_message += add_field("Company/Institution", company or institution)
-    email_message += add_field("Department", department)
-    email_message += add_field("Gene Sequence", gene_sequence)
-    email_message += add_field("Gene Species", gene_species)
-    email_message += add_field("Institution", institution if institution != company else None)
-    email_message += add_field("Mammalian Cells", mammalian_cells)
-    email_message += add_field("Plasmid Amount", plasmid_amount)
-    email_message += add_field("Product Type", product_type)
-    email_message += add_field("Service Type", service_type)
-    email_message += add_field("Cell Line Amount", cell_line_amount)
-    email_message += add_field("Timeline", timeline)
-    email_message += add_field("Budget", budget)
+    from quote.services import send_quote_smtp_email
+    sent, err_msg = send_quote_smtp_email(email_context, template_type=template_type)
 
-    if project_description:
-        email_message += f"\nProject Description:\n-----------------------\n{project_description}\n"
-
-    if additional_info:
-        email_message += f"\nAdditional Information:\n-----------------------\n{additional_info}\n"
-
-    if message:
-        email_message += f"\nCustomer Message:\n-----------------------\n{message}\n"
-
-    try:
-        send_mail(
-            subject="New Quote from Bioark Tech",
-            message=email_message,
-            from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[settings.EMAIL_HOST_USER],
-        )
-    except Exception:
-        logger.exception("Quote %s was saved, but the notification email failed.", quote.id)
+    if not sent:
+        logger.warning("Quote %s was saved, but SMTP email notification failed: %s", quote.id, err_msg)
         return JsonResponse({
             "detail": "Quote request saved, but the notification email could not be sent.",
             "id": quote.id,
@@ -348,6 +334,7 @@ def send_quote_form(request):
         }, status=201)
 
     return JsonResponse({"detail": "Quote request saved.", "id": quote.id, "externalId": quote.external_id, "emailSent": True}, status=201)
+
 
 @require_POST
 def resend_verification(request):

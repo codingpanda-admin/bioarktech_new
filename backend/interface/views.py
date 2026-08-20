@@ -37,3 +37,10 @@ def get_homepage_services(request):
     services = ServiceMode.objects.filter(show_on_screen=True, hidden=False).order_by('title')
     serializer = ServiceModeSerializer(services, many=True)
     return JsonResponse(serializer.data, safe=False)
+
+@api_view(['GET'])
+def get_google_auth_config(request):
+    config = SmtpConfig.objects.first()
+    client_id = config.google_client_id if config and config.google_client_id else '1047155694294-1a3b4c5d6e7f8g9h0i.apps.googleusercontent.com'
+    return JsonResponse({'client_id': client_id})
+

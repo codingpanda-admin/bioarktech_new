@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import { apiFetch } from '../utils/api';
 
 // Sub-components
@@ -12,6 +13,8 @@ import AdminResources from './admin/AdminResources';
 import AdminQuotes from './admin/AdminQuotes';
 import AdminMedia from './admin/AdminMedia';
 import AdminHomepage from './admin/AdminHomepage';
+import AdminSmtp from './admin/AdminSmtp';
+
 
 const adminLinks = [
   'Overview',
@@ -80,6 +83,71 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
     );
   }
 
+  const handleGoogleAdminResponse = async (response) => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await apiFetch('/api/google-login/', {
+        method: 'POST',
+        body: { credential: response.credential }
+      });
+      if (onLoginSuccess) {
+        await onLoginSuccess(data.email);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to sign in with Google.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let timerId;
+    const initGoogleAdmin = async () => {
+      if (!currentUser && window.google) {
+        try {
+          let clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1047155694294-1a3b4c5d6e7f8g9h0i.apps.googleusercontent.com';
+          try {
+            const cfg = await apiFetch('/api/interface/get-google-auth-config/');
+            if (cfg && cfg.client_id) {
+              clientId = cfg.client_id;
+            }
+          } catch (e) {
+            // fallback
+          }
+
+          if (window.google?.accounts?.id) {
+            window.google.accounts.id.initialize({
+              client_id: clientId,
+              callback: handleGoogleAdminResponse,
+              auto_select: false
+            });
+
+            timerId = setTimeout(() => {
+              const btnElement = document.getElementById("admin-google-btn");
+              if (btnElement && window.google?.accounts?.id) {
+                window.google.accounts.id.renderButton(
+                  btnElement,
+                  { theme: "outline", size: "large", width: "100%", text: "signin_with" }
+                );
+              }
+            }, 100);
+          }
+        } catch (err) {
+          console.error("Error initializing Google Identity Services for admin:", err);
+        }
+      }
+    };
+
+    initGoogleAdmin();
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [currentUser]);
+
+
+
+
   // 1. Not logged in -> Show admin login form
   if (!currentUser) {
     return (
@@ -90,6 +158,23 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
             <p>Admin Console Sign In</p>
           </div>
           {error && <div className="admin-login-error">{error}</div>}
+
+          <div style={{ marginBottom: '16px' }}>
+            <div id="admin-google-btn" style={{ minHeight: '40px', display: 'flex', justifyContent: 'center' }}></div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              textAlign: 'center',
+              margin: '16px 0',
+              color: 'var(--muted)',
+              fontSize: '12px'
+            }}>
+              <div style={{ flex: 1, height: '1px', background: 'var(--line)' }}></div>
+              <span style={{ padding: '0 10px', fontWeight: 500 }}>or sign in with password</span>
+              <div style={{ flex: 1, height: '1px', background: 'var(--line)' }}></div>
+            </div>
+          </div>
+
           <form onSubmit={handleLoginSubmit} autoComplete="off">
             <div className="form-group">
               <label>Email Address</label>
@@ -121,6 +206,7 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
       </main>
     );
   }
+
 
   // 2. Logged in, but profile is still loading
   if (currentUser && !currentUserProfile) {
@@ -227,96 +313,9 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
         )}
 
         {activeSection === 'Email (SMTP)' && (
-          <>
-            <h2 id="admin-content-title">SMTP Configuration</h2>
-            <form className="smtp-form">
-              <div className="smtp-grid">
-                <label>
-                  Host
-                  <input type="text" name="smtpHost" defaultValue="smtp.gmail.com" />
-                </label>
-                <label>
-                  Port
-                  <input type="text" name="smtpPort" defaultValue="465" />
-                </label>
-              </div>
-              <label className="smtp-check">
-                <input type="checkbox" name="smtpSecure" defaultChecked />
-                Secure (TLS/SSL)
-              </label>
-              <div className="smtp-grid">
-                <label>
-                  User
-                  <input type="email" name="smtpUser" defaultValue="wulipeng@gmail.com" />
-                </label>
-                <label>
-                  Password
-                  <input type="password" name="smtpPassword" placeholder="SMTP password" />
-                </label>
-                <label>
-                  From Email
-                  <input type="email" name="smtpFromEmail" defaultValue="wulipeng@gmail.com" />
-                </label>
-                <label>
-                  Admin To Emails
-                  <input type="text" name="smtpAdminEmails" defaultValue="Lipengwu@bioarktech.com" />
-                </label>
-              </div>
-
-              <section className="smtp-template-section" aria-labelledby="full-form-template-title">
-                <h3 id="full-form-template-title">Full Form Email Template</h3>
-                <p>Used by the full “Request a Quote” form.</p>
-                <label>
-                  Subject
-                  <input type="text" name="fullSubject" defaultValue="New Quote (Full) from {{firstName}} {{lastName}} — {{serviceType}}" />
-                </label>
-                <label>
-                  HTML Body
-                  <textarea
-                    name="fullBody"
-                    rows="10"
-                    defaultValue={`<h2>New Quote (Full) Notification</h2>\n<p><strong>Name:</strong> {{firstName}} {{lastName}}</p>\n<p><strong>Email:</strong> {{email}}</p>\n{{#if phone}}<p><strong>Phone:</strong> {{phone}}</p>{{/if}}\n<p><strong>Company:</strong> {{company}}</p>\n{{#if department}}<p><strong>Department:</strong> {{department}}</p>{{/if}}\n<p><strong>Service:</strong> {{serviceType}}</p>\n<p><strong>Description:</strong> {{projectDescription}}</p>`}
-                  />
-                </label>
-                <button type="button" className="smtp-test-button">Test Full</button>
-              </section>
-
-              <section className="smtp-template-section" aria-labelledby="product-template-title">
-                <h3 id="product-template-title">Product Quote Email Template</h3>
-                <p>Used by the simplified product quote form (name, email, and product info only).</p>
-                <label>
-                  Subject
-                  <input type="text" name="productSubject" defaultValue="New Product Quote from {{firstName}} {{lastName}}" />
-                </label>
-                <label>
-                  HTML Body
-                  <textarea
-                    name="productBody"
-                    rows="8"
-                    defaultValue={`<h2>New Product Quote</h2>\n<p><strong>Name:</strong> {{firstName}} {{lastName}}</p>\n<p><strong>Email:</strong> {{email}}</p>\n<hr/>\n<p><strong>Product:</strong> {{projectDescription}}</p>\n{{#if catalogNumber}}<p><strong>Catalog #:</strong> {{catalogNumber}}</p>{{/if}}`}
-                  />
-                </label>
-                <button type="button" className="smtp-test-button">Test Product</button>
-              </section>
-
-              <p className="smtp-help">
-                {'Template syntax: variables like {{key}}; conditionals {{#if key}}...{{/if}}.'}
-                Available keys: firstName, lastName, email, phone, company, department, serviceType, timeline,
-                budget, projectDescription, additionalInfo, createdAt, and for product template, catalogNumber.
-              </p>
-
-              <div className="smtp-actions">
-                <button type="button" className="secondary-admin-button">Send Test (Default)</button>
-                <button type="submit" className="primary-button">Save</button>
-              </div>
-
-              <p className="smtp-note">
-                Note: After deployment, the server will use the above configuration to send emails via SMTP.
-                The frontend only stores these settings and exposes them for the server to read/use.
-              </p>
-            </form>
-          </>
+          <AdminSmtp />
         )}
+
 
         {activeSection === 'Media' && (
           <AdminMedia />

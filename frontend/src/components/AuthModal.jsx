@@ -57,29 +57,43 @@ function AuthModal({ onClose, onLoginSuccess, isPopupPage = false }) {
     }
   };
 
-  const renderGoogleButton = () => {
+  const renderGoogleButton = async () => {
     if (window.google && (authMode === 'login' || authMode === 'register')) {
       try {
+        let clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1047155694294-1a3b4c5d6e7f8g9h0i.apps.googleusercontent.com';
+        try {
+          const cfg = await apiFetch('/api/interface/get-google-auth-config/');
+          if (cfg && cfg.client_id) {
+            clientId = cfg.client_id;
+          }
+        } catch (e) {
+          // fallback to default
+        }
+
         window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '1047155694294-1a3b4c5d6e7f8g9h0i.apps.googleusercontent.com',
+          client_id: clientId,
           callback: handleGoogleResponse,
           auto_select: false
         });
 
-        window.google.accounts.id.renderButton(
-          document.getElementById("google-signin-btn"),
-          { 
-            theme: "outline", 
-            size: "large", 
-            width: "100%", 
-            text: authMode === 'register' ? 'signup_with' : 'signin_with' 
-          }
-        );
+        const btnEl = document.getElementById("google-signin-btn");
+        if (btnEl) {
+          window.google.accounts.id.renderButton(
+            btnEl,
+            { 
+              theme: "outline", 
+              size: "large", 
+              width: "100%", 
+              text: authMode === 'register' ? 'signup_with' : 'signin_with' 
+            }
+          );
+        }
       } catch (err) {
         console.error("Error initializing Google Identity Services:", err);
       }
     }
   };
+
 
   useEffect(() => {
     const timer = setTimeout(() => {

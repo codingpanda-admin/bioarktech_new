@@ -10090,3 +10090,205 @@ Unauthorized: /api/admin-panel/products/255/
 Unauthorized: /api/admin-panel/products/255/
 Unauthorized: /api/admin-panel/products/255/
 Unauthorized: /api/admin-panel/homepage-slides/
+Watching for file changes with StatReloader
+/app/interface/serializers.py changed, reloading.
+Watching for file changes with StatReloader
+/app/api/admin_views.py changed, reloading.
+Watching for file changes with StatReloader
+/app/api/admin_views.py changed, reloading.
+Watching for file changes with StatReloader
+/app/api/urls.py changed, reloading.
+Watching for file changes with StatReloader
+/app/api/urls.py changed, reloading.
+Watching for file changes with StatReloader
+/app/quote/services.py changed, reloading.
+Watching for file changes with StatReloader
+/app/quote/views.py changed, reloading.
+Watching for file changes with StatReloader
+/app/api/views.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Bad Request: /api/login/
+Bad Request: /api/login/
+Bad Request: /api/login/
+/app/interface/models.py changed, reloading.
+Watching for file changes with StatReloader
+/app/interface/views.py changed, reloading.
+Watching for file changes with StatReloader
+/app/interface/urls.py changed, reloading.
+Watching for file changes with StatReloader
+/app/api/admin_views.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+/app/interface/models.py changed, reloading.
+Watching for file changes with StatReloader
+Internal Server Error: /api/admin-panel/smtp-config/send-test/
+Internal Server Error: /api/admin-panel/smtp-config/send-test/
+Internal Server Error: /api/interface/get-google-auth-config/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.UndefinedColumn: column smtp_config.use_google_oauth does not exist
+LINE 1: SELECT "smtp_config"."id", "smtp_config"."use_google_oauth",...
+                                   ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/usr/local/lib/python3.10/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/usr/local/lib/python3.10/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/usr/local/lib/python3.10/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/rest_framework/decorators.py", line 50, in handler
+    return func(*args, **kwargs)
+  File "/app/interface/views.py", line 43, in get_google_auth_config
+    config = SmtpConfig.objects.first()
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 1097, in first
+    for obj in queryset[:1]:
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 400, in __iter__
+    self._fetch_all()
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 1928, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/sql/compiler.py", line 1562, in execute_sql
+    cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/usr/local/lib/python3.10/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.ProgrammingError: column smtp_config.use_google_oauth does not exist
+LINE 1: SELECT "smtp_config"."id", "smtp_config"."use_google_oauth",...
+                                   ^
+
+Internal Server Error: /api/interface/get-google-auth-config/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+psycopg2.errors.UndefinedColumn: column smtp_config.use_google_oauth does not exist
+LINE 1: SELECT "smtp_config"."id", "smtp_config"."use_google_oauth",...
+                                   ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "/usr/local/lib/python3.10/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/usr/local/lib/python3.10/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "/usr/local/lib/python3.10/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/rest_framework/decorators.py", line 50, in handler
+    return func(*args, **kwargs)
+  File "/app/interface/views.py", line 43, in get_google_auth_config
+    config = SmtpConfig.objects.first()
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 1097, in first
+    for obj in queryset[:1]:
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 400, in __iter__
+    self._fetch_all()
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 1928, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/query.py", line 91, in __iter__
+    results = compiler.execute_sql(
+  File "/usr/local/lib/python3.10/site-packages/django/db/models/sql/compiler.py", line 1562, in execute_sql
+    cursor.execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/usr/local/lib/python3.10/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.10/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+django.db.utils.ProgrammingError: column smtp_config.use_google_oauth does not exist
+LINE 1: SELECT "smtp_config"."id", "smtp_config"."use_google_oauth",...
+                                   ^
+
+/app/quote/services.py changed, reloading.
+Watching for file changes with StatReloader
+/app/quote/services.py changed, reloading.
+Watching for file changes with StatReloader
+/app/api/admin_views.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+/app/api/admin_views.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Failed to send email notification
+Traceback (most recent call last):
+  File "/app/quote/services.py", line 138, in send_quote_smtp_email
+    server.sendmail(from_email, recipients, msg.as_string())
+  File "/usr/local/lib/python3.10/smtplib.py", line 887, in sendmail
+    raise SMTPSenderRefused(code, resp, from_addr)
+smtplib.SMTPSenderRefused: (530, b'5.7.0 Authentication Required. For more information, go to\n5.7.0  https://support.google.com/accounts/troubleshooter/2402620. 71dfb90a1353d-5c40ae6b6c7sm2944535e0c.1 - gsmtp', 'wulipeng@gmail.com')
+Bad Request: /api/admin-panel/smtp-config/send-test/
+Google OAuth 2.0 email sent successfully to ['windonpc125@gmail.com']
+Google OAuth 2.0 email sent successfully to ['windonpc125@gmail.com']
+Google OAuth 2.0 email sent successfully to ['windonpc125@gmail.com']
+Google OAuth 2.0 email sent successfully to ['windonpc125@gmail.com']
+Google OAuth 2.0 email sent successfully to ['windonpc125@gmail.com']
+Google OAuth 2.0 email sent successfully to ['windonpc125@gmail.com']
+Google OAuth 2.0 email sent successfully to ['windonpc125@gmail.com']
+/app/api/admin_views.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Google OAuth 2.0 email sent successfully to ['windonpc125@gmail.com']
+Google OAuth 2.0 email sent successfully to ['windonpc125@gmail.com']
+Google OAuth 2.0 email sent successfully to ['windonpc125@gmail.com']
+Watching for file changes with StatReloader
+Google OAuth 2.0 email sent successfully to ['windonpc125@gmail.com', 'larry.garcia@macondosoftwares.com']
+Google OAuth 2.0 email sent successfully to ['windonpc125@gmail.com', 'larry.garcia@macondosoftwares.com']
+Google OAuth 2.0 email sent successfully to ['windonpc125@gmail.com', 'larry.garcia@macondosoftwares.com']
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader

@@ -17,7 +17,7 @@ from products.models import (
 from blogs.models import Blog, ResourceDocument
 from users.models import User, Address
 from quote.models import Quote
-from interface.models import ProductMode, ServiceMode, HomepageSlide
+from interface.models import ProductMode, ServiceMode, HomepageSlide, SmtpConfig
 
 
 # ---------------------------------------------------------------------------
@@ -2024,4 +2024,213 @@ def admin_delete_slide(request, slide_id):
         return Response({'error': 'Slide not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ===========================================================================
+#  SMTP CONFIGURATION & EMAIL TESTING
+# ===========================================================================
+
+def _get_or_create_smtp_config():
+    config = SmtpConfig.objects.first()
+    if not config:
+        config = SmtpConfig.objects.create()
+    return config
+
+def _serialize_smtp_config(config):
+    return {
+        'id': config.id,
+        'use_google_oauth': config.use_google_oauth,
+        'google_client_id': config.google_client_id,
+        'google_client_secret': config.google_client_secret,
+        'google_refresh_token': config.google_refresh_token,
+        'sender_email': config.sender_email,
+        'admin_to_emails': config.admin_to_emails,
+        'host': config.host,
+        'port': config.port,
+        'secure': config.secure,
+        'user': config.user,
+        'password': config.password,
+        'from_email': config.from_email,
+        'full_subject': config.full_subject,
+        'full_body': config.full_body,
+        'product_subject': config.product_subject,
+        'product_body': config.product_body,
+        'updated_at': config.updated_at,
+    }
+
+@api_view(['GET'])
+def admin_get_smtp_config(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        config = _get_or_create_smtp_config()
+        return Response(_serialize_smtp_config(config))
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def admin_update_smtp_config(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        config = _get_or_create_smtp_config()
+        d = request.data
+
+        if 'use_google_oauth' in d:
+            val = d.get('use_google_oauth')
+            config.use_google_oauth = val if isinstance(val, bool) else str(val).lower() in ('true', '1')
+
+        if 'google_client_id' in d:
+            config.google_client_id = d.get('google_client_id', '').strip()
+        if 'google_client_secret' in d:
+            config.google_client_secret = (d.get('google_client_secret') or '').strip()
+        if 'google_refresh_token' in d:
+            config.google_refresh_token = (d.get('google_refresh_token') or '').strip()
+        if 'sender_email' in d:
+            config.sender_email = d.get('sender_email', '').strip()
+
+
+        if 'host' in d:
+            config.host = d.get('host', '').strip() or 'smtp.gmail.com'
+        if 'port' in d:
+            try:
+                config.port = int(d.get('port', 465))
+            except (TypeError, ValueError):
+                config.port = 465
+        if 'secure' in d:
+            val = d.get('secure')
+            config.secure = val if isinstance(val, bool) else str(val).lower() in ('true', '1')
+        if 'user' in d:
+            config.user = d.get('user', '').strip()
+        if 'password' in d:
+            # If user provided password or empty string
+            pwd = d.get('password')
+            if pwd is not None and pwd != '':
+                config.password = pwd
+        if 'from_email' in d:
+            config.from_email = d.get('from_email', '').strip()
+        if 'admin_to_emails' in d:
+            config.admin_to_emails = d.get('admin_to_emails', '').strip()
+
+        if 'full_subject' in d:
+            config.full_subject = d.get('full_subject', '')
+        if 'full_body' in d:
+            config.full_body = d.get('full_body', '')
+
+        if 'product_subject' in d:
+            config.product_subject = d.get('product_subject', '')
+        if 'product_body' in d:
+            config.product_body = d.get('product_body', '')
+
+        config.save()
+        return Response({'message': 'Configuration updated successfully', 'config': _serialize_smtp_config(config)})
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['POST'])
+def admin_send_test_email(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        from quote.services import send_quote_smtp_email
+        template_type = request.data.get('template_type', 'default') # 'full', 'product', or 'default'
+        config = _get_or_create_smtp_config()
+
+        # Dummy sample quote data for testing
+        sample_context = {
+            'firstName': 'Test',
+            'lastName': 'User',
+            'email': request.user.email or config.user or 'test@example.com',
+            'phone': '+1 (555) 123-4567',
+            'company': 'BioArk Testing Lab',
+            'department': 'R&D Division',
+            'serviceType': 'Gene Editing Services',
+            'timeline': 'Within 2 weeks',
+            'budget': '$5,000 - $25,000',
+            'projectDescription': 'CRISPR-Cas9 Knockout Cell Line Construction',
+            'additionalInfo': 'Target gene: EXMPL1, species: Human',
+            'catalogNumber': 'GENOME-EDITING-01',
+            'createdAt': '2026-08-09 10:00:00',
+        }
+
+        recipients = [e.strip() for e in config.admin_to_emails.split(',') if e.strip()]
+        if not recipients:
+            recipients = [config.user]
+
+        sent, msg = send_quote_smtp_email(sample_context, template_type=template_type, custom_recipients=recipients)
+        if sent:
+            return Response({'message': f'Test email sent successfully! ({msg})', 'success': True})
+        else:
+            return Response({'error': f'Failed to send test email: {msg}'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def admin_exchange_google_oauth_code(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        import urllib.request
+        import urllib.parse
+        import json
+
+        code = request.data.get('code', '').strip()
+        redirect_uri = request.data.get('redirect_uri', '').strip()
+        
+        config = _get_or_create_smtp_config()
+        client_id = request.data.get('client_id') or config.google_client_id
+        client_secret = request.data.get('client_secret') or config.google_client_secret
+
+        if not client_id or not client_secret:
+            return Response({'error': 'Please enter and save Google Client ID and Client Secret first.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not code:
+            return Response({'error': 'Authorization code is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        url = "https://oauth2.googleapis.com/token"
+        params = {
+            'code': code,
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'redirect_uri': redirect_uri or 'https://developers.google.com/oauthplayground',
+            'grant_type': 'authorization_code',
+        }
+
+        encoded_data = urllib.parse.urlencode(params).encode('utf-8')
+        req = urllib.request.Request(url, data=encoded_data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
+
+        with urllib.request.urlopen(req, timeout=10) as response:
+            res_body = json.loads(response.read().decode('utf-8'))
+            refresh_token = res_body.get('refresh_token')
+            access_token = res_body.get('access_token')
+
+            if refresh_token:
+                config.google_refresh_token = refresh_token
+                config.save()
+                return Response({
+                    'message': 'Google Refresh Token generated and saved successfully!',
+                    'refresh_token': refresh_token,
+                    'access_token': access_token
+                })
+            else:
+                return Response({
+                    'message': 'Authorization code exchanged, but no refresh_token returned (make sure prompt=consent & access_type=offline).',
+                    'access_token': access_token,
+                    'raw_response': res_body
+                })
+    except Exception as e:
+        return Response({'error': f'Failed to exchange authorization code: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 

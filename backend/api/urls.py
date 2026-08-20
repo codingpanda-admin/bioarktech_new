@@ -25,7 +25,10 @@ from .admin_views import (
     admin_list_media, admin_upload_media, admin_delete_media,
     admin_list_slides, admin_get_slide, admin_create_slide,
     admin_update_slide, admin_reorder_slides, admin_delete_slide,
+    admin_get_smtp_config, admin_update_smtp_config, admin_send_test_email,
+    admin_exchange_google_oauth_code,
 )
+
 
 admin.site.site_header = "Bioark Site Administration"
 admin.site.site_title = "Bioark Site Administration"
@@ -126,5 +129,13 @@ urlpatterns = [
     path('admin-panel/homepage-slides/<int:slide_id>/', admin_get_slide),
     path('admin-panel/homepage-slides/<int:slide_id>/update/', admin_update_slide),
     path('admin-panel/homepage-slides/<int:slide_id>/delete/', admin_delete_slide),
+
+    # SMTP Configuration
+    path('admin-panel/smtp-config/', admin_get_smtp_config),
+    path('admin-panel/smtp-config/update/', admin_update_smtp_config),
+    path('admin-panel/smtp-config/send-test/', admin_send_test_email),
+    path('admin-panel/smtp-config/exchange-code/', admin_exchange_google_oauth_code),
 ]
+
+
 

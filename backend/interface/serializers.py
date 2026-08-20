@@ -14,4 +14,10 @@ class ServiceModeSerializer(serializers.ModelSerializer):
 class HomepageSlideSerializer(serializers.ModelSerializer):
     class Meta:
         model = HomepageSlide
-        fields = '__all__'
+        fields = '__all__'
+
+class SmtpConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SmtpConfig
+        fields = '__all__'
+

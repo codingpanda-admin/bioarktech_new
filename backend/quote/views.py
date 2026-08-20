@@ -90,4 +90,33 @@ def create_quote(request):
         read=False,
     )
 
+    # Determine template type (product vs full)
+    template_type = data.get('templateType') or data.get('template_type')
+    if not template_type:
+        service_val = (quote.service_type or '').strip().lower()
+        if service_val == 'products' or data.get('catalogNumber') or data.get('catalog_number'):
+            template_type = 'product'
+        else:
+            template_type = 'full'
+
+    email_context = {
+        'firstName': quote.first_name,
+        'lastName': quote.last_name,
+        'email': quote.email,
+        'phone': quote.phone or '',
+        'company': quote.company or '',
+        'department': quote.department or '',
+        'serviceType': quote.service_type or '',
+        'timeline': quote.timeline or '',
+        'budget': quote.budget or '',
+        'projectDescription': quote.project_description or '',
+        'additionalInfo': quote.additional_info or '',
+        'catalogNumber': data.get('catalogNumber') or data.get('catalog_number') or '',
+        'createdAt': quote.created_at.strftime('%Y-%m-%d %H:%M:%S') if quote.created_at else '',
+    }
+
+    from .services import send_quote_smtp_email
+    send_quote_smtp_email(email_context, template_type=template_type)
+
     return JsonResponse({'detail': 'Quote request saved.', 'id': quote.id, 'externalId': quote.external_id}, status=201)
+
