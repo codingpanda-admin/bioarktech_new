@@ -113,7 +113,7 @@ function CheckoutSuccessPage({ navigate, onClearCart }) {
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
               {sessionData?.order_id && (
                 <a
-                  href={`${API_URL}/api/orders/invoice/${sessionData.order_id}/pdf/?view=1`}
+                  href={`${API_URL}/api/orders/invoice/${sessionData.order_id}/html/`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="primary-button"

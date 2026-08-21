@@ -42,6 +42,7 @@ from django.db import transaction
 import requests
 
 from .invoice_pdf import build_invoice_pdf, invoice_number_for
+from .invoice_html import build_invoice_html
 from .purchase_email import queue_purchase_confirmation_email
 
 load_dotenv()
@@ -498,6 +499,35 @@ def download_order_invoice(request, order_id):
     disposition = 'inline' if request.query_params.get('view') == '1' else 'attachment'
     response['Content-Disposition'] = f'{disposition}; filename="BioArk-Invoice-{invoice_number}.pdf"'
     response['Cache-Control'] = 'private, no-store'
+    return response
+
+
+@api_view(['GET'])
+def view_order_invoice_html(request, order_id):
+    if not request.user.is_authenticated:
+        return Response(
+            {"detail": "Please sign in to view an invoice."},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    try:
+        order = (
+            Order.objects
+            .select_related('user', 'billing_address', 'shipping_address')
+            .prefetch_related('orderitem_set')
+            .get(order_id=order_id, user=request.user)
+        )
+    except Order.DoesNotExist:
+        return Response({"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    invoice_number = invoice_number_for(order)
+    response = HttpResponse(build_invoice_html(order), content_type='text/html; charset=utf-8')
+    disposition = 'attachment' if request.query_params.get('download') == '1' else 'inline'
+    response['Content-Disposition'] = (
+        f'{disposition}; filename="BioArk-Invoice-{invoice_number}.html"'
+    )
+    response['Cache-Control'] = 'private, no-store'
+    response['X-Content-Type-Options'] = 'nosniff'
     return response
 
 

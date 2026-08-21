@@ -1,7 +1,7 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from users.models import Address, User
+from users.models import Address, CustomerShippingAddress, User
 
 
 class BillingAddressApiTests(TestCase):
@@ -49,3 +49,75 @@ class BillingAddressApiTests(TestCase):
         response = self.client.post(self.url, self.payload, format='json')
 
         self.assertEqual(response.status_code, 401)
+
+
+class DefaultShippingAddressApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(email='shipping@example.com', password='test-password')
+        self.client.force_authenticate(user=self.user)
+        self.first_address = CustomerShippingAddress.objects.create(
+            user=self.user,
+            nickname='Home',
+            first_name='Alex',
+            last_name='Customer',
+            address_line_1='100 First Street',
+            city='Rockville',
+            state='MD',
+            postal_code='20850',
+            is_default=True,
+        )
+        self.second_address = CustomerShippingAddress.objects.create(
+            user=self.user,
+            nickname='Office',
+            first_name='Alex',
+            last_name='Customer',
+            address_line_1='200 Second Street',
+            city='Bethesda',
+            state='MD',
+            postal_code='20814',
+            is_default=False,
+        )
+
+    def test_set_default_switches_address_and_returns_canonical_list(self):
+        response = self.client.post(
+            f'/api/users/shipping-addresses/{self.second_address.id}/set-default/',
+            {},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.first_address.refresh_from_db()
+        self.second_address.refresh_from_db()
+        self.user.refresh_from_db()
+        self.assertFalse(self.first_address.is_default)
+        self.assertTrue(self.second_address.is_default)
+        self.assertEqual(
+            CustomerShippingAddress.objects.filter(user=self.user, is_default=True).count(),
+            1,
+        )
+        self.assertEqual(response.data['shipping_addresses'][0]['id'], self.second_address.id)
+        self.assertEqual(self.user.shipping_address.city, 'Bethesda')
+
+    def test_user_cannot_set_another_users_address_as_default(self):
+        another_user = User.objects.create_user(email='other-shipping@example.com')
+        other_address = CustomerShippingAddress.objects.create(
+            user=another_user,
+            nickname='Other',
+            first_name='Other',
+            last_name='Customer',
+            address_line_1='300 Third Street',
+            city='Baltimore',
+            state='MD',
+            postal_code='21201',
+        )
+
+        response = self.client.post(
+            f'/api/users/shipping-addresses/{other_address.id}/set-default/',
+            {},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.first_address.refresh_from_db()
+        self.assertTrue(self.first_address.is_default)

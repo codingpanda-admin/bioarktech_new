@@ -154,6 +154,38 @@ class OrderInvoicePdfTests(APITestCase):
         response = self.client.get(reverse('order_invoice_pdf', args=[self.order.order_id]))
         self.assertEqual(response.status_code, 404)
 
+    def test_owner_can_view_html_invoice_with_print_action(self):
+        self.client.force_authenticate(self.user)
+
+        response = self.client.get(reverse('order_invoice_html', args=[self.order.order_id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response['Content-Type'].startswith('text/html'))
+        self.assertTrue(response['Content-Disposition'].startswith('inline;'))
+        self.assertContains(response, 'Example Research Reagent')
+        self.assertContains(response, 'Print Invoice')
+        self.assertNotContains(response, 'Download HTML')
+        self.assertContains(response, 'BioArk-Invoice-IV')
+
+    def test_owner_can_download_html_invoice(self):
+        self.client.force_authenticate(self.user)
+        url = f"{reverse('order_invoice_html', args=[self.order.order_id])}?download=1"
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response['Content-Disposition'].startswith('attachment;'))
+        self.assertIn('.html', response['Content-Disposition'])
+
+    def test_anonymous_user_cannot_view_html_invoice(self):
+        response = self.client.get(reverse('order_invoice_html', args=[self.order.order_id]))
+        self.assertEqual(response.status_code, 401)
+
+    def test_user_cannot_view_another_users_html_invoice(self):
+        self.client.force_authenticate(self.other_user)
+        response = self.client.get(reverse('order_invoice_html', args=[self.order.order_id]))
+        self.assertEqual(response.status_code, 404)
+
 
 @override_settings(
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
