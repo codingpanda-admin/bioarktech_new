@@ -471,18 +471,19 @@ def delete_shipping_address(request, pk):
 
 
 @api_view(['POST'])
+@transaction.atomic
 def set_default_shipping_address(request, pk):
     if not request.user.is_authenticated:
         return Response({'detail': 'User is not authenticated.'}, status=401)
         
     try:
-        addr = CustomerShippingAddress.objects.get(id=pk, user=request.user)
+        addr = CustomerShippingAddress.objects.select_for_update().get(id=pk, user=request.user)
     except CustomerShippingAddress.DoesNotExist:
         return Response({'detail': 'Shipping address not found.'}, status=404)
         
     CustomerShippingAddress.objects.filter(user=request.user).update(is_default=False)
     addr.is_default = True
-    addr.save()
+    addr.save(update_fields=['is_default', 'updated_at'])
     
     sync_default_shipping_address_to_user(request.user)
     
@@ -490,6 +491,9 @@ def set_default_shipping_address(request, pk):
     user_serializer = UserSerializer(user)
     return Response({
         'success': True,
+        'shipping_addresses': CustomerShippingAddressSerializer(
+            user.shipping_addresses.all(), many=True
+        ).data,
         'user': user_serializer.data
     })
 

@@ -431,23 +431,29 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
   };
 
   const handleSetDefaultAddress = async (id) => {
+    const previousAddresses = shippingAddresses;
     setSaving(true);
     setStatus({ type: '', message: '' });
+    setShippingAddresses((current) => current
+      .map((address) => ({ ...address, is_default: address.id === id }))
+      .sort((left, right) => Number(right.is_default) - Number(left.is_default)));
 
     try {
       const response = await apiFetch(`/api/users/shipping-addresses/${id}/set-default/`, {
         method: 'POST',
       });
 
-      if (response.user) {
-        setShippingAddresses(response.user.shipping_addresses || []);
-        if (onRefreshProfile) {
-          onRefreshProfile();
-        }
+      const updatedAddresses = response.shipping_addresses || response.user?.shipping_addresses;
+      if (Array.isArray(updatedAddresses)) {
+        setShippingAddresses(updatedAddresses);
+      }
+      if (onRefreshProfile) {
+        await onRefreshProfile();
       }
       
       setStatus({ type: 'success', message: 'Default shipping address updated.' });
     } catch (err) {
+      setShippingAddresses(previousAddresses);
       setStatus({ type: 'error', message: err.message || 'Failed to set default address.' });
     } finally {
       setSaving(false);
@@ -1177,8 +1183,9 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
                               type="button" 
                               className="address-action-btn" 
                               onClick={() => handleSetDefaultAddress(addr.id)}
+                              disabled={saving}
                             >
-                              Set as Default
+                              {saving ? 'Updating...' : 'Set as Default'}
                             </button>
                           )}
                           <button 
@@ -1402,9 +1409,11 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
                           <td>
                             <a
                               className="order-invoice-link"
-                              href={`${API_URL}/api/orders/invoice/${item.order_id}/pdf/`}
+                              href={`${API_URL}/api/orders/invoice/${item.order_id}/html/`}
+                              target="_blank"
+                              rel="noopener noreferrer"
                             >
-                              Generate Invoice
+                              View Invoice
                             </a>
                           </td>
                         </tr>
