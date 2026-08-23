@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Q
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -15,6 +16,7 @@ from .models import (
     GeneDesignPrice,
     GeneLibrary,
 )
+from .bulk_upsert import build_gene_upsert_template, import_gene_upsert_workbook
 
 
 def _check_admin(request):
@@ -169,6 +171,55 @@ def admin_update_gene(request, gene_id):
         return Response({'gene': _serialize_gene(gene)})
     except ValidationError as exc:
         return Response({'error': _validation_message(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def admin_download_gene_upsert_template(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    workbook = build_gene_upsert_template()
+    response = HttpResponse(
+        workbook.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = 'attachment; filename="bioark-gene-library-bulk-upsert-template.xlsx"'
+    return response
+
+
+@api_view(['POST'])
+def admin_bulk_upsert_genes(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    uploaded_file = request.FILES.get('file')
+    if not uploaded_file:
+        return Response(
+            {'error': 'Select an Excel workbook to upload.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if not str(uploaded_file.name or '').lower().endswith('.xlsx'):
+        return Response(
+            {'error': 'Only .xlsx Excel workbooks are supported.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if uploaded_file.size > 25 * 1024 * 1024:
+        return Response(
+            {'error': 'The workbook cannot exceed 25 MB.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        return Response(import_gene_upsert_workbook(uploaded_file))
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception:
+        return Response(
+            {'error': 'The gene workbook could not be processed.'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 def _serialize_price(price):

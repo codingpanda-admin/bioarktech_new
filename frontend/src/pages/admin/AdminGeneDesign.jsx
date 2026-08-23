@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { apiFetch } from '../../utils/api';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { API_URL, apiFetch } from '../../utils/api';
 
 
 const emptyGene = {
@@ -87,6 +87,13 @@ export function AdminGeneDatabase() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkFile, setBulkFile] = useState(null);
+  const [bulkUploading, setBulkUploading] = useState(false);
+  const [bulkDownloading, setBulkDownloading] = useState(false);
+  const [bulkError, setBulkError] = useState('');
+  const [bulkResult, setBulkResult] = useState(null);
+  const bulkInputRef = useRef(null);
 
   const loadGenes = useCallback(async () => {
     setLoading(true);
@@ -133,6 +140,66 @@ export function AdminGeneDatabase() {
     }
   };
 
+  const downloadBulkTemplate = async () => {
+    setBulkDownloading(true);
+    setBulkError('');
+    try {
+      const response = await fetch(`${API_URL}/api/admin-panel/gene-library/bulk-upsert/template/`, {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const responseText = await response.text().catch(() => '');
+        let message = responseText;
+        try {
+          const responseData = responseText ? JSON.parse(responseText) : {};
+          message = responseData.error || responseData.detail || responseText;
+        } catch {
+          // Keep the server response text when it is not JSON.
+        }
+        throw new Error(message || 'Unable to download the template.');
+      }
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = 'bioark-gene-library-bulk-upsert-template.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      setBulkError(err.message || 'Unable to download the template.');
+    } finally {
+      setBulkDownloading(false);
+    }
+  };
+
+  const uploadBulkGenes = async () => {
+    if (!bulkFile) {
+      setBulkError('Select the completed Excel template first.');
+      return;
+    }
+    setBulkUploading(true);
+    setBulkError('');
+    setBulkResult(null);
+    const body = new FormData();
+    body.append('file', bulkFile);
+    try {
+      const result = await apiFetch('/api/admin-panel/gene-library/bulk-upsert/', {
+        method: 'POST',
+        body,
+      });
+      setBulkResult(result);
+      setBulkFile(null);
+      if (bulkInputRef.current) bulkInputRef.current.value = '';
+      if (result.created || result.updated) await loadGenes();
+    } catch (err) {
+      setBulkError(err.message || 'Unable to bulk upsert the gene records.');
+    } finally {
+      setBulkUploading(false);
+    }
+  };
+
   return (
     <>
       <div className="admin-section-header admin-gene-section-header">
@@ -140,8 +207,87 @@ export function AdminGeneDatabase() {
           <h2 id="admin-content-title">Gene Database</h2>
           <p>Manage the target genes available in Gene Design Step 5.</p>
         </div>
-        <button type="button" className="primary-button" onClick={() => { setError(''); setSuccess(''); setEditing({ ...emptyGene }); }}>+ Add Gene</button>
+        <div className="admin-gene-header-actions">
+          <button
+            type="button"
+            className="secondary-admin-button"
+            aria-expanded={bulkOpen}
+            onClick={() => { setBulkOpen((current) => !current); setBulkError(''); }}
+          >
+            {bulkOpen ? 'Close Bulk Upsert' : 'Bulk Upsert'}
+          </button>
+          <button type="button" className="primary-button" onClick={() => { setError(''); setSuccess(''); setEditing({ ...emptyGene }); }}>+ Add Gene</button>
+        </div>
       </div>
+
+      {bulkOpen && (
+        <section className="admin-gene-bulk-panel" aria-labelledby="gene-bulk-upsert-title">
+          <div className="admin-gene-bulk-copy">
+            <h3 id="gene-bulk-upsert-title">Bulk Upsert Gene Records</h3>
+            <p>
+              Upload one gene per row. Target Sequence is the matching key: an existing sequence is updated,
+              while a new sequence creates a record.
+            </p>
+            <button
+              type="button"
+              className="admin-template-download admin-gene-template-button"
+              onClick={downloadBulkTemplate}
+              disabled={bulkDownloading}
+            >
+              <span aria-hidden="true">↓</span>
+              {bulkDownloading ? 'Preparing template...' : 'Download Excel Template'}
+            </button>
+          </div>
+          <div className="admin-gene-bulk-upload">
+            <label className="admin-bulk-file">
+              <span>Completed .xlsx file</span>
+              <input
+                ref={bulkInputRef}
+                type="file"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                disabled={bulkUploading}
+                onChange={(event) => {
+                  setBulkFile(event.target.files?.[0] || null);
+                  setBulkError('');
+                  setBulkResult(null);
+                }}
+              />
+            </label>
+            <div className="admin-bulk-file-name">{bulkFile ? bulkFile.name : 'No file selected'}</div>
+            <button
+              type="button"
+              className="primary-button"
+              disabled={bulkUploading || !bulkFile}
+              onClick={uploadBulkGenes}
+            >
+              {bulkUploading ? 'Upserting Genes...' : 'Upload and Upsert'}
+            </button>
+          </div>
+          {bulkError && <div className="admin-bulk-error" role="alert">{bulkError}</div>}
+          {bulkResult && (
+            <div className="admin-bulk-result admin-gene-bulk-result" aria-live="polite">
+              <div className="admin-bulk-result-counts">
+                <span><strong>{bulkResult.created}</strong> created</span>
+                <span><strong>{bulkResult.updated}</strong> updated</span>
+                <span className={bulkResult.failed ? 'has-errors' : ''}><strong>{bulkResult.failed}</strong> failed</span>
+              </div>
+              {bulkResult.errors?.length > 0 && (
+                <div className="admin-bulk-row-errors">
+                  <h4>Rows requiring attention</h4>
+                  <ul>
+                    {bulkResult.errors.map((rowError) => (
+                      <li key={`${rowError.row}-${rowError.target_sequence}`}>
+                        <strong>Row {rowError.row}</strong>
+                        {rowError.target_sequence && ` (${rowError.target_sequence})`}: {rowError.message}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      )}
 
       <form className="admin-gene-toolbar" onSubmit={submitSearch}>
         <div className="admin-search-box">

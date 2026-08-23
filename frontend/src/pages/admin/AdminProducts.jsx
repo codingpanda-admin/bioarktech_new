@@ -790,6 +790,7 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
 export const CatalogGroupEditorModal = ({ group, category, itemType, onClose, onSaved }) => {
   const summaryEditorRef = useRef(null);
   const [groupName, setGroupName] = useState(group?.group_name || '');
+  const [externalId, setExternalId] = useState(group?.external_id || '');
   const [summary, setSummary] = useState(group?.summary || '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -815,6 +816,7 @@ export const CatalogGroupEditorModal = ({ group, category, itemType, onClose, on
         body: {
           category_external_id: category.id,
           group_name: cleanName,
+          external_id: externalId.trim(),
           summary: summaryEditorRef.current?.getHtml() ?? summary,
         },
       });
@@ -845,13 +847,14 @@ export const CatalogGroupEditorModal = ({ group, category, itemType, onClose, on
                 <span>External ID *</span>
                 <input
                   type="text"
-                  value={group?.external_id || ''}
-                  placeholder="Generated when the group is created"
-                  readOnly
+                  value={externalId}
+                  onChange={(event) => setExternalId(event.target.value)}
+                  placeholder={isEditing ? 'Enter an External ID' : 'Leave blank to auto-generate'}
+                  required={isEditing}
                   aria-describedby="catalog-group-external-id-help"
                 />
                 <small id="catalog-group-external-id-help">
-                  Required, generated once, and cannot be changed after creation.
+                  Letters, numbers, hyphens, and underscores only. Changing this also changes the public group URL.
                 </small>
               </label>
               <div className="admin-form-field span-3">

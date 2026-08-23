@@ -9,6 +9,7 @@ from rest_framework.test import APIClient
 
 from interface.models import ServiceMode
 from products.models import CatalogGroup, FeaturedProduct, Product, ProductCategory
+from users.models import User
 
 from .admin_views import (
     _normalize_product_manual_payload,
@@ -415,3 +416,88 @@ class CatalogHierarchyTests(TestCase):
         self.assertEqual(service.category_ref_id, self.service_category.category_id)
         self.assertEqual(service.catalog_group.category_id, self.service_category.category_id)
         self.assertEqual(service.catalog_group.normalized_name, 'cell-engineering')
+
+
+class CatalogGroupExternalIdAdminTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = User.objects.create_user(
+            email='catalog-group-admin@example.com',
+            password='test-password',
+            is_admin=True,
+        )
+        self.client.force_authenticate(user=self.admin)
+        self.product_category = ProductCategory.objects.create(
+            category_name='Editable Product Groups',
+            external_id='editable-product-groups',
+            product_type='product',
+        )
+        self.service_category = ProductCategory.objects.create(
+            category_name='Editable Service Groups',
+            external_id='editable-service-groups',
+            product_type='service',
+        )
+        self.product_group = CatalogGroup.objects.create(
+            category=self.product_category,
+            group_name='Original Product Group',
+        )
+
+    def test_admin_can_edit_product_group_external_id(self):
+        response = self.client.post(
+            f'/api/admin-panel/catalog-groups/{self.product_group.group_id}/update/',
+            {
+                'group_name': self.product_group.group_name,
+                'external_id': 'product-renamed-group',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.product_group.refresh_from_db()
+        self.assertEqual(self.product_group.external_id, 'product-renamed-group')
+        self.assertEqual(response.data['external_id'], 'product-renamed-group')
+
+    def test_admin_can_create_service_group_with_custom_external_id(self):
+        response = self.client.post(
+            '/api/admin-panel/catalog-groups/create/',
+            {
+                'category_external_id': self.service_category.external_id,
+                'group_name': 'Custom Service Group',
+                'external_id': 'service-custom-group-id',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['external_id'], 'service-custom-group-id')
+
+    def test_duplicate_group_external_id_is_rejected(self):
+        duplicate_group = CatalogGroup.objects.create(
+            category=self.service_category,
+            group_name='Duplicate Target',
+        )
+
+        response = self.client.post(
+            f'/api/admin-panel/catalog-groups/{self.product_group.group_id}/update/',
+            {
+                'group_name': self.product_group.group_name,
+                'external_id': duplicate_group.external_id,
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.product_group.refresh_from_db()
+        self.assertNotEqual(self.product_group.external_id, duplicate_group.external_id)
+
+    def test_invalid_group_external_id_is_rejected(self):
+        response = self.client.post(
+            f'/api/admin-panel/catalog-groups/{self.product_group.group_id}/update/',
+            {
+                'group_name': self.product_group.group_name,
+                'external_id': 'invalid group id',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 400)

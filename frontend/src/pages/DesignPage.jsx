@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import GeneStructureVisual from '../components/GeneStructureVisual';
 import { apiFetch } from '../utils/api';
 
 const steps = [
@@ -59,15 +60,40 @@ const parseCatalogDesignPrefill = (catalogNumber) => {
   };
 };
 
+const getDiscountPriceDetails = (price) => {
+  const listPrice = price?.list_price !== null && price?.list_price !== ''
+    ? Number(price.list_price)
+    : null;
+  const discountedPrice = price?.discount_price !== null && price?.discount_price !== ''
+    ? Number(price.discount_price)
+    : null;
+  const isDiscounted = (
+    Number.isFinite(listPrice)
+    && listPrice > 0
+    && Number.isFinite(discountedPrice)
+    && discountedPrice >= 0
+    && discountedPrice < listPrice
+  );
+
+  if (!isDiscounted) {
+    return { isDiscounted: false, listPrice, discountedPrice, discountPercent: '' };
+  }
+
+  const percentage = ((listPrice - discountedPrice) / listPrice) * 100;
+  const discountPercent = percentage < 0.01
+    ? '<0.01'
+    : percentage < 1
+      ? percentage.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
+      : String(Math.round(percentage));
+
+  return { isDiscounted, listPrice, discountedPrice, discountPercent };
+};
+
 const getEffectivePrice = (price) => {
-  if (price?.discount_price !== null && price?.discount_price !== '') {
-    const discountPrice = Number(price.discount_price);
-    if (Number.isFinite(discountPrice)) return discountPrice;
-  }
-  if (price?.list_price !== null && price?.list_price !== '') {
-    const listPrice = Number(price.list_price);
-    if (Number.isFinite(listPrice)) return listPrice;
-  }
+  const discount = getDiscountPriceDetails(price);
+  if (discount.isDiscounted) return discount.discountedPrice;
+  if (Number.isFinite(discount.listPrice)) return discount.listPrice;
+  if (Number.isFinite(discount.discountedPrice)) return discount.discountedPrice;
   return 0;
 };
 
@@ -682,7 +708,7 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
               );
 
               return (
-                <div className="design-structure-group" key={substep.code}>
+                <div className={`design-structure-group is-${substep.code.toLowerCase()}`} key={substep.code}>
                   <h3>{substep.code} · {substep.name}</h3>
                   {substep.code === 'S6' ? (
                     <div className="design-structure-auto" aria-live="polite">
@@ -924,30 +950,42 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
           )}
           {!priceLoading && priceLookup.results.length > 0 && (
             <div className="design-price-list">
-              {priceLookup.results.map((price) => (
-                <article className="design-price-row" key={`${price.format_code}-${price.unit_amount}`}>
-                  <div className="design-price-format">
-                    <strong>{price.format_name}</strong>
-                    <span>{price.unit_amount}</span>
-                  </div>
-                  {price.quote_only ? (
-                    <button type="button" className="design-price-quote" onClick={goToQuote}>
-                      Submit Quote
-                    </button>
-                  ) : (
-                    <div className="design-price-values">
-                      <span>
-                        <small>List Price</small>
-                        <strong>{formatUsd(price.list_price)}</strong>
-                      </span>
-                      <span className="is-discount">
-                        <small>Discount Price</small>
-                        <strong>{formatUsd(price.discount_price)}</strong>
-                      </span>
+              {priceLookup.results.map((price) => {
+                const discount = getDiscountPriceDetails(price);
+                const effectivePrice = getEffectivePrice(price);
+                return (
+                  <article className="design-price-row" key={`${price.format_code}-${price.unit_amount}`}>
+                    <div className="design-price-format">
+                      <strong>{price.format_name}</strong>
+                      <span>{price.unit_amount}</span>
                     </div>
-                  )}
-                </article>
-              ))}
+                    {price.quote_only ? (
+                      <button type="button" className="design-price-quote" onClick={goToQuote}>
+                        Submit Quote
+                      </button>
+                    ) : discount.isDiscounted ? (
+                      <div className="design-price-values is-discounted">
+                        <span className="design-price-list-value">
+                          <small>List Price</small>
+                          <strong>{formatUsd(discount.listPrice)}</strong>
+                        </span>
+                        <span className="is-discount">
+                          <small>Discounted Price</small>
+                          <strong>{formatUsd(discount.discountedPrice)}</strong>
+                          <em>{discount.discountPercent}% OFF</em>
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="design-price-values is-regular">
+                        <span>
+                          <small>Price</small>
+                          <strong>{formatUsd(effectivePrice)}</strong>
+                        </span>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>
@@ -975,7 +1013,12 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
         <div className="design-panel design-gene-panel">
           <h1><SectionIcon /> Gene Structure</h1>
           <div className="design-structure-frame">
-            <img src="/images/design/gene-structure-base.png" alt="Gene structure map" />
+            <GeneStructureVisual
+              structureSelections={structureSelections}
+              functionTypeName={functionTypeLabel}
+              deliveryTypeName={deliveryTypeLabel}
+              targetGeneName={design.targetGeneRecord?.gene_name || selectedTargetGene?.name || ''}
+            />
             <div className="design-canvas-tags" aria-label="Selected design options by step">
               {selectedStepTags.map((group) => (
                 <div className="design-canvas-tag-group" key={group.step}>
@@ -1087,6 +1130,7 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
               const key = makePriceKey(price.format_code, price.unit_amount);
               const quantity = formatQuantities[key] || 1;
               const effectivePrice = getEffectivePrice(price);
+              const discount = getDiscountPriceDetails(price);
               return (
                 <article className="design-order-row" key={`summary-price-${key}`}>
                   <div className="design-order-format">
@@ -1098,12 +1142,15 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
                     {price.quote_only ? (
                       <button type="button" onClick={goToQuote}>Submit Quote</button>
                     ) : (
-                      <>
+                      <div className={`design-order-price-display ${discount.isDiscounted ? 'is-discounted' : ''}`}>
                         <strong>{formatUsd(effectivePrice)}</strong>
-                        {Number(price.list_price) > effectivePrice && (
-                          <span>List {formatUsd(price.list_price)}</span>
+                        {discount.isDiscounted && (
+                          <>
+                            <span>List {formatUsd(discount.listPrice)}</span>
+                            <em>{discount.discountPercent}% OFF</em>
+                          </>
                         )}
-                      </>
+                      </div>
                     )}
                   </div>
                   <div className="design-order-quantity">

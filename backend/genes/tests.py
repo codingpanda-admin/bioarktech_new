@@ -1,8 +1,12 @@
+from io import BytesIO
+
 from django.test import TestCase
+from openpyxl import Workbook, load_workbook
 
 from products.models import Product
 
 from .models import GeneDesignCategory, GeneDesignPrice, GeneLibrary
+from .bulk_upsert import GENE_HEADERS, build_gene_upsert_template, import_gene_upsert_workbook
 from .pricing import build_design_sku, resolve_design_sku_price
 from .views import _normalize_target_gene_code
 
@@ -236,3 +240,75 @@ class GeneLibrarySearchTests(TestCase):
         data = response.json()
         self.assertEqual(data['total'], 1)
         self.assertEqual(data['results'][0]['target_sequence'], 'MGENE1')
+
+
+class GeneLibraryBulkUpsertTests(TestCase):
+    @staticmethod
+    def workbook(rows):
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = 'Upload'
+        sheet.append(GENE_HEADERS)
+        for row in rows:
+            sheet.append([row.get(header, '') for header in GENE_HEADERS])
+        output = BytesIO()
+        workbook.save(output)
+        output.seek(0)
+        return output
+
+    def test_template_contains_expected_upload_columns(self):
+        template = build_gene_upsert_template()
+        workbook = load_workbook(template, read_only=True)
+        self.assertEqual(workbook.sheetnames, ['Upload', 'Instructions'])
+        headers = list(next(workbook['Upload'].iter_rows(values_only=True)))
+        self.assertEqual(headers, GENE_HEADERS)
+        workbook.close()
+
+    def test_upsert_matches_target_sequence_case_insensitively(self):
+        existing = GeneLibrary.objects.create(
+            target_sequence='AbC123',
+            gene_name='Old Gene Name',
+            abbreviation='OLD',
+            symbol='OLD',
+            species='Human',
+        )
+        upload = self.workbook([
+            {
+                'target_sequence': 'abc123',
+                'gene_name': 'Updated Gene Name',
+                'symbol': 'NEW',
+                'species': 'Mouse',
+            },
+            {
+                'target_sequence': 'DEF456',
+                'gene_name': 'Created Gene',
+                'symbol': 'CG',
+                'locus_id': 12345,
+            },
+        ])
+
+        result = import_gene_upsert_workbook(upload)
+
+        self.assertEqual(result['created'], 1)
+        self.assertEqual(result['updated'], 1)
+        self.assertEqual(result['failed'], 0)
+        existing.refresh_from_db()
+        self.assertEqual(existing.target_sequence, 'ABC123')
+        self.assertEqual(existing.gene_name, 'Updated Gene Name')
+        self.assertEqual(existing.symbol, 'NEW')
+        self.assertEqual(existing.species, 'Mouse')
+        self.assertIsNone(existing.abbreviation)
+        self.assertTrue(GeneLibrary.objects.filter(target_sequence='DEF456', locus_id=12345).exists())
+
+    def test_duplicate_target_sequences_in_workbook_are_rejected(self):
+        upload = self.workbook([
+            {'target_sequence': 'ABC123', 'gene_name': 'Gene One', 'symbol': 'ONE'},
+            {'target_sequence': 'abc123', 'gene_name': 'Gene Two', 'symbol': 'TWO'},
+        ])
+
+        result = import_gene_upsert_workbook(upload)
+
+        self.assertEqual(result['created'], 0)
+        self.assertEqual(result['updated'], 0)
+        self.assertEqual(result['failed'], 2)
+        self.assertEqual(GeneLibrary.objects.filter(target_sequence__iexact='ABC123').count(), 0)
