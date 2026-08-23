@@ -193,13 +193,10 @@ class CatalogGroup(models.Model):
         if not self.normalized_name:
             raise ValidationError({'group_name': 'Group name must contain letters or numbers.'})
 
-        if self._state.adding:
-            if not self.external_id:
-                self.external_id = self.generate_external_id(self.category, self.group_name)
+        if not self.external_id:
+            self.external_id = self.generate_external_id(self.category, self.group_name)
         else:
-            original_external_id = type(self).objects.filter(pk=self.pk).values_list('external_id', flat=True).first()
-            if original_external_id and self.external_id != original_external_id:
-                raise ValidationError({'external_id': 'External ID cannot be changed after the group is created.'})
+            self.external_id = str(self.external_id).strip()
 
         if not self.external_id:
             raise ValidationError({'external_id': 'External ID is required.'})

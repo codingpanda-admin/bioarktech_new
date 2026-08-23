@@ -1,4 +1,5 @@
 import json
+import re
 import traceback
 
 from django.core.paginator import Paginator
@@ -236,6 +237,22 @@ def _serialize_product_category(category):
     }
 
 
+CATALOG_EXTERNAL_ID_PATTERN = re.compile(r'^[A-Za-z0-9_-]+$')
+
+
+def _validate_catalog_external_id(value, label, max_length):
+    external_id = str(value or '').strip()
+    if not external_id:
+        raise ValueError(f'{label} External ID is required.')
+    if len(external_id) > max_length:
+        raise ValueError(f'{label} External ID cannot exceed {max_length} characters.')
+    if not CATALOG_EXTERNAL_ID_PATTERN.fullmatch(external_id):
+        raise ValueError(
+            f'{label} External ID may contain only letters, numbers, hyphens, and underscores.'
+        )
+    return external_id
+
+
 def _validated_catalog_group(group_id, category):
     if not group_id:
         return None
@@ -261,6 +278,7 @@ def _serialize_catalog_group(group):
 
 
 @api_view(['POST'])
+@transaction.atomic
 def admin_create_catalog_group(request):
     err = _check_admin(request)
     if err:
@@ -276,14 +294,26 @@ def admin_create_catalog_group(request):
 
         category = ProductCategory.objects.get(external_id=category_external_id)
         max_priority = category.catalog_groups.aggregate(max_priority=Max('priority'))['max_priority'] or 0
+        supplied_external_id = request.data.get('external_id')
+        external_id = None
+        if supplied_external_id is not None and str(supplied_external_id).strip():
+            external_id = _validate_catalog_external_id(supplied_external_id, 'Group', 160)
+            if CatalogGroup.objects.filter(external_id__iexact=external_id).exists():
+                return Response(
+                    {'error': 'A group with this External ID already exists.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         group = CatalogGroup(
             category=category,
             group_name=group_name,
+            external_id=external_id,
             summary=request.data.get('summary') or '',
             priority=request.data.get('priority') or max_priority + 1,
             is_active=True,
         )
-        # CatalogGroup generates the required External ID during this first save.
+        # A blank External ID is generated during the first save; administrators
+        # can also provide a valid ID and edit it later.
         group.save()
         return Response(_serialize_catalog_group(group), status=status.HTTP_201_CREATED)
     except ProductCategory.DoesNotExist:
@@ -293,6 +323,7 @@ def admin_create_catalog_group(request):
 
 
 @api_view(['POST'])
+@transaction.atomic
 def admin_update_catalog_group(request, group_id):
     err = _check_admin(request)
     if err:
@@ -300,12 +331,18 @@ def admin_update_catalog_group(request, group_id):
 
     try:
         group = CatalogGroup.objects.select_related('category').get(group_id=group_id)
-        supplied_external_id = request.data.get('external_id')
-        if supplied_external_id is not None and str(supplied_external_id).strip() != group.external_id:
-            return Response(
-                {'error': 'External ID cannot be changed after the group is created.'},
-                status=status.HTTP_400_BAD_REQUEST,
+        if 'external_id' in request.data:
+            external_id = _validate_catalog_external_id(
+                request.data.get('external_id'), 'Group', 160
             )
+            if CatalogGroup.objects.filter(
+                external_id__iexact=external_id
+            ).exclude(group_id=group.group_id).exists():
+                return Response(
+                    {'error': 'A group with this External ID already exists.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            group.external_id = external_id
 
         if 'group_name' in request.data:
             group_name = (request.data.get('group_name') or '').strip()

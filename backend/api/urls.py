@@ -36,6 +36,7 @@ from .admin_views import (
 )
 from genes.admin_views import (
     admin_list_genes, admin_create_gene, admin_update_gene,
+    admin_download_gene_upsert_template, admin_bulk_upsert_genes,
     admin_list_gene_design_prices, admin_create_gene_design_price,
     admin_update_gene_design_price,
 )
@@ -74,6 +75,8 @@ urlpatterns = [
     # Gene Design
     path('admin-panel/gene-library/', admin_list_genes),
     path('admin-panel/gene-library/create/', admin_create_gene),
+    path('admin-panel/gene-library/bulk-upsert/template/', admin_download_gene_upsert_template),
+    path('admin-panel/gene-library/bulk-upsert/', admin_bulk_upsert_genes),
     path('admin-panel/gene-library/<int:gene_id>/update/', admin_update_gene),
     path('admin-panel/gene-design-prices/', admin_list_gene_design_prices),
     path('admin-panel/gene-design-prices/create/', admin_create_gene_design_price),

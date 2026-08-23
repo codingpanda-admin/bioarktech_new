@@ -54,7 +54,7 @@ const getBlogTimestamp = (blog) => {
 };
 
 const getRecentBlogs = (items) => (
-  [...items].sort((a, b) => getBlogTimestamp(b) - getBlogTimestamp(a)).slice(0, 3)
+  [...items].sort((a, b) => getBlogTimestamp(b) - getBlogTimestamp(a)).slice(0, 4)
 );
 
 const formatHomeBlogDate = (blog) => {
