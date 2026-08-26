@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
@@ -279,6 +280,75 @@ class PurchaseConfirmationEmailTests(TestCase):
         self.assertTrue(success)
         self.assertEqual(order.order_id, self.order.order_id)
         queue_email.assert_called_once_with(self.order.order_id)
+
+
+class StripeWebhookTests(TestCase):
+    def setUp(self):
+        self.url = reverse('stripe_webhook')
+        self.event = {
+            'id': 'evt_test_checkout_completed',
+            'type': 'checkout.session.completed',
+            'data': {
+                'object': {
+                    'id': 'cs_test_webhook',
+                    'payment_status': 'paid',
+                },
+            },
+        }
+
+    @patch('orders.views.STRIPE_WEBHOOK_SECRET', '')
+    @patch('orders.views._handle_checkout_completed')
+    def test_missing_webhook_secret_fails_closed(self, handle_checkout):
+        response = self.client.post(
+            self.url,
+            data=json.dumps(self.event),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 503)
+        handle_checkout.assert_not_called()
+
+    @patch('orders.views.STRIPE_WEBHOOK_SECRET', 'whsec_test_placeholder')
+    @patch('orders.views._handle_checkout_completed')
+    @patch('orders.views.stripe.Webhook.construct_event')
+    def test_signed_checkout_event_is_processed(
+        self,
+        construct_event,
+        handle_checkout,
+    ):
+        construct_event.return_value = self.event
+
+        response = self.client.post(
+            self.url,
+            data=json.dumps(self.event),
+            content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='test-signature',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        construct_event.assert_called_once()
+        self.assertEqual(construct_event.call_args.args[1], 'test-signature')
+        self.assertEqual(construct_event.call_args.args[2], 'whsec_test_placeholder')
+        handle_checkout.assert_called_once_with(self.event)
+
+    @patch('orders.views.STRIPE_WEBHOOK_SECRET', 'whsec_test_placeholder')
+    @patch('orders.views._handle_checkout_completed', side_effect=RuntimeError('database unavailable'))
+    @patch('orders.views.stripe.Webhook.construct_event')
+    def test_processing_failure_returns_retryable_error(
+        self,
+        construct_event,
+        _handle_checkout,
+    ):
+        construct_event.return_value = self.event
+
+        response = self.client.post(
+            self.url,
+            data=json.dumps(self.event),
+            content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='test-signature',
+        )
+
+        self.assertEqual(response.status_code, 500)
 
 
 class StripeCheckoutBillingAddressTests(APITestCase):

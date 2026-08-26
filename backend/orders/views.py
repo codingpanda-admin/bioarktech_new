@@ -1130,34 +1130,32 @@ def stripe_webhook(request):
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE", "")
 
     if not STRIPE_WEBHOOK_SECRET:
-        logger.warning("STRIPE_WEBHOOK_SECRET not configured; accepting webhook without verification.")
-        try:
-            event_data = json.loads(payload)
-        except ValueError:
-            logger.error("Stripe webhook: invalid json payload")
-            return HttpResponse("Invalid payload", status=400)
-    else:
-        try:
-            event_data = json.loads(payload)
-            event = stripe.Webhook.construct_event(
-                payload, sig_header, STRIPE_WEBHOOK_SECRET
-            )
-            event_data = event if isinstance(event, dict) else json.loads(str(event))
-        except ValueError:
-            logger.error("Stripe webhook: invalid payload")
-            return HttpResponse("Invalid payload", status=400)
-        except stripe.error.SignatureVerificationError:
-            logger.error("Stripe webhook: invalid signature")
-            return HttpResponse("Invalid signature", status=400)
+        logger.error("Stripe webhook is disabled because STRIPE_WEBHOOK_SECRET is not configured.")
+        return HttpResponse("Webhook not configured", status=503)
+
+    try:
+        event_data = stripe.Webhook.construct_event(
+            payload, sig_header, STRIPE_WEBHOOK_SECRET
+        )
+    except ValueError:
+        logger.error("Stripe webhook: invalid payload")
+        return HttpResponse("Invalid payload", status=400)
+    except stripe.error.SignatureVerificationError:
+        logger.error("Stripe webhook: invalid signature")
+        return HttpResponse("Invalid signature", status=400)
 
     event_type = event_data.get("type", "")
 
-    if event_type in {"checkout.session.completed", "checkout.session.async_payment_succeeded"}:
-        _handle_checkout_completed(event_data)
-    elif event_type == "payment_intent.succeeded":
-        pass
-    elif event_type == "charge.dispute.created":
-        _handle_dispute(event_data)
+    try:
+        if event_type in {"checkout.session.completed", "checkout.session.async_payment_succeeded"}:
+            _handle_checkout_completed(event_data)
+        elif event_type == "payment_intent.succeeded":
+            pass
+        elif event_type == "charge.dispute.created":
+            _handle_dispute(event_data)
+    except Exception:
+        logger.exception("Stripe webhook: event processing failed for %s", event_type)
+        return HttpResponse("Event processing failed", status=500)
 
     return HttpResponse("ok", status=200)
 
@@ -1380,11 +1378,8 @@ def _process_successful_checkout(session):
 
 def _handle_checkout_completed(event_data):
     """Process a completed checkout session and create the order."""
-    try:
-        session = event_data.get("data", {}).get("object", {})
-        _process_successful_checkout(session)
-    except Exception as e:
-        logger.error(f"Stripe webhook: error processing checkout.session.completed: {e}")
+    session = event_data.get("data", {}).get("object", {})
+    return _process_successful_checkout(session)
 
 
 def _handle_dispute(event_data):

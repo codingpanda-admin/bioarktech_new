@@ -38,7 +38,8 @@ DEBUG = True if debug_flag == "True" else False
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '127.0.0.1:4200',
                  'localhost:4200', 'bioarktech.com',
                  'www.bioarktech.com', 'store.bioarktech.com',
-                 'api.bioarktech.com', '93.127.217.163']
+                 'api.bioarktech.com', 'staging.bioarktech.com',
+                 '93.127.217.163']
 #quite los https// de los dominios
 
 # Application definition
