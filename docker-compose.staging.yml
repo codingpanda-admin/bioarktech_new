@@ -30,6 +30,7 @@ services:
       - .env
     environment:
       DB_HOST: db
+      FRONTEND_URL: https://staging.bioarktech.com
     ports:
       - "8101:8000"
     volumes:
@@ -49,7 +50,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://93.127.217.163:8101
+        VITE_API_URL: https://staging.bioarktech.com
     container_name: bioark_staging_frontend
     restart: always
     ports:

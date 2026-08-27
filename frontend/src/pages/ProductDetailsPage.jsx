@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { logo, apiFetch, formatAssetUrl } from '../utils/api';
 import { formatRichText } from '../utils/richText';
 import QuoteRequestForm from '../components/QuoteRequestForm';
@@ -72,6 +72,31 @@ const getProductListPrice = (product) => (
   || ''
 );
 
+const getProductDiscountedPrice = (product) => (
+  product?.discounted_price
+  || product?.discountedPrice
+  || product?.raw_detail?.discountedPrice
+  || product?.raw_detail?.discounted_price
+  || ''
+);
+
+const getDiscountPriceState = (listPrice, discountedPrice) => {
+  const numericListPrice = parseProductPrice(listPrice);
+  const numericDiscountedPrice = parseProductPrice(discountedPrice);
+  const isDiscounted = (
+    numericListPrice !== null
+    && numericListPrice > 0
+    && numericDiscountedPrice !== null
+    && numericDiscountedPrice < numericListPrice
+  );
+
+  return {
+    unit_price: isDiscounted ? discountedPrice : listPrice,
+    list_price: isDiscounted ? listPrice : '',
+    on_discount: isDiscounted,
+  };
+};
+
 const isEnabledFlag = (value) => (
   value === true
   || value === 1
@@ -98,19 +123,31 @@ const getProductPriceOptions = (product) => {
       .map(([option, optionPrice]) => [String(option || '').trim(), optionPrice])
       .filter(([option]) => Boolean(option))
   );
+  const rawOptionDiscounts = (
+    product?.option_discounted_prices
+    && typeof product.option_discounted_prices === 'object'
+    && !Array.isArray(product.option_discounted_prices)
+  ) ? product.option_discounted_prices : {};
+  const optionDiscounts = Object.fromEntries(
+    Object.entries(rawOptionDiscounts)
+      .map(([option, optionPrice]) => [String(option || '').trim(), optionPrice])
+      .filter(([option]) => Boolean(option))
+  );
   const optionNames = [...new Set([
     ...options.map((option) => String(option || '').trim()).filter(Boolean),
     ...Object.keys(optionPrices).map((option) => String(option || '').trim()).filter(Boolean),
+    ...Object.keys(optionDiscounts).map((option) => String(option || '').trim()).filter(Boolean),
   ])];
 
-  if (Object.keys(optionPrices).length > 0) {
-    return optionNames.map((option, index) => ({
-      id: `catalog-option-${index}-${option}`,
-      unit_size: option,
-      unit_price: getOptionPriceOrListPrice(optionPrices[option], productListPrice),
-      list_price: '',
-      on_discount: false,
-    }));
+  if (Object.keys(optionPrices).length > 0 || Object.keys(optionDiscounts).length > 0) {
+    return optionNames.map((option, index) => {
+      const optionListPrice = getOptionPriceOrListPrice(optionPrices[option], productListPrice);
+      return {
+        id: `catalog-option-${index}-${option}`,
+        unit_size: option,
+        ...getDiscountPriceState(optionListPrice, optionDiscounts[option]),
+      };
+    });
   }
 
   const unitPrices = Array.isArray(product?.unit_prices) ? product.unit_prices : [];
@@ -139,13 +176,15 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   const [activeTab, setActiveTab] = useState('details');
   
   // Featured product specific states
-  const [mainImage, setMainImage] = useState(logo);
+  const [selectedMedia, setSelectedMedia] = useState({ type: 'image', url: logo });
   const [selectedUnitSize, setSelectedUnitSize] = useState(null);
   const [cartAdded, setCartAdded] = useState(false);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [showQuoteConfirmation, setShowQuoteConfirmation] = useState(false);
   const [featuredServices, setFeaturedServices] = useState([]);
   const thumbnailStripRef = useRef(null);
+  const serviceTabsAnchorRef = useRef(null);
+  const [serviceTabsFloatingStyle, setServiceTabsFloatingStyle] = useState(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -162,12 +201,20 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
         setProduct(productDetail);
         const priceOptions = getProductPriceOptions(productDetail);
         setSelectedUnitSize(priceOptions[0] || null);
-        setMainImage(
-          productDetail.image_url
-            ? formatAssetUrl(productDetail.image_url)
-            : productDetail.images?.[0]
-              ? formatAssetUrl(typeof productDetail.images[0] === 'string' ? productDetail.images[0] : productDetail.images[0].image)
-              : logo
+        const primaryImage = productDetail.image_url
+          ? formatAssetUrl(productDetail.image_url)
+          : productDetail.images?.[0]
+            ? formatAssetUrl(typeof productDetail.images[0] === 'string' ? productDetail.images[0] : productDetail.images[0].image)
+            : '';
+        const primaryVideo = Array.isArray(productDetail.videos)
+          ? productDetail.videos.find(Boolean)
+          : '';
+        setSelectedMedia(
+          primaryImage
+            ? { type: 'image', url: primaryImage }
+            : primaryVideo
+              ? { type: 'video', url: formatAssetUrl(primaryVideo) }
+              : { type: 'image', url: logo }
         );
       } catch (err) {
         console.error(err);
@@ -200,6 +247,48 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
     };
   }, []);
 
+  useEffect(() => {
+    const tabsAnchor = serviceTabsAnchorRef.current;
+    if (!tabsAnchor) {
+      setServiceTabsFloatingStyle(null);
+      return undefined;
+    }
+
+    const updateFloatingTabs = () => {
+      const anchorRect = tabsAnchor.getBoundingClientRect();
+      const siteHeader = document.querySelector('.site-header');
+      const headerHeight = siteHeader?.getBoundingClientRect().height || (window.innerWidth <= 720 ? 72 : 96);
+      const top = Math.ceil(headerHeight + 8);
+      const shouldFloat = anchorRect.top <= top;
+
+      setServiceTabsFloatingStyle((currentStyle) => {
+        if (!shouldFloat) return currentStyle === null ? currentStyle : null;
+
+        const nextStyle = {
+          top,
+          left: anchorRect.left,
+          width: anchorRect.width,
+          height: tabsAnchor.offsetHeight,
+        };
+        const isUnchanged = currentStyle
+          && Math.abs(currentStyle.left - nextStyle.left) < 0.5
+          && Math.abs(currentStyle.width - nextStyle.width) < 0.5
+          && currentStyle.top === nextStyle.top
+          && currentStyle.height === nextStyle.height;
+        return isUnchanged ? currentStyle : nextStyle;
+      });
+    };
+
+    updateFloatingTabs();
+    window.addEventListener('scroll', updateFloatingTabs, { passive: true });
+    window.addEventListener('resize', updateFloatingTabs);
+
+    return () => {
+      window.removeEventListener('scroll', updateFloatingTabs);
+      window.removeEventListener('resize', updateFloatingTabs);
+    };
+  }, [product]);
+
   const handleAddToCart = () => {
     if (isQuoteOnlyProduct(product)) {
       return;
@@ -226,7 +315,6 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
 
   if (!product) return null;
 
-  const isFeatured = product && Array.isArray(product.unit_prices);
   const categoryExternalId = product.category_external_id || product.categoryExternalId || '';
   const normalizedCategoryLabel = String(
     product.category_name || product.categoryName || product.product_category || ''
@@ -262,6 +350,10 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   const availabilityLabel = product.availability;
   const quoteOnly = isQuoteOnlyProduct(product);
   const productCode = product.catalog_number || product.product_sku || product.external_id || product.externalId || '';
+  const geneDesignCatalogSegments = String(productCode).replace(/\s+/g, '').toUpperCase().split('-');
+  const canCustomizeGeneDesign = !isReagent
+    && /^[A-Z]{2}[STLM]$/.test(geneDesignCatalogSegments[0] || '')
+    && /^[A-Z0-9]{6}$/.test(geneDesignCatalogSegments[1] || '');
   const detailsContent = formatRichText(
     product.content_text || product.contentText || product.raw_detail?.contentText || ''
   );
@@ -354,7 +446,14 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
     product.image_url,
     ...(Array.isArray(product.images) ? product.images.map(getImageUrl) : []),
   ].filter(Boolean)));
-  const showThumbnailNav = productImages.length > 4;
+  const productVideos = Array.from(new Set(
+    (Array.isArray(product.videos) ? product.videos : []).filter(Boolean)
+  ));
+  const productMedia = [
+    ...productImages.map((url) => ({ type: 'image', url: formatAssetUrl(url) })),
+    ...productVideos.map((url) => ({ type: 'video', url: formatAssetUrl(url) })),
+  ];
+  const showThumbnailNav = productMedia.length > 4;
 
   const scrollThumbnails = (direction) => {
     if (!thumbnailStripRef.current) return;
@@ -363,6 +462,71 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
       behavior: 'smooth',
     });
   };
+
+  const renderSelectedMedia = (imageClassName = '') => (
+    selectedMedia.type === 'video' ? (
+      <video
+        key={selectedMedia.url}
+        className={`product-main-video ${imageClassName}`.trim()}
+        src={selectedMedia.url}
+        poster={productMedia.find((media) => media.type === 'image')?.url}
+        controls
+        playsInline
+        preload="metadata"
+      >
+        Your browser does not support embedded video.
+      </video>
+    ) : (
+      <img src={selectedMedia.url} className={imageClassName} alt={name} />
+    )
+  );
+
+  const renderMediaThumbnails = (itemLabel) => (
+    productMedia.length > 1 && (
+      <div className={`product-thumbnail-carousel ${showThumbnailNav ? 'has-nav' : 'no-nav'}`}>
+        {showThumbnailNav && (
+          <button
+            type="button"
+            className="product-thumbnail-nav"
+            aria-label={`Previous ${itemLabel} media`}
+            onClick={() => scrollThumbnails(-1)}
+          >
+            <span className="product-thumbnail-chevron prev" aria-hidden="true" />
+          </button>
+        )}
+        <div className="product-thumbnail-strip" ref={thumbnailStripRef}>
+          {productMedia.map((media, index) => (
+            <button
+              key={`${media.type}-${media.url}-${index}`}
+              type="button"
+              className={`product-thumbnail-button ${selectedMedia.type === media.type && selectedMedia.url === media.url ? 'active' : ''}`}
+              onClick={() => setSelectedMedia(media)}
+              aria-label={`${media.type === 'video' ? 'Play' : 'View'} ${itemLabel} ${media.type} ${index + 1}`}
+            >
+              {media.type === 'video' ? (
+                <span className="product-video-thumbnail">
+                  <video src={media.url} muted playsInline preload="metadata" />
+                  <span aria-hidden="true">▶</span>
+                </span>
+              ) : (
+                <img src={media.url} alt="" />
+              )}
+            </button>
+          ))}
+        </div>
+        {showThumbnailNav && (
+          <button
+            type="button"
+            className="product-thumbnail-nav"
+            aria-label={`Next ${itemLabel} media`}
+            onClick={() => scrollThumbnails(1)}
+          >
+            <span className="product-thumbnail-chevron next" aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    )
+  );
 
   const getProductQuoteDescription = () => (
     isService
@@ -410,13 +574,17 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   };
   
   // Calculate price dynamically for featured products based on selected unit size
-  const price = isFeatured ? selectedUnitSize?.unit_price : product.unit_price;
+  const topLevelPriceState = getDiscountPriceState(
+    getProductListPrice(product),
+    getProductDiscountedPrice(product),
+  );
+  const price = selectedUnitSize?.unit_price || product.unit_price || topLevelPriceState.unit_price;
   const productPriceOptions = getProductPriceOptions(product);
   const hasProductPriceOptions = productPriceOptions.length > 0;
   const selectedPrice = hasProductPriceOptions ? selectedUnitSize?.unit_price : price;
   const productListPrice = getProductListPrice(product);
-  const listPrice = hasProductPriceOptions ? selectedUnitSize?.list_price : productListPrice;
-  const onDiscount = hasProductPriceOptions ? selectedUnitSize?.on_discount : false;
+  const listPrice = hasProductPriceOptions ? selectedUnitSize?.list_price : topLevelPriceState.list_price;
+  const onDiscount = hasProductPriceOptions ? selectedUnitSize?.on_discount : topLevelPriceState.on_discount;
   const numericSelectedPrice = parseProductPrice(selectedPrice);
   const numericListPrice = parseProductPrice(listPrice);
   const discountPercent = (
@@ -464,6 +632,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
             currentUserProfile={currentUserProfile}
             initialProjectDescription={getProductQuoteDescription()}
             initialServiceType={getQuoteServiceType()}
+            initialServiceCategoryId={product.category_external_id || product.categoryExternalId || ''}
             onSubmitted={() => setShowQuoteConfirmation(true)}
           />
         </div>
@@ -472,7 +641,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   );
 
   if (isService) {
-    const hasServiceImage = Boolean(product.image_url || productImages.length > 0);
+    const hasServiceMedia = productMedia.length > 0;
 
     return (
       <main className="service-detail-page">
@@ -498,9 +667,9 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
 
         <div className="service-detail-layout">
           <aside className="service-detail-navigation" aria-labelledby="featured-services-heading">
-            <h2 id="featured-services-heading">Featured Services</h2>
+            <h2 id="featured-services-heading">Recommended Services</h2>
             {featuredServices.length > 0 ? (
-              <nav aria-label="Featured Services">
+              <nav aria-label="Recommended Services">
                 {featuredServices.map((service) => {
                   const serviceHref = `/product/${service.url}`;
                   const isActiveService = String(service.url) === String(skuOrCatalog);
@@ -522,14 +691,15 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 })}
               </nav>
             ) : (
-              <p className="service-detail-nav-empty">No featured services are available.</p>
+              <p className="service-detail-nav-empty">No recommended services are available.</p>
             )}
           </aside>
 
           <div className="service-detail-main">
-            <div className={`service-detail-banner ${hasServiceImage ? '' : 'is-fallback'}`}>
-              <img src={mainImage} alt={name} />
+            <div className={`service-detail-banner ${hasServiceMedia ? '' : 'is-fallback'}`}>
+              {renderSelectedMedia()}
             </div>
+            {renderMediaThumbnails('service')}
 
             <header className="service-detail-heading">
               <h1>{name}</h1>
@@ -550,8 +720,22 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
               </button>
             </header>
 
-            <section className="service-detail-copy" aria-label="Service information">
-            <div className="service-detail-tabs" role="tablist" aria-label="Service information">
+            <div
+              ref={serviceTabsAnchorRef}
+              className="service-detail-tabs-anchor"
+              style={serviceTabsFloatingStyle ? { minHeight: serviceTabsFloatingStyle.height } : undefined}
+            >
+            <div
+              className={`service-detail-tabs ${serviceTabsFloatingStyle ? 'is-floating' : ''}`}
+              style={serviceTabsFloatingStyle ? {
+                top: serviceTabsFloatingStyle.top,
+                left: serviceTabsFloatingStyle.left,
+                width: serviceTabsFloatingStyle.width,
+              } : undefined}
+              role="tablist"
+              aria-label="Service information"
+              aria-orientation="horizontal"
+            >
               <button
                 type="button"
                 id="service-details-tab"
@@ -561,7 +745,18 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 aria-controls="service-details-panel"
                 onClick={() => setActiveTab('details')}
               >
-                Detail
+                Service
+              </button>
+              <button
+                type="button"
+                id="service-technique-tab"
+                className={activeTab === 'technique' ? 'is-active' : ''}
+                role="tab"
+                aria-selected={activeTab === 'technique'}
+                aria-controls="service-technique-panel"
+                onClick={() => setActiveTab('technique')}
+              >
+                Technique
               </button>
               <button
                 type="button"
@@ -597,7 +792,10 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 Documents
               </button>
             </div>
+            </div>
 
+            <section className="service-detail-copy" aria-label="Service information">
+            <div className="service-detail-tab-content">
             {activeTab === 'details' && (
               <div
                 id="service-details-panel"
@@ -613,6 +811,26 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 ) : (
                   <div className="admin-empty-table service-detail-empty">
                     No additional details available.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'technique' && (
+              <div
+                id="service-technique-panel"
+                className="service-detail-tab-panel"
+                role="tabpanel"
+                aria-labelledby="service-technique-tab"
+              >
+                {product.technique ? (
+                  <div
+                    className="blog-detail-content product-detail-content"
+                    dangerouslySetInnerHTML={{ __html: formatRichText(product.technique) }}
+                  />
+                ) : (
+                  <div className="admin-empty-table service-detail-empty">
+                    No technique information available.
                   </div>
                 )}
               </div>
@@ -705,6 +923,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 )}
               </div>
             )}
+            </div>
             </section>
           </div>
         </div>
@@ -737,48 +956,9 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
         {/* Gallery Section */}
         <div className="product-detail-gallery">
           <div className="product-main-image-frame">
-            <img src={mainImage} className="product-main-image" alt={name} />
+            {renderSelectedMedia('product-main-image')}
           </div>
-          {productImages.length > 1 && (
-            <div className={`product-thumbnail-carousel ${showThumbnailNav ? 'has-nav' : 'no-nav'}`}>
-              {showThumbnailNav && (
-                <button
-                  type="button"
-                  className="product-thumbnail-nav"
-                  aria-label="Previous product images"
-                  onClick={() => scrollThumbnails(-1)}
-                >
-                  <span className="product-thumbnail-chevron prev" aria-hidden="true" />
-                </button>
-              )}
-              <div className="product-thumbnail-strip" ref={thumbnailStripRef}>
-                {productImages.map((imageUrl, idx) => {
-                  const thumbnailUrl = formatAssetUrl(imageUrl);
-                  return (
-                    <button
-                      key={`${imageUrl}-${idx}`}
-                      type="button"
-                      className={`product-thumbnail-button ${mainImage === thumbnailUrl ? 'active' : ''}`}
-                      onClick={() => setMainImage(thumbnailUrl)}
-                      aria-label={`View product image ${idx + 1}`}
-                    >
-                      <img src={thumbnailUrl} alt="" />
-                    </button>
-                  );
-                })}
-              </div>
-              {showThumbnailNav && (
-                <button
-                  type="button"
-                  className="product-thumbnail-nav"
-                  aria-label="Next product images"
-                  onClick={() => scrollThumbnails(1)}
-                >
-                  <span className="product-thumbnail-chevron next" aria-hidden="true" />
-                </button>
-              )}
-            </div>
-          )}
+          {renderMediaThumbnails(isReagent ? 'reagent' : 'product')}
         </div>
 
         {/* Info Panel Section */}
@@ -823,8 +1003,13 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                   >
                     <span>{unit.unit_size}</span>
                     {formatProductPrice(unit.unit_price) && (
-                      <span style={{ color: 'var(--blue)', fontSize: '13px', fontWeight: 600 }}>
+                      <span className={unit.on_discount ? 'product-option-price is-discounted' : 'product-option-price'}>
                         {formatProductPrice(unit.unit_price)}
+                      </span>
+                    )}
+                    {unit.on_discount && (
+                      <span className="product-option-list-price">
+                        {formatProductPrice(unit.list_price)}
                       </span>
                     )}
                   </button>
@@ -868,7 +1053,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
           )}
 
           {/* Actions */}
-          <div style={{ display: 'flex', gap: '16px', marginTop: '20px' }}>
+          <div className="product-detail-actions">
             {quoteOnly ? (
               <button
                 type="button"
@@ -886,6 +1071,15 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 style={{ padding: '12px 28px' }}
               >
                 {cartAdded ? 'Added to Cart!' : 'Add to Cart'}
+              </button>
+            )}
+            {canCustomizeGeneDesign && (
+              <button
+                type="button"
+                className="secondary-button product-gene-design-button"
+                onClick={() => navigate(`/design?catalog=${encodeURIComponent(String(productCode).trim())}`)}
+              >
+                Customize Gene Design
               </button>
             )}
             <button 

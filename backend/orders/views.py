@@ -1,6 +1,7 @@
 from datetime import datetime, date, timedelta
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from rest_framework.views import APIView
@@ -39,6 +40,10 @@ from django.http import HttpResponse, JsonResponse
 from django.db import transaction
 
 import requests
+
+from .invoice_pdf import build_invoice_pdf, invoice_number_for
+from .invoice_html import build_invoice_html
+from .purchase_email import queue_purchase_confirmation_email
 
 load_dotenv()
 
@@ -470,6 +475,62 @@ def get_invoice(request, order_number):
         return Response({"detail": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
+@api_view(['GET'])
+def download_order_invoice(request, order_id):
+    if not request.user.is_authenticated:
+        return Response(
+            {"detail": "Please sign in to generate an invoice."},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    try:
+        order = (
+            Order.objects
+            .select_related('user', 'billing_address', 'shipping_address')
+            .prefetch_related('orderitem_set')
+            .get(order_id=order_id, user=request.user)
+        )
+    except Order.DoesNotExist:
+        return Response({"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    pdf_content = build_invoice_pdf(order)
+    invoice_number = invoice_number_for(order)
+    response = HttpResponse(pdf_content, content_type='application/pdf')
+    disposition = 'inline' if request.query_params.get('view') == '1' else 'attachment'
+    response['Content-Disposition'] = f'{disposition}; filename="BioArk-Invoice-{invoice_number}.pdf"'
+    response['Cache-Control'] = 'private, no-store'
+    return response
+
+
+@api_view(['GET'])
+def view_order_invoice_html(request, order_id):
+    if not request.user.is_authenticated:
+        return Response(
+            {"detail": "Please sign in to view an invoice."},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    try:
+        order = (
+            Order.objects
+            .select_related('user', 'billing_address', 'shipping_address')
+            .prefetch_related('orderitem_set')
+            .get(order_id=order_id, user=request.user)
+        )
+    except Order.DoesNotExist:
+        return Response({"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    invoice_number = invoice_number_for(order)
+    response = HttpResponse(build_invoice_html(order), content_type='text/html; charset=utf-8')
+    disposition = 'attachment' if request.query_params.get('download') == '1' else 'inline'
+    response['Content-Disposition'] = (
+        f'{disposition}; filename="BioArk-Invoice-{invoice_number}.html"'
+    )
+    response['Cache-Control'] = 'private, no-store'
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
+
+
 def invoice_repayment(request, order_number, payment_token):
     body = request.data
     total_price = body.get("total_price")
@@ -659,6 +720,16 @@ def _lookup_db_price(sku, unit_size=None):
     if not sku:
         return 0.0
 
+    # Gene Design cart items encode Steps 2-5 plus the selected Step 6 format
+    # in their SKU. Always verify their price against the backend lookup table.
+    from genes.pricing import resolve_design_sku_price
+
+    design_price = resolve_design_sku_price(sku, unit_size)
+    if design_price is not None:
+        if design_price['quote_only'] or design_price['price'] is None:
+            return 0.0
+        return float(design_price['price'])
+
     # 1. Check if it's a FeaturedProduct
     featured_product = FeaturedProduct.objects.filter(catalog_number__iexact=sku).first()
     if featured_product:
@@ -672,8 +743,8 @@ def _lookup_db_price(sku, unit_size=None):
             up = UnitPrice.objects.filter(union=featured_product.union).first()
             if up:
                 return float(up.unit_price)
-        # Fallback to 0 if not found
-        return 0.0
+        # Featured rows are presentation metadata. If their legacy UnitPrice
+        # record is absent, continue to the canonical Product price fields.
 
     # 2. Check if it's a general Product
     product = Product.objects.filter(catalog_number__iexact=sku, hidden=False).first()
@@ -690,20 +761,58 @@ def _lookup_db_price(sku, unit_size=None):
         if union:
             if unit_size:
                 up = UnitPrice.objects.filter(union=union, unit_size__iexact=unit_size).first()
-            if not up:
+            if not up and not unit_size:
                 up = UnitPrice.objects.filter(union=union).first()
                 
         if up:
             return float(up.unit_price)
-        else:
-            # Parse list_price
-            raw_lp = product.list_price or product.price_range or ""
-            try:
-                # Remove currency symbols and formatting
-                clean_lp = "".join(c for c in raw_lp if c.isdigit() or c == '.')
-                return float(clean_lp) if clean_lp else 0.0
-            except ValueError:
-                return 0.0
+
+        def parse_catalog_price(value):
+            parsed = Product._numeric_catalog_price(value)
+            return float(parsed) if parsed is not None else None
+
+        def option_value(values, selected_unit):
+            if not isinstance(values, dict) or not selected_unit:
+                return None
+            normalized_unit = selected_unit.strip().casefold()
+            for option_name, option_price in values.items():
+                if str(option_name or '').strip().casefold() == normalized_unit:
+                    return option_price
+            return None
+
+        # Current product/reagent records store option prices directly on the
+        # Product JSON fields rather than in the legacy UnitPrice table.
+        if unit_size:
+            option_list_price = parse_catalog_price(option_value(product.option_prices, unit_size))
+            if option_list_price is None:
+                option_list_price = parse_catalog_price(product.list_price)
+
+            option_discount_price = parse_catalog_price(
+                option_value(product.option_discounted_prices, unit_size)
+            )
+            if (
+                option_discount_price is not None
+                and option_list_price is not None
+                and option_discount_price < option_list_price
+            ):
+                return option_discount_price
+            if option_list_price is not None:
+                return option_list_price
+
+        list_price = parse_catalog_price(product.list_price)
+        discount_price = parse_catalog_price(product.discounted_price)
+        if (
+            discount_price is not None
+            and list_price is not None
+            and discount_price < list_price
+        ):
+            return discount_price
+        if list_price is not None:
+            return list_price
+
+        # A range is not a purchasable single price and must not be guessed.
+        range_price = parse_catalog_price(product.price_range)
+        return range_price if range_price is not None else 0.0
 
     # 3. Check if it's a service
     # Services in this app have URL as their identifier (e.g. s.url)
@@ -760,6 +869,27 @@ def create_stripe_checkout_session(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        checkout_user = User.objects.select_related("billing_address").get(id=request.user.id)
+        billing_address = checkout_user.billing_address
+        required_billing_fields = (
+            "address_line_1",
+            "city",
+            "state",
+            "zipcode",
+            "country",
+        )
+        if not billing_address or any(
+            not str(getattr(billing_address, field, "") or "").strip()
+            for field in required_billing_fields
+        ):
+            return Response(
+                {
+                    "error": "A complete billing address is required before checkout.",
+                    "code": "billing_address_required",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         line_items = []
         subtotal = 0
         total_quantity = 0
@@ -813,14 +943,6 @@ def create_stripe_checkout_session(request):
         shipping_amount = _calculate_shipping(cart_items, subtotal)
         grand_total = subtotal + shipping_amount
 
-        address_obj, _ = Address.objects.get_or_create(
-            address_line_1=address["address_line_1"],
-            apt_suite=address.get("apt", ""),
-            city=address["city"],
-            state=address["state"],
-            zipcode=address["zipcode"]
-        )
-
         save_to_profile = address.get("save_to_profile", False)
         if save_to_profile:
             try:
@@ -855,60 +977,69 @@ def create_stripe_checkout_session(request):
                 logger.error(f"Error saving checkout address to profile: {e}")
 
 
-        import uuid
-
-        # Create Order object in database as "pending"
-        order_data = {
-            "payment_token": f"pending-{uuid.uuid4()}",
-            "subtotal": subtotal,
-            "shipping_amount": shipping_amount,
-            "tax_amount": 0,
-            "total_price": grand_total,
-            "total_paid": 0.0,
-            "minimum_payment": calculate_minimum_payment(grand_total),
-            "payment_source": "Pending Payment (Stripe)",
-            "quantity": total_quantity,
-            "shipping_address": address_obj,
-            "billing_address": address_obj,
-            "user": request.user,
-            "discount_code": discount_code,
-            "transaction_status": "pending",
-            "paid": False,
-        }
-        order_obj = Order.objects.create(**order_data)
-
-        # Create OrderItem objects
-        create_order_items(cart_items, order_obj)
+        checkout_attempt = StripeCheckoutAttempt.objects.create(
+            user=checkout_user,
+            cart_items=cart_items,
+            shipping_address={
+                "address_line_1": address["address_line_1"],
+                "address_line_2": address.get("address_line_2", ""),
+                "apt_suite": address.get("apt", ""),
+                "city": address["city"],
+                "state": address["state"],
+                "zipcode": address["zipcode"],
+                "country": address.get("country", "US") or "US",
+            },
+            billing_address={
+                "address_line_1": billing_address.address_line_1,
+                "address_line_2": billing_address.address_line_2,
+                "apt_suite": billing_address.apt_suite,
+                "city": billing_address.city,
+                "state": billing_address.state,
+                "zipcode": billing_address.zipcode,
+                "country": billing_address.country or "US",
+            },
+            subtotal=subtotal,
+            shipping_amount=shipping_amount,
+            total_quantity=total_quantity,
+            discount_code=discount_code,
+        )
 
         session_metadata = {
-            "order_id": str(order_obj.order_id),
+            "checkout_attempt_id": str(checkout_attempt.checkout_attempt_id),
         }
 
         frontend_url = _get_frontend_url()
 
-        checkout_session = stripe.checkout.Session.create(
-            payment_intent_data={
-                "metadata": session_metadata,
-            },
-            line_items=line_items,
-            mode="payment",
-            success_url=f"{frontend_url}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{frontend_url}/checkout/cancel",
-            customer_email=request.user.email,
-            metadata=session_metadata,
-            shipping_options=[
-                {
-                    "shipping_rate_data": {
-                        "type": "fixed_amount",
-                        "fixed_amount": {
-                            "amount": int(round(shipping_amount * 100)),
-                            "currency": "usd",
-                        },
-                        "display_name": "Standard Shipping",
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                payment_intent_data={
+                    "metadata": session_metadata,
+                },
+                line_items=line_items,
+                mode="payment",
+                success_url=f"{frontend_url}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=f"{frontend_url}/checkout/cancel?attempt_id={checkout_attempt.checkout_attempt_id}",
+                customer_email=request.user.email,
+                metadata=session_metadata,
+                shipping_options=[
+                    {
+                        "shipping_rate_data": {
+                            "type": "fixed_amount",
+                            "fixed_amount": {
+                                "amount": int(round(shipping_amount * 100)),
+                                "currency": "usd",
+                            },
+                            "display_name": "Standard Shipping",
+                        }
                     }
-                }
-            ] if shipping_amount > 0 else [],
-        )
+                ] if shipping_amount > 0 else [],
+            )
+        except Exception:
+            checkout_attempt.delete()
+            raise
+
+        checkout_attempt.stripe_session_id = checkout_session.id
+        checkout_attempt.save(update_fields=['stripe_session_id'])
 
         return Response({
             "session_id": checkout_session.id,
@@ -932,6 +1063,61 @@ def create_stripe_checkout_session(request):
         )
 
 
+@api_view(['POST'])
+def stripe_checkout_cancel(request):
+    """Discard an unpaid checkout attempt without creating or retaining a purchase."""
+    if not request.user.is_authenticated:
+        return Response(
+            {"error": "Please sign in."},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    checkout_attempt_id = request.data.get('checkout_attempt_id') or request.data.get('attempt_id')
+    if not checkout_attempt_id:
+        return Response(
+            {"error": "No checkout attempt ID provided."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        checkout_attempt = StripeCheckoutAttempt.objects.filter(
+            checkout_attempt_id=checkout_attempt_id,
+            user=request.user,
+        ).first()
+    except (TypeError, ValueError, ValidationError):
+        return Response(
+            {"error": "Invalid checkout attempt ID."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if checkout_attempt is None:
+        return Response({"status": "already_cancelled"})
+
+    if checkout_attempt.stripe_session_id:
+        try:
+            stripe_session = stripe.checkout.Session.retrieve(checkout_attempt.stripe_session_id)
+        except stripe.error.StripeError as exc:
+            logger.warning(
+                "Could not verify Stripe checkout attempt %s before cancellation: %s",
+                checkout_attempt.checkout_attempt_id,
+                exc,
+            )
+            return Response(
+                {"error": "Could not verify payment status before cancellation."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        if stripe_session.payment_status == 'paid':
+            success, order = _process_successful_checkout(stripe_session)
+            return Response({
+                "status": "completed" if success else "processing",
+                "order_id": order.order_id if order else None,
+            })
+
+    checkout_attempt.delete()
+    return Response({"status": "cancelled"})
+
+
 @csrf_exempt
 @require_POST
 def stripe_webhook(request):
@@ -944,36 +1130,46 @@ def stripe_webhook(request):
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE", "")
 
     if not STRIPE_WEBHOOK_SECRET:
-        logger.warning("STRIPE_WEBHOOK_SECRET not configured; accepting webhook without verification.")
-        try:
-            event_data = json.loads(payload)
-        except ValueError:
-            logger.error("Stripe webhook: invalid json payload")
-            return HttpResponse("Invalid payload", status=400)
-    else:
-        try:
-            event_data = json.loads(payload)
-            event = stripe.Webhook.construct_event(
-                payload, sig_header, STRIPE_WEBHOOK_SECRET
-            )
-            event_data = event if isinstance(event, dict) else json.loads(str(event))
-        except ValueError:
-            logger.error("Stripe webhook: invalid payload")
-            return HttpResponse("Invalid payload", status=400)
-        except stripe.error.SignatureVerificationError:
-            logger.error("Stripe webhook: invalid signature")
-            return HttpResponse("Invalid signature", status=400)
+        logger.error("Stripe webhook is disabled because STRIPE_WEBHOOK_SECRET is not configured.")
+        return HttpResponse("Webhook not configured", status=503)
+
+    try:
+        event_data = stripe.Webhook.construct_event(
+            payload, sig_header, STRIPE_WEBHOOK_SECRET
+        )
+    except ValueError:
+        logger.error("Stripe webhook: invalid payload")
+        return HttpResponse("Invalid payload", status=400)
+    except stripe.error.SignatureVerificationError:
+        logger.error("Stripe webhook: invalid signature")
+        return HttpResponse("Invalid signature", status=400)
 
     event_type = event_data.get("type", "")
 
-    if event_type == "checkout.session.completed":
-        _handle_checkout_completed(event_data)
-    elif event_type == "payment_intent.succeeded":
-        pass
-    elif event_type == "charge.dispute.created":
-        _handle_dispute(event_data)
+    try:
+        if event_type in {"checkout.session.completed", "checkout.session.async_payment_succeeded"}:
+            _handle_checkout_completed(event_data)
+        elif event_type == "payment_intent.succeeded":
+            pass
+        elif event_type == "charge.dispute.created":
+            _handle_dispute(event_data)
+    except Exception:
+        logger.exception("Stripe webhook: event processing failed for %s", event_type)
+        return HttpResponse("Event processing failed", status=500)
 
     return HttpResponse("ok", status=200)
+
+
+def _create_checkout_address_snapshot(address_data):
+    return Address.objects.create(
+        address_line_1=address_data.get('address_line_1', ''),
+        address_line_2=address_data.get('address_line_2', ''),
+        apt_suite=address_data.get('apt_suite', ''),
+        city=address_data.get('city', ''),
+        state=address_data.get('state', ''),
+        zipcode=address_data.get('zipcode', ''),
+        country=address_data.get('country', 'US') or 'US',
+    )
 
 
 def _process_successful_checkout(session):
@@ -988,14 +1184,18 @@ def _process_successful_checkout(session):
     order_qs = Order.objects.filter(payment_token=session_id)
     if order_qs.exists():
         logger.info(f"Stripe order processing: order {session_id} already exists, skipping creation.")
-        return True, order_qs.first()
+        order_obj = order_qs.first()
+        queue_purchase_confirmation_email(order_obj.order_id)
+        return True, order_obj
 
     with transaction.atomic():
         # Re-check existence inside transaction lock
         order_qs = Order.objects.select_for_update().filter(payment_token=session_id)
         if order_qs.exists():
             logger.info(f"Stripe order processing: order {session_id} already exists inside transaction, skipping.")
-            return True, order_qs.first()
+            order_obj = order_qs.first()
+            queue_purchase_confirmation_email(order_obj.order_id)
+            return True, order_obj
 
         metadata = session.get("metadata", {})
         payment_intent_metadata = {}
@@ -1013,6 +1213,7 @@ def _process_successful_checkout(session):
                     pass
 
         effective_metadata = payment_intent_metadata or metadata
+        checkout_attempt_id = effective_metadata.get("checkout_attempt_id")
         order_id = effective_metadata.get("order_id")
 
         amount_received = session.get("amount_total", 0) / 100.0
@@ -1036,6 +1237,62 @@ def _process_successful_checkout(session):
                 except Exception:
                     pass
 
+        if checkout_attempt_id:
+            if session.get("payment_status") != "paid":
+                logger.info(
+                    "Stripe checkout attempt %s is not paid; no order was created.",
+                    checkout_attempt_id,
+                )
+                return False, None
+
+            checkout_attempt = (
+                StripeCheckoutAttempt.objects.select_for_update()
+                .select_related('user')
+                .filter(checkout_attempt_id=checkout_attempt_id)
+                .first()
+            )
+            if checkout_attempt is None:
+                order_obj = Order.objects.filter(payment_token=session_id).first()
+                if order_obj:
+                    queue_purchase_confirmation_email(order_obj.order_id)
+                    return True, order_obj
+                logger.error(
+                    "Stripe order processing: checkout attempt %s was not found.",
+                    checkout_attempt_id,
+                )
+                return False, None
+
+            shipping_address_obj = _create_checkout_address_snapshot(checkout_attempt.shipping_address)
+            billing_address_obj = _create_checkout_address_snapshot(checkout_attempt.billing_address)
+            order_obj = Order.objects.create(
+                payment_token=session_id,
+                subtotal=checkout_attempt.subtotal,
+                shipping_amount=checkout_attempt.shipping_amount,
+                tax_amount=0,
+                total_price=total_price,
+                total_paid=total_price,
+                minimum_payment=calculate_minimum_payment(total_price),
+                payment_source=payment_source,
+                quantity=checkout_attempt.total_quantity,
+                shipping_address=shipping_address_obj,
+                billing_address=billing_address_obj,
+                user=checkout_attempt.user,
+                last_digits=last_digits,
+                discount_code=checkout_attempt.discount_code,
+                transaction_status="completed",
+                paid=True,
+            )
+            create_order_items(checkout_attempt.cart_items, order_obj)
+            checkout_attempt.delete()
+
+            logger.info(
+                "Stripe order processing: order %s created after confirmed payment for session %s.",
+                order_obj.order_id,
+                session_id,
+            )
+            queue_purchase_confirmation_email(order_obj.order_id)
+            return True, order_obj
+
         if order_id:
             try:
                 order_obj = Order.objects.select_for_update().get(order_id=int(order_id))
@@ -1045,6 +1302,7 @@ def _process_successful_checkout(session):
 
             if order_obj.paid:
                 logger.info(f"Stripe order processing: order {order_id} is already marked as paid.")
+                queue_purchase_confirmation_email(order_obj.order_id)
                 return True, order_obj
 
             order_obj.payment_token = session_id
@@ -1058,6 +1316,7 @@ def _process_successful_checkout(session):
             order_obj.save()
 
             logger.info(f"Stripe order processing: order {order_id} successfully updated to paid/completed.")
+            queue_purchase_confirmation_email(order_obj.order_id)
             return True, order_obj
 
         else:
@@ -1113,16 +1372,14 @@ def _process_successful_checkout(session):
                 logger.error(f"Stripe order processing: error creating order items: {e}")
 
             logger.info(f"Stripe order processing: order {session_id} created for user {user_id}, total ${total_price}")
+            queue_purchase_confirmation_email(order_obj.order_id)
             return True, order_obj
 
 
 def _handle_checkout_completed(event_data):
     """Process a completed checkout session and create the order."""
-    try:
-        session = event_data.get("data", {}).get("object", {})
-        _process_successful_checkout(session)
-    except Exception as e:
-        logger.error(f"Stripe webhook: error processing checkout.session.completed: {e}")
+    session = event_data.get("data", {}).get("object", {})
+    return _process_successful_checkout(session)
 
 
 def _handle_dispute(event_data):
@@ -1159,9 +1416,19 @@ def stripe_checkout_success(request):
 
         if session.payment_status == "paid":
             # Fallback order creation if not already created by webhook
-            _process_successful_checkout(session)
-            
-            order_exists = Order.objects.filter(payment_token=session_id).exists()
+            _, order = _process_successful_checkout(session)
+            if order is None:
+                order = Order.objects.filter(
+                    payment_token=session_id,
+                    user=request.user,
+                ).first()
+
+            if order is None or order.user_id != request.user.id:
+                return Response(
+                    {"error": "Confirmed order not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
             return Response({
                 "status": "success",
                 "session_id": session_id,
@@ -1169,7 +1436,8 @@ def stripe_checkout_success(request):
                 "currency": session.currency,
                 "customer_email": session.customer_email,
                 "payment_status": session.payment_status,
-                "order_confirmed": order_exists,
+                "order_confirmed": True,
+                "order_id": order.order_id,
             })
         else:
             return Response({
@@ -1235,6 +1503,9 @@ def _calculate_shipping(cart_items, subtotal):
 
 def _get_frontend_url():
     """Determine the frontend URL based on environment."""
+    configured_url = os.getenv("FRONTEND_URL", "").strip()
+    if configured_url:
+        return configured_url.rstrip("/")
     if DEBUG and DEBUG == "True":
         return "http://localhost:5173"
     return "https://bioarktech.com"

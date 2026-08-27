@@ -1,11 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiFetch, mockResources, getCategoryIcon, formatAssetUrl } from '../utils/api';
-import { logo } from '../utils/api';
-import { getCatalogCardPrice } from '../utils/catalogPrice';
 import IconMark from '../components/IconMark';
 import ProductVisual from '../components/ProductVisual';
+import CatalogPrice from '../components/CatalogPrice';
 
-const HOME_BLOG_CATEGORIES = ['All', 'BioArk News', 'Biotech Outlook', 'Business News'];
+const ABOUT_CALLOUTS = [
+  {
+    icon: 'premium-quality',
+    title: 'Premium Quality',
+    description: 'Rigorous quality control ensures exceptional products you can trust.',
+  },
+  {
+    icon: 'reliable-results',
+    title: 'Reliable Results',
+    description: 'Consistent performance and reproducibility to support your research.',
+  },
+  {
+    icon: 'fast-shipping',
+    title: 'Fast Shipping',
+    description: 'Quick processing and delivery to keep your research moving.',
+  },
+  {
+    icon: 'expert-support',
+    title: 'Expert Support',
+    description: 'Knowledgeable experts here to support you every step of the way.',
+  },
+];
 
 const inferHomeBlogCategory = (blog) => {
   const text = `${blog?.title || ''} ${blog?.description || ''} ${blog?.tag || ''}`.toLowerCase();
@@ -22,8 +42,8 @@ const inferHomeBlogCategory = (blog) => {
 };
 
 const getHomeBlogCategory = (blog) => {
-  if (HOME_BLOG_CATEGORIES.includes(blog?.category)) return blog.category;
-  if (HOME_BLOG_CATEGORIES.includes(blog?.tag)) return blog.tag;
+  if (blog?.category) return blog.category;
+  if (blog?.tag) return blog.tag;
   return inferHomeBlogCategory(blog);
 };
 
@@ -34,7 +54,7 @@ const getBlogTimestamp = (blog) => {
 };
 
 const getRecentBlogs = (items) => (
-  [...items].sort((a, b) => getBlogTimestamp(b) - getBlogTimestamp(a)).slice(0, 3)
+  [...items].sort((a, b) => getBlogTimestamp(b) - getBlogTimestamp(a)).slice(0, 4)
 );
 
 const formatHomeBlogDate = (blog) => {
@@ -76,6 +96,12 @@ const getSlideImageUrl = (url) => {
   if (url.startsWith('/images/')) {
     return url;
   }
+  return formatAssetUrl(url);
+};
+
+const getSlideVideoUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('/') && !url.startsWith('/media/')) return url;
   return formatAssetUrl(url);
 };
 
@@ -126,6 +152,7 @@ function HomePage({ navigate, searchParams }) {
   const [featuredGeneralProducts, setFeaturedGeneralProducts] = useState([]);
   const [featuredServices, setFeaturedServices] = useState([]);
   const [blogs, setBlogs] = useState([]);
+  const [blogCategories, setBlogCategories] = useState([]);
   const [activeBlogCategory, setActiveBlogCategory] = useState('All');
   const [loading, setLoading] = useState(true);
   const [featuredStartIndex, setFeaturedStartIndex] = useState(0);
@@ -136,6 +163,7 @@ function HomePage({ navigate, searchParams }) {
   const [canBrowseCategoriesRight, setCanBrowseCategoriesRight] = useState(false);
   const [slides, setSlides] = useState([]);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+  const [isHeroVideoPlaying, setIsHeroVideoPlaying] = useState(false);
   const categoryCarouselViewportRef = useRef(null);
 
   // Smooth scroll logic
@@ -162,6 +190,7 @@ function HomePage({ navigate, searchParams }) {
           generalProdData,
           servicesData,
           blogData,
+          blogCategoryData,
           slideData
         ] = await Promise.all([
           apiFetch('/api/products/load-product-categories/?show_on_homepage=true').catch(() => []),
@@ -169,6 +198,7 @@ function HomePage({ navigate, searchParams }) {
           apiFetch('/api/products/get-featured-general-products/').catch(() => []),
           apiFetch('/api/interface/get-homepage-services/').catch(() => []),
           apiFetch('/api/blogs/get-all-blogs/').catch(() => mockResources),
+          apiFetch('/api/blogs/get-blog-categories/').catch(() => []),
           apiFetch('/api/interface/get-homepage-slides/').catch(() => [])
         ]);
 
@@ -177,6 +207,7 @@ function HomePage({ navigate, searchParams }) {
         setFeaturedGeneralProducts(Array.isArray(generalProdData) ? generalProdData : []);
         setFeaturedServices(Array.isArray(servicesData) ? servicesData : []);
         setBlogs(Array.isArray(blogData) && blogData.length > 0 ? blogData : mockResources);
+        setBlogCategories(Array.isArray(blogCategoryData) ? blogCategoryData : []);
         if (Array.isArray(slideData) && slideData.length > 0) {
           setSlides(slideData);
         }
@@ -197,6 +228,14 @@ function HomePage({ navigate, searchParams }) {
     homeCategory: getHomeBlogCategory(blog),
     homeIndex: index,
   }));
+  const storedBlogCategoryNames = blogCategories.map((category) => category.name).filter(Boolean);
+  const inferredBlogCategoryNames = categorizedBlogs.map((blog) => blog.homeCategory).filter(Boolean);
+  const homeBlogCategoryTabs = [
+    'All',
+    ...Array.from(new Set(
+      storedBlogCategoryNames.length > 0 ? storedBlogCategoryNames : inferredBlogCategoryNames
+    )),
+  ];
   const visibleHomeBlogs = getRecentBlogs(
     categorizedBlogs.filter((blog) => (
       activeBlogCategory === 'All' || blog.homeCategory === activeBlogCategory
@@ -248,12 +287,16 @@ function HomePage({ navigate, searchParams }) {
 
   // Auto play carousel
   useEffect(() => {
-    if (activeSlides.length <= 1) return;
+    if (activeSlides.length <= 1 || isHeroVideoPlaying) return undefined;
     const timer = setInterval(() => {
       setActiveSlideIndex((prev) => (prev + 1) % activeSlides.length);
     }, 7000);
     return () => clearInterval(timer);
-  }, [activeSlides.length]);
+  }, [activeSlides.length, isHeroVideoPlaying]);
+
+  useEffect(() => {
+    setIsHeroVideoPlaying(false);
+  }, [activeSlideIndex]);
 
   useEffect(() => {
     setFeaturedStartIndex(0);
@@ -381,7 +424,29 @@ function HomePage({ navigate, searchParams }) {
             </div>
           </div>
 
-          {currentSlide.image_url ? (
+          {currentSlide.video_url ? (
+            <aside className="hero-video-hud" aria-label={`Video for ${String(currentSlide.title || 'homepage slide').replace(/<[^>]*>/g, '')}`}>
+              <div className="hero-video-hud-header">
+                <span className="hero-video-hud-indicator" aria-hidden="true" />
+                <span>Featured video</span>
+              </div>
+              <video
+                key={`${currentSlide.id}-${currentSlide.video_url}`}
+                className="hero-video-player"
+                src={getSlideVideoUrl(currentSlide.video_url)}
+                poster={currentSlide.image_url ? getSlideImageUrl(currentSlide.image_url) : undefined}
+                controls
+                playsInline
+                preload="metadata"
+                onPlay={() => setIsHeroVideoPlaying(true)}
+                onPlaying={() => setIsHeroVideoPlaying(true)}
+                onPause={() => setIsHeroVideoPlaying(false)}
+                onEnded={() => setIsHeroVideoPlaying(false)}
+              >
+                Your browser does not support embedded video.
+              </video>
+            </aside>
+          ) : currentSlide.image_url ? (
             <div className="hero-slide-empty-right-column" style={{ width: '100%', height: '100%', pointerEvents: 'none' }} />
           ) : (
             <div className="hero-art" aria-label="BioArk agarose gel promotion">
@@ -520,9 +585,6 @@ function HomePage({ navigate, searchParams }) {
                     : itemType === 'reagent'
                       ? 'Reagent'
                       : 'Product';
-                  const priceStr = itemType === 'service'
-                    ? 'Contact for Quote'
-                    : getCatalogCardPrice(prod);
                   const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
                   const productId = prod.externalId || prod.external_id || prod.catalog_number || prod.product_sku;
                   const productHref = productId ? `/product/${productId}` : `/search?q=${encodeURIComponent(name)}`;
@@ -541,7 +603,11 @@ function HomePage({ navigate, searchParams }) {
                       {itemType !== 'service' && (
                         <p className="rating">★★★★★ <span>({prod.reviews || '45'})</span></p>
                       )}
-                      <p className="price">{priceStr}</p>
+                      {itemType === 'service' ? (
+                        <p className="price">Contact for Quote</p>
+                      ) : (
+                        <CatalogPrice item={prod} className="price" />
+                      )}
                       <a className="product-card-action" href={productHref} onClick={(e) => { e.preventDefault(); navigate(productHref); }}>View {itemLabel} <span>→</span></a>
                     </article>
                   );
@@ -585,7 +651,6 @@ function HomePage({ navigate, searchParams }) {
                   <div className="product-grid product-carousel-grid">
                     {visibleFeaturedGeneralProducts.map(({ product: prod, index }) => {
                       const name = prod.product_name;
-                      const priceStr = getCatalogCardPrice(prod);
                       const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
                       const productId = prod.externalId || prod.external_id || prod.catalog_number;
                       const productHref = productId ? `/product/${productId}` : `/search?q=${encodeURIComponent(name)}`;
@@ -617,7 +682,7 @@ function HomePage({ navigate, searchParams }) {
                             <div>
                               <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: '0 0 10px 0', minHeight: '48px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', color: 'var(--ink)' }}>{name}</h3>
                               <p className="rating" style={{ margin: '0 0 12px 0' }}>★★★★★ <span style={{ color: 'var(--ink-light)', fontSize: '0.85rem' }}>(4.8)</span></p>
-                              <p className="price" style={{ margin: '0 0 20px 0', fontSize: '1.2rem', fontWeight: '700', color: 'var(--blue)' }}>{priceStr}</p>
+                              <CatalogPrice item={prod} className="price" />
                             </div>
                             <a className="product-card-action" href={productHref} onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(productHref); }}>View Details <span>→</span></a>
                           </div>
@@ -715,24 +780,36 @@ function HomePage({ navigate, searchParams }) {
         )}
 
         <section className="about-section" aria-labelledby="about-title">
-          <div className="about-copy">
-            <h2 id="about-title">About BioArkTech</h2>
-            <p>
-              BioArkTech is dedicated to empowering life science research with innovative,
-              high-quality products. From molecular biology reagents to advanced instruments,
-              we provide reliable solutions that drive discovery and accelerate breakthroughs.
-            </p>
-            <div className="trust-row">
-              <span>Premium Quality</span>
-              <span>Reliable Results</span>
-              <span>Fast Shipping</span>
-              <span>Expert Support</span>
+          <div className="about-main">
+            <div className="about-copy">
+              <h2 id="about-title">About BioArkTech</h2>
+              <p>
+                BioArkTech is dedicated to empowering life science research with innovative,
+                high-quality products. From molecular biology reagents to advanced instruments,
+                we provide reliable solutions that drive discovery and accelerate breakthroughs.
+              </p>
+            </div>
+            <div className="video-card">
+              <video controls preload="metadata" playsInline aria-label="BioArk Tech introduction">
+                <source src="/bioark-tech-intro-1280x540.mp4" type="video/mp4" />
+                Your browser does not support embedded video.
+              </video>
             </div>
           </div>
-          <div className="video-card" aria-label="Bio Ark Tech video preview">
-            <img src={logo} alt="" />
-            <div className="video-line" />
-            <div className="video-controls"><span /> 0:00 / 1:25 <b /></div>
+
+          <div className="trust-row">
+            {ABOUT_CALLOUTS.map((callout) => (
+              <article className={`trust-callout trust-${callout.icon}`} key={callout.title}>
+                <div className="trust-callout-icon" aria-hidden="true">
+                  <img src={`/img/bioark-icon-${callout.icon}.svg`} alt="" />
+                </div>
+                <div className="trust-callout-body">
+                  <h3>{callout.title}</h3>
+                  <p>{callout.description}</p>
+                  <span className="trust-callout-accent" aria-hidden="true" />
+                </div>
+              </article>
+            ))}
           </div>
         </section>
 
@@ -745,7 +822,7 @@ function HomePage({ navigate, searchParams }) {
             navigate={navigate}
           />
           <div className="home-blog-tabs" role="tablist" aria-label="Blog categories">
-            {HOME_BLOG_CATEGORIES.map((category) => (
+            {homeBlogCategoryTabs.map((category) => (
               <button
                 className={`home-blog-tab ${activeBlogCategory === category ? 'is-active' : ''}`}
                 key={category}

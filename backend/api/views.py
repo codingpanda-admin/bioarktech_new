@@ -1,6 +1,9 @@
 import json
 import logging
 import os
+import re
+import unicodedata
+from html import unescape
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.password_validation import validate_password
@@ -16,7 +19,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.db.models import Q
 from django.core.paginator import Paginator
-from django.utils import timezone
+from django.utils.html import strip_tags
 
 
 from rest_framework.decorators import api_view
@@ -26,20 +29,11 @@ from rest_framework.response import Response
 from products.serializers import ProductSerializer
 from users.models import User
 from api.models import EmailVerificationToken, PasswordResetToken
-from quote.models import Quote
-from quote.services import create_quote_record
 from products.models import *
 
 FRONTEND_DOMAIN = os.environ.get('FRONTEND_DOMAIN') or 'http://localhost:5173'
 logger = logging.getLogger(__name__)
 
-
-def generate_quote_external_id(request):
-    if not request.session.session_key:
-        request.session.create()
-
-    timestamp = timezone.localtime(timezone.now()).strftime("%Y%m%d%M%S")
-    return f"q_{request.session.session_key}_{timestamp}"
 
 def get_csrf(request):
     response = JsonResponse({'detail': 'CSRF cookie set', 'csrftoken': get_token(request)})
@@ -203,7 +197,7 @@ def send_verification_email(user):
     send_mail(
         subject="Verify your email address",
         message=f"Click the link below to verify your email address:\n{verification_url}",
-        from_email=settings.EMAIL_HOST_USER,
+        from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user.email],
     )
 
@@ -240,114 +234,11 @@ def send_contact_form(request):
         subject=f"New message from Bioark Tech: {subject}",
         message=f"Customer: {last_name}, {first_name}\nEmail: {email}\nPhone: {phone}\n{message}\nProduct: {product}",
         html_message="<h1>New message from Bioark Tech</h1>",
-        from_email="no-reply@bioarktech.com",
-        recipient_list=["no-reply@bioarktech.com"],
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[settings.EMAIL_NOTIFICATION_RECIPIENT],
     )
 
     return JsonResponse({"detail": "Contact form sent."})
-
-@require_POST
-def send_quote_form(request):
-    data = json.loads(request.body)
-    email = data.get('email')
-    first_name = data.get('firstName')
-    last_name = data.get('lastName')
-    phone = data.get('phone')
-    company = data.get('company') or data.get('institution')
-    department = data.get('department')
-    timeline = data.get('timeline')
-    budget = data.get('budget')
-    project_description = data.get('projectDescription') or data.get('project_description')
-    additional_info = data.get('additionalInfo') or data.get('additionalInformation') or data.get('additional_info')
-    gene_sequence = data.get('geneSequence')
-    gene_species = data.get('geneSpecies')
-    institution = data.get('institution')
-    mammalian_cells = data.get('mammalianCells')
-    plasmid_amount = data.get('plasmidAmount')
-    product_type = data.get('productType')
-    service_type = data.get('serviceType')
-    cell_line_amount = data.get('cellLineAmount')
-    message = data.get('message')
-    user = request.user if request.user.is_authenticated else None
-
-    if not first_name or not last_name or not email:
-        return JsonResponse({'detail': 'First name, last name, and email are required.'}, status=400)
-
-    try:
-        validate_email(email)
-    except ValidationError:
-        return JsonResponse({'detail': 'Invalid email address.'}, status=400)
-
-    external_id = data.get('externalId') or data.get('external_id') or generate_quote_external_id(request)
-
-    quote = create_quote_record(
-        user=user,
-        external_id=external_id,
-        first_name=first_name,
-        last_name=last_name,
-        email=email,
-        phone=phone,
-        company=company,
-        department=department,
-        service_type=service_type or data.get('productType'),
-        timeline=timeline,
-        budget=budget,
-        project_description=project_description or message,
-        additional_info=additional_info,
-        read=False,
-    )
-    
-    email_message = ("New Quote Request from Bioark Tech\n"
-                     "Customer Information:\n"
-                     "-----------------------\n"
-                     f"Quote ID: {quote.id}\n"
-                     f"External ID: {quote.external_id}\n"
-                     f"Name: {first_name} {last_name}\n"
-                     f"Email: {email}\n")
-
-    def add_field(label, value):
-        return f"{label}: {value}\n" if value else ""
-
-    email_message += add_field("Phone", phone)
-    email_message += add_field("Company/Institution", company or institution)
-    email_message += add_field("Department", department)
-    email_message += add_field("Gene Sequence", gene_sequence)
-    email_message += add_field("Gene Species", gene_species)
-    email_message += add_field("Institution", institution if institution != company else None)
-    email_message += add_field("Mammalian Cells", mammalian_cells)
-    email_message += add_field("Plasmid Amount", plasmid_amount)
-    email_message += add_field("Product Type", product_type)
-    email_message += add_field("Service Type", service_type)
-    email_message += add_field("Cell Line Amount", cell_line_amount)
-    email_message += add_field("Timeline", timeline)
-    email_message += add_field("Budget", budget)
-
-    if project_description:
-        email_message += f"\nProject Description:\n-----------------------\n{project_description}\n"
-
-    if additional_info:
-        email_message += f"\nAdditional Information:\n-----------------------\n{additional_info}\n"
-
-    if message:
-        email_message += f"\nCustomer Message:\n-----------------------\n{message}\n"
-
-    try:
-        send_mail(
-            subject="New Quote from Bioark Tech",
-            message=email_message,
-            from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[settings.EMAIL_HOST_USER],
-        )
-    except Exception:
-        logger.exception("Quote %s was saved, but the notification email failed.", quote.id)
-        return JsonResponse({
-            "detail": "Quote request saved, but the notification email could not be sent.",
-            "id": quote.id,
-            "externalId": quote.external_id,
-            "emailSent": False,
-        }, status=201)
-
-    return JsonResponse({"detail": "Quote request saved.", "id": quote.id, "externalId": quote.external_id, "emailSent": True}, status=201)
 
 @require_POST
 def resend_verification(request):
@@ -389,6 +280,40 @@ def get_first_catalog_option_price(product, fallback=''):
 
     return next((price for price in option_prices.values() if price not in [None, '']), fallback)
 
+
+def get_catalog_search_images(product=None, featured_product=None):
+    """Return canonical and legacy catalog images in reliable fallback order."""
+    candidates = []
+
+    def add_candidate(value):
+        if isinstance(value, dict):
+            value = value.get('image') or value.get('url') or value.get('image_url')
+        value = str(value or '').strip()
+        if value and value not in candidates:
+            candidates.append(value)
+
+    # The Product record is the Admin Console source of truth. This is also
+    # where imported product/reagent images are stored, including records that
+    # have an older FeaturedProduct row with no associated Image rows.
+    if product:
+        add_candidate(product.image_url)
+        for image_value in product.images or []:
+            add_candidate(image_value)
+
+    if featured_product and featured_product.union_id:
+        legacy_images = Image.objects.filter(union=featured_product.union).order_by(
+            '-main_display',
+            'id',
+        )
+        for legacy_image in legacy_images:
+            if legacy_image.image:
+                try:
+                    add_candidate(legacy_image.image.url)
+                except ValueError:
+                    add_candidate(f'/media/{legacy_image.image.name}')
+
+    return candidates
+
 def is_product_consumable(product):
     return product.category_external_id == 'category-1780539818236'
 
@@ -398,6 +323,103 @@ def is_featured_product_consumable(fp):
     if linked_product:
         return linked_product.category_external_id == 'category-1780539818236'
     return 'wet ice' not in (fp.ship_info or "").lower()
+
+
+def _search_text(value):
+    """Return readable text for scalar, HTML, array, and JSON catalog fields."""
+    if value in (None, ''):
+        return ''
+    if isinstance(value, dict):
+        value = ' '.join(f'{key} {item}' for key, item in value.items())
+    elif isinstance(value, (list, tuple, set)):
+        value = ' '.join(str(item) for item in value if item not in (None, ''))
+    return unescape(strip_tags(str(value)))
+
+
+def _normalize_search_text(value):
+    """Normalize case, accents, HTML, whitespace, and catalog-code punctuation."""
+    decomposed = unicodedata.normalize('NFKD', _search_text(value).casefold())
+    without_accents = ''.join(char for char in decomposed if not unicodedata.combining(char))
+    return ' '.join(re.findall(r'[^\W_]+', without_accents, flags=re.UNICODE))
+
+
+def _search_match_score(query, search_fields):
+    """Score a catalog item while requiring every supplied search term to match.
+
+    Codes are also compared without punctuation, so RNDT-021k, RNDT 021k, and
+    rndt021k resolve to the same item. Fields are intentionally weighted so an
+    exact name/code always ranks above a mention in long-form description text.
+    """
+    normalized_query = _normalize_search_text(query)
+    if not normalized_query:
+        return 0
+
+    query_tokens = normalized_query.split()
+    compact_query = ''.join(query_tokens)
+    field_weights = {
+        'identifiers': 500,
+        'names': 300,
+        'groups': 90,
+        'keywords': 25,
+    }
+    normalized_fields = {
+        field_name: [
+            normalized
+            for value in values
+            if (normalized := _normalize_search_text(value))
+        ]
+        for field_name, values in search_fields.items()
+    }
+    all_values = [value for values in normalized_fields.values() for value in values]
+    all_words = [word for value in all_values for word in value.split()]
+    compact_values = [''.join(value.split()) for value in all_values]
+
+    def token_matches(token):
+        if token in all_words:
+            return True
+        return len(token) >= 3 and any(token in word for word in all_words)
+
+    compact_match = len(compact_query) >= 3 and any(
+        compact_query in value for value in compact_values
+    )
+    if not compact_match and not all(token_matches(token) for token in query_tokens):
+        return None
+
+    identifier_values = normalized_fields.get('identifiers', [])
+    name_values = normalized_fields.get('names', [])
+    identifier_compact = [''.join(value.split()) for value in identifier_values]
+    name_compact = [''.join(value.split()) for value in name_values]
+
+    score = 0
+    if compact_query in identifier_compact:
+        score += 10000
+    elif len(compact_query) >= 3 and any(compact_query in value for value in identifier_compact):
+        score += 6500
+
+    if normalized_query in name_values:
+        score += 9000
+    elif compact_query in name_compact:
+        score += 8500
+
+    for field_name, values in normalized_fields.items():
+        weight = field_weights.get(field_name, 10)
+        for value in values:
+            words = value.split()
+            compact_value = ''.join(words)
+            if value.startswith(normalized_query):
+                score += weight * 8
+            elif normalized_query in value:
+                score += weight * 6
+            elif len(compact_query) >= 3 and compact_query in compact_value:
+                score += weight * 5
+
+            for token in query_tokens:
+                if token in words:
+                    score += weight * 2
+                elif len(token) >= 3 and any(token in word for word in words):
+                    score += weight
+
+    return score
 
 @api_view(['GET'])
 def search_product(request):
@@ -420,42 +442,23 @@ def search_product(request):
         category_filter = 'services'
         query = ''
 
-    list_keywords = query.split()
-
-    if list_keywords:
-        # Query Product table
-        search_query = Q()
-        for keyword in list_keywords:
-            search_query |= Q(product_name__icontains=keyword)
-            search_query |= Q(external_id__icontains=keyword)
-            search_query |= Q(catalog_number__icontains=keyword)
-            search_query |= Q(category_external_id__icontains=keyword)
-            search_query |= Q(product_group__icontains=keyword)
-            search_query |= Q(source_type__icontains=keyword)
-            search_query |= Q(description__icontains=keyword)
-            search_query |= Q(content_text__icontains=keyword)
-
-        products = Product.objects.filter(search_query, hidden=False)
-
-        # Query FeaturedProduct table
-        featured_search_query = Q()
-        for keyword in list_keywords:
-            featured_search_query |= Q(product_name__icontains=keyword)
-            featured_search_query |= Q(catalog_number__icontains=keyword)
-            featured_search_query |= Q(description__icontains=keyword)
-
-        featured_products = FeaturedProduct.objects.filter(featured_search_query)
-    else:
-        products = Product.objects.filter(hidden=False)
-        featured_products = FeaturedProduct.objects.all()
+    # The public catalog is intentionally small enough to score in memory. This
+    # avoids database-specific punctuation/case behavior and lets catalog codes,
+    # rich text, arrays, and JSON metadata share one consistent matching policy.
+    products = list(Product.objects.filter(hidden=False).select_related('category'))
+    featured_products = FeaturedProduct.objects.all()
+    active_products_by_catalog = {
+        (product.catalog_number or '').strip().casefold(): product
+        for product in products
+        if (product.catalog_number or '').strip()
+    }
 
     combined_results = []
     seen_skus = set()
     
     # 1. Add featured products first to prioritize rich featured data (prices/images)
     for fp in featured_products:
-        linked_products = Product.objects.filter(catalog_number__iexact=fp.catalog_number)
-        linked_product = linked_products.filter(hidden=False).first()
+        linked_product = active_products_by_catalog.get((fp.catalog_number or '').strip().casefold())
 
         # FeaturedProduct is legacy detail/pricing data, not an independently
         # active catalog item. Only an active canonical Product may appear in
@@ -493,37 +496,53 @@ def search_product(request):
         up = UnitPrice.objects.filter(union=fp.union).first()
         price = float(up.unit_price) if up else 0.0
         
-        img = Image.objects.filter(union=fp.union).first()
-        if img and img.image:
-            import os
-            from django.conf import settings
-            filename = os.path.basename(img.image.name)
-            subfolder_path = os.path.join(settings.MEDIA_ROOT, 'product_images', filename)
-            if os.path.exists(subfolder_path):
-                img_url = f"/media/product_images/{filename}"
-            else:
-                img_url = f"/media/{filename}"
-        else:
-            img_url = None
+        image_candidates = get_catalog_search_images(linked_product, fp)
+        img_url = image_candidates[0] if image_candidates else None
         
         combined_results.append({
             'product_id': fp.id,
             'product_sku': fp.catalog_number,
+            'catalog_number': fp.catalog_number,
             'external_id': linked_product.external_id if linked_product else None,
             'externalId': linked_product.external_id if linked_product else None,
             'product_name': fp.product_name,
             'description': fp.description,
             'unit_price': price,
             'list_price': linked_product.list_price or '',
+            'discounted_price': linked_product.discounted_price or '',
             'options': linked_product.options or [],
             'option_prices': linked_product.option_prices or {},
+            'option_discounted_prices': linked_product.option_discounted_prices or {},
             'first_option_price': get_first_catalog_option_price(linked_product, price),
             'image': img_url,
+            'image_candidates': image_candidates,
             'category': prod_cat,
             'category_external_id': linked_cat_id,
             'product_group': linked_group,
             'shipping_cost': 100.0 if category_type == 'consumables' else 60.0,
-            'is_featured': True
+            'is_featured': True,
+            '_search_fields': {
+                'identifiers': [fp.catalog_number, linked_product.catalog_number, linked_product.external_id],
+                'names': [fp.product_name, linked_product.product_name],
+                'groups': [
+                    linked_product.product_group,
+                    linked_product.source_type,
+                    linked_product.category_external_id,
+                    linked_product.category.category_name if linked_product.category else '',
+                ],
+                'keywords': [
+                    fp.description,
+                    fp.key_features,
+                    fp.performance_data,
+                    linked_product.description,
+                    linked_product.content_text,
+                    linked_product.key_features,
+                    linked_product.options,
+                    linked_product.raw_product,
+                    linked_product.raw_override,
+                    linked_product.raw_detail,
+                ],
+            },
         })
         
     # 2. Add general products next, skipping any that were already added as featured
@@ -552,6 +571,7 @@ def search_product(request):
 
         prod_cat = 'Consumables' if category_type == 'consumables' else ('Reagents & Kits' if category_type == 'reagents' else 'Products & Services')
 
+        image_candidates = get_catalog_search_images(p)
         combined_results.append({
             'product_id': p.product_id,
             'product_sku': p.catalog_number or p.external_id,
@@ -562,15 +582,37 @@ def search_product(request):
             'description': p.description,
             'unit_price': 0.0,
             'list_price': p.list_price or '',
+            'discounted_price': p.discounted_price or '',
             'options': p.options or [],
             'option_prices': p.option_prices or {},
+            'option_discounted_prices': p.option_discounted_prices or {},
             'first_option_price': get_first_catalog_option_price(p),
-            'image': p.image_url or (p.images[0] if p.images else None),
+            'image': image_candidates[0] if image_candidates else None,
+            'image_candidates': image_candidates,
             'category': prod_cat,
             'category_external_id': p.category_external_id,
             'product_group': p.product_group,
             'shipping_cost': 100.0 if category_type == 'consumables' else 60.0,
-            'is_featured': p.is_featured or p.show_in_featured
+            'is_featured': p.is_featured or p.show_in_featured,
+            '_search_fields': {
+                'identifiers': [p.catalog_number, p.external_id],
+                'names': [p.product_name],
+                'groups': [
+                    p.product_group,
+                    p.source_type,
+                    p.category_external_id,
+                    p.category.category_name if p.category else '',
+                ],
+                'keywords': [
+                    p.description,
+                    p.content_text,
+                    p.key_features,
+                    p.options,
+                    p.raw_product,
+                    p.raw_override,
+                    p.raw_detail,
+                ],
+            },
         })
 
 
@@ -581,21 +623,10 @@ def search_product(request):
         if category_filter == 'featured':
             service_filters['is_featured'] = True
 
-        if list_keywords:
-            service_query = Q()
-            for keyword in list_keywords:
-                service_query |= Q(title__icontains=keyword)
-                service_query |= Q(url__icontains=keyword)
-                service_query |= Q(content__icontains=keyword)
-                service_query |= Q(category__icontains=keyword)
-                service_query |= Q(service_group__icontains=keyword)
-            services = ServiceMode.objects.filter(service_query, **service_filters)
-        else:
-            services = ServiceMode.objects.filter(**service_filters)
+        services = ServiceMode.objects.filter(**service_filters)
 
         for s in services:
             # Clean HTML content for description snippet
-            import re
             clean_desc = re.sub(r'<[^>]*>', '', s.content)[:180] + "..." if s.content else ""
             
             # Map category to service category external ID
@@ -611,26 +642,51 @@ def search_product(request):
             elif svc_cat == 'functional-testing':
                 svc_cat = 'functional-testing-services'
 
+            image_candidates = [f"/media/{s.image.name}"] if s.image else []
             combined_results.append({
                 'product_id': f"svc-{s.id}",
-                'product_sku': s.url.upper(),
+                'product_sku': s.catalog_number or s.url.upper(),
                 'external_id': s.url,
                 'externalId': s.url,
-                'catalog_number': s.url.upper(),
+                'catalog_number': s.catalog_number or s.url.upper(),
                 'product_name': s.title,
                 'description': clean_desc,
                 'unit_price': 0.0,
                 'list_price': 'Contact for Quote',
-                'image': f"/media/{s.image.name}" if s.image else None,
+                'image': image_candidates[0] if image_candidates else None,
+                'image_candidates': image_candidates,
                 'category': 'Services',
                 'category_external_id': svc_cat,
                 'product_group': s.service_group or None,
                 'shipping_cost': 0.0,
-                'is_featured': s.is_featured
+                'is_featured': s.is_featured,
+                '_search_fields': {
+                    'identifiers': [s.catalog_number, s.url],
+                    'names': [s.title],
+                    'groups': [s.category, s.service_group],
+                    'keywords': [s.content, s.price, s.performance_data, s.manuals],
+                },
             })
 
-    # Sort all results alphabetically by name
-    combined_results.sort(key=lambda x: x['product_name'].lower())
+    if query:
+        scored_results = []
+        for result in combined_results:
+            score = _search_match_score(query, result.pop('_search_fields', {}))
+            if score is None:
+                continue
+            result['search_score'] = score
+            scored_results.append(result)
+        combined_results = scored_results
+        combined_results.sort(key=lambda item: (
+            -item['search_score'],
+            not item['is_featured'],
+            item['product_name'].casefold(),
+        ))
+    else:
+        for result in combined_results:
+            result.pop('_search_fields', None)
+            result['search_score'] = 0
+        combined_results.sort(key=lambda item: item['product_name'].casefold())
 
     paginator = Paginator(combined_results, page_size)
 
@@ -676,7 +732,7 @@ def request_password_reset(request):
                 send_mail(
                     subject="Reset your password - Bioark Tech",
                     message=email_body,
-                    from_email=settings.EMAIL_HOST_USER,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[user.email],
                     fail_silently=False
                 )

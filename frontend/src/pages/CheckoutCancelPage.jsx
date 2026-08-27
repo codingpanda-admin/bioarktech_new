@@ -1,6 +1,19 @@
-import React from 'react';
+import { useEffect } from 'react';
+import { apiFetch } from '../utils/api';
 
 function CheckoutCancelPage({ navigate }) {
+  useEffect(() => {
+    const checkoutAttemptId = new URLSearchParams(window.location.search).get('attempt_id');
+    if (!checkoutAttemptId) return;
+
+    apiFetch('/api/orders/stripe/checkout-cancel/', {
+      method: 'POST',
+      body: { checkout_attempt_id: checkoutAttemptId },
+    }).catch((error) => {
+      console.error('Unable to close the cancelled checkout attempt:', error);
+    });
+  }, []);
+
   return (
     <main style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
       <div style={{
@@ -31,9 +44,9 @@ function CheckoutCancelPage({ navigate }) {
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="secondary-button checkout-secondary-button"
             onClick={() => navigate('/')}
-            style={{ padding: '12px 24px', borderRadius: '8px', fontWeight: 600, border: '1px solid var(--line)', background: 'transparent' }}
+            style={{ padding: '12px 24px', borderRadius: '8px', fontWeight: 600 }}
           >
             Continue Shopping
           </button>

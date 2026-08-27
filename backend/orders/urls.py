@@ -11,9 +11,12 @@ urlpatterns = [
     path('pay-with-purchase-order/', views.pay_with_purchase_order, name='purchase_order'),
     path('cart/add-quote-to-cart/<str:quote_number>', views.add_quote_to_cart, name='quote_to_cart'),
     path('get-invoice/<str:order_number>', views.get_invoice, name='get_invoice'),
+    path('invoice/<int:order_id>/html/', views.view_order_invoice_html, name='order_invoice_html'),
+    path('invoice/<int:order_id>/pdf/', views.download_order_invoice, name='order_invoice_pdf'),
 
     # Stripe Payment Gateway
     path('stripe/create-checkout-session/', views.create_stripe_checkout_session, name='stripe_checkout'),
+    path('stripe/checkout-cancel/', views.stripe_checkout_cancel, name='stripe_checkout_cancel'),
     path('stripe/webhook/', views.stripe_webhook, name='stripe_webhook'),
     path('stripe/checkout-success/', views.stripe_checkout_success, name='stripe_checkout_success'),
     path('stripe/publishable-key/', views.stripe_publishable_key, name='stripe_publishable_key'),

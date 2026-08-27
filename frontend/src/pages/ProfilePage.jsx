@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { apiFetch, formatAssetUrl } from '../utils/api';
+import { API_URL, apiFetch, formatAssetUrl } from '../utils/api';
+import { US_STATES, normalizeUsState } from '../utils/usStates';
 
 const emptyProfile = {
   firstName: '',
@@ -18,29 +19,15 @@ const emptyProfile = {
   zipcode: '',
 };
 
-const US_STATES = [
-  ['AL', 'Alabama'], ['AK', 'Alaska'], ['AZ', 'Arizona'], ['AR', 'Arkansas'],
-  ['CA', 'California'], ['CO', 'Colorado'], ['CT', 'Connecticut'], ['DE', 'Delaware'],
-  ['FL', 'Florida'], ['GA', 'Georgia'], ['HI', 'Hawaii'], ['ID', 'Idaho'],
-  ['IL', 'Illinois'], ['IN', 'Indiana'], ['IA', 'Iowa'], ['KS', 'Kansas'],
-  ['KY', 'Kentucky'], ['LA', 'Louisiana'], ['ME', 'Maine'], ['MD', 'Maryland'],
-  ['MA', 'Massachusetts'], ['MI', 'Michigan'], ['MN', 'Minnesota'], ['MS', 'Mississippi'],
-  ['MO', 'Missouri'], ['MT', 'Montana'], ['NE', 'Nebraska'], ['NV', 'Nevada'],
-  ['NH', 'New Hampshire'], ['NJ', 'New Jersey'], ['NM', 'New Mexico'], ['NY', 'New York'],
-  ['NC', 'North Carolina'], ['ND', 'North Dakota'], ['OH', 'Ohio'], ['OK', 'Oklahoma'],
-  ['OR', 'Oregon'], ['PA', 'Pennsylvania'], ['RI', 'Rhode Island'], ['SC', 'South Carolina'],
-  ['SD', 'South Dakota'], ['TN', 'Tennessee'], ['TX', 'Texas'], ['UT', 'Utah'],
-  ['VT', 'Vermont'], ['VA', 'Virginia'], ['WA', 'Washington'], ['WV', 'West Virginia'],
-  ['WI', 'Wisconsin'], ['WY', 'Wyoming'],
-];
-
-const normalizeUsState = (state) => {
-  const normalized = (state || '').trim().toLowerCase();
-  const match = US_STATES.find(([code, name]) => (
-    code.toLowerCase() === normalized || name.toLowerCase() === normalized
-  ));
-  return match ? match[0] : '';
-};
+const normalizeBillingAddress = (address = {}) => ({
+  address_line_1: address.address_line_1 || '',
+  address_line_2: address.address_line_2 || '',
+  apt_suite: address.apt_suite || '',
+  city: address.city || '',
+  state: normalizeUsState(address.state),
+  zipcode: address.zipcode || '',
+  country: address.country || 'US',
+});
 
 const formatQuoteDate = (dateStr) => {
   if (!dateStr) return 'N/A';
@@ -69,7 +56,7 @@ const getQuoteValue = (quote, ...keys) => {
 };
 
 function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
-  const [activeTab, setActiveTab] = useState(initialTab || 'personal'); // 'personal', 'address', 'orders', 'quotes', 'security'
+  const [activeTab, setActiveTab] = useState(initialTab || 'personal'); // 'personal', 'address', 'billing', 'orders', 'quotes', 'security'
 
   useEffect(() => {
     setActiveTab(initialTab || 'personal');
@@ -119,6 +106,11 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
     is_default: false,
   });
 
+  // Each user has one billing address. Saving again updates this same record.
+  const [billingAddress, setBillingAddress] = useState(null);
+  const [isEditingBillingAddress, setIsEditingBillingAddress] = useState(false);
+  const [billingAddressFormData, setBillingAddressFormData] = useState(normalizeBillingAddress());
+
   // Load profile data on mount
   useEffect(() => {
     const loadProfile = async () => {
@@ -152,6 +144,8 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
 
         setProfilePicture(user.profile_picture || null);
         setShippingAddresses(user.shipping_addresses || []);
+        setBillingAddress(user.billing_address || null);
+        setBillingAddressFormData(normalizeBillingAddress(user.billing_address || {}));
       } catch (err) {
         setStatus({ type: 'error', message: err.message || 'Failed to load profile.' });
       } finally {
@@ -437,24 +431,78 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
   };
 
   const handleSetDefaultAddress = async (id) => {
+    const previousAddresses = shippingAddresses;
     setSaving(true);
     setStatus({ type: '', message: '' });
+    setShippingAddresses((current) => current
+      .map((address) => ({ ...address, is_default: address.id === id }))
+      .sort((left, right) => Number(right.is_default) - Number(left.is_default)));
 
     try {
       const response = await apiFetch(`/api/users/shipping-addresses/${id}/set-default/`, {
         method: 'POST',
       });
 
-      if (response.user) {
-        setShippingAddresses(response.user.shipping_addresses || []);
-        if (onRefreshProfile) {
-          onRefreshProfile();
-        }
+      const updatedAddresses = response.shipping_addresses || response.user?.shipping_addresses;
+      if (Array.isArray(updatedAddresses)) {
+        setShippingAddresses(updatedAddresses);
+      }
+      if (onRefreshProfile) {
+        await onRefreshProfile();
       }
       
       setStatus({ type: 'success', message: 'Default shipping address updated.' });
     } catch (err) {
+      setShippingAddresses(previousAddresses);
       setStatus({ type: 'error', message: err.message || 'Failed to set default address.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleBillingAddressFormChange = (event) => {
+    const { name, value } = event.target;
+    setBillingAddressFormData((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleStartBillingAddressEdit = () => {
+    setBillingAddressFormData(normalizeBillingAddress(billingAddress || {}));
+    setIsEditingBillingAddress(true);
+    setStatus({ type: '', message: '' });
+  };
+
+  const handleCancelBillingAddressEdit = () => {
+    setBillingAddressFormData(normalizeBillingAddress(billingAddress || {}));
+    setIsEditingBillingAddress(false);
+  };
+
+  const handleSaveBillingAddress = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setStatus({ type: '', message: '' });
+
+    try {
+      const wasNew = !billingAddress;
+      const response = await apiFetch('/api/users/billing-address/', {
+        method: billingAddress ? 'PUT' : 'POST',
+        body: billingAddressFormData,
+      });
+
+      const savedAddress = response.billing_address || response.user?.billing_address;
+      setBillingAddress(savedAddress || null);
+      setBillingAddressFormData(normalizeBillingAddress(savedAddress || {}));
+      setIsEditingBillingAddress(false);
+      setStatus({
+        type: 'success',
+        message: wasNew ? 'Billing address added successfully.' : 'Billing address updated successfully.',
+      });
+
+      if (onRefreshProfile) {
+        onRefreshProfile();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      setStatus({ type: 'error', message: err.message || 'Failed to save billing address.' });
     } finally {
       setSaving(false);
     }
@@ -627,6 +675,29 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
         .orders-table tr:hover {
           background: rgba(0, 0, 0, 0.01);
         }
+        .order-invoice-link {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 34px;
+          padding: 7px 12px;
+          border: 1px solid rgba(0, 102, 237, 0.3);
+          border-radius: 6px;
+          color: var(--blue);
+          background: #fff;
+          font-size: 12px;
+          font-weight: 600;
+          line-height: 1.2;
+          text-decoration: none;
+          white-space: nowrap;
+        }
+        .order-invoice-link:hover,
+        .order-invoice-link:focus-visible {
+          color: #fff;
+          border-color: transparent;
+          background: linear-gradient(135deg, #0066ed, #00b95c);
+          outline: none;
+        }
         .status-badge {
           padding: 4px 10px;
           border-radius: 12px;
@@ -769,13 +840,31 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
           font-size: 28px;
           font-weight: 300;
         }
+        .billing-address-card {
+          max-width: 560px;
+          min-height: 220px;
+          margin-top: 20px;
+        }
+        .profile-cancel-button {
+          padding: 12px 24px;
+          border: 1px solid var(--line);
+          border-radius: 8px;
+          background: #fff;
+          color: var(--ink);
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .profile-cancel-button:hover {
+          border-color: var(--blue);
+          color: var(--blue);
+        }
       `}</style>
 
 
       <section className="profile-header" style={{ width: 'min(1200px, calc(100% - 48px))', margin: '40px auto 0' }}>
         <div>
           <h1 style={{ fontWeight: 700 }}>My Account</h1>
-          <p style={{ color: 'var(--muted)', fontSize: '15px' }}>Manage your profile, shipping addresses, purchases, and quote requests.</p>
+          <p style={{ color: 'var(--muted)', fontSize: '15px' }}>Manage your profile, billing and shipping addresses, purchases, and quote requests.</p>
         </div>
       </section>
 
@@ -817,6 +906,13 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
               onClick={() => { setActiveTab('address'); setStatus({ type: '', message: '' }); }}
             >
               📍 Shipping Address
+            </button>
+            <button
+              type="button"
+              className={`profile-sidebar-tab ${activeTab === 'billing' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('billing'); setStatus({ type: '', message: '' }); }}
+            >
+              💳 Billing Address
             </button>
             <button 
               type="button" 
@@ -1054,7 +1150,7 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
               ) : (
                 <div>
                   <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '20px' }}>
-                    Select or manage the addresses you want to use for shipping and billing.
+                    Select or manage the addresses you want to use for shipping.
                   </p>
                   
                   <div className="address-grid">
@@ -1087,8 +1183,9 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
                               type="button" 
                               className="address-action-btn" 
                               onClick={() => handleSetDefaultAddress(addr.id)}
+                              disabled={saving}
                             >
-                              Set as Default
+                              {saving ? 'Updating...' : 'Set as Default'}
                             </button>
                           )}
                           <button 
@@ -1112,7 +1209,152 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
             </div>
           )}
 
-          {/* TAB 3: ORDER HISTORY */}
+          {/* TAB 3: BILLING ADDRESS */}
+          {activeTab === 'billing' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '20px', borderBottom: '1px solid var(--line)', paddingBottom: '10px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0 }}>
+                  Billing Address
+                </h2>
+                {!isEditingBillingAddress && (
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={handleStartBillingAddressEdit}
+                    style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '14px' }}
+                  >
+                    {billingAddress ? 'Edit Billing Address' : '+ Add Billing Address'}
+                  </button>
+                )}
+              </div>
+
+              <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '20px' }}>
+                You can save one billing address. Edit this address whenever your billing details change.
+              </p>
+
+              {isEditingBillingAddress ? (
+                <form onSubmit={handleSaveBillingAddress}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px' }}>
+                    {billingAddress ? 'Edit Billing Address' : 'Add Billing Address'}
+                  </h3>
+                  <div className="profile-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <label className="full-span" style={{ gridColumn: 'span 2' }}>
+                      Address Line 1 *
+                      <input
+                        type="text"
+                        name="address_line_1"
+                        value={billingAddressFormData.address_line_1}
+                        onChange={handleBillingAddressFormChange}
+                        required
+                      />
+                    </label>
+                    <label className="full-span" style={{ gridColumn: 'span 2' }}>
+                      Address Line 2 (Optional)
+                      <input
+                        type="text"
+                        name="address_line_2"
+                        value={billingAddressFormData.address_line_2}
+                        onChange={handleBillingAddressFormChange}
+                      />
+                    </label>
+                    <label>
+                      Apt / Suite (Optional)
+                      <input
+                        type="text"
+                        name="apt_suite"
+                        value={billingAddressFormData.apt_suite}
+                        onChange={handleBillingAddressFormChange}
+                      />
+                    </label>
+                    <label>
+                      City *
+                      <input
+                        type="text"
+                        name="city"
+                        value={billingAddressFormData.city}
+                        onChange={handleBillingAddressFormChange}
+                        required
+                      />
+                    </label>
+                    <label>
+                      State *
+                      <select
+                        name="state"
+                        value={billingAddressFormData.state}
+                        onChange={handleBillingAddressFormChange}
+                        required
+                      >
+                        <option value="">Select a state</option>
+                        {US_STATES.map(([code, name]) => (
+                          <option key={code} value={code}>{name}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      ZIP / Postal Code *
+                      <input
+                        type="text"
+                        name="zipcode"
+                        value={billingAddressFormData.zipcode}
+                        onChange={handleBillingAddressFormChange}
+                        required
+                      />
+                    </label>
+                    <label>
+                      Country *
+                      <select
+                        name="country"
+                        value={billingAddressFormData.country}
+                        onChange={handleBillingAddressFormChange}
+                        required
+                      >
+                        <option value="US">United States (US)</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                    <button type="submit" className="primary-button" disabled={saving} style={{ padding: '12px 24px', borderRadius: '8px' }}>
+                      {saving ? 'Saving...' : 'Save Billing Address'}
+                    </button>
+                    <button type="button" className="profile-cancel-button" onClick={handleCancelBillingAddressEdit} disabled={saving}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : billingAddress ? (
+                <div className="address-card default billing-address-card">
+                  <div>
+                    <div className="address-header-badge">
+                      <span className="address-nickname-badge">Billing</span>
+                      <span className="address-default-badge">Saved</span>
+                    </div>
+                    <div className="address-name">{formData.firstName} {formData.lastName}</div>
+                    {formData.company && <div className="address-company">{formData.company}</div>}
+                    <div className="address-details">
+                      <div>{billingAddress.address_line_1}</div>
+                      {billingAddress.address_line_2 && <div>{billingAddress.address_line_2}</div>}
+                      {billingAddress.apt_suite && <div>{billingAddress.apt_suite}</div>}
+                      <div>{billingAddress.city}, {billingAddress.state} {billingAddress.zipcode}</div>
+                      <div>{billingAddress.country || 'US'}</div>
+                    </div>
+                  </div>
+                  <div className="address-actions">
+                    <button type="button" className="address-action-btn" onClick={handleStartBillingAddressEdit}>
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="address-add-card billing-address-card" onClick={handleStartBillingAddressEdit}>
+                  <span className="address-add-icon">+</span>
+                  <span>Add Billing Address</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: ORDER HISTORY */}
           {activeTab === 'orders' && (
             <div>
               <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '20px', borderBottom: '1px solid var(--line)', paddingBottom: '10px' }}>
@@ -1141,6 +1383,7 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
                         <th>Qty</th>
                         <th>Total Amount</th>
                         <th>Status</th>
+                        <th>Invoice</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1163,6 +1406,16 @@ function ProfilePage({ navigate, initialTab, onRefreshProfile }) {
                             <strong>${Number(item.total_price).toFixed(2)}</strong>
                           </td>
                           <td>{renderStatusBadge(item.status)}</td>
+                          <td>
+                            <a
+                              className="order-invoice-link"
+                              href={`${API_URL}/api/orders/invoice/${item.order_id}/html/`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              View Invoice
+                            </a>
+                          </td>
                         </tr>
                       ))}
                     </tbody>

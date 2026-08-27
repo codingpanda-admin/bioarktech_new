@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { apiFetch, formatAssetUrl } from '../utils/api';
-import { getCatalogCardPrice } from '../utils/catalogPrice';
 import ProductVisual from '../components/ProductVisual';
+import CatalogPrice from '../components/CatalogPrice';
 import {
   CONSUMABLES_CATEGORIES,
   PRODUCTS_CATEGORIES,
@@ -24,11 +24,38 @@ const toFilterCategory = (category) => ({
     .filter(Boolean),
 });
 
+function SearchResultImage({ item, visualType }) {
+  const candidates = useMemo(() => {
+    const rawCandidates = Array.isArray(item?.image_candidates)
+      ? item.image_candidates
+      : [];
+    return [...new Set([item?.image, ...rawCandidates]
+      .map((image) => formatAssetUrl(image))
+      .filter(Boolean))];
+  }, [item?.image, item?.image_candidates]);
+  const [candidateIndex, setCandidateIndex] = useState(0);
+
+  useEffect(() => {
+    setCandidateIndex(0);
+  }, [item?.product_id, item?.external_id]);
+
+  const imageUrl = candidates[candidateIndex];
+  if (!imageUrl) return <ProductVisual type={visualType} />;
+
+  return (
+    <img
+      src={imageUrl}
+      alt={item.product_name}
+      onError={() => setCandidateIndex((index) => index + 1)}
+    />
+  );
+}
+
 function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCategory }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [sortBy, setSortBy] = useState('name-asc');
+  const [sortBy, setSortBy] = useState(currentQuery ? 'relevance' : 'name-asc');
   const [selectedCategory, setSelectedCategory] = useState(initialSelectedCategory);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [groupFiltersExpanded, setGroupFiltersExpanded] = useState(false);
@@ -120,6 +147,10 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
   }, [currentQuery, currentCategory]);
 
   useEffect(() => {
+    setSortBy(currentQuery ? 'relevance' : 'name-asc');
+  }, [currentQuery]);
+
+  useEffect(() => {
     if (currentQuery) {
       const matchedCat = [
         ...productCategoryOptions,
@@ -203,6 +234,10 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
 
   // Sort filtered products
   const sortedResults = [...filteredResults].sort((a, b) => {
+    if (sortBy === 'relevance') {
+      return (b.search_score || 0) - (a.search_score || 0)
+        || a.product_name.localeCompare(b.product_name);
+    }
     if (sortBy === 'name-asc') {
       return a.product_name.localeCompare(b.product_name);
     }
@@ -1108,6 +1143,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
                 onChange={(e) => setSortBy(e.target.value)}
                 aria-label="Sort products"
               >
+                {currentQuery && <option value="relevance">Most Relevant</option>}
                 <option value="name-asc">Alphabetical (A-Z)</option>
                 <option value="name-desc">Alphabetical (Z-A)</option>
                 <option value="price-asc">Price (Low to High)</option>
@@ -1182,7 +1218,6 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
           {!loading && !error && sortedResults.length > 0 && (
             <div className="modern-product-grid">
               {sortedResults.map((prod, idx) => {
-                const imgUrl = prod.image ? formatAssetUrl(prod.image) : null;
                 const isConsumable = prod.category === 'Consumables';
                 const isReagent = prod.category === 'Reagents & Kits' || isConsumable;
                 const cardType = prod.category === 'Services' ? 'service' : (isReagent ? 'reagent' : 'product');
@@ -1217,11 +1252,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
 
                     {/* Product Image / Visual fallback */}
                     <div className="card-image-container">
-                      {imgUrl ? (
-                        <img src={imgUrl} alt={prod.product_name} />
-                      ) : (
-                        <ProductVisual type={getVisualType(prod)} />
-                      )}
+                      <SearchResultImage item={prod} visualType={getVisualType(prod)} />
                     </div>
 
                     {/* Details */}
@@ -1233,9 +1264,11 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
                       <h3 className="card-title" title={prod.product_name}>{prod.product_name}</h3>
                       
                       <div className="card-price-row">
-                        <span className="card-price">
-                          {cardType === 'service' ? 'Contact for Quote' : getCatalogCardPrice(prod)}
-                        </span>
+                        {cardType === 'service' ? (
+                          <span className="card-price">Contact for Quote</span>
+                        ) : (
+                          <CatalogPrice item={prod} />
+                        )}
                       </div>
 
                       <a 

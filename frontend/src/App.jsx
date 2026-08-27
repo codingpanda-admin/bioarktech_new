@@ -27,6 +27,7 @@ import ProfilePage from './pages/ProfilePage';
 import MyQuotesPage from './pages/MyQuotesPage';
 import DesignPage from './pages/DesignPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import CatalogSummaryPage from './pages/CatalogSummaryPage';
 
 function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -231,6 +232,8 @@ function App() {
   const isDesignPage = currentPath === '/design';
   const isResetPasswordPage = currentPath.startsWith('/reset-password/');
   const isAuthPopupPage = currentPath === '/auth-popup';
+  const catalogSummaryMatch = currentPath.match(/^\/catalog\/(category|group)\/([^/]+)\/?$/);
+  const isCatalogSummaryPage = Boolean(catalogSummaryMatch);
 
   if (isAuthPopupPage) {
     return (
@@ -272,7 +275,7 @@ function App() {
           currentUser={currentUser} 
           currentUserProfile={currentUserProfile}
           onOpenAuth={handleOpenAuth} 
-          onLogout={handleAdminLogout}
+          onLogout={handleLogout}
           cartCount={cartCount}
         />
       )}
@@ -291,7 +294,7 @@ function App() {
               setCurrentUserProfile(null);
             }
           }} 
-          onLogout={handleLogout}
+          onLogout={handleAdminLogout}
         />
       ) : isRequestQuotePage ? (
         <RequestQuotePage
@@ -316,6 +319,12 @@ function App() {
           onAddToCart={handleAddToCart}
           currentUser={currentUser}
           currentUserProfile={currentUserProfile}
+        />
+      ) : isCatalogSummaryPage ? (
+        <CatalogSummaryPage
+          navigate={navigate}
+          kind={catalogSummaryMatch[1]}
+          externalId={decodeURIComponent(catalogSummaryMatch[2])}
         />
       ) : isCartPage ? (
         <CartPage
@@ -345,7 +354,11 @@ function App() {
       ) : isMyQuotesPage ? (
         <MyQuotesPage navigate={navigate} currentUser={currentUser} authChecked={authChecked} />
       ) : isDesignPage ? (
-        <DesignPage navigate={navigate} />
+        <DesignPage
+          navigate={navigate}
+          onAddToCart={handleAddToCart}
+          catalogNumber={searchParams.get('catalog') || ''}
+        />
       ) : isBlogPage ? (
         <BlogDetailPage
           navigate={navigate}

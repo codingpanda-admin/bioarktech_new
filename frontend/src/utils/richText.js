@@ -398,3 +398,15 @@ export const formatRichText = (value) => {
 
   return formatRichTextSource(richTextSource);
 };
+
+export const hasVisibleRichText = (value) => {
+  const source = String(value || '').trim();
+  if (!source) return false;
+  if (/<(?:img|table|video|audio|iframe)\b/i.test(source)) return true;
+
+  return source
+    .replace(/<br\s*\/?>/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;|&#160;|\u00a0/gi, ' ')
+    .trim().length > 0;
+};

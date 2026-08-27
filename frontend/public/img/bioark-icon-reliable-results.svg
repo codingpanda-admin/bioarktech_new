@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Reliable Results</title>
+  <desc id="desc">Rising chart with three bars</desc>
+  <defs>
+    <radialGradient id="bg" cx="38%" cy="30%" r="76%">
+      <stop offset="0" stop-color="#F9FCFF"/>
+      <stop offset="1" stop-color="#EAF2FF"/>
+    </radialGradient>
+    <linearGradient id="stroke" x1="64" y1="56" x2="194" y2="198" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1F55B5"/>
+      <stop offset="1" stop-color="#2D74E6"/>
+    </linearGradient>
+  </defs>
+  <circle cx="128" cy="128" r="108" fill="url(#bg)"/>
+  <path d="M64 190H194" stroke="#BFD4F8" stroke-width="5" stroke-linecap="round"/>
+  <rect x="72" y="144" width="25" height="46" rx="2" stroke="url(#stroke)" stroke-width="7"/>
+  <rect x="116" y="116" width="25" height="74" rx="2" stroke="url(#stroke)" stroke-width="7"/>
+  <rect x="160" y="91" width="25" height="99" rx="2" stroke="url(#stroke)" stroke-width="7"/>
+  <path d="M77 119L114 88L138 99L178 59" stroke="url(#stroke)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="77" cy="119" r="7" fill="#F6FAFF" stroke="url(#stroke)" stroke-width="6"/>
+  <circle cx="114" cy="88" r="7" fill="#F6FAFF" stroke="url(#stroke)" stroke-width="6"/>
+  <circle cx="138" cy="99" r="7" fill="#F6FAFF" stroke="url(#stroke)" stroke-width="6"/>
+  <circle cx="178" cy="59" r="7" fill="#F6FAFF" stroke="url(#stroke)" stroke-width="6"/>
+</svg>

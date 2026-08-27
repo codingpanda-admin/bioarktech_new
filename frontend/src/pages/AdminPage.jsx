@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { apiFetch } from '../utils/api';
 
 // Sub-components
@@ -6,26 +6,25 @@ import AdminDashboard from './admin/AdminDashboard';
 import AdminUsers from './admin/AdminUsers';
 import AdminProducts from './admin/AdminProducts';
 import AdminFeaturedProducts from './admin/AdminFeaturedProducts';
+import AdminPresentedServices from './admin/AdminPresentedServices';
 import AdminServices from './admin/AdminServices';
 import AdminBlogs from './admin/AdminBlogs';
 import AdminResources from './admin/AdminResources';
 import AdminQuotes from './admin/AdminQuotes';
 import AdminMedia from './admin/AdminMedia';
 import AdminHomepage from './admin/AdminHomepage';
+import AdminBulkUpload from './admin/AdminBulkUpload';
+import { AdminGeneDatabase, AdminGenePricing } from './admin/AdminGeneDesign';
+import { AdminAboutBioArk, AdminInvestors } from './admin/AdminPageContent';
 
-const adminLinks = [
-  'Overview',
-  'Homepage',
-  'Users',
-  'Products',
-  'Reagents',
-  'Services',
-  'Featured Solutions',
-  'Blogs',
-  'Documents',
-  'Quotes',
-  'Email (SMTP)',
-  'Media',
+const adminLinkGroups = [
+  ['Overview', 'Homepage', 'Users'],
+  ['Products', 'Reagents', 'Services', 'Bulk Upload'],
+  ['Featured Solutions', 'Recommended Services'],
+  { title: 'Gene Design', items: ['Gene Database', 'Pricing Tables'] },
+  ['Blogs', 'About BioArk', 'Investors'],
+  ['Quotes'],
+  ['Documents', 'Email (SMTP)', 'Media'],
 ];
 
 function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSuccess, onLogout }) {
@@ -35,7 +34,6 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const homepageSettings = ['Background Images', 'Hero Text', 'CTA Button', 'Metrics'];
 
   const handleFeaturedItemEdit = (item) => {
     const section = item.item_type === 'service'
@@ -64,7 +62,7 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
       if (onLoginSuccess) {
         await onLoginSuccess(email);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to login, please check username and password again');
     } finally {
       setLoading(false);
@@ -158,18 +156,28 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
     <main className="admin-page" aria-label="Admin Console">
       <aside className="admin-sidebar" aria-label="Admin navigation">
         <nav>
-          {adminLinks.map((label) => (
-            <a
-              className={activeSection === label ? 'is-active' : undefined}
-              href={`#${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-              key={label}
-              onClick={(event) => {
-                event.preventDefault();
-                setActiveSection(label);
-              }}
+          {adminLinkGroups.map((group, groupIndex) => (
+            <div
+              className="admin-nav-group"
+              role="group"
+              aria-label={`Admin navigation group ${groupIndex + 1}`}
+              key={Array.isArray(group) ? group.join('-') : group.title}
             >
-              {label}
-            </a>
+              {!Array.isArray(group) && <span className="admin-nav-group-title">{group.title}</span>}
+              {(Array.isArray(group) ? group : group.items).map((label) => (
+                <a
+                  className={activeSection === label ? 'is-active' : undefined}
+                  href={`#${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                  key={label}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setActiveSection(label);
+                  }}
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
           ))}
         </nav>
       </aside>
@@ -181,6 +189,14 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
 
         {activeSection === 'Homepage' && (
           <AdminHomepage />
+        )}
+
+        {activeSection === 'About BioArk' && (
+          <AdminAboutBioArk />
+        )}
+
+        {activeSection === 'Investors' && (
+          <AdminInvestors />
         )}
 
         {activeSection === 'Users' && (
@@ -199,6 +215,10 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
           <AdminFeaturedProducts onEditItem={handleFeaturedItemEdit} />
         )}
 
+        {activeSection === 'Recommended Services' && (
+          <AdminPresentedServices onEditItem={handleFeaturedItemEdit} />
+        )}
+
         {activeSection === 'Reagents' && (
           <AdminProducts
             categoryFilter="reagents"
@@ -212,6 +232,18 @@ function AdminPage({ currentUser, currentUserProfile, authChecked, onLoginSucces
             initialEditId={featuredEditRequest?.section === 'Services' ? featuredEditRequest.itemId : null}
             onInitialEditHandled={handleFeaturedEditOpened}
           />
+        )}
+
+        {activeSection === 'Bulk Upload' && (
+          <AdminBulkUpload />
+        )}
+
+        {activeSection === 'Gene Database' && (
+          <AdminGeneDatabase />
+        )}
+
+        {activeSection === 'Pricing Tables' && (
+          <AdminGenePricing />
         )}
 
         {activeSection === 'Blogs' && (

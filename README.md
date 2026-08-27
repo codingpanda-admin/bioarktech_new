@@ -24,7 +24,7 @@ The application environment consists of three main Docker services:
 2. **`bioark_backend` (Backend API):**
    * Framework: Django + Django REST Framework.
    * Ports: Exposed at `http://localhost:8000`.
-   * Responsibilities: User authentication, search APIs with category filtering support, shipping cost classification, and SMTP email processing for quotes.
+   * Responsibilities: User authentication, search APIs with category filtering support, shipping cost classification, and AWS SES API email processing.
 3. **`bioark_frontend` (Frontend Web):**
    * Framework: React + Vite (structured modularly under `/components` and `/pages`).
    * Ports: Exposed at `http://localhost:5173`.
@@ -45,6 +45,26 @@ Once the containers are up and running, you can access:
 * **Frontend Web:** [http://localhost:5173](http://localhost:5173)
 * **Admin Console:** [http://localhost:5173/admin](http://localhost:5173/admin)
 * **Backend REST API:** [http://localhost:8000](http://localhost:8000)
+
+### Amazon SES email configuration
+
+Outbound email uses the Amazon SES API rather than SES SMTP. Add these values
+to the root `.env` file (which is excluded from Git):
+
+```env
+AWS_SES_ACCESS_KEY_ID=replace-with-the-IAM-access-key
+AWS_SES_SECRET_ACCESS_KEY=replace-with-the-IAM-secret-key
+AWS_SES_REGION_NAME=us-east-1
+DEFAULT_FROM_EMAIL=no-reply@your-verified-domain.example
+EMAIL_NOTIFICATION_RECIPIENT=your-notification-inbox@example.com
+```
+
+The sender identity must be verified in the configured SES region. Development
+can use a sender under the verified Coding Panda domain, while staging and
+production can override `DEFAULT_FROM_EMAIL` with their respective verified
+sender identities. `EMAIL_NOTIFICATION_RECIPIENT` receives new quote
+notifications and is CC'd on paid-order confirmation emails. Never commit
+actual AWS credentials.
 
 ---
 

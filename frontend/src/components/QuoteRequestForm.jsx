@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../utils/api';
-import { SERVICES_CATEGORIES } from '../data/catalogCategories';
 
-const SERVICE_TYPE_OPTIONS = [
-  'Products',
-  ...SERVICES_CATEGORIES.map(category => category.label)
-];
+const PRODUCT_SERVICE_TYPE = { id: 'products', label: 'Products' };
 
 const emptyQuoteForm = {
   firstName: '',
@@ -15,8 +11,6 @@ const emptyQuoteForm = {
   company: '',
   department: '',
   serviceType: '',
-  timeline: '',
-  budget: '',
   projectDescription: '',
   additionalInformation: ''
 };
@@ -29,11 +23,80 @@ function QuoteRequestForm({
   quotePrefill,
   initialProjectDescription = '',
   initialServiceType = '',
+  initialServiceCategoryId = '',
   onSubmitted
 }) {
   const [formData, setFormData] = useState(emptyQuoteForm);
+  const [serviceTypeOptions, setServiceTypeOptions] = useState([PRODUCT_SERVICE_TYPE]);
   const [status, setStatus] = useState({ type: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    apiFetch('/api/products/get-nav-catalog/')
+      .then((catalog) => {
+        if (!isMounted) return;
+
+        const seen = new Set();
+        const activeServiceCategories = (Array.isArray(catalog) ? catalog : [])
+          .filter((category) => {
+            const hasActiveService = (category?.subcategories || []).some((subcategory) => (
+              (subcategory?.products || []).some((item) => (
+                String(item?.product_id || '').startsWith('svc-')
+              ))
+            ));
+            return Boolean(
+              category?.category_id
+              && category?.product_type === 'service'
+              && hasActiveService
+              && String(category?.category_name || '').trim()
+            );
+          })
+          .map((category) => ({
+            id: String(category.external_id || category.externalId || category.category_id),
+            label: String(category.category_name).trim(),
+          }))
+          .filter((category) => {
+            const key = category.label.toLocaleLowerCase();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+
+        const options = [PRODUCT_SERVICE_TYPE, ...activeServiceCategories];
+        setServiceTypeOptions(options);
+        setFormData((current) => {
+          const normalizedCategoryId = String(initialServiceCategoryId || '').toLocaleLowerCase();
+          const normalizedInitialType = String(initialServiceType || '').toLocaleLowerCase();
+          const normalizedCurrentType = String(current.serviceType || '').toLocaleLowerCase();
+          const selectedOption = options.find((option) => (
+            (normalizedCategoryId && option.id.toLocaleLowerCase() === normalizedCategoryId)
+            || (normalizedInitialType && option.label.toLocaleLowerCase() === normalizedInitialType)
+            || (normalizedCurrentType && option.label.toLocaleLowerCase() === normalizedCurrentType)
+          ));
+
+          return {
+            ...current,
+            serviceType: selectedOption?.label || '',
+          };
+        });
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setServiceTypeOptions([PRODUCT_SERVICE_TYPE]);
+        setFormData((current) => ({
+          ...current,
+          serviceType: current.serviceType === PRODUCT_SERVICE_TYPE.label
+            ? current.serviceType
+            : '',
+        }));
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialServiceCategoryId, initialServiceType]);
 
   useEffect(() => {
     const projectDescription = quotePrefill?.get('projectDescription') || initialProjectDescription;
@@ -132,14 +195,12 @@ function QuoteRequestForm({
         phone: formData.phone,
         company: formData.company,
         department: formData.department,
-        timeline: formData.timeline,
-        budget: formData.budget,
         projectDescription: formData.projectDescription,
         additionalInfo: formData.additionalInformation,
         institution: formData.company,
         productType: formData.serviceType,
         serviceType: formData.serviceType,
-        message: `Departamento: ${formData.department || 'N/A'}\nTiempo: ${formData.timeline}\nPresupuesto: ${formData.budget}\nDescripcion: ${formData.projectDescription}\nInformacion Adicional: ${formData.additionalInformation || 'Ninguna'}`
+        message: `Departamento: ${formData.department || 'N/A'}\nDescripcion: ${formData.projectDescription}\nInformacion Adicional: ${formData.additionalInformation || 'Ninguna'}`
       };
 
       await apiFetch('/api/quotes/', {
@@ -202,29 +263,9 @@ function QuoteRequestForm({
           Service Type *
           <select name="serviceType" value={formData.serviceType} onChange={handleInputChange} required>
             <option value="">Select service type</option>
-            {SERVICE_TYPE_OPTIONS.map(serviceType => (
-              <option key={serviceType} value={serviceType}>{serviceType}</option>
+            {serviceTypeOptions.map(serviceType => (
+              <option key={serviceType.id} value={serviceType.label}>{serviceType.label}</option>
             ))}
-          </select>
-        </label>
-        <label>
-          Preferred Timeline
-          <select name="timeline" value={formData.timeline} onChange={handleInputChange}>
-            <option value="">Select timeline</option>
-            <option value="As soon as possible">As soon as possible</option>
-            <option value="Within 2 weeks">Within 2 weeks</option>
-            <option value="Within 1 month">Within 1 month</option>
-            <option value="Flexible">Flexible</option>
-          </select>
-        </label>
-        <label>
-          Budget Range (USD)
-          <select name="budget" value={formData.budget} onChange={handleInputChange}>
-            <option value="">Select budget range</option>
-            <option value="Under $1,000">Under $1,000</option>
-            <option value="$1,000 - $5,000">$1,000 - $5,000</option>
-            <option value="$5,000 - $25,000">$5,000 - $25,000</option>
-            <option value="$25,000+">$25,000+</option>
           </select>
         </label>
         <label className="full-span">

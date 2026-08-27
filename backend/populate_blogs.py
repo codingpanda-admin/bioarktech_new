@@ -6,7 +6,7 @@ import sys
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 
-from blogs.models import Blog
+from blogs.models import Blog, BlogCategory
 from django.utils.dateparse import parse_datetime
 
 # Check if blogs and resources are already populated
@@ -22,6 +22,15 @@ blogs_data = [{'id': 1765571538185, 'title': 'CRISPR Gene Editing: Best Practice
 # Clear existing blogs to start fresh
 Blog.objects.all().delete()
 
+default_blog_category, _created = BlogCategory.objects.get_or_create(
+    name='Biotech Outlook',
+    defaults={
+        'slug': 'biotech-outlook',
+        'display_order': 2,
+        'is_active': True,
+    },
+)
+
 for data in blogs_data:
     b = Blog(
         id=data['id'],
@@ -30,7 +39,8 @@ for data in blogs_data:
         image=data['image'],
         date_posted=parse_datetime(data['date_posted']),
         content=data['content'],
-        description=data['description']
+        description=data['description'],
+        category=default_blog_category,
     )
     b.save()
     print(f"Saved blog post: {b.title} (ID: {b.id})")

@@ -33,7 +33,9 @@ function AdminFeaturedProducts({ onEditItem }) {
   const [featuredBuckets, setFeaturedBuckets] = useState({ products: [], services: [], reagents: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [removingItemKey, setRemovingItemKey] = useState('');
 
   const loadFeaturedItems = useCallback(async () => {
     setLoading(true);
@@ -51,6 +53,37 @@ function AdminFeaturedProducts({ onEditItem }) {
   useEffect(() => {
     loadFeaturedItems();
   }, [loadFeaturedItems]);
+
+  const handleRemoveFeatured = async (item) => {
+    if (!window.confirm(`Remove "${item.product_name}" from Featured Solutions?`)) return;
+
+    const itemKey = `${item.item_type}-${item.id}`;
+    const isService = item.item_type === 'service';
+    const endpoint = isService
+      ? `/api/admin-panel/services/${item.id}/update/`
+      : `/api/admin-panel/products/${item.id}/update/`;
+
+    setRemovingItemKey(itemKey);
+    setError('');
+    setSuccessMsg('');
+    try {
+      await apiFetch(endpoint, {
+        method: 'POST',
+        body: { is_featured: false },
+      });
+      setFeaturedBuckets((currentBuckets) => ({
+        ...currentBuckets,
+        [isService ? 'services' : item.item_type === 'reagent' ? 'reagents' : 'products']:
+          currentBuckets[isService ? 'services' : item.item_type === 'reagent' ? 'reagents' : 'products']
+            .filter((featuredItem) => featuredItem.id !== item.id),
+      }));
+      setSuccessMsg(`${item.product_name} was removed from Featured Solutions.`);
+    } catch (err) {
+      setError(err.message || 'Failed to remove the featured item.');
+    } finally {
+      setRemovingItemKey('');
+    }
+  };
 
   const filteredBuckets = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -92,6 +125,7 @@ function AdminFeaturedProducts({ onEditItem }) {
       </div>
 
       {error && <div className="admin-alert error">{error}</div>}
+      {successMsg && <div className="admin-alert success">{successMsg}</div>}
 
       {loading ? (
         <div className="admin-empty-table">Loading featured items...</div>
@@ -158,13 +192,23 @@ function AdminFeaturedProducts({ onEditItem }) {
                               </a>
                             </td>
                             <td>
-                              <button
-                                className="admin-action-btn edit"
-                                type="button"
-                                onClick={() => onEditItem?.(item)}
-                              >
-                                Edit
-                              </button>
+                              <div className="admin-row-actions">
+                                <button
+                                  className="admin-action-btn edit"
+                                  type="button"
+                                  onClick={() => onEditItem?.(item)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="admin-action-btn delete"
+                                  type="button"
+                                  disabled={removingItemKey === `${item.item_type}-${item.id}`}
+                                  onClick={() => handleRemoveFeatured(item)}
+                                >
+                                  {removingItemKey === `${item.item_type}-${item.id}` ? 'Removing...' : 'Remove'}
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}

@@ -38,7 +38,8 @@ DEBUG = True if debug_flag == "True" else False
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '127.0.0.1:4200',
                  'localhost:4200', 'bioarktech.com',
                  'www.bioarktech.com', 'store.bioarktech.com',
-                 'api.bioarktech.com', '93.127.217.163']
+                 'api.bioarktech.com', '93.127.217.163',
+                 'staging.bioarktech.com']
 #quite los https// de los dominios
 
 # Application definition
@@ -145,17 +146,27 @@ CSRF_TRUSTED_ORIGINS = ['http://localhost:4200', 'http://127.0.0.1:4200', 'http:
 
 CART_SESSION_ID = 'cart'
 
-# Email Service
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.office365.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'no-reply@bioarktech.com'
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PW')
-SERVER_EMAIL = 'no-reply@bioarktech.com'
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+# Email service - Amazon SES API (no SES SMTP credentials required).
+# Use AWS_SES_* variables so these credentials remain isolated from any other
+# AWS integration the application may gain later. If credentials are omitted,
+# boto3 can use the normal AWS credential chain (for example, an EC2/ECS role).
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django_ses.SESBackend')
+AWS_SES_ACCESS_KEY_ID = os.environ.get('AWS_SES_ACCESS_KEY_ID')
+AWS_SES_SECRET_ACCESS_KEY = os.environ.get('AWS_SES_SECRET_ACCESS_KEY')
+AWS_SES_SESSION_TOKEN = os.environ.get('AWS_SES_SESSION_TOKEN')
+AWS_SES_REGION_NAME = os.environ.get('AWS_SES_REGION_NAME', 'us-east-1')
+AWS_SES_REGION_ENDPOINT = os.environ.get(
+    'AWS_SES_REGION_ENDPOINT',
+    f'email.{AWS_SES_REGION_NAME}.amazonaws.com',
+)
+USE_SES_V2 = os.environ.get('AWS_SES_USE_V2', 'true').lower() in ('1', 'true', 'yes', 'on')
 
-DEFAULT_FROM_EMAIL = 'no-reply@bioarktech.com'
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@bioarktech.com')
+SERVER_EMAIL = os.environ.get('SERVER_EMAIL', DEFAULT_FROM_EMAIL)
+EMAIL_NOTIFICATION_RECIPIENT = os.environ.get(
+    'EMAIL_NOTIFICATION_RECIPIENT',
+    DEFAULT_FROM_EMAIL,
+)
 
 
 # Database

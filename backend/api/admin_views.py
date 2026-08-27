@@ -1,9 +1,10 @@
 import json
+import re
 import traceback
 
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import F, Q, Max
+from django.db.models import Count, F, Q, Max
 from django.utils.text import slugify
 
 from rest_framework.decorators import api_view
@@ -12,12 +13,33 @@ from rest_framework import status
 
 from products.models import (
     Product, FeaturedProduct, ProductsUnion, Image,
-    UnitPrice, ManualFile, ProductCategory,
+    UnitPrice, ManualFile, ProductCategory, CatalogGroup,
 )
-from blogs.models import Blog, ResourceDocument
+from blogs.models import Blog, BlogAttachment, BlogCategory, ResourceDocument
 from users.models import User, Address
 from quote.models import Quote
-from interface.models import ProductMode, ServiceMode, HomepageSlide
+from interface.models import (
+    ProductMode,
+    ServiceMode,
+    HomepageSlide,
+    AboutWhoWeAre,
+    AboutHighlight,
+    AboutTeamMember,
+    InvestorCompanyOverview,
+    InvestorStrategyTier,
+    InvestorRoadmapMilestone,
+    InvestorPartnerSection,
+)
+from interface.serializers import (
+    AboutWhoWeAreSerializer,
+    AboutHighlightSerializer,
+    AboutTeamMemberSerializer,
+    InvestorCompanyOverviewSerializer,
+    InvestorStrategyTierSerializer,
+    InvestorRoadmapMilestoneSerializer,
+    InvestorPartnerSectionSerializer,
+)
+from .bulk_upload import import_catalog_workbook
 
 
 # ---------------------------------------------------------------------------
@@ -53,6 +75,46 @@ def _get_resolved_image_url(request, image_field):
     return request.build_absolute_uri(url)
 
 
+@api_view(['POST'])
+def admin_bulk_upload_catalog(request, item_type):
+    """Create or update catalog items from the matching Excel template."""
+    err = _check_admin(request)
+    if err:
+        return err
+
+    normalized_type = str(item_type or '').strip().lower()
+    if normalized_type not in {'product', 'reagent', 'service'}:
+        return Response(
+            {'error': 'Item type must be product, reagent, or service.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    uploaded_file = request.FILES.get('file')
+    if not uploaded_file:
+        return Response(
+            {'error': 'Select an Excel workbook to upload.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if not str(uploaded_file.name or '').lower().endswith('.xlsx'):
+        return Response(
+            {'error': 'Only .xlsx Excel workbooks are supported.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if uploaded_file.size > 10 * 1024 * 1024:
+        return Response(
+            {'error': 'The workbook cannot exceed 10 MB.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        result = import_catalog_workbook(uploaded_file, normalized_type)
+        return Response(result)
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 # ===========================================================================
 #  DASHBOARD
 # ===========================================================================
@@ -64,13 +126,77 @@ def admin_dashboard_stats(request):
         return err
 
     try:
+        reagent_category_ids = [
+            'category-1765063995229',
+            'category-1766675380397',
+            'category-1766675365489',
+            'category-1765995504911',
+            'category-1780539818236',
+        ]
+        reagent_products = (
+            Q(source_type='reagent')
+            | Q(category_external_id__in=reagent_category_ids)
+            | Q(category__product_type__in=['reagent', 'consumable'])
+        )
+
+        active_catalog = Product.objects.filter(hidden=False)
+        active_products = active_catalog.exclude(reagent_products).count()
+        active_reagents = active_catalog.filter(reagent_products).count()
+        active_services = ServiceMode.objects.filter(hidden=False).count()
+        inactive_catalog = (
+            Product.objects.filter(hidden=True).count()
+            + ServiceMode.objects.filter(hidden=True).count()
+        )
+        featured_solutions = (
+            active_catalog.filter(Q(is_featured=True) | Q(show_in_featured=True)).count()
+            + ServiceMode.objects.filter(hidden=False, is_featured=True).count()
+        )
+        recent_quotes = Quote.objects.order_by('-created_at')[:5]
+
+        total_blogs = Blog.objects.count()
+        total_documents = ResourceDocument.objects.count()
+        total_media = Image.objects.count()
+        total_catalog_items = active_products + active_reagents + active_services
+
         return Response({
-            'total_products': Product.objects.filter(hidden=False).count(),
-            'total_featured_products': FeaturedProduct.objects.count(),
-            'total_blogs': Blog.objects.count(),
+            'total_products': active_products,
+            'total_reagents': active_reagents,
+            'total_services': active_services,
+            'total_catalog_items': total_catalog_items,
+            'inactive_catalog_items': inactive_catalog,
+            'total_featured_products': featured_solutions,
+            'total_featured_solutions': featured_solutions,
+            'total_product_categories': ProductCategory.objects.count(),
+            'total_blogs': total_blogs,
+            'total_blog_categories': BlogCategory.objects.count(),
             'total_users': User.objects.count(),
             'total_quotes': Quote.objects.count(),
             'unread_quotes': Quote.objects.filter(read=False).count(),
+            'total_documents': total_documents,
+            'total_media': total_media,
+            'total_homepage_slides': HomepageSlide.objects.filter(is_active=True).count(),
+            'total_about_records': (
+                AboutWhoWeAre.objects.filter(is_active=True).count()
+                + AboutHighlight.objects.filter(is_active=True).count()
+                + AboutTeamMember.objects.filter(is_active=True).count()
+            ),
+            'total_investor_records': (
+                InvestorCompanyOverview.objects.filter(is_active=True).count()
+                + InvestorStrategyTier.objects.filter(is_active=True).count()
+                + InvestorRoadmapMilestone.objects.filter(is_active=True).count()
+                + InvestorPartnerSection.objects.filter(is_active=True).count()
+            ),
+            'total_content_assets': total_blogs + total_documents + total_media,
+            'recent_quotes': [
+                {
+                    'id': quote.id,
+                    'name': f'{quote.first_name} {quote.last_name}'.strip() or quote.email,
+                    'service_type': quote.service_type or 'General inquiry',
+                    'created_at': quote.created_at.isoformat() if quote.created_at else None,
+                    'read': quote.read,
+                }
+                for quote in recent_quotes
+            ],
         })
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -89,14 +215,151 @@ def _serialize_product_category(category):
         'category_id': category.category_id,
         'category_name': category.category_name,
         'description': category.description,
+        'summary': category.summary,
         'priority': category.priority,
         'external_id': category.external_id,
         'product_type': category.product_type,
         'show_on_homepage': category.show_on_homepage,
         'homepage_image': category.homepage_image,
+        'groups': [
+            {
+                'group_id': group.group_id,
+                'group_name': group.group_name,
+                'external_id': group.external_id,
+                'summary': group.summary,
+                'priority': group.priority,
+                'is_active': group.is_active,
+            }
+            for group in category.catalog_groups.filter(is_active=True).order_by('priority', 'group_name', 'group_id')
+        ],
         'product_count': service_count if category.product_type == 'service' else product_count,
         'service_count': service_count,
     }
+
+
+CATALOG_EXTERNAL_ID_PATTERN = re.compile(r'^[A-Za-z0-9_-]+$')
+
+
+def _validate_catalog_external_id(value, label, max_length):
+    external_id = str(value or '').strip()
+    if not external_id:
+        raise ValueError(f'{label} External ID is required.')
+    if len(external_id) > max_length:
+        raise ValueError(f'{label} External ID cannot exceed {max_length} characters.')
+    if not CATALOG_EXTERNAL_ID_PATTERN.fullmatch(external_id):
+        raise ValueError(
+            f'{label} External ID may contain only letters, numbers, hyphens, and underscores.'
+        )
+    return external_id
+
+
+def _validated_catalog_group(group_id, category):
+    if not group_id:
+        return None
+    group = CatalogGroup.objects.filter(group_id=group_id, is_active=True).first()
+    if not group:
+        raise ValueError('The selected group does not exist or is inactive.')
+    if not category or group.category_id != category.category_id:
+        raise ValueError('The selected group does not belong to the selected category.')
+    return group
+
+
+def _serialize_catalog_group(group):
+    return {
+        'group_id': group.group_id,
+        'category_id': group.category_id,
+        'category_external_id': group.category.external_id,
+        'group_name': group.group_name,
+        'external_id': group.external_id,
+        'summary': group.summary,
+        'priority': group.priority,
+        'is_active': group.is_active,
+    }
+
+
+@api_view(['POST'])
+@transaction.atomic
+def admin_create_catalog_group(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        category_external_id = (request.data.get('category_external_id') or '').strip()
+        group_name = (request.data.get('group_name') or '').strip()
+        if not category_external_id:
+            return Response({'error': 'Category is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not group_name:
+            return Response({'error': 'Group name is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        category = ProductCategory.objects.get(external_id=category_external_id)
+        max_priority = category.catalog_groups.aggregate(max_priority=Max('priority'))['max_priority'] or 0
+        supplied_external_id = request.data.get('external_id')
+        external_id = None
+        if supplied_external_id is not None and str(supplied_external_id).strip():
+            external_id = _validate_catalog_external_id(supplied_external_id, 'Group', 160)
+            if CatalogGroup.objects.filter(external_id__iexact=external_id).exists():
+                return Response(
+                    {'error': 'A group with this External ID already exists.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        group = CatalogGroup(
+            category=category,
+            group_name=group_name,
+            external_id=external_id,
+            summary=request.data.get('summary') or '',
+            priority=request.data.get('priority') or max_priority + 1,
+            is_active=True,
+        )
+        # A blank External ID is generated during the first save; administrators
+        # can also provide a valid ID and edit it later.
+        group.save()
+        return Response(_serialize_catalog_group(group), status=status.HTTP_201_CREATED)
+    except ProductCategory.DoesNotExist:
+        return Response({'error': 'Category not found.'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@transaction.atomic
+def admin_update_catalog_group(request, group_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        group = CatalogGroup.objects.select_related('category').get(group_id=group_id)
+        if 'external_id' in request.data:
+            external_id = _validate_catalog_external_id(
+                request.data.get('external_id'), 'Group', 160
+            )
+            if CatalogGroup.objects.filter(
+                external_id__iexact=external_id
+            ).exclude(group_id=group.group_id).exists():
+                return Response(
+                    {'error': 'A group with this External ID already exists.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            group.external_id = external_id
+
+        if 'group_name' in request.data:
+            group_name = (request.data.get('group_name') or '').strip()
+            if not group_name:
+                return Response({'error': 'Group name is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            group.group_name = group_name
+        if 'summary' in request.data:
+            group.summary = request.data.get('summary') or ''
+        if 'priority' in request.data:
+            group.priority = request.data.get('priority') or 1
+
+        group.save()
+        return Response(_serialize_catalog_group(group))
+    except CatalogGroup.DoesNotExist:
+        return Response({'error': 'Group not found.'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -141,6 +404,7 @@ def admin_create_product_category(request):
             category_name=name,
             external_id=external_id,
             description=d.get('description') or '',
+            summary=d.get('summary') or '',
             priority=d.get('priority') or max_priority + 1,
             product_type=d.get('product_type') or 'product',
             show_on_homepage=str(d.get('show_on_homepage', 'false')).lower() == 'true',
@@ -172,6 +436,9 @@ def admin_update_product_category(request, category_id):
 
         if 'description' in d:
             category.description = d.get('description') or ''
+
+        if 'summary' in d:
+            category.summary = d.get('summary') or ''
 
         if 'product_type' in d:
             category.product_type = d.get('product_type') or category.product_type
@@ -315,13 +582,16 @@ def admin_list_products(request):
                 'product_name': p_name,
                 'external_id': p.external_id,
                 'catalog_number': p.catalog_number,
+                'show_catalog_number': p.show_catalog_number,
                 'category_external_id': p.category_external_id,
+                'catalog_group_id': p.catalog_group_id,
                 'product_group': p.product_group,
                 'hidden': p.hidden,
                 'is_featured': p_featured,
                 'show_on_screen': p.show_on_screen,
                 'image_url': p_image,
                 'list_price': p.list_price,
+                'discounted_price': p.discounted_price,
                 'source_type': p.source_type,
                 'created_at': p.created_at,
             })
@@ -419,14 +689,17 @@ def admin_get_product(request, product_id):
             'image_url': p.image_url,
             'product_link': p.product_link,
             'category_external_id': p.category_external_id,
+            'catalog_group_id': p.catalog_group_id,
             'product_group': p.product_group,
             'source_type': p.source_type,
             'display_order': p.display_order,
             'source_created_at_ms': p.source_created_at_ms,
             'source_created_at': p.source_created_at,
             'catalog_number': p.catalog_number,
+            'show_catalog_number': p.show_catalog_number,
             'availability': p.availability,
             'list_price': p.list_price,
+            'discounted_price': p.discounted_price,
             'price_range': p.price_range,
             'quote_only': p.quote_only,
             'is_featured': p.is_featured,
@@ -436,12 +709,14 @@ def admin_get_product(request, product_id):
             'key_features': p.key_features,
             'options': p.options,
             'option_prices': p.option_prices,
+            'option_discounted_prices': p.option_discounted_prices,
             'storage_stability': p.storage_stability,
             'performance_data': p.performance_data,
             'data_description': p.data_description,
             'manuals': p.manuals,
             'manual_urls': p.manual_urls,
             'images': p.images,
+            'videos': p.videos,
             'store_link': p.store_link,
             'content_text': p.content_text,
             'hidden': p.hidden,
@@ -600,6 +875,8 @@ def admin_create_product(request):
 
     try:
         d = dict(request.data)
+        if 'videos' in d:
+            d['videos'] = _normalize_catalog_videos(d['videos'])
         if 'manuals' in d:
             originals, names, urls = _normalize_product_manual_payload(d['manuals'])
             d['manuals_original'] = originals
@@ -610,7 +887,7 @@ def admin_create_product(request):
         if isinstance(raw_detail, dict) and 'content_text' in d:
             raw_detail = {**raw_detail, 'contentText': d.get('content_text', '')}
 
-        p = Product.objects.create(
+        p = Product(
             external_id=d.get('external_id', ''),
             product_name=d.get('product_name', ''),
             description=d.get('description', ''),
@@ -621,8 +898,10 @@ def admin_create_product(request):
             source_type=d.get('source_type', ''),
             display_order=d.get('display_order'),
             catalog_number=d.get('catalog_number', ''),
+            show_catalog_number=d.get('show_catalog_number', True),
             availability=d.get('availability', ''),
             list_price=d.get('list_price', ''),
+            discounted_price=d.get('discounted_price', ''),
             price_range=d.get('price_range', ''),
             quote_only=d.get('quote_only', False),
             is_featured=d.get('is_featured', False),
@@ -632,12 +911,14 @@ def admin_create_product(request):
             key_features=d.get('key_features', []),
             options=d.get('options', []),
             option_prices=d.get('option_prices', {}),
+            option_discounted_prices=d.get('option_discounted_prices', {}),
             storage_stability=d.get('storage_stability', ''),
             performance_data=d.get('performance_data', ''),
             data_description=d.get('data_description', ''),
             manuals=d.get('manuals', []),
             manual_urls=d.get('manual_urls', []),
             images=d.get('images', []),
+            videos=d.get('videos', []),
             store_link=d.get('store_link', ''),
             content_text=d.get('content_text', ''),
             hidden=d.get('hidden', False),
@@ -645,6 +926,10 @@ def admin_create_product(request):
             raw_override=d.get('raw_override'),
             raw_detail=raw_detail,
         )
+        p.category = ProductCategory.objects.filter(external_id=p.category_external_id).first()
+        if d.get('catalog_group_id'):
+            p.catalog_group = _validated_catalog_group(d.get('catalog_group_id'), p.category)
+        p.save()
         _sync_featured_product(p, d)
         return Response({'id': p.product_id, 'message': 'Product created successfully'}, status=status.HTTP_201_CREATED)
     except Exception as e:
@@ -660,6 +945,8 @@ def admin_update_product(request, product_id):
     try:
         p = Product.objects.get(product_id=product_id)
         d = dict(request.data)
+        if 'videos' in d:
+            d['videos'] = _normalize_catalog_videos(d['videos'])
         if 'manuals' in d:
             originals, names, urls = _normalize_product_manual_payload(d['manuals'])
             d['manuals_original'] = originals
@@ -669,18 +956,34 @@ def admin_update_product(request, product_id):
         updatable_fields = [
             'external_id', 'product_name', 'description', 'image_url',
             'product_link', 'category_external_id', 'product_group',
-            'source_type', 'display_order', 'catalog_number', 'availability',
-            'list_price', 'price_range', 'quote_only', 'is_featured', 'show_on_screen',
+            'source_type', 'display_order', 'catalog_number', 'show_catalog_number', 'availability',
+            'list_price', 'discounted_price', 'price_range', 'quote_only', 'is_featured', 'show_on_screen',
             'show_in_featured', 'show_in_gene_editing', 'key_features',
-            'options', 'option_prices', 'storage_stability', 'performance_data',
+            'options', 'option_prices', 'option_discounted_prices', 'storage_stability', 'performance_data',
             'data_description', 'manuals', 'manual_urls', 'images',
-            'store_link', 'content_text', 'hidden', 'raw_product',
+            'videos', 'store_link', 'content_text', 'hidden', 'raw_product',
             'raw_override', 'raw_detail',
         ]
 
         for field in updatable_fields:
             if field in d:
                 setattr(p, field, d[field])
+
+        if 'category_external_id' in d:
+            p.category = ProductCategory.objects.filter(external_id=p.category_external_id).first()
+        if 'catalog_group_id' in d or 'product_group' in d or 'category_external_id' in d:
+            group_id = d.get('catalog_group_id')
+            group_name = str(d.get('product_group') or '').strip()
+            p.catalog_group = None
+            if group_id:
+                p.catalog_group = _validated_catalog_group(group_id, p.category)
+            elif p.category and group_name:
+                normalized_name = CatalogGroup.normalize_name(group_name)
+                p.catalog_group, _ = CatalogGroup.objects.get_or_create(
+                    category=p.category,
+                    normalized_name=normalized_name,
+                    defaults={'group_name': group_name},
+                )
 
         if 'content_text' in d and isinstance(p.raw_detail, dict):
             p.raw_detail = {**p.raw_detail, 'contentText': p.content_text or ''}
@@ -830,6 +1133,42 @@ def admin_list_featured_products(request):
 
 
 @api_view(['GET'])
+def admin_list_presented_services(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        category_names = {
+            category.external_id: category.category_name
+            for category in ProductCategory.objects.exclude(external_id__isnull=True).exclude(external_id='')
+        }
+        services = ServiceMode.objects.filter(
+            presented_service=True,
+            hidden=False,
+        ).order_by('title')
+
+        results = [
+            {
+                'id': service.id,
+                'edit_id': service.id,
+                'item_type': 'service',
+                'product_name': service.title,
+                'catalog_number': service.catalog_number or '',
+                'category_name': category_names.get(service.category) or service.category or 'Uncategorized',
+                'group_name': service.service_group or '',
+                'external_id': service.url,
+                'homepage_url': f'/product/{service.url}',
+                'image_url': request.build_absolute_uri(service.image.url) if service.image else None,
+            }
+            for service in services
+        ]
+        return Response({'results': results, 'total': len(results)})
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
 def admin_get_featured_product(request, fp_id):
     err = _check_admin(request)
     if err:
@@ -968,6 +1307,193 @@ def admin_delete_featured_product(request, fp_id):
 #  BLOGS CRUD
 # ===========================================================================
 
+def _serialize_blog_category(category):
+    return {
+        'id': category.id,
+        'name': category.name,
+        'slug': category.slug,
+        'description': category.description,
+        'display_order': category.display_order,
+        'is_active': category.is_active,
+        'blog_count': getattr(category, 'blog_count', category.blogs.count()),
+    }
+
+
+def _serialize_blog_attachments(blog, request=None):
+    attachments = []
+    for attachment in blog.attachments.all():
+        file_url = attachment.file.url if attachment.file else ''
+        attachments.append({
+            'id': attachment.id,
+            'name': attachment.original_name,
+            'original_name': attachment.original_name,
+            'url': request.build_absolute_uri(file_url) if request and file_url else file_url,
+            'display_order': attachment.display_order,
+            'uploaded_at': attachment.uploaded_at,
+        })
+    return attachments
+
+
+def _validate_blog_attachment_files(files):
+    allowed_extensions = {
+        'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+        'csv', 'txt', 'zip', 'png', 'jpg', 'jpeg', 'gif', 'webp',
+    }
+    for attachment_file in files:
+        extension = attachment_file.name.rsplit('.', 1)[-1].lower() if '.' in attachment_file.name else ''
+        if extension not in allowed_extensions:
+            raise ValueError(
+                f'Unsupported attachment type for {attachment_file.name}. '
+                'Upload a document, spreadsheet, presentation, archive, text file, or image.'
+            )
+        if attachment_file.size > 50 * 1024 * 1024:
+            raise ValueError(f'{attachment_file.name} must be 50 MB or smaller.')
+
+
+def _save_blog_attachments(blog, files):
+    next_order = blog.attachments.aggregate(Max('display_order'))['display_order__max']
+    next_order = (next_order if next_order is not None else -1) + 1
+    for offset, attachment_file in enumerate(files):
+        original_name = str(attachment_file.name or 'Blog attachment').replace('\\', '/').rsplit('/', 1)[-1]
+        BlogAttachment.objects.create(
+            blog=blog,
+            file=attachment_file,
+            original_name=original_name,
+            display_order=next_order + offset,
+        )
+
+
+def _parse_blog_attachment_ids(value):
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            value = []
+    if not isinstance(value, list):
+        return []
+
+    attachment_ids = []
+    for item in value:
+        try:
+            attachment_ids.append(int(item))
+        except (TypeError, ValueError):
+            continue
+    return attachment_ids
+
+
+def _blog_category_boolean(value, default=True):
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in ('true', '1', 'yes', 'on')
+
+
+def _validate_blog_category_payload(data, category=None):
+    name = str(data.get('name', category.name if category else '') or '').strip()
+    if not name:
+        raise ValueError('Blog category name is required.')
+
+    duplicate_names = BlogCategory.objects.filter(name__iexact=name)
+    if category:
+        duplicate_names = duplicate_names.exclude(pk=category.pk)
+    if duplicate_names.exists():
+        raise ValueError('A blog category with this name already exists.')
+
+    requested_slug = data.get('slug')
+    if requested_slug is None and category:
+        category_slug = category.slug
+    else:
+        category_slug = slugify(requested_slug or name)
+    if not category_slug:
+        raise ValueError('Enter a valid blog category name or URL slug.')
+
+    duplicate_slugs = BlogCategory.objects.filter(slug__iexact=category_slug)
+    if category:
+        duplicate_slugs = duplicate_slugs.exclude(pk=category.pk)
+    if duplicate_slugs.exists():
+        raise ValueError('A blog category with this URL slug already exists.')
+
+    try:
+        display_order = int(data.get(
+            'display_order',
+            category.display_order if category else (BlogCategory.objects.aggregate(Max('display_order'))['display_order__max'] or 0) + 1,
+        ))
+    except (TypeError, ValueError):
+        raise ValueError('Display order must be a whole number.')
+    if display_order < 0:
+        raise ValueError('Display order cannot be negative.')
+
+    return {
+        'name': name,
+        'slug': category_slug,
+        'description': str(data.get('description', category.description if category else '') or '').strip(),
+        'display_order': display_order,
+        'is_active': _blog_category_boolean(
+            data.get('is_active'),
+            category.is_active if category else True,
+        ),
+    }
+
+
+@api_view(['GET'])
+def admin_list_blog_categories(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    categories = BlogCategory.objects.annotate(blog_count=Count('blogs')).order_by('display_order', 'name')
+    return Response({'results': [_serialize_blog_category(category) for category in categories]})
+
+
+@api_view(['POST'])
+def admin_create_blog_category(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        payload = _validate_blog_category_payload(request.data)
+        category = BlogCategory.objects.create(**payload)
+        return Response(_serialize_blog_category(category), status=status.HTTP_201_CREATED)
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def admin_update_blog_category(request, category_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        category = BlogCategory.objects.get(pk=category_id)
+        payload = _validate_blog_category_payload(request.data, category)
+        for field, value in payload.items():
+            setattr(category, field, value)
+        category.save()
+        return Response(_serialize_blog_category(category))
+    except BlogCategory.DoesNotExist:
+        return Response({'error': 'Blog category not found.'}, status=status.HTTP_404_NOT_FOUND)
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def _resolve_blog_category(value):
+    """Resolve a category id while accepting legacy name and slug values."""
+    if value is None or not str(value).strip():
+        return None
+
+    normalized_value = str(value).strip()
+    query = Q(name__iexact=normalized_value) | Q(slug__iexact=normalized_value)
+    if normalized_value.isdigit():
+        query |= Q(pk=int(normalized_value))
+    return BlogCategory.objects.filter(query, is_active=True).first()
+
 @api_view(['GET'])
 def admin_list_blogs(request):
     err = _check_admin(request)
@@ -975,13 +1501,15 @@ def admin_list_blogs(request):
         return err
 
     try:
-        blogs = Blog.objects.all().order_by('-date_posted')
+        blogs = Blog.objects.select_related('category').annotate(attachment_count=Count('attachments')).order_by('-date_posted')
         data = []
         for b in blogs:
             data.append({
                 'id': b.id,
                 'title': b.title,
-                'category': b.category,
+                'category': b.category.name,
+                'category_id': b.category_id,
+                'category_slug': b.category.slug,
                 'description': b.description,
                 'author': b.author,
                 'content': b.content,
@@ -989,6 +1517,7 @@ def admin_list_blogs(request):
                 'date_posted': b.date_posted,
                 'date_modified': b.date_modified,
                 'is_featured': b.is_featured,
+                'attachment_count': b.attachment_count,
             })
         return Response({'results': data})
     except Exception as e:
@@ -1002,11 +1531,13 @@ def admin_get_blog(request, blog_id):
         return err
 
     try:
-        b = Blog.objects.get(id=blog_id)
+        b = Blog.objects.select_related('category').prefetch_related('attachments').get(id=blog_id)
         data = {
             'id': b.id,
             'title': b.title,
-            'category': b.category,
+            'category': b.category.name,
+            'category_id': b.category_id,
+            'category_slug': b.category.slug,
             'description': b.description,
             'author': b.author,
             'content': b.content,
@@ -1014,6 +1545,7 @@ def admin_get_blog(request, blog_id):
             'date_posted': b.date_posted,
             'date_modified': b.date_modified,
             'is_featured': b.is_featured,
+            'attachments': _serialize_blog_attachments(b, request),
         }
         return Response(data)
     except Blog.DoesNotExist:
@@ -1030,11 +1562,13 @@ def admin_create_blog(request):
 
     try:
         d = request.data
-        category = str(d.get('category', '')).strip()
-        valid_categories = {value for value, _label in Blog.CATEGORY_CHOICES}
-        if not category:
+        attachment_files = request.FILES.getlist('attachments')
+        _validate_blog_attachment_files(attachment_files)
+        category_value = d.get('category_id') or d.get('category')
+        if category_value is None or not str(category_value).strip():
             return Response({'error': 'Blog category is required.'}, status=status.HTTP_400_BAD_REQUEST)
-        if category not in valid_categories:
+        category = _resolve_blog_category(category_value)
+        if category is None:
             return Response({'error': 'Select a valid blog category.'}, status=status.HTTP_400_BAD_REQUEST)
 
         b = Blog(
@@ -1047,7 +1581,9 @@ def admin_create_blog(request):
         )
         if request.FILES.get('image'):
             b.image = request.FILES['image']
-        b.save()
+        with transaction.atomic():
+            b.save()
+            _save_blog_attachments(b, attachment_files)
         return Response({'id': b.id, 'message': 'Blog created successfully'}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -1060,19 +1596,21 @@ def admin_update_blog(request, blog_id):
         return err
 
     try:
-        b = Blog.objects.get(id=blog_id)
+        b = Blog.objects.select_related('category').get(id=blog_id)
         d = request.data
+        attachment_files = request.FILES.getlist('attachments')
+        _validate_blog_attachment_files(attachment_files)
 
         for field in ['title', 'description', 'author', 'content']:
             if field in d:
                 setattr(b, field, d[field])
 
-        if 'category' in d:
-            category = str(d.get('category', '')).strip()
-            valid_categories = {value for value, _label in Blog.CATEGORY_CHOICES}
-            if not category:
+        if 'category_id' in d or 'category' in d:
+            category_value = d.get('category_id') or d.get('category')
+            if category_value is None or not str(category_value).strip():
                 return Response({'error': 'Blog category is required.'}, status=status.HTTP_400_BAD_REQUEST)
-            if category not in valid_categories:
+            category = _resolve_blog_category(category_value)
+            if category is None:
                 return Response({'error': 'Select a valid blog category.'}, status=status.HTTP_400_BAD_REQUEST)
             b.category = category
 
@@ -1082,7 +1620,17 @@ def admin_update_blog(request, blog_id):
         if request.FILES.get('image'):
             b.image = request.FILES['image']
 
-        b.save()
+        remove_attachment_ids = _parse_blog_attachment_ids(d.get('remove_attachment_ids', []))
+        with transaction.atomic():
+            b.save()
+            attachments_to_remove = list(b.attachments.filter(id__in=remove_attachment_ids))
+            for attachment in attachments_to_remove:
+                if attachment.file:
+                    file_name = attachment.file.name
+                    file_storage = attachment.file.storage
+                    transaction.on_commit(lambda name=file_name, storage=file_storage: storage.delete(name))
+                attachment.delete()
+            _save_blog_attachments(b, attachment_files)
         return Response({'message': 'Blog updated successfully'})
     except Blog.DoesNotExist:
         return Response({'error': 'Blog not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -1097,8 +1645,16 @@ def admin_delete_blog(request, blog_id):
         return err
 
     try:
-        b = Blog.objects.get(id=blog_id)
-        b.delete()
+        b = Blog.objects.prefetch_related('attachments').get(id=blog_id)
+        attachment_files = [
+            (attachment.file.name, attachment.file.storage)
+            for attachment in b.attachments.all()
+            if attachment.file
+        ]
+        with transaction.atomic():
+            b.delete()
+            for file_name, file_storage in attachment_files:
+                transaction.on_commit(lambda name=file_name, storage=file_storage: storage.delete(name))
         return Response({'message': 'Blog deleted successfully'})
     except Blog.DoesNotExist:
         return Response({'error': 'Blog not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -1558,6 +2114,24 @@ def _normalize_service_manuals(value):
     return documents
 
 
+def _normalize_catalog_videos(value):
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            value = [value]
+
+    if not isinstance(value, list):
+        return []
+
+    videos = []
+    for item in value:
+        video_path = str(item or '').strip()
+        if video_path and video_path not in videos:
+            videos.append(video_path)
+    return videos
+
+
 @api_view(['GET'])
 def admin_list_services(request):
     err = _check_admin(request)
@@ -1582,14 +2156,20 @@ def admin_list_services(request):
                 'external_id': s.url,
                 'title': s.title,
                 'catalog_number': s.catalog_number,
+                'show_catalog_number': s.show_catalog_number,
                 'content': s.content,
+                'technique': s.technique,
                 'price': s.price,
                 'performance_data': s.performance_data,
                 'manuals': _normalize_service_manuals(s.manuals),
+                'videos': _normalize_catalog_videos(s.videos),
                 'image': request.build_absolute_uri(s.image.url) if s.image else None,
                 'category': s.category,
+                'category_id': s.category_ref_id,
+                'catalog_group_id': s.catalog_group_id,
                 'service_group': s.service_group,
                 'is_featured': s.is_featured,
+                'presented_service': s.presented_service,
                 'show_on_screen': s.show_on_screen,
                 'hidden': s.hidden,
             })
@@ -1612,14 +2192,20 @@ def admin_get_service(request, service_id):
             'external_id': s.url,
             'title': s.title,
             'catalog_number': s.catalog_number,
+            'show_catalog_number': s.show_catalog_number,
             'content': s.content,
+            'technique': s.technique,
             'price': s.price,
             'performance_data': s.performance_data,
             'manuals': _normalize_service_manuals(s.manuals),
+            'videos': _normalize_catalog_videos(s.videos),
             'image': request.build_absolute_uri(s.image.url) if s.image else None,
             'category': s.category,
+            'category_id': s.category_ref_id,
+            'catalog_group_id': s.catalog_group_id,
             'service_group': s.service_group,
             'is_featured': s.is_featured,
+            'presented_service': s.presented_service,
             'show_on_screen': s.show_on_screen,
             'hidden': s.hidden,
         }
@@ -1641,26 +2227,39 @@ def admin_create_service(request):
         is_featured_val = d.get('is_featured', False)
         if isinstance(is_featured_val, str):
             is_featured_val = is_featured_val.lower() == 'true'
+        presented_service_val = d.get('presented_service', False)
+        if isinstance(presented_service_val, str):
+            presented_service_val = presented_service_val.lower() == 'true'
         show_on_screen_val = d.get('show_on_screen', False)
         if isinstance(show_on_screen_val, str):
             show_on_screen_val = show_on_screen_val.lower() == 'true'
         hidden_val = d.get('hidden', False)
         if isinstance(hidden_val, str):
             hidden_val = hidden_val.lower() == 'true'
+        show_catalog_number_val = d.get('show_catalog_number', True)
+        if isinstance(show_catalog_number_val, str):
+            show_catalog_number_val = show_catalog_number_val.lower() == 'true'
         s = ServiceMode(
             url=d.get('url', ''),
             title=d.get('title', ''),
             catalog_number=d.get('catalog_number', ''),
+            show_catalog_number=show_catalog_number_val,
             content=d.get('content', ''),
+            technique=d.get('technique', ''),
             price=d.get('price', ''),
             performance_data=d.get('performance_data', ''),
             manuals=_normalize_service_manuals(d.get('manuals', [])),
+            videos=_normalize_catalog_videos(d.get('videos', [])),
             category=d.get('category', ''),
             service_group=d.get('service_group', ''),
             is_featured=is_featured_val,
+            presented_service=presented_service_val,
             show_on_screen=show_on_screen_val,
             hidden=hidden_val,
         )
+        s.category_ref = ProductCategory.objects.filter(external_id=s.category).first()
+        if d.get('catalog_group_id'):
+            s.catalog_group = _validated_catalog_group(d.get('catalog_group_id'), s.category_ref)
         if request.FILES.get('image'):
             s.image = request.FILES['image']
         s.save()
@@ -1683,12 +2282,31 @@ def admin_update_service(request, service_id):
         s = ServiceMode.objects.get(id=service_id)
         d = request.data
 
-        for field in ['url', 'title', 'catalog_number', 'content', 'price', 'performance_data', 'category', 'service_group']:
+        for field in ['url', 'title', 'catalog_number', 'content', 'technique', 'price', 'performance_data', 'category', 'service_group']:
             if field in d:
                 setattr(s, field, d[field])
 
+        if 'category' in d:
+            s.category_ref = ProductCategory.objects.filter(external_id=s.category).first()
+        if 'catalog_group_id' in d or 'service_group' in d or 'category' in d:
+            group_id = d.get('catalog_group_id')
+            group_name = str(d.get('service_group') or '').strip()
+            s.catalog_group = None
+            if group_id:
+                s.catalog_group = _validated_catalog_group(group_id, s.category_ref)
+            elif s.category_ref and group_name:
+                normalized_name = CatalogGroup.normalize_name(group_name)
+                s.catalog_group, _ = CatalogGroup.objects.get_or_create(
+                    category=s.category_ref,
+                    normalized_name=normalized_name,
+                    defaults={'group_name': group_name},
+                )
+
         if 'manuals' in d:
             s.manuals = _normalize_service_manuals(d['manuals'])
+
+        if 'videos' in d:
+            s.videos = _normalize_catalog_videos(d['videos'])
 
         if 'is_featured' in d:
             is_featured_val = d['is_featured']
@@ -1696,11 +2314,23 @@ def admin_update_service(request, service_id):
                 is_featured_val = is_featured_val.lower() == 'true'
             s.is_featured = is_featured_val
 
+        if 'presented_service' in d:
+            presented_service_val = d['presented_service']
+            if isinstance(presented_service_val, str):
+                presented_service_val = presented_service_val.lower() == 'true'
+            s.presented_service = presented_service_val
+
         if 'show_on_screen' in d:
             show_on_screen_val = d['show_on_screen']
             if isinstance(show_on_screen_val, str):
                 show_on_screen_val = show_on_screen_val.lower() == 'true'
             s.show_on_screen = show_on_screen_val
+
+        if 'show_catalog_number' in d:
+            show_catalog_number_val = d['show_catalog_number']
+            if isinstance(show_catalog_number_val, str):
+                show_catalog_number_val = show_catalog_number_val.lower() == 'true'
+            s.show_catalog_number = show_catalog_number_val
 
         if 'hidden' in d:
             hidden_val = d['hidden']
@@ -1777,6 +2407,43 @@ def admin_upload_service_document(request):
         }, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def admin_upload_catalog_video(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        video_file = request.FILES.get('video')
+        if not video_file:
+            return Response({'error': 'No video file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        extension = video_file.name.rsplit('.', 1)[-1].lower() if '.' in video_file.name else ''
+        if extension not in {'mp4', 'webm', 'ogg'} or not str(video_file.content_type).startswith('video/'):
+            return Response(
+                {'error': 'Upload an MP4, WebM, or Ogg video.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if video_file.size > 200 * 1024 * 1024:
+            return Response(
+                {'error': 'The video must be 200 MB or smaller.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from django.core.files.storage import default_storage
+        from django.utils.text import get_valid_filename
+
+        safe_name = get_valid_filename(video_file.name)
+        saved_path = default_storage.save(f'catalog_videos/{safe_name}', video_file)
+        return Response({
+            'video_path': f'media/{saved_path}',
+            'url': request.build_absolute_uri(default_storage.url(saved_path)),
+            'message': 'Video uploaded successfully.',
+        }, status=status.HTTP_201_CREATED)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ===========================================================================
@@ -1874,6 +2541,46 @@ def admin_delete_media(request, image_id):
 #  HOMEPAGE SLIDES CRUD (HomepageSlide)
 # ===========================================================================
 
+@api_view(['POST'])
+def admin_upload_homepage_slide_video(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        video_file = request.FILES.get('video')
+        if not video_file:
+            return Response(
+                {'error': 'No video file provided.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        extension = video_file.name.rsplit('.', 1)[-1].lower() if '.' in video_file.name else ''
+        allowed_extensions = {'mp4', 'webm', 'ogg'}
+        if extension not in allowed_extensions or not str(video_file.content_type).startswith('video/'):
+            return Response(
+                {'error': 'Upload an MP4, WebM, or Ogg video.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if video_file.size > 200 * 1024 * 1024:
+            return Response(
+                {'error': 'The video must be 200 MB or smaller.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from django.core.files.storage import default_storage
+        from django.utils.text import get_valid_filename
+
+        safe_name = get_valid_filename(video_file.name)
+        saved_path = default_storage.save(f'homepage_videos/{safe_name}', video_file)
+        return Response({
+            'video_path': f'media/{saved_path}',
+            'url': request.build_absolute_uri(default_storage.url(saved_path)),
+            'message': 'Video uploaded successfully.',
+        }, status=status.HTTP_201_CREATED)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['GET'])
 def admin_list_slides(request):
     err = _check_admin(request)
@@ -1894,6 +2601,7 @@ def admin_list_slides(request):
                 'secondary_button_text': s.secondary_button_text,
                 'secondary_button_link': s.secondary_button_link,
                 'image_url': s.image_url,
+                'video_url': s.video_url,
                 'display_order': s.display_order,
                 'is_active': s.is_active,
             })
@@ -1920,6 +2628,7 @@ def admin_get_slide(request, slide_id):
             'secondary_button_text': s.secondary_button_text,
             'secondary_button_link': s.secondary_button_link,
             'image_url': s.image_url,
+            'video_url': s.video_url,
             'display_order': s.display_order,
             'is_active': s.is_active,
         })
@@ -1951,6 +2660,7 @@ def admin_create_slide(request):
             secondary_button_text=data.get('secondary_button_text', ''),
             secondary_button_link=data.get('secondary_button_link', ''),
             image_url=data.get('image_url', ''),
+            video_url=data.get('video_url', ''),
             display_order=display_order,
             is_active=bool(data.get('is_active', True)),
         )
@@ -1977,6 +2687,7 @@ def admin_update_slide(request, slide_id):
         s.secondary_button_text = data.get('secondary_button_text', s.secondary_button_text)
         s.secondary_button_link = data.get('secondary_button_link', s.secondary_button_link)
         s.image_url = data.get('image_url', s.image_url)
+        s.video_url = data.get('video_url', s.video_url)
         try:
             s.display_order = int(data.get('display_order', s.display_order))
         except (ValueError, TypeError):
@@ -2024,4 +2735,334 @@ def admin_delete_slide(request, slide_id):
         return Response({'error': 'Slide not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ===========================================================================
+#  ABOUT BIOARK AND INVESTOR PAGE CONTENT
+# ===========================================================================
+
+@api_view(['POST'])
+def admin_upload_page_content_image(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        image_file = request.FILES.get('image')
+        if not image_file:
+            return Response(
+                {'error': 'No image file provided.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        extension = image_file.name.rsplit('.', 1)[-1].lower() if '.' in image_file.name else ''
+        allowed_extensions = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
+        if extension not in allowed_extensions or not str(image_file.content_type).startswith('image/'):
+            return Response(
+                {'error': 'Upload a JPG, PNG, GIF, or WebP image.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if image_file.size > 10 * 1024 * 1024:
+            return Response(
+                {'error': 'The image must be 10 MB or smaller.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from django.core.files.storage import default_storage
+        from django.utils.text import get_valid_filename
+
+        safe_name = get_valid_filename(image_file.name)
+        saved_path = default_storage.save(f'page_content_images/{safe_name}', image_file)
+        return Response({
+            'image_path': f'media/{saved_path}',
+            'url': request.build_absolute_uri(default_storage.url(saved_path)),
+            'message': 'Image uploaded successfully.',
+        }, status=status.HTTP_201_CREATED)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+def _boolean_value(value, default=True):
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in ('true', '1', 'yes', 'on')
+
+
+def _integer_value(value, default=0):
+    try:
+        return max(0, int(value))
+    except (TypeError, ValueError):
+        return default
+
+
+INVESTOR_STRATEGY_ICON_CHOICES = {
+    '\u25a3',  # Foundation
+    '\u25a4',  # Platform
+    '\u2301',  # Future
+    '\u2697',  # Science
+    '\U0001f9ec',  # Gene editing
+    '\u25ce',  # Target
+    '\u2197',  # Growth
+    '\u2726',  # Innovation
+    '\u25c8',  # Partnership
+}
+
+ABOUT_HIGHLIGHT_ICON_CHOICES = {
+    '\u25a6',  # Company
+    '\u2697',  # Science
+    '\u2723',  # Platform
+    '\u2699',  # AI and engineering
+    '\u2662',  # Clinical
+    '\U0001f9ec',  # Gene editing
+    '\u25ce',  # Target
+    '\u2726',  # Innovation
+    '\u25c8',  # Partnership
+}
+
+
+def _text_list(value):
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip() for item in value if str(item).strip()]
+
+
+def _about_page_payload():
+    overview = AboutWhoWeAre.objects.order_by('id').first()
+    return {
+        'overview': AboutWhoWeAreSerializer(overview).data if overview else None,
+        'highlights': AboutHighlightSerializer(
+            AboutHighlight.objects.all().order_by('display_order', 'id'),
+            many=True,
+        ).data,
+        'team_members': AboutTeamMemberSerializer(
+            AboutTeamMember.objects.all().order_by('display_order', 'id'),
+            many=True,
+        ).data,
+    }
+
+
+def _investor_page_payload():
+    overview = InvestorCompanyOverview.objects.order_by('id').first()
+    partner = InvestorPartnerSection.objects.order_by('id').first()
+    return {
+        'overview': (
+            InvestorCompanyOverviewSerializer(overview).data if overview else None
+        ),
+        'strategy_tiers': InvestorStrategyTierSerializer(
+            InvestorStrategyTier.objects.all().order_by('display_order', 'id'),
+            many=True,
+        ).data,
+        'milestones': InvestorRoadmapMilestoneSerializer(
+            InvestorRoadmapMilestone.objects.all().order_by('display_order', 'id'),
+            many=True,
+        ).data,
+        'partner': InvestorPartnerSectionSerializer(partner).data if partner else None,
+    }
+
+
+def _sync_repeatable_rows(model, rows, allowed_fields, required_field):
+    if not isinstance(rows, list):
+        raise ValueError('Repeatable section content must be a list.')
+
+    retained_ids = []
+    for index, row in enumerate(rows, start=1):
+        if not isinstance(row, dict):
+            raise ValueError('Each repeatable section item must be an object.')
+
+        required_value = str(row.get(required_field) or '').strip()
+        if not required_value:
+            raise ValueError(f'{required_field.replace("_", " ").title()} is required.')
+
+        row_id = row.get('id')
+        instance = model.objects.filter(id=row_id).first() if row_id else model()
+        if row_id and not instance:
+            raise ValueError(f'{model.__name__} record {row_id} does not exist.')
+
+        for field in allowed_fields:
+            if field == 'display_order':
+                setattr(instance, field, _integer_value(row.get(field), index))
+            elif field == 'is_active':
+                setattr(instance, field, _boolean_value(row.get(field), True))
+            elif field in ('items', 'full_bio'):
+                setattr(instance, field, _text_list(row.get(field)))
+            else:
+                setattr(instance, field, str(row.get(field) or '').strip())
+
+        instance.save()
+        retained_ids.append(instance.id)
+
+    model.objects.exclude(id__in=retained_ids).delete()
+
+
+@api_view(['GET', 'PUT'])
+def admin_about_page_content(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    if request.method == 'GET':
+        return Response(_about_page_payload())
+
+    try:
+        data = request.data
+        overview_data = data.get('overview') or {}
+        if not str(overview_data.get('section_title') or '').strip():
+            return Response(
+                {'error': 'Who We Are section title is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        for highlight in data.get('highlights', []):
+            if str(highlight.get('icon') or '').strip() not in ABOUT_HIGHLIGHT_ICON_CHOICES:
+                return Response(
+                    {'error': 'Select a valid icon for every About BioArk highlight.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        with transaction.atomic():
+            AboutWhoWeAre.objects.update_or_create(
+                slug='main',
+                defaults={
+                    'page_title': str(overview_data.get('page_title') or '').strip(),
+                    'page_subtitle': str(overview_data.get('page_subtitle') or '').strip(),
+                    'section_title': str(overview_data.get('section_title') or '').strip(),
+                    'paragraphs': _text_list(overview_data.get('paragraphs')),
+                    'is_active': _boolean_value(overview_data.get('is_active'), True),
+                },
+            )
+            _sync_repeatable_rows(
+                AboutHighlight,
+                data.get('highlights', []),
+                ('icon', 'title', 'text', 'display_order', 'is_active'),
+                'title',
+            )
+            _sync_repeatable_rows(
+                AboutTeamMember,
+                data.get('team_members', []),
+                (
+                    'initials',
+                    'name',
+                    'role',
+                    'image_url',
+                    'short_bio',
+                    'full_bio',
+                    'display_order',
+                    'is_active',
+                ),
+                'name',
+            )
+
+        return Response({
+            'message': 'About BioArk page content updated successfully.',
+            **_about_page_payload(),
+        })
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET', 'PUT'])
+def admin_investor_page_content(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    if request.method == 'GET':
+        return Response(_investor_page_payload())
+
+    try:
+        data = request.data
+        overview_data = data.get('overview') or {}
+        partner_data = data.get('partner') or {}
+        if not str(overview_data.get('section_title') or '').strip():
+            return Response(
+                {'error': 'Company Overview & Vision section title is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not str(overview_data.get('strategy_section_title') or '').strip():
+            return Response(
+                {'error': 'Strategy section title is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not str(overview_data.get('roadmap_section_title') or '').strip():
+            return Response(
+                {'error': 'Roadmap section title is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not str(partner_data.get('section_title') or '').strip():
+            return Response(
+                {'error': 'Partner section title is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        for tier in data.get('strategy_tiers', []):
+            if str(tier.get('icon') or '').strip() not in INVESTOR_STRATEGY_ICON_CHOICES:
+                return Response(
+                    {'error': 'Select a valid icon for every strategy tier.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        button_target = str(partner_data.get('button_target') or '_self').strip()
+        if button_target not in ('_self', '_blank'):
+            button_target = '_self'
+
+        with transaction.atomic():
+            InvestorCompanyOverview.objects.update_or_create(
+                slug='main',
+                defaults={
+                    'page_title': str(overview_data.get('page_title') or '').strip(),
+                    'page_subtitle': str(overview_data.get('page_subtitle') or '').strip(),
+                    'section_title': str(overview_data.get('section_title') or '').strip(),
+                    'strategy_section_title': str(overview_data.get('strategy_section_title') or '').strip(),
+                    'roadmap_section_title': str(overview_data.get('roadmap_section_title') or '').strip(),
+                    'paragraphs': _text_list(overview_data.get('paragraphs')),
+                    'image_url': str(overview_data.get('image_url') or '').strip(),
+                    'image_alt': str(overview_data.get('image_alt') or '').strip(),
+                    'is_active': _boolean_value(overview_data.get('is_active'), True),
+                },
+            )
+            _sync_repeatable_rows(
+                InvestorStrategyTier,
+                data.get('strategy_tiers', []),
+                (
+                    'icon',
+                    'title',
+                    'subtitle',
+                    'items',
+                    'note',
+                    'display_order',
+                    'is_active',
+                ),
+                'title',
+            )
+            _sync_repeatable_rows(
+                InvestorRoadmapMilestone,
+                data.get('milestones', []),
+                ('phase', 'goal', 'period_and_funding', 'display_order', 'is_active'),
+                'phase',
+            )
+            InvestorPartnerSection.objects.update_or_create(
+                slug='main',
+                defaults={
+                    'section_title': str(partner_data.get('section_title') or '').strip(),
+                    'text': str(partner_data.get('text') or '').strip(),
+                    'button_text': str(partner_data.get('button_text') or '').strip(),
+                    'button_url': str(partner_data.get('button_url') or '').strip(),
+                    'button_target': button_target,
+                    'button_style': str(partner_data.get('button_style') or 'primary').strip(),
+                    'contact_email': str(partner_data.get('contact_email') or '').strip(),
+                    'is_active': _boolean_value(partner_data.get('is_active'), True),
+                },
+            )
+
+        return Response({
+            'message': 'Investor page content updated successfully.',
+            **_investor_page_payload(),
+        })
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

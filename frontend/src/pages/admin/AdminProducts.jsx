@@ -25,10 +25,57 @@ const reagentKeyFeaturesToPlainText = (value) => (
     .join('\n')
 );
 
+const parseNumericCatalogPrice = (value) => {
+  const text = String(value ?? '').trim();
+  if (!text) return null;
+  const normalized = text.replace(/^\$\s*/, '').replace(/,/g, '');
+  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return Number.NaN;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : Number.NaN;
+};
+
+const validateDiscountedPrice = (discountValue, listValue, label) => {
+  const discountText = String(discountValue ?? '').trim();
+  if (!discountText) return;
+
+  const discount = parseNumericCatalogPrice(discountText);
+  const listPrice = parseNumericCatalogPrice(listValue);
+  if (Number.isNaN(discount)) {
+    throw new Error(`${label} must be a non-negative numeric price.`);
+  }
+  if (listPrice === null || Number.isNaN(listPrice)) {
+    throw new Error(`${label} requires a numeric List Price.`);
+  }
+  if (discount > listPrice) {
+    throw new Error(`${label} cannot exceed its List Price.`);
+  }
+};
+
 const FilledHomeIcon = () => (
   <svg className="admin-home-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path d="M3 10.5 12 3l9 7.5v9A1.5 1.5 0 0 1 19.5 21H15v-6h-6v6H4.5A1.5 1.5 0 0 1 3 19.5v-9Z" />
   </svg>
+);
+
+export const DeactivateIcon = () => (
+  <span className="admin-deactivate-icon" aria-hidden="true">{'\u23FB'}</span>
+);
+
+export const CatalogNumberDisplayToggle = ({ checked, onChange }) => (
+  <label className="admin-form-field admin-switch-field">
+    <span>Catalog Number Display</span>
+    <span className="admin-slide-switch">
+      <input
+        type="checkbox"
+        role="switch"
+        aria-label="Display catalog number"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      />
+      <span className="admin-slide-switch-track" aria-hidden="true" />
+      <span className="admin-slide-switch-state" aria-hidden="true">{checked ? 'Show' : 'Hide'}</span>
+    </span>
+  </label>
 );
 
 const PublicDetailLink = ({ identifier }) => {
@@ -48,7 +95,12 @@ const PublicDetailLink = ({ identifier }) => {
   );
 };
 
-export const ProductContentEditor = React.forwardRef(function ProductContentEditor({ value, onChange, ariaLabel = 'Product content text' }, ref) {
+export const ProductContentEditor = React.forwardRef(function ProductContentEditor({
+  value,
+  onChange,
+  ariaLabel = 'Product content text',
+  imageUploadEndpoint = '/api/admin-panel/products/upload-image/',
+}, ref) {
   const editorRef = useRef(null);
   const lastEmittedHtmlRef = useRef(null);
   const selectedImageRef = useRef(null);
@@ -177,6 +229,38 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
     image.removeAttribute('height');
     setSelectedImageWidth(width);
     syncValue();
+  };
+
+  const deleteSelectedImage = () => {
+    const editor = editorRef.current;
+    const image = selectedImageRef.current;
+    if (!editor || !image || !editor.contains(image)) {
+      clearSelectedImage();
+      return;
+    }
+
+    const parent = image.parentNode;
+    const nextSibling = image.nextSibling;
+    image.remove();
+    selectedImageRef.current = null;
+    setSelectedImageWidth(null);
+
+    if (parent && editor.contains(parent)) {
+      const nextRange = document.createRange();
+      if (nextSibling && parent.contains(nextSibling)) {
+        nextRange.setStartBefore(nextSibling);
+      } else {
+        nextRange.selectNodeContents(parent);
+        nextRange.collapse(false);
+      }
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(nextRange);
+      savedSelectionRangeRef.current = nextRange.cloneRange();
+    }
+
+    syncValue();
+    focusEditor();
   };
 
   const handleEditorClick = (event) => {
@@ -358,7 +442,7 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
       try {
         const formData = new FormData();
         formData.append('image', file);
-        const response = await apiFetch('/api/admin-panel/products/upload-image/', {
+        const response = await apiFetch(imageUploadEndpoint, {
           method: 'POST',
           body: formData,
         });
@@ -589,28 +673,59 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
   return (
     <div className="admin-rich-text admin-product-rich-text">
       <div className="admin-rich-text-toolbar" aria-label="Product content formatting tools">
-        <select aria-label="Text style" defaultValue="p" onMouseDown={rememberEditorSelection} onChange={handleBlockChange}>
-          <option value="p">Paragraph</option>
-          <option value="h2">Heading 2</option>
-          <option value="h3">Heading 3</option>
-          <option value="blockquote">Quote</option>
-        </select>
-        <button type="button" aria-label="Bold" onMouseDown={handleBoldMouseDown}><strong>B</strong></button>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('italic')}><em>I</em></button>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('underline')}><span className="admin-rich-underline">U</span></button>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertUnorderedList')}>Bullet List</button>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertOrderedList')}>Numbered List</button>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={handleLink}>Link</button>
-        <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('unlink')}>Unlink</button>
+        <div className="admin-rich-text-command-group" role="group" aria-label="History commands">
+          <button
+            type="button"
+            className="admin-rich-undo-button"
+            aria-label="Undo last change"
+            title="Undo (Ctrl+Z)"
+            onMouseDown={preventFocusLoss}
+            onClick={() => runCommand('undo')}
+          >
+            <span aria-hidden="true">{'\u21B6'}</span> Undo
+          </button>
+        </div>
         <span className="admin-rich-text-divider" aria-hidden="true" />
-        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={insertTable}>Insert Table</button>
-        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={addTableRow}>Add Row</button>
-        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={addTableColumn}>Add Column</button>
-        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={mergeCellRight}>Merge Right</button>
-        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={mergeCellDown}>Merge Down</button>
-        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={deleteTableRow}>Delete Row</button>
-        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={deleteTableColumn}>Delete Column</button>
-        <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={deleteTable}>Delete Table</button>
+        <div className="admin-rich-text-command-group" role="group" aria-label="Text formatting commands">
+          <select aria-label="Text style" defaultValue="p" onMouseDown={rememberEditorSelection} onChange={handleBlockChange}>
+            <option value="p">Paragraph</option>
+            <option value="h2">Heading 2</option>
+            <option value="h3">Heading 3</option>
+            <option value="blockquote">Quote</option>
+          </select>
+          <button type="button" aria-label="Bold" onMouseDown={handleBoldMouseDown}><strong>B</strong></button>
+          <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('italic')}><em>I</em></button>
+          <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('underline')}><span className="admin-rich-underline">U</span></button>
+          <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertUnorderedList')}>Bullet List</button>
+          <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('insertOrderedList')}>Numbered List</button>
+          <button type="button" onMouseDown={preventFocusLoss} onClick={handleLink}>Link</button>
+          <button type="button" onMouseDown={preventFocusLoss} onClick={() => runCommand('unlink')}>Unlink</button>
+        </div>
+        <span className="admin-rich-text-divider" aria-hidden="true" />
+        <div className="admin-rich-text-command-group" role="group" aria-label="Image commands">
+          <button
+            type="button"
+            className="admin-rich-delete-image-button"
+            disabled={selectedImageWidth === null}
+            aria-label="Delete selected image"
+            title={selectedImageWidth === null ? 'Select an image in the editor first' : 'Delete selected image'}
+            onMouseDown={preventFocusLoss}
+            onClick={deleteSelectedImage}
+          >
+            Delete Image
+          </button>
+        </div>
+        <span className="admin-rich-text-divider" aria-hidden="true" />
+        <div className="admin-rich-text-command-group" role="group" aria-label="Table commands">
+          <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={insertTable}>Insert Table</button>
+          <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={addTableRow}>Add Row</button>
+          <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={addTableColumn}>Add Column</button>
+          <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={mergeCellRight}>Merge Right</button>
+          <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={mergeCellDown}>Merge Down</button>
+          <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={deleteTableRow}>Delete Row</button>
+          <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={deleteTableColumn}>Delete Column</button>
+          <button type="button" className="admin-rich-table-button" onMouseDown={preventFocusLoss} onClick={deleteTable}>Delete Table</button>
+        </div>
       </div>
       <div
         className={`admin-rich-text-image-hint ${imageUploadError ? 'has-error' : ''}`}
@@ -672,6 +787,243 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
   );
 });
 
+export const CatalogGroupEditorModal = ({ group, category, itemType, onClose, onSaved }) => {
+  const summaryEditorRef = useRef(null);
+  const [groupName, setGroupName] = useState(group?.group_name || '');
+  const [externalId, setExternalId] = useState(group?.external_id || '');
+  const [summary, setSummary] = useState(group?.summary || '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const isEditing = Boolean(group?.group_id);
+  const typeLabel = itemType === 'service' ? 'Service' : itemType === 'reagent' ? 'Reagent' : 'Product';
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const cleanName = groupName.trim();
+    if (!cleanName) {
+      setError(`${typeLabel} Group Name is required.`);
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    try {
+      const endpoint = isEditing
+        ? `/api/admin-panel/catalog-groups/${group.group_id}/update/`
+        : '/api/admin-panel/catalog-groups/create/';
+      const savedGroup = await apiFetch(endpoint, {
+        method: 'POST',
+        body: {
+          category_external_id: category.id,
+          group_name: cleanName,
+          external_id: externalId.trim(),
+          summary: summaryEditorRef.current?.getHtml() ?? summary,
+        },
+      });
+      onSaved(savedGroup);
+    } catch (err) {
+      setError(err.message || `Failed to save ${typeLabel.toLowerCase()} group.`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="admin-modal-overlay" onClick={() => !saving && onClose()}>
+      <div className="admin-modal admin-modal-lg admin-catalog-group-modal" onClick={(event) => event.stopPropagation()}>
+        <div className="admin-modal-header">
+          <h3>{isEditing ? `Edit ${typeLabel} Group` : `Create ${typeLabel} Group`}</h3>
+          <button type="button" className="admin-modal-close" disabled={saving} onClick={onClose} aria-label="Close">×</button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="admin-modal-body">
+            {error && <div className="admin-alert error">{error}</div>}
+            <div className="admin-form-grid">
+              <label className="admin-form-field">
+                <span>{typeLabel} Group Name *</span>
+                <input type="text" value={groupName} onChange={(event) => setGroupName(event.target.value)} required />
+              </label>
+              <label className="admin-form-field">
+                <span>External ID *</span>
+                <input
+                  type="text"
+                  value={externalId}
+                  onChange={(event) => setExternalId(event.target.value)}
+                  placeholder={isEditing ? 'Enter an External ID' : 'Leave blank to auto-generate'}
+                  required={isEditing}
+                  aria-describedby="catalog-group-external-id-help"
+                />
+                <small id="catalog-group-external-id-help">
+                  Letters, numbers, hyphens, and underscores only. Changing this also changes the public group URL.
+                </small>
+              </label>
+              <div className="admin-form-field span-3">
+                <span>Summary</span>
+                <ProductContentEditor
+                  ref={summaryEditorRef}
+                  value={summary}
+                  onChange={setSummary}
+                  ariaLabel={`${typeLabel} group summary`}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="admin-modal-footer">
+            <button type="button" className="secondary-admin-button" disabled={saving} onClick={onClose}>Cancel</button>
+            <button type="submit" className="primary-button" disabled={saving}>
+              {saving ? 'Saving...' : isEditing ? 'Save Group' : 'Create Group'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export const CatalogCategoryEditorPage = ({ category, itemType, onCancel, onSaved }) => {
+  const summaryEditorRef = useRef(null);
+  const [categoryName, setCategoryName] = useState(category?.category_name || category?.name || '');
+  const [summary, setSummary] = useState(category?.summary || '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const typeLabel = itemType === 'service' ? 'Service' : itemType === 'reagent' ? 'Reagent' : 'Product';
+  const externalId = category?.external_id || category?.id || '';
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const cleanName = categoryName.trim();
+    if (!cleanName) {
+      setError(`${typeLabel} Category Name is required.`);
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    try {
+      const updatedCategory = await apiFetch(
+        `/api/admin-panel/product-categories/${category.category_id}/update/`,
+        {
+          method: 'POST',
+          body: {
+            category_name: cleanName,
+            summary: summaryEditorRef.current?.getHtml() ?? summary,
+          },
+        },
+      );
+      onSaved(updatedCategory);
+    } catch (err) {
+      setError(err.message || `Failed to save ${typeLabel.toLowerCase()} category.`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="admin-blog-editor-page admin-category-editor-page">
+      <div className="admin-editor-header">
+        <div>
+          <button type="button" className="admin-back-button" disabled={saving} onClick={onCancel}>
+            Back to {typeLabel} Catalog
+          </button>
+          <h2 id="admin-content-title">Edit {typeLabel} Category</h2>
+        </div>
+        <div className="admin-editor-header-actions">
+          <button type="button" className="secondary-admin-button" disabled={saving} onClick={onCancel}>Cancel</button>
+          <button type="submit" form="admin-category-editor-form" className="primary-button" disabled={saving}>
+            {saving ? 'Saving...' : 'Save Category'}
+          </button>
+        </div>
+      </div>
+
+      {error && <div className="admin-alert error">{error}</div>}
+
+      <form id="admin-category-editor-form" onSubmit={handleSubmit} className="admin-editor-panel">
+        <div className="admin-form-grid">
+          <label className="admin-form-field">
+            <span>{typeLabel} Category Name *</span>
+            <input type="text" value={categoryName} onChange={(event) => setCategoryName(event.target.value)} required />
+          </label>
+          <label className="admin-form-field">
+            <span>External ID</span>
+            <input type="text" value={externalId} readOnly />
+          </label>
+          <div className="admin-form-field span-3">
+            <span>Summary</span>
+            <ProductContentEditor
+              ref={summaryEditorRef}
+              value={summary}
+              onChange={setSummary}
+              ariaLabel={`${typeLabel} category summary`}
+            />
+          </div>
+        </div>
+        <div className="admin-editor-footer">
+          <button type="button" className="secondary-admin-button" disabled={saving} onClick={onCancel}>Cancel</button>
+          <button type="submit" className="primary-button" disabled={saving}>
+            {saving ? 'Saving...' : 'Save Category'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export const CatalogVideoEditor = ({ videos = [], onChange, onUpload, itemLabel }) => (
+  <div className="admin-form-field span-3 admin-catalog-video-editor">
+    <span className="admin-catalog-media-title">{itemLabel} Videos</span>
+    <div className="admin-catalog-video-grid">
+      {videos.map((videoUrl, index) => (
+        <div className="admin-catalog-video-card" key={`${videoUrl}-${index}`}>
+          {videoUrl ? (
+            <video src={formatAssetUrl(videoUrl)} controls preload="metadata" />
+          ) : (
+            <span className="admin-catalog-video-empty">Empty path</span>
+          )}
+          <input
+            type="text"
+            value={videoUrl || ''}
+            onChange={(event) => {
+              const nextVideos = [...videos];
+              nextVideos[index] = event.target.value;
+              onChange(nextVideos);
+            }}
+            placeholder="Video path"
+            aria-label={`${itemLabel} video ${index + 1} path`}
+          />
+          <button
+            type="button"
+            className="admin-catalog-media-remove"
+            onClick={() => onChange(videos.filter((_, videoIndex) => videoIndex !== index))}
+            aria-label={`Remove ${itemLabel.toLowerCase()} video ${index + 1}`}
+            title="Remove video"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+
+      <div className="admin-catalog-video-add-card">
+        <button
+          type="button"
+          className="secondary-admin-button"
+          onClick={() => onChange([...videos, ''])}
+        >
+          + Add Path
+        </button>
+        <label className="primary-button">
+          + Upload Video
+          <input
+            type="file"
+            accept="video/mp4,video/webm,video/ogg"
+            onChange={onUpload}
+          />
+        </label>
+        <small>MP4, WebM, or Ogg; maximum 200 MB.</small>
+      </div>
+    </div>
+  </div>
+);
+
 function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialEditHandled }) {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -692,6 +1044,8 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
   const [collapsedCatalogs, setCollapsedCatalogs] = useState(() => new Set());
   const [subgroupSorts, setSubgroupSorts] = useState({});
   const [optionRows, setOptionRows] = useState([]);
+  const [editingCatalogGroup, setEditingCatalogGroup] = useState(null);
+  const [editingCategory, setEditingCategory] = useState(null);
   const productContentEditorRef = useRef(null);
   const performanceDataEditorRef = useRef(null);
   const optionRowIdRef = useRef(0);
@@ -732,17 +1086,27 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
-  const createOptionRows = (options = [], optionPrices = {}) => {
+  const createOptionRows = (options = [], optionPrices = {}, optionDiscountedPrices = {}) => {
     const optionNames = Array.isArray(options) ? options : [];
     const priceMap = optionPrices && typeof optionPrices === 'object' && !Array.isArray(optionPrices)
       ? optionPrices
       : {};
-    const names = [...new Set([...optionNames, ...Object.keys(priceMap)])];
+    const discountedPriceMap = (
+      optionDiscountedPrices
+      && typeof optionDiscountedPrices === 'object'
+      && !Array.isArray(optionDiscountedPrices)
+    ) ? optionDiscountedPrices : {};
+    const names = [...new Set([
+      ...optionNames,
+      ...Object.keys(priceMap),
+      ...Object.keys(discountedPriceMap),
+    ])];
 
     return names.map((name) => ({
       id: `option-row-${++optionRowIdRef.current}`,
       name,
       price: priceMap[name] ?? '',
+      discountedPrice: discountedPriceMap[name] ?? '',
     }));
   };
 
@@ -755,7 +1119,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
   const addOptionRow = () => {
     setOptionRows((rows) => [
       ...rows,
-      { id: `option-row-${++optionRowIdRef.current}`, name: '', price: '' },
+      { id: `option-row-${++optionRowIdRef.current}`, name: '', price: '', discountedPrice: '' },
     ]);
   };
 
@@ -769,12 +1133,16 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
       product_name: '',
       external_id: '',
       catalog_number: '',
+      show_catalog_number: true,
       description: '',
       image_url: '',
+      images: [],
+      videos: [],
       category_external_id: selectedCategory !== 'All' && selectedCategory !== 'uncategorized' ? selectedCategory : '',
       product_group: '',
       source_type: categoryFilter === 'products' ? 'quote' : 'reagent',
       list_price: '',
+      discounted_price: '',
       price_range: '',
       availability: '',
       hidden: false,
@@ -803,7 +1171,11 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
             storage_stability: richTextToPlainText(productData.storage_stability),
           }
         : {};
-      setOptionRows(createOptionRows(productData.options, productData.option_prices));
+      setOptionRows(createOptionRows(
+        productData.options,
+        productData.option_prices,
+        productData.option_discounted_prices,
+      ));
       setEditingProduct({
         ...productData,
         ...reagentPlainTextFields,
@@ -957,8 +1329,9 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
         .map((row) => ({
           name: String(row.name || '').trim(),
           price: String(row.price ?? '').trim(),
+          discountedPrice: String(row.discountedPrice ?? '').trim(),
         }))
-        .filter((row) => row.name || row.price);
+        .filter((row) => row.name || row.price || row.discountedPrice);
       const unnamedOption = normalizedOptionRows.find((row) => !row.name);
       if (unnamedOption) {
         throw new Error('Each option price must have an option name.');
@@ -970,6 +1343,27 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
       const normalizedOptionPrices = Object.fromEntries(
         normalizedOptionRows.map((row) => [row.name, row.price])
       );
+      const normalizedOptionDiscountedPrices = Object.fromEntries(
+        normalizedOptionRows
+          .filter((row) => row.discountedPrice)
+          .map((row) => [row.name, row.discountedPrice])
+      );
+
+      validateDiscountedPrice(
+        editingProduct.discounted_price,
+        editingProduct.list_price,
+        'Discounted Price',
+      );
+      normalizedOptionRows.forEach((row) => {
+        const effectiveListPrice = parseNumericCatalogPrice(row.price) === null
+          ? editingProduct.list_price
+          : row.price;
+        validateDiscountedPrice(
+          row.discountedPrice,
+          effectiveListPrice,
+          `Discounted Price for option "${row.name}"`,
+        );
+      });
       
       // Map 'uncategorized' option back to null or empty string for DB submission
       const payload = {
@@ -981,6 +1375,8 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
         performance_data: latestPerformanceData,
         options: normalizedOptions,
         option_prices: normalizedOptionPrices,
+        option_discounted_prices: normalizedOptionDiscountedPrices,
+        videos: (editingProduct.videos || []).filter(Boolean),
         manuals: (editingProduct.manuals || []).filter(man => man.name && man.manual),
         raw_detail: updatedRawDetail,
         category_external_id: editingProduct.category_external_id === 'uncategorized' ? '' : editingProduct.category_external_id
@@ -996,7 +1392,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
         setEditingProduct(null);
         setOptionRows([]);
       } else if (isNew) {
-        setOptionRows(createOptionRows(normalizedOptions, normalizedOptionPrices));
+        setOptionRows(createOptionRows(normalizedOptions, normalizedOptionPrices, normalizedOptionDiscountedPrices));
         setEditingProduct((prev) => ({
           ...prev,
           ...payload,
@@ -1004,7 +1400,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
           id: saveResponse?.id,
         }));
       } else {
-        setOptionRows(createOptionRows(normalizedOptions, normalizedOptionPrices));
+        setOptionRows(createOptionRows(normalizedOptions, normalizedOptionPrices, normalizedOptionDiscountedPrices));
         setEditingProduct((prev) => ({
           ...prev,
           ...payload,
@@ -1150,6 +1546,8 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
     product_type: cat.product_type || currentProductType,
     show_on_homepage: !!cat.show_on_homepage,
     homepage_image: cat.homepage_image || '',
+    summary: cat.summary || '',
+    groups: (cat.groups || []).filter((group) => group.is_active !== false),
     product_count: cat.product_count ?? products.filter(p => p.category_external_id === (cat.external_id || cat.externalId || cat.id)).length,
   });
   const dbMatchedCategories = categories
@@ -1164,6 +1562,9 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
   const matchedCategories = dbMatchedCategories
     .filter((cat) => cat.id)
     .sort((a, b) => (a.priority || 0) - (b.priority || 0) || a.name.localeCompare(b.name));
+  const availableProductGroups = matchedCategories
+    .find((category) => category.id === editingProduct?.category_external_id)
+    ?.groups || [];
 
   const openCatalogEditor = () => {
     setError('');
@@ -1175,6 +1576,8 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
       product_type: cat.product_type || currentProductType,
       show_on_homepage: !!cat.show_on_homepage,
       homepage_image: cat.homepage_image || '',
+      summary: cat.summary || '',
+      groups: cat.groups || [],
       product_count: products.filter(p => p.category_external_id === cat.id).length,
       isNew: false,
     })));
@@ -1228,6 +1631,28 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
       setError(err.message || 'Homepage image upload failed.');
     } finally {
       setCatalogImageUploading((current) => ({ ...current, [index]: false }));
+      fileInput.value = '';
+    }
+  };
+
+  const handleVideoUpload = async (event) => {
+    const fileInput = event.currentTarget;
+    const file = fileInput.files?.[0];
+    if (!file) return;
+
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('video', file);
+      const data = await apiFetch('/api/admin-panel/catalog/upload-video/', {
+        method: 'POST',
+        body: formData,
+      });
+      updateField('videos', [...(editingProduct.videos || []), data.video_path]);
+      showSuccess('Video uploaded successfully.');
+    } catch (err) {
+      setError(err.message || 'Video upload failed.');
+    } finally {
       fileInput.value = '';
     }
   };
@@ -1392,6 +1817,9 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
       const catProducts = searched.filter(p => p.category_external_id === cat.id);
       
       const subGroupMap = {};
+      (cat.groups || []).forEach((group) => {
+        subGroupMap[group.group_name] = [];
+      });
       catProducts.forEach(p => {
         const groupName = p.product_group || '';
         if (!subGroupMap[groupName]) {
@@ -1560,7 +1988,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
         {error && <div className="admin-alert error">{error}</div>}
 
         <form id="admin-product-editor-form" onSubmit={handleSave} className="admin-editor-panel">
-          <div className="admin-form-grid">
+          <div className="admin-form-grid admin-catalog-editor-grid">
             <label className="admin-form-field span-2">
               <span>Product Name *</span>
               <input type="text" value={editingProduct.product_name || ''} onChange={(e) => updateField('product_name', e.target.value)} required />
@@ -1573,11 +2001,20 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
               <span>Catalog Number</span>
               <input type="text" value={editingProduct.catalog_number || ''} onChange={(e) => updateField('catalog_number', e.target.value)} />
             </label>
+            <CatalogNumberDisplayToggle
+              checked={editingProduct.show_catalog_number !== false}
+              onChange={(checked) => updateField('show_catalog_number', checked)}
+            />
             <label className="admin-form-field">
               <span>Category *</span>
               <select
                 value={editingProduct.category_external_id || ''}
-                onChange={(e) => updateField('category_external_id', e.target.value)}
+                onChange={(e) => setEditingProduct((current) => ({
+                  ...current,
+                  category_external_id: e.target.value,
+                  catalog_group_id: null,
+                  product_group: '',
+                }))}
                 required
               >
                 <option value="">-- Select Category --</option>
@@ -1591,11 +2028,36 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
             </label>
             <label className="admin-form-field">
               <span>Product Group (Subcategory)</span>
-              <input type="text" value={editingProduct.product_group || ''} onChange={(e) => updateField('product_group', e.target.value)} placeholder="e.g. DNA, RNA, Non-Viral" />
+              <select
+                value={editingProduct.catalog_group_id || ''}
+                onChange={(e) => {
+                  const group = availableProductGroups.find((item) => String(item.group_id) === e.target.value);
+                  setEditingProduct((current) => ({
+                    ...current,
+                    catalog_group_id: group?.group_id || null,
+                    product_group: group?.group_name || '',
+                  }));
+                }}
+                disabled={!editingProduct.category_external_id}
+              >
+                <option value="">-- No Group --</option>
+                {availableProductGroups.map((group) => (
+                  <option key={group.group_id} value={group.group_id}>{group.group_name}</option>
+                ))}
+              </select>
             </label>
             <label className="admin-form-field">
               <span>List Price</span>
               <input type="text" value={editingProduct.list_price || ''} onChange={(e) => updateField('list_price', e.target.value)} />
+            </label>
+            <label className="admin-form-field">
+              <span>Discounted Price</span>
+              <input
+                type="text"
+                value={editingProduct.discounted_price || ''}
+                onChange={(e) => updateField('discounted_price', e.target.value)}
+                placeholder="Must not exceed List Price"
+              />
             </label>
 
             <div className="admin-form-field span-3 admin-options-editor">
@@ -1615,7 +2077,8 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                 <div className="admin-options-list">
                   <div className="admin-option-row admin-option-row-heading" aria-hidden="true">
                     <span>Option</span>
-                    <span>Price</span>
+                    <span>List Price</span>
+                    <span>Discounted Price</span>
                     <span>Action</span>
                   </div>
                   {optionRows.map((row, index) => (
@@ -1633,6 +2096,13 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                         onChange={(e) => updateOptionRow(row.id, 'price', e.target.value)}
                         placeholder="e.g. $39.00"
                         aria-label={`Option ${index + 1} price`}
+                      />
+                      <input
+                        type="text"
+                        value={row.discountedPrice}
+                        onChange={(e) => updateOptionRow(row.id, 'discountedPrice', e.target.value)}
+                        placeholder="Optional discounted price"
+                        aria-label={`Option ${index + 1} discounted price`}
                       />
                       <button
                         type="button"
@@ -1761,6 +2231,13 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                 </div>
               </div>
             </div>
+
+            <CatalogVideoEditor
+              videos={editingProduct.videos || []}
+              onChange={(videos) => updateField('videos', videos)}
+              onUpload={handleVideoUpload}
+              itemLabel={categoryFilter === 'products' ? 'Product' : 'Reagent'}
+            />
 
             <div className="admin-form-field span-3" style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--line)', paddingTop: '15px', marginTop: '10px' }}>
               <span style={{ fontWeight: '600', color: 'var(--ink)' }}>Product Manuals (PDFs)</span>
@@ -1940,6 +2417,21 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
     );
   }
 
+  if (editingCategory) {
+    return (
+      <CatalogCategoryEditorPage
+        category={editingCategory}
+        itemType={currentProductType}
+        onCancel={() => setEditingCategory(null)}
+        onSaved={(savedCategory) => {
+          setEditingCategory(null);
+          showSuccess(`${currentProductType === 'reagent' ? 'Reagent' : 'Product'} category ${savedCategory.category_name} saved.`);
+          loadProducts();
+        }}
+      />
+    );
+  }
+
   return (
     <>
       <div className="admin-section-header">
@@ -2051,25 +2543,55 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                     </span>
                     <span>{cat.category_name}</span>
                   </button>
-                  <span className="admin-category-badge">{groupObj.totalCount} items</span>
+                  <span className="admin-category-title-actions">
+                    {catalogId !== 'uncategorized' && (
+                      <button
+                        type="button"
+                        className="admin-action-btn edit"
+                        onClick={() => setEditingCatalogGroup({
+                          group: null,
+                          category: matchedCategories.find((item) => item.id === catalogId),
+                        })}
+                      >
+                        + Add Group
+                      </button>
+                    )}
+                    <span className="admin-category-badge">{groupObj.totalCount} items</span>
+                  </span>
                 </h3>
 
                 {!isCollapsed && (
                   <div id={`catalog-panel-${catalogId}`} className="admin-category-panel">
-                    {groupObj.totalCount === 0 ? (
+                    {Object.keys(subGroups).length === 0 ? (
                       <div className="admin-empty-table" style={{ minHeight: '80px', background: '#fcfdfd' }}>
                         No items in this category.
                       </div>
                     ) : (
                       Object.keys(subGroups).map((subGroupName) => {
                         const productsList = subGroups[subGroupName];
+                        const category = matchedCategories.find((item) => item.id === catalogId);
+                        const catalogGroup = category?.groups?.find((item) => item.group_name === subGroupName);
                         const sortKey = getSubgroupSortKey(catalogId, subGroupName);
                         const sortConfig = getSubgroupSort(sortKey);
                         const sortedProductsList = sortSubgroupProducts(productsList, sortConfig);
                         return (
                           <div key={subGroupName} className="admin-subgroup-group">
                         <h4 className="admin-subgroup-title">
-                          {subGroupName || 'General'} ({productsList.length})
+                          <span className="admin-subgroup-identity">
+                            <span>{subGroupName || 'General'} ({productsList.length})</span>
+                            {catalogGroup?.external_id && (
+                              <code className="admin-subgroup-external-id">External ID: {catalogGroup.external_id}</code>
+                            )}
+                          </span>
+                          {catalogGroup && (
+                            <button
+                              type="button"
+                              className="admin-action-btn edit"
+                              onClick={() => setEditingCatalogGroup({ group: catalogGroup, category })}
+                            >
+                              Edit Group
+                            </button>
+                          )}
                         </h4>
                         <div className="admin-data-table-wrap">
                           <table className="admin-data-table">
@@ -2170,7 +2692,15 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                                         {product.hidden ? (
                                           <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleActivate(pId); }}>Activate</button>
                                         ) : (
-                                          <button type="button" className="admin-action-btn delete" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeactivate(pId); }}>Deactivate</button>
+                                          <button
+                                            type="button"
+                                            className="admin-action-btn delete admin-deactivate-action-btn"
+                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeactivate(pId); }}
+                                            title="Deactivate"
+                                            aria-label="Deactivate"
+                                          >
+                                            <DeactivateIcon />
+                                          </button>
                                         )}
                                       </div>
                                     </td>
@@ -2192,6 +2722,20 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
         </div>
       )}
 
+      {editingCatalogGroup?.category && (
+        <CatalogGroupEditorModal
+          group={editingCatalogGroup.group}
+          category={editingCatalogGroup.category}
+          itemType={currentProductType}
+          onClose={() => setEditingCatalogGroup(null)}
+          onSaved={(savedGroup) => {
+            setEditingCatalogGroup(null);
+            showSuccess(`${currentProductType === 'reagent' ? 'Reagent' : 'Product'} group ${savedGroup.group_name} saved.`);
+            loadProducts();
+          }}
+        />
+      )}
+
       {isModalOpen && editingProduct && (
         <div className="admin-modal-overlay" onClick={() => setIsModalOpen(false)}>
           <div className="admin-modal admin-modal-lg" onClick={(e) => e.stopPropagation()}>
@@ -2200,7 +2744,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
               <button className="admin-modal-close" onClick={() => setIsModalOpen(false)}>×</button>
             </div>
             <form onSubmit={handleSave} className="admin-modal-body">
-              <div className="admin-form-grid">
+              <div className="admin-form-grid admin-catalog-editor-grid">
                 <label className="admin-form-field span-2">
                   <span>Product Name *</span>
                   <input type="text" value={editingProduct.product_name || ''} onChange={(e) => updateField('product_name', e.target.value)} required />
@@ -2213,11 +2757,20 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                   <span>Catalog Number</span>
                   <input type="text" value={editingProduct.catalog_number || ''} onChange={(e) => updateField('catalog_number', e.target.value)} />
                 </label>
+                <CatalogNumberDisplayToggle
+                  checked={editingProduct.show_catalog_number !== false}
+                  onChange={(checked) => updateField('show_catalog_number', checked)}
+                />
                 <label className="admin-form-field">
                   <span>Category *</span>
                   <select 
                     value={editingProduct.category_external_id || ''} 
-                    onChange={(e) => updateField('category_external_id', e.target.value)}
+                    onChange={(e) => setEditingProduct((current) => ({
+                      ...current,
+                      category_external_id: e.target.value,
+                      catalog_group_id: null,
+                      product_group: '',
+                    }))}
                     required
                   >
                     <option value="">-- Select Category --</option>
@@ -2231,11 +2784,36 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                 </label>
                 <label className="admin-form-field">
                   <span>Product Group (Subcategory)</span>
-                  <input type="text" value={editingProduct.product_group || ''} onChange={(e) => updateField('product_group', e.target.value)} placeholder="e.g. DNA, RNA, Non-Viral" />
+                  <select
+                    value={editingProduct.catalog_group_id || ''}
+                    onChange={(e) => {
+                      const group = availableProductGroups.find((item) => String(item.group_id) === e.target.value);
+                      setEditingProduct((current) => ({
+                        ...current,
+                        catalog_group_id: group?.group_id || null,
+                        product_group: group?.group_name || '',
+                      }));
+                    }}
+                    disabled={!editingProduct.category_external_id}
+                  >
+                    <option value="">-- No Group --</option>
+                    {availableProductGroups.map((group) => (
+                      <option key={group.group_id} value={group.group_id}>{group.group_name}</option>
+                    ))}
+                  </select>
                 </label>
                 <label className="admin-form-field">
                   <span>List Price</span>
                   <input type="text" value={editingProduct.list_price || ''} onChange={(e) => updateField('list_price', e.target.value)} />
+                </label>
+                <label className="admin-form-field">
+                  <span>Discounted Price</span>
+                  <input
+                    type="text"
+                    value={editingProduct.discounted_price || ''}
+                    onChange={(e) => updateField('discounted_price', e.target.value)}
+                    placeholder="Must not exceed List Price"
+                  />
                 </label>
                 <div className="admin-form-field span-2" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <span style={{ fontWeight: '500', color: 'var(--ink)' }}>Main Image</span>
@@ -2351,6 +2929,13 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                     </div>
                   </div>
                 </div>
+
+                <CatalogVideoEditor
+                  videos={editingProduct.videos || []}
+                  onChange={(videos) => updateField('videos', videos)}
+                  onUpload={handleVideoUpload}
+                  itemLabel={categoryFilter === 'products' ? 'Product' : 'Reagent'}
+                />
 
                 <div className="admin-form-field span-3" style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--line)', paddingTop: '15px', marginTop: '10px' }}>
                   <span style={{ fontWeight: '600', color: 'var(--ink)' }}>Product Manuals (PDFs)</span>
@@ -2513,6 +3098,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                       <th>External ID</th>
                       <th>Popular</th>
                       <th>Homepage Image</th>
+                      <th>Groups</th>
                       <th>Products</th>
                       <th>Reorder</th>
                       <th>Actions</th>
@@ -2584,6 +3170,54 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                             </div>
                           </div>
                         </td>
+                        <td>
+                          <div className="admin-catalog-group-actions">
+                            {(row.groups || []).map((group) => (
+                              <button
+                                key={group.group_id}
+                                type="button"
+                                className="admin-action-btn edit admin-catalog-group-edit-button"
+                                onClick={() => {
+                                  setEditingCatalogGroup({
+                                    group,
+                                    category: {
+                                      ...row,
+                                      id: row.external_id,
+                                      name: row.category_name,
+                                    },
+                                  });
+                                  setIsCatalogModalOpen(false);
+                                }}
+                                title={`Edit ${group.group_name}`}
+                              >
+                                <span>{group.group_name}</span>
+                                <code>{group.external_id}</code>
+                              </button>
+                            ))}
+                            {!row.isNew && row.category_id && (
+                              <button
+                                type="button"
+                                className="admin-action-btn admin-catalog-group-add-button"
+                                onClick={() => {
+                                  setEditingCatalogGroup({
+                                    group: null,
+                                    category: {
+                                      ...row,
+                                      id: row.external_id,
+                                      name: row.category_name,
+                                    },
+                                  });
+                                  setIsCatalogModalOpen(false);
+                                }}
+                              >
+                                + Add Group
+                              </button>
+                            )}
+                            {(row.groups || []).length === 0 && (row.isNew || !row.category_id) && (
+                              <span className="admin-catalog-groups-empty">Save category first</span>
+                            )}
+                          </div>
+                        </td>
                         <td>{row.product_count || 0}</td>
                         <td>
                           <div className="admin-row-actions">
@@ -2592,9 +3226,23 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                           </div>
                         </td>
                         <td>
-                          <button className="admin-action-btn delete" type="button" onClick={() => deleteCatalogRow(index)}>
-                            Delete
-                          </button>
+                          <div className="admin-row-actions">
+                            <button
+                              className="admin-action-btn edit"
+                              type="button"
+                              disabled={row.isNew || !row.category_id}
+                              title={row.isNew ? 'Save this category before editing its summary.' : 'Edit category'}
+                              onClick={() => {
+                                setEditingCategory(row);
+                                setIsCatalogModalOpen(false);
+                              }}
+                            >
+                              Edit
+                            </button>
+                            <button className="admin-action-btn delete" type="button" onClick={() => deleteCatalogRow(index)}>
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -7,13 +7,17 @@ from .admin_views import (
     admin_list_product_categories, admin_create_product_category,
     admin_update_product_category, admin_reorder_product_categories,
     admin_delete_product_category,
+    admin_create_catalog_group, admin_update_catalog_group,
     admin_list_products, admin_get_product, admin_create_product,
     admin_update_product, admin_delete_product, admin_upload_product_image,
-    admin_list_featured_products, admin_get_featured_product,
+    admin_upload_catalog_video,
+    admin_list_featured_products, admin_list_presented_services, admin_get_featured_product,
     admin_create_featured_product, admin_update_featured_product,
     admin_delete_featured_product,
     admin_list_blogs, admin_get_blog, admin_create_blog,
     admin_update_blog, admin_delete_blog,
+    admin_list_blog_categories, admin_create_blog_category,
+    admin_update_blog_category,
     admin_list_resources, admin_get_resource, admin_create_resource,
     admin_update_resource, admin_delete_resource,
     admin_list_all_users, admin_get_user, admin_create_user,
@@ -25,6 +29,16 @@ from .admin_views import (
     admin_list_media, admin_upload_media, admin_delete_media,
     admin_list_slides, admin_get_slide, admin_create_slide,
     admin_update_slide, admin_reorder_slides, admin_delete_slide,
+    admin_upload_homepage_slide_video,
+    admin_about_page_content, admin_investor_page_content,
+    admin_upload_page_content_image,
+    admin_bulk_upload_catalog,
+)
+from genes.admin_views import (
+    admin_list_genes, admin_create_gene, admin_update_gene,
+    admin_download_gene_upsert_template, admin_bulk_upsert_genes,
+    admin_list_gene_design_prices, admin_create_gene_design_price,
+    admin_update_gene_design_price,
 )
 
 admin.site.site_header = "Bioark Site Administration"
@@ -38,6 +52,7 @@ urlpatterns = [
     path('users/', include('users.urls')),
     path('orders/', include('orders.urls')),
     path('blogs/', include('blogs.urls')),
+    path('genes/', include('genes.urls')),
     path('interface/', include('interface.urls')),
     path('csrf/', views.get_csrf, name='api-csrf'),
     path('signup/', views.signup_view, name='api-signup'),
@@ -51,11 +66,21 @@ urlpatterns = [
     path('password-reset-confirm/<str:token>/', views.confirm_password_reset, name='password_reset_confirm'),
     path('google-login/', views.google_login, name='google_login'),
     path('contact-us/', views.send_contact_form, name='contact-us'),
-    path('quote/', views.send_quote_form, name='quote'),
     path('search/', views.search_product, name='search'),
 
     # ── Admin Panel API ──────────────────────────────────────────────────
     path('admin-panel/dashboard/', admin_dashboard_stats),
+    path('admin-panel/bulk-upload/<str:item_type>/', admin_bulk_upload_catalog),
+
+    # Gene Design
+    path('admin-panel/gene-library/', admin_list_genes),
+    path('admin-panel/gene-library/create/', admin_create_gene),
+    path('admin-panel/gene-library/bulk-upsert/template/', admin_download_gene_upsert_template),
+    path('admin-panel/gene-library/bulk-upsert/', admin_bulk_upsert_genes),
+    path('admin-panel/gene-library/<int:gene_id>/update/', admin_update_gene),
+    path('admin-panel/gene-design-prices/', admin_list_gene_design_prices),
+    path('admin-panel/gene-design-prices/create/', admin_create_gene_design_price),
+    path('admin-panel/gene-design-prices/<int:price_id>/update/', admin_update_gene_design_price),
 
     # Products
     path('admin-panel/product-categories/', admin_list_product_categories),
@@ -63,21 +88,28 @@ urlpatterns = [
     path('admin-panel/product-categories/reorder/', admin_reorder_product_categories),
     path('admin-panel/product-categories/<int:category_id>/update/', admin_update_product_category),
     path('admin-panel/product-categories/<int:category_id>/delete/', admin_delete_product_category),
+    path('admin-panel/catalog-groups/create/', admin_create_catalog_group),
+    path('admin-panel/catalog-groups/<int:group_id>/update/', admin_update_catalog_group),
     path('admin-panel/products/', admin_list_products),
     path('admin-panel/products/create/', admin_create_product),
     path('admin-panel/products/upload-image/', admin_upload_product_image),
+    path('admin-panel/catalog/upload-video/', admin_upload_catalog_video),
     path('admin-panel/products/<int:product_id>/', admin_get_product),
     path('admin-panel/products/<int:product_id>/update/', admin_update_product),
     path('admin-panel/products/<int:product_id>/delete/', admin_delete_product),
 
     # Featured Products
     path('admin-panel/featured-products/', admin_list_featured_products),
+    path('admin-panel/presented-services/', admin_list_presented_services),
     path('admin-panel/featured-products/create/', admin_create_featured_product),
     path('admin-panel/featured-products/<int:fp_id>/', admin_get_featured_product),
     path('admin-panel/featured-products/<int:fp_id>/update/', admin_update_featured_product),
     path('admin-panel/featured-products/<int:fp_id>/delete/', admin_delete_featured_product),
 
     # Blogs
+    path('admin-panel/blog-categories/', admin_list_blog_categories),
+    path('admin-panel/blog-categories/create/', admin_create_blog_category),
+    path('admin-panel/blog-categories/<int:category_id>/update/', admin_update_blog_category),
     path('admin-panel/blogs/', admin_list_blogs),
     path('admin-panel/blogs/create/', admin_create_blog),
     path('admin-panel/blogs/<int:blog_id>/', admin_get_blog),
@@ -121,9 +153,15 @@ urlpatterns = [
     # Homepage Slides
     path('admin-panel/homepage-slides/', admin_list_slides),
     path('admin-panel/homepage-slides/create/', admin_create_slide),
+    path('admin-panel/homepage-slides/upload-video/', admin_upload_homepage_slide_video),
     path('admin-panel/homepage-slides/reorder/', admin_reorder_slides),
     path('admin-panel/homepage-slides/<int:slide_id>/', admin_get_slide),
     path('admin-panel/homepage-slides/<int:slide_id>/update/', admin_update_slide),
     path('admin-panel/homepage-slides/<int:slide_id>/delete/', admin_delete_slide),
+
+    # Public page content editors
+    path('admin-panel/about-page/', admin_about_page_content),
+    path('admin-panel/investor-page/', admin_investor_page_content),
+    path('admin-panel/page-content/upload-image/', admin_upload_page_content_image),
 ]
 
