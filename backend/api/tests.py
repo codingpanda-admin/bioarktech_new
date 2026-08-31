@@ -57,6 +57,41 @@ class QuoteNotificationEmailTests(SimpleTestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, ['notifications@example.com'])
 
+    @patch('quote.views.create_quote_record')
+    def test_contact_message_uses_quote_recipient_with_contact_wording(self, create_quote_record):
+        create_quote_record.return_value = SimpleNamespace(
+            id=19,
+            external_id='contact-notification-test',
+            first_name='Test',
+            last_name='Customer',
+            email='customer@example.com',
+            phone=None,
+            company='Example Lab',
+            department=None,
+            service_type='Contact Us',
+            timeline=None,
+            budget=None,
+            project_description=None,
+            additional_info='Please contact me about my order.',
+        )
+
+        response = APIClient().post(reverse('create-quote'), {
+            'externalId': 'contact-notification-test',
+            'firstName': 'Test',
+            'lastName': 'Customer',
+            'email': 'customer@example.com',
+            'company': 'Example Lab',
+            'serviceType': 'Contact Us',
+            'additionalInfo': 'Please contact me about my order.',
+        }, format='json')
+
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.json()['emailSent'])
+        self.assertEqual(mail.outbox[0].to, ['notifications@example.com'])
+        self.assertEqual(mail.outbox[0].subject, 'New Contact Message from Bioark Tech')
+        self.assertIn('Message:\n', mail.outbox[0].body)
+        self.assertNotIn('Service Type:', mail.outbox[0].body)
+
     @patch('quote.views.send_quote_notification', side_effect=RuntimeError('SES unavailable'))
     @patch('quote.views.create_quote_record')
     def test_quote_remains_saved_when_notification_fails(self, create_quote_record, _send_notification):
