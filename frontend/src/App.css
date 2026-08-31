@@ -5181,6 +5181,12 @@ label,
   white-space: normal;
 }
 
+.admin-blog-category-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
 .admin-category-status {
   display: inline-flex;
   align-items: center;
@@ -6839,6 +6845,18 @@ label,
 
 .product-specifications-table td:last-child {
   width: 80%;
+}
+
+.product-specifications-table .product-key-features-value ul,
+.product-specifications-table .product-key-features-value ol {
+  margin-left: 0;
+  padding-left: 0;
+  list-style-position: inside;
+}
+
+.product-specifications-table .product-key-features-value li {
+  margin-left: 0;
+  padding-left: 0;
 }
 
 .product-detail-content {
@@ -11703,6 +11721,36 @@ label,
 .design-canvas-tag.empty {
   color: #8090a4;
   background: #f2f5f8;
+}
+
+.design-canvas-tag.is-promoter {
+  border-color: #ffad75;
+  color: #713814;
+  background: #fff0e5;
+}
+
+.design-canvas-tag.is-tag {
+  border-color: #cda7f1;
+  color: #59327c;
+  background: #f6edff;
+}
+
+.design-canvas-tag.is-fluorescence {
+  border-color: #72dc73;
+  color: #245e2a;
+  background: #eafbea;
+}
+
+.design-canvas-tag.is-selection {
+  border-color: #29b7ed;
+  color: #075978;
+  background: #e7f8ff;
+}
+
+.design-canvas-tag.is-antibiotic {
+  border-color: #acd0f8;
+  color: #24577f;
+  background: #edf6ff;
 }
 
 .design-summary dl {

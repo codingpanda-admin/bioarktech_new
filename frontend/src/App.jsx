@@ -265,7 +265,8 @@ function App() {
   const isCartPage = currentPath === '/cart';
   const isCheckoutSuccess = currentPath === '/checkout/success';
   const isCheckoutCancel = currentPath === '/checkout/cancel';
-  const isBlogsPage = currentPath === '/blogs';
+  const blogCategoryMatch = currentPath.match(/^\/blogs\/category\/([^/]+)\/?$/);
+  const isBlogsPage = currentPath === '/blogs' || Boolean(blogCategoryMatch);
   const isBlogPage = currentPath.startsWith('/blog/');
   const isInvestorsPage = currentPath === '/investors';
   const isAboutBioArkPage = currentPath === '/about-bioark';
@@ -391,7 +392,11 @@ function App() {
       ) : isResetPasswordPage ? (
         <ResetPasswordPage navigate={navigate} token={currentPath.split('/reset-password/')[1]?.split('?')[0] || ''} />
       ) : isBlogsPage ? (
-        <ResourcesPage navigate={navigate} searchParams={searchParams} />
+        <ResourcesPage
+          navigate={navigate}
+          searchParams={searchParams}
+          categorySlug={blogCategoryMatch?.[1] || ''}
+        />
       ) : isProfilePage ? (
         <ProfilePage navigate={navigate} initialTab={searchParams.get('tab')} onRefreshProfile={refreshUserProfile} />
       ) : isMyQuotesPage ? (
