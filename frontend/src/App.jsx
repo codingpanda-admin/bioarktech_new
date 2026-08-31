@@ -113,10 +113,14 @@ function App() {
 
       if (existingItemIndex > -1) {
         const updatedCart = [...prevCart];
+        const existingItem = updatedCart[existingItemIndex];
         updatedCart[existingItemIndex] = {
-          ...updatedCart[existingItemIndex],
-          quantity: updatedCart[existingItemIndex].quantity + quantity,
-          product,
+          ...existingItem,
+          quantity: existingItem.quantity + quantity,
+          product: {
+            ...product,
+            gene_design: product.gene_design || existingItem.product?.gene_design,
+          },
         };
         return updatedCart;
       } else {
@@ -143,7 +147,14 @@ function App() {
         return prevCart
           .map((item, index) => (
             index === duplicateIndex
-              ? { ...replacement, quantity: item.quantity + replacement.quantity }
+              ? {
+                  ...replacement,
+                  quantity: item.quantity + replacement.quantity,
+                  product: {
+                    ...replacement.product,
+                    gene_design: replacement.product.gene_design || item.product?.gene_design,
+                  },
+                }
               : item
           ))
           .filter((_, index) => index !== originalIndex);

@@ -146,9 +146,15 @@ function DesignPage({
         format: { ...(editingSnapshot.design.format || {}) },
       }
     : initialDesign;
-  const restoredQuantityKey = editingSnapshot?.format_code && editingSnapshot?.unit_amount
-    ? makePriceKey(editingSnapshot.format_code, editingSnapshot.unit_amount)
-    : '';
+  // Prefer the format/unit key already stored on the design's format selection
+  // (present even on cart items saved before format_code/unit_amount were tracked
+  // on gene_design directly, since makeFormatKey and makePriceKey produce the same
+  // "code::unitAmount" string). Fall back to format_code/unit_amount for safety.
+  const editingFormatKeys = Object.values(editingSnapshot?.design?.format || {});
+  const restoredQuantityKey = editingFormatKeys[0]
+    || (editingSnapshot?.format_code && editingSnapshot?.unit_amount
+      ? makePriceKey(editingSnapshot.format_code, editingSnapshot.unit_amount)
+      : '');
 
   const [activeStep, setActiveStep] = useState(isEditingCartItem ? steps.length - 1 : 0);
   const [metadata, setMetadata] = useState(emptyMetadata);
@@ -654,6 +660,20 @@ function DesignPage({
   const addDesignSelectionsToCart = () => {
     if (!onAddToCart || pricedSelections.length === 0) return;
 
+    // Each format/unit combination resolves to its own distinct SKU (see buildDesignSku),
+    // so only the ONE selection that matches what was originally being edited should
+    // replace the original cart line — every other selection is a genuinely different
+    // product and belongs on its own cart line. Match by the original format/unit instead
+    // of array index (API ordering isn't guaranteed to put the edited format first).
+    // Fall back to index 0 when the original key can't be determined (e.g. an older cart
+    // item saved before format/unit tracking existed).
+    const editingMatchIndex = restoredQuantityKey
+      ? pricedSelections.findIndex((price) => (
+          makePriceKey(price.format_code, price.unit_amount) === restoredQuantityKey
+        ))
+      : -1;
+    const updateTargetIndex = editingMatchIndex >= 0 ? editingMatchIndex : 0;
+
     pricedSelections.forEach((price, index) => {
       const key = makePriceKey(price.format_code, price.unit_amount);
       const quantity = formatQuantities[key] || 1;
@@ -665,7 +685,7 @@ function DesignPage({
         list_price: Number(price.list_price) || effectivePrice,
       };
 
-      if (isEditingCartItem && index === 0 && onUpdateCartItem) {
+      if (isEditingCartItem && index === updateTargetIndex && onUpdateCartItem) {
         onUpdateCartItem(
           editingCartItem.sku,
           editingCartItem.unitSize,
@@ -679,6 +699,15 @@ function DesignPage({
     });
 
     if (isEditingCartItem) {
+      if (quoteOnlySelections.length > 0) {
+        // Stay on this page (instead of navigating away) so the existing cart-notice UI
+        // below can actually surface this message — cartNotice is local component state
+        // and would be lost immediately if we navigated to /cart first.
+        setCartNotice(
+          `Cart updated. ${quoteOnlySelections.length} quote-only selection${quoteOnlySelections.length === 1 ? ' was' : 's were'} not added — use Submit Quote for ${quoteOnlySelections.length === 1 ? 'it' : 'them'}.`,
+        );
+        return;
+      }
       navigate('/cart');
       return;
     }

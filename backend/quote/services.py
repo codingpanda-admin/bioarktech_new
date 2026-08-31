@@ -7,8 +7,26 @@ from django.db.models import Max
 from .models import Quote
 
 
-def build_quote_notification_message(quote, supplemental_fields=None):
-    is_contact_message = str(quote.service_type or '').strip().casefold() == 'contact us'
+def _is_contact_message(quote):
+    """Heuristic for "is this a Contact Us submission rather than a real quote request".
+
+    The Contact Us form and the Quote Request form (frontend/src/components/QuoteRequestForm.jsx)
+    both POST to the same `/api/quotes/` endpoint (quote/views.py:create_quote), and neither the
+    request payload nor the Quote model (quote/models.py) carries an explicit flag distinguishing
+    them. The only signal available today is that the Contact Us form hardcodes
+    service_type='Contact Us'. For real quote requests, service_type instead comes from an
+    admin-managed catalog of service categories, so if an admin ever names/renames a category
+    "Contact Us" (any case), a genuine quote request will collide with this check and be
+    mislabeled. This is computed once and threaded through so both callers below stay in sync;
+    fixing the collision risk for good needs an explicit signal from the caller (e.g. a
+    dedicated field/endpoint for the contact form), not just deduping this string comparison.
+    """
+    return str(quote.service_type or '').strip().casefold() == 'contact us'
+
+
+def build_quote_notification_message(quote, supplemental_fields=None, is_contact_message=None):
+    if is_contact_message is None:
+        is_contact_message = _is_contact_message(quote)
     lines = [
         'New Contact Message from Bioark Tech' if is_contact_message else 'New Quote Request from Bioark Tech',
         'Customer Information:',
@@ -54,13 +72,14 @@ def send_quote_notification(quote, supplemental_fields=None):
     if not recipient:
         raise ImproperlyConfigured('EMAIL_NOTIFICATION_RECIPIENT must not be blank.')
 
+    is_contact_message = _is_contact_message(quote)
     return send_mail(
         subject=(
             'New Contact Message from Bioark Tech'
-            if str(quote.service_type or '').strip().casefold() == 'contact us'
+            if is_contact_message
             else 'New Quote from Bioark Tech'
         ),
-        message=build_quote_notification_message(quote, supplemental_fields),
+        message=build_quote_notification_message(quote, supplemental_fields, is_contact_message=is_contact_message),
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[recipient],
     )
