@@ -66,6 +66,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
   const [catalogImageUploading, setCatalogImageUploading] = useState({});
   const [draggedCatalogIndex, setDraggedCatalogIndex] = useState(null);
   const [collapsedCatalogs, setCollapsedCatalogs] = useState(() => new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState(() => new Set());
   const [editingCatalogGroup, setEditingCatalogGroup] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
   const serviceContentEditorRef = useRef(null);
@@ -716,6 +717,22 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
     });
   };
 
+  const getGroupCollapseKey = (catalogId, subgroupName) => (
+    JSON.stringify([catalogStatus, catalogId, subgroupName || ''])
+  );
+
+  const toggleGroupCollapse = (groupKey) => {
+    setCollapsedGroups((previous) => {
+      const next = new Set(previous);
+      if (next.has(groupKey)) {
+        next.delete(groupKey);
+      } else {
+        next.add(groupKey);
+      }
+      return next;
+    });
+  };
+
   if (editingService) {
     const isEditingExistingService = Boolean(editingService.id);
 
@@ -1164,17 +1181,31 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                       </div>
                     ) : (
                       <>
-                        {serviceSubgroupEntries.map(([subgroupName, subgroupServices]) => {
+                        {serviceSubgroupEntries.map(([subgroupName, subgroupServices], subgroupIndex) => {
                           const catalogGroup = cat.groups?.find((group) => group.group_name === subgroupName);
+                          const groupCollapseKey = getGroupCollapseKey(cat.id, subgroupName);
+                          const isGroupCollapsed = collapsedGroups.has(groupCollapseKey);
+                          const groupPanelId = `service-group-panel-${cat.id}-${subgroupIndex}`;
                           return (
-                          <div key={subgroupName || '__general'} className="admin-subgroup-group">
+                          <div key={subgroupName || '__general'} className={`admin-subgroup-group ${isGroupCollapsed ? 'is-collapsed' : ''}`}>
                             <h4 className="admin-subgroup-title">
-                              <span className="admin-subgroup-identity">
-                                <span>{subgroupName || 'General'} ({subgroupServices.length})</span>
-                                {catalogGroup?.external_id && (
-                                  <code className="admin-subgroup-external-id">External ID: {catalogGroup.external_id}</code>
-                                )}
-                              </span>
+                              <button
+                                type="button"
+                                className="admin-subgroup-toggle"
+                                aria-expanded={!isGroupCollapsed}
+                                aria-controls={groupPanelId}
+                                onClick={() => toggleGroupCollapse(groupCollapseKey)}
+                              >
+                                <span className="admin-category-toggle-icon" aria-hidden="true">
+                                  {isGroupCollapsed ? '+' : '-'}
+                                </span>
+                                <span className="admin-subgroup-identity">
+                                  <span>{subgroupName || 'General'} ({subgroupServices.length})</span>
+                                  {catalogGroup?.external_id && (
+                                    <code className="admin-subgroup-external-id">External ID: {catalogGroup.external_id}</code>
+                                  )}
+                                </span>
+                              </button>
                               {catalogGroup && (
                                 <button
                                   type="button"
@@ -1185,7 +1216,8 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                                 </button>
                               )}
                             </h4>
-                      <div className="admin-data-table-wrap">
+                      {!isGroupCollapsed && (
+                      <div id={groupPanelId} className="admin-data-table-wrap">
                     <table className="admin-data-table">
                       <thead>
                         <tr>
@@ -1322,8 +1354,9 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                      </table>
                       </div>
+                      )}
                           </div>
                           );
                         })}

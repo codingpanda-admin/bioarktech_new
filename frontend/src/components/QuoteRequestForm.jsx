@@ -21,17 +21,26 @@ function QuoteRequestForm({
   currentUser,
   currentUserProfile,
   quotePrefill,
+  variant = 'quote',
   initialProjectDescription = '',
   initialServiceType = '',
   initialServiceCategoryId = '',
   onSubmitted
 }) {
-  const [formData, setFormData] = useState(emptyQuoteForm);
+  const isContactForm = variant === 'contact';
+  const [formData, setFormData] = useState(() => ({
+    ...emptyQuoteForm,
+    serviceType: isContactForm ? 'Contact Us' : '',
+  }));
   const [serviceTypeOptions, setServiceTypeOptions] = useState([PRODUCT_SERVICE_TYPE]);
   const [status, setStatus] = useState({ type: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (isContactForm) {
+      return undefined;
+    }
+
     let isMounted = true;
 
     apiFetch('/api/products/get-nav-catalog/')
@@ -96,9 +105,13 @@ function QuoteRequestForm({
     return () => {
       isMounted = false;
     };
-  }, [initialServiceCategoryId, initialServiceType]);
+  }, [initialServiceCategoryId, initialServiceType, isContactForm]);
 
   useEffect(() => {
+    if (isContactForm) {
+      return;
+    }
+
     const projectDescription = quotePrefill?.get('projectDescription') || initialProjectDescription;
     if (!projectDescription && !initialServiceType) {
       return;
@@ -109,9 +122,13 @@ function QuoteRequestForm({
       projectDescription: prev.projectDescription || projectDescription,
       serviceType: prev.serviceType || initialServiceType,
     }));
-  }, [quotePrefill, initialProjectDescription, initialServiceType]);
+  }, [quotePrefill, initialProjectDescription, initialServiceType, isContactForm]);
 
   useEffect(() => {
+    if (isContactForm) {
+      return;
+    }
+
     if (cart && cart.length > 0) {
       // Create a nice text list of products
       const itemsList = cart.map(item =>
@@ -119,38 +136,7 @@ function QuoteRequestForm({
       ).join('\n');
 
       const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-
-      // Separate items into groups to calculate shipping
-      const consumableItems = cart.filter(item => item.shippingCost === 100);
-      const reagentItems = cart.filter(item => item.shippingCost !== 100 && item.shippingCost !== 0);
-
-      const subtotalConsumables = consumableItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-      const subtotalReagents = reagentItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-
-      let shippingConsumables = 0;
-      let shippingReagents = 0;
-      const hasConsumables = consumableItems.length > 0;
-      const hasReagents = reagentItems.length > 0;
-
-      if (hasConsumables) {
-        const shippingSubtotal = subtotalConsumables + subtotalReagents;
-        if (shippingSubtotal <= 2000) {
-          shippingConsumables = 100;
-        } else {
-          shippingConsumables = Math.min(700, 100 + Math.ceil((shippingSubtotal - 2000) / 1000) * 60);
-        }
-      } else if (hasReagents) {
-        if (subtotalReagents <= 1000) {
-          shippingReagents = 60;
-        } else {
-          shippingReagents = Math.min(300, 60 + Math.ceil((subtotalReagents - 1000) / 500) * 30);
-        }
-      }
-
-      const totalShipping = shippingConsumables + shippingReagents;
-      const grandTotal = subtotal + totalShipping;
-
-      const cartSummaryText = `[Productos Seleccionados]:\n${itemsList}\n\nSubtotal: $${subtotal.toFixed(2)}\nEnvio Consumibles: $${shippingConsumables.toFixed(2)}\nEnvio Reactivos: $${shippingReagents.toFixed(2)}\nEnvio Total: $${totalShipping.toFixed(2)}\nTotal Estimado: $${grandTotal.toFixed(2)}`;
+      const cartSummaryText = `[Productos Seleccionados]:\n${itemsList}\n\nSubtotal: $${subtotal.toFixed(2)}`;
 
       setFormData(prev => ({
         ...prev,
@@ -158,7 +144,7 @@ function QuoteRequestForm({
         serviceType: prev.serviceType || 'Products',
       }));
     }
-  }, [cart]);
+  }, [cart, isContactForm]);
 
   useEffect(() => {
     if (!currentUser && !currentUserProfile) {
@@ -187,7 +173,6 @@ function QuoteRequestForm({
     setStatus({ type: '', message: '' });
 
     try {
-      // Map frontend fields to Django quote endpoint
       const payload = {
         email: formData.email,
         firstName: formData.firstName,
@@ -195,12 +180,11 @@ function QuoteRequestForm({
         phone: formData.phone,
         company: formData.company,
         department: formData.department,
-        projectDescription: formData.projectDescription,
+        projectDescription: isContactForm ? '' : formData.projectDescription,
         additionalInfo: formData.additionalInformation,
         institution: formData.company,
-        productType: formData.serviceType,
-        serviceType: formData.serviceType,
-        message: `Departamento: ${formData.department || 'N/A'}\nDescripcion: ${formData.projectDescription}\nInformacion Adicional: ${formData.additionalInformation || 'Ninguna'}`
+        productType: isContactForm ? 'Contact Us' : formData.serviceType,
+        serviceType: isContactForm ? 'Contact Us' : formData.serviceType
       };
 
       await apiFetch('/api/quotes/', {
@@ -211,7 +195,10 @@ function QuoteRequestForm({
       if (onClearCart) {
         onClearCart();
       }
-      setFormData(emptyQuoteForm);
+      setFormData({
+        ...emptyQuoteForm,
+        serviceType: isContactForm ? 'Contact Us' : '',
+      });
       setStatus({ type: '', message: '' });
       if (onSubmitted) {
         onSubmitted();
@@ -225,8 +212,12 @@ function QuoteRequestForm({
 
   return (
     <>
-      <h2 id="quote-form-title">Quote Request Form</h2>
-      <p className="quote-form-intro">Please provide detailed information about your project requirements</p>
+      <h2 id="quote-form-title">{isContactForm ? 'Contact Us Form' : 'Quote Request Form'}</h2>
+      <p className="quote-form-intro">
+        {isContactForm
+          ? 'Send us a message and a member of our team will get back to you.'
+          : 'Please provide detailed information about your project requirements'}
+      </p>
 
       {status.message && (
         <div className={`alert-banner ${status.type}`}>
@@ -259,25 +250,35 @@ function QuoteRequestForm({
           Department
           <input type="text" name="department" value={formData.department} onChange={handleInputChange} />
         </label>
+        {!isContactForm && (
+          <>
+            <label className="full-span">
+              Service Type *
+              <select name="serviceType" value={formData.serviceType} onChange={handleInputChange} required>
+                <option value="">Select service type</option>
+                {serviceTypeOptions.map(serviceType => (
+                  <option key={serviceType.id} value={serviceType.label}>{serviceType.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="full-span">
+              Project Description *
+              <textarea name="projectDescription" value={formData.projectDescription} onChange={handleInputChange} rows="6" placeholder="Please describe your project requirements..." required />
+            </label>
+          </>
+        )}
         <label className="full-span">
-          Service Type *
-          <select name="serviceType" value={formData.serviceType} onChange={handleInputChange} required>
-            <option value="">Select service type</option>
-            {serviceTypeOptions.map(serviceType => (
-              <option key={serviceType.id} value={serviceType.label}>{serviceType.label}</option>
-            ))}
-          </select>
-        </label>
-        <label className="full-span">
-          Project Description *
-          <textarea name="projectDescription" value={formData.projectDescription} onChange={handleInputChange} rows="6" placeholder="Please describe your project requirements..." required />
-        </label>
-        <label className="full-span">
-          Additional Information
-          <textarea name="additionalInformation" value={formData.additionalInformation} onChange={handleInputChange} rows="5" placeholder="Any additional details..." />
+          {isContactForm ? 'Message' : 'Additional Information'}
+          <textarea
+            name="additionalInformation"
+            value={formData.additionalInformation}
+            onChange={handleInputChange}
+            rows="5"
+            placeholder={isContactForm ? 'How can we help?' : 'Any additional details...'}
+          />
         </label>
         <button type="submit" className="primary-button" disabled={submitting}>
-          {submitting ? 'Sending...' : 'Submit Request'}
+          {submitting ? 'Sending...' : (isContactForm ? 'Send Message' : 'Submit Request')}
         </button>
       </form>
     </>

@@ -784,17 +784,6 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
           border: 1px solid #fde68a;
         }
 
-        .badge-shipping {
-          background: rgba(255, 255, 255, 0.95);
-          color: #475569;
-          border: 1px solid #e2e8f0;
-          font-size: 11px;
-          font-weight: 500;
-          padding: 4px 10px;
-          border-radius: 20px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-        }
-
         .card-image-container {
           height: 180px;
           background: radial-gradient(circle, #f8fafc 0%, #ffffff 100%);
@@ -1221,8 +1210,6 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
                 const isConsumable = prod.category === 'Consumables';
                 const isReagent = prod.category === 'Reagents & Kits' || isConsumable;
                 const cardType = prod.category === 'Services' ? 'service' : (isReagent ? 'reagent' : 'product');
-                const shippingCost = prod.shipping_cost || (isConsumable ? 100 : 40);
-
                 return (
                   <article className={`modern-product-card ${cardType}-result-card`} key={idx}>
                     {/* Floating Badges */}
@@ -1244,9 +1231,6 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
                       )}
                       <span className={`badge-category ${isReagent ? 'reagent' : 'product'}`}>
                         {isReagent ? 'Reagent / Kit' : 'Product / Service'}
-                      </span>
-                      <span className="badge-shipping">
-                        ${shippingCost} Shipping
                       </span>
                     </div>
 

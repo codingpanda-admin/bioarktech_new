@@ -753,6 +753,15 @@ function AdminBlogs() {
                 </p>
                 <p className="admin-card-desc">{blog.description}</p>
                 <div className="admin-row-actions">
+                  <a
+                    className="admin-action-btn view"
+                    href={`/blog/${blog.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`View ${blog.title} on the customer-facing blog page`}
+                  >
+                    View Blog
+                  </a>
                   <button className="admin-action-btn edit" onClick={() => handleEdit(blog.id)}>Edit</button>
                   <button className={`admin-action-btn star ${blog.is_featured ? 'active' : ''}`} onClick={() => handleToggleFeatured(blog)}>
                     {blog.is_featured ? '★ Featured' : '☆ Feature'}

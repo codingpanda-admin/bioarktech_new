@@ -1042,6 +1042,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
   const [catalogImageUploading, setCatalogImageUploading] = useState({});
   const [draggedCatalogIndex, setDraggedCatalogIndex] = useState(null);
   const [collapsedCatalogs, setCollapsedCatalogs] = useState(() => new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState(() => new Set());
   const [subgroupSorts, setSubgroupSorts] = useState({});
   const [optionRows, setOptionRows] = useState([]);
   const [editingCatalogGroup, setEditingCatalogGroup] = useState(null);
@@ -1960,6 +1961,22 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
     });
   };
 
+  const getGroupCollapseKey = (catalogId, subgroupName) => (
+    JSON.stringify([categoryFilter, catalogStatus, catalogId, subgroupName || ''])
+  );
+
+  const toggleGroupCollapse = (groupKey) => {
+    setCollapsedGroups((previous) => {
+      const next = new Set(previous);
+      if (next.has(groupKey)) {
+        next.delete(groupKey);
+      } else {
+        next.add(groupKey);
+      }
+      return next;
+    });
+  };
+
   if (editingProduct) {
     const isEditingExistingProduct = Boolean(editingProduct.product_id || editingProduct.id);
 
@@ -2314,10 +2331,6 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
             {categoryFilter === 'reagents' ? (
               <>
                 <label className="admin-form-field span-3">
-                  <span>Description</span>
-                  <textarea rows="4" value={editingProduct.description || ''} onChange={(e) => updateField('description', e.target.value)} />
-                </label>
-                <label className="admin-form-field span-3">
                   <span>Key Features</span>
                   <textarea
                     rows="5"
@@ -2325,6 +2338,10 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                     onChange={(e) => updateKeyFeatures(e.target.value)}
                     placeholder="Enter one key feature per line"
                   />
+                </label>
+                <label className="admin-form-field span-3">
+                  <span>Application</span>
+                  <textarea rows="4" value={editingProduct.description || ''} onChange={(e) => updateField('description', e.target.value)} />
                 </label>
                 <label className="admin-form-field span-3">
                   <span>Storage &amp; Stability</span>
@@ -2343,10 +2360,6 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
             ) : (
               <>
                 <label className="admin-form-field span-3">
-                  <span>Description</span>
-                  <textarea rows="4" value={editingProduct.description || ''} onChange={(e) => updateField('description', e.target.value)} />
-                </label>
-                <label className="admin-form-field span-3">
                   <span>Key Features</span>
                   <textarea
                     rows="5"
@@ -2354,6 +2367,10 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                     onChange={(e) => updateKeyFeatures(e.target.value)}
                     placeholder="Enter one key feature per line"
                   />
+                </label>
+                <label className="admin-form-field span-3">
+                  <span>Application</span>
+                  <textarea rows="4" value={editingProduct.description || ''} onChange={(e) => updateField('description', e.target.value)} />
                 </label>
                 <label className="admin-form-field span-3">
                   <span>Storage &amp; Stability</span>
@@ -2567,22 +2584,36 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                         No items in this category.
                       </div>
                     ) : (
-                      Object.keys(subGroups).map((subGroupName) => {
+                      Object.keys(subGroups).map((subGroupName, subgroupIndex) => {
                         const productsList = subGroups[subGroupName];
                         const category = matchedCategories.find((item) => item.id === catalogId);
                         const catalogGroup = category?.groups?.find((item) => item.group_name === subGroupName);
                         const sortKey = getSubgroupSortKey(catalogId, subGroupName);
                         const sortConfig = getSubgroupSort(sortKey);
                         const sortedProductsList = sortSubgroupProducts(productsList, sortConfig);
+                        const groupCollapseKey = getGroupCollapseKey(catalogId, subGroupName);
+                        const isGroupCollapsed = collapsedGroups.has(groupCollapseKey);
+                        const groupPanelId = `product-group-panel-${catalogId}-${subgroupIndex}`;
                         return (
-                          <div key={subGroupName} className="admin-subgroup-group">
+                          <div key={subGroupName} className={`admin-subgroup-group ${isGroupCollapsed ? 'is-collapsed' : ''}`}>
                         <h4 className="admin-subgroup-title">
-                          <span className="admin-subgroup-identity">
-                            <span>{subGroupName || 'General'} ({productsList.length})</span>
-                            {catalogGroup?.external_id && (
-                              <code className="admin-subgroup-external-id">External ID: {catalogGroup.external_id}</code>
-                            )}
-                          </span>
+                          <button
+                            type="button"
+                            className="admin-subgroup-toggle"
+                            aria-expanded={!isGroupCollapsed}
+                            aria-controls={groupPanelId}
+                            onClick={() => toggleGroupCollapse(groupCollapseKey)}
+                          >
+                            <span className="admin-category-toggle-icon" aria-hidden="true">
+                              {isGroupCollapsed ? '+' : '-'}
+                            </span>
+                            <span className="admin-subgroup-identity">
+                              <span>{subGroupName || 'General'} ({productsList.length})</span>
+                              {catalogGroup?.external_id && (
+                                <code className="admin-subgroup-external-id">External ID: {catalogGroup.external_id}</code>
+                              )}
+                            </span>
+                          </button>
                           {catalogGroup && (
                             <button
                               type="button"
@@ -2593,7 +2624,8 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                             </button>
                           )}
                         </h4>
-                        <div className="admin-data-table-wrap">
+                        {!isGroupCollapsed && (
+                        <div id={groupPanelId} className="admin-data-table-wrap">
                           <table className="admin-data-table">
                             <thead>
                               <tr>
@@ -2710,6 +2742,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                             </tbody>
                           </table>
                         </div>
+                        )}
                           </div>
                         );
                       })
@@ -3010,10 +3043,6 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                   <ProductContentEditor ref={productContentEditorRef} value={editingProduct.content_text || ''} onChange={(value) => updateField('content_text', value)} />
                 </div>
                 <label className="admin-form-field span-3">
-                  <span>Description</span>
-                  <textarea rows="4" value={editingProduct.description || ''} onChange={(e) => updateField('description', e.target.value)} />
-                </label>
-                <label className="admin-form-field span-3">
                   <span>Key Features</span>
                   <textarea
                     rows="5"
@@ -3021,6 +3050,10 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                     onChange={(e) => updateKeyFeatures(e.target.value)}
                     placeholder="Enter one key feature per line"
                   />
+                </label>
+                <label className="admin-form-field span-3">
+                  <span>Application</span>
+                  <textarea rows="4" value={editingProduct.description || ''} onChange={(e) => updateField('description', e.target.value)} />
                 </label>
                 <label className="admin-form-field span-3">
                   <span>Storage &amp; Stability</span>

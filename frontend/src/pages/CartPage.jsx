@@ -76,6 +76,48 @@ function CartPage({
   const [checkoutError, setCheckoutError] = useState('');
   const [showRulesModal, setShowRulesModal] = useState(false);
 
+  const isGeneDesignItem = (item) => Boolean(item.product?.gene_design?.design);
+
+  const editGeneDesignItem = (item) => {
+    const params = new URLSearchParams({
+      editSku: item.sku,
+      editUnit: item.unitSize || '',
+    });
+    navigate(`/design?${params.toString()}`);
+  };
+
+  const openCartItem = (item) => {
+    if (isGeneDesignItem(item)) {
+      editGeneDesignItem(item);
+    } else {
+      navigate(`/product/${item.sku}`);
+    }
+  };
+
+  const renderGeneDesignEditButton = (item) => (
+    isGeneDesignItem(item) ? (
+      <button
+        type="button"
+        onClick={() => editGeneDesignItem(item)}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          marginTop: '8px',
+          padding: '5px 10px',
+          border: '1px solid var(--blue)',
+          borderRadius: '6px',
+          background: '#fff',
+          color: 'var(--blue)',
+          fontSize: '12px',
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}
+      >
+        Edit design
+      </button>
+    ) : null
+  );
+
   const handleAddressChange = (field, value) => {
     setAddressEdits((prev) => ({ ...prev, [field]: value }));
   };
@@ -451,7 +493,7 @@ function CartPage({
                           <div 
                             className="cart-item-image" 
                             style={{ cursor: 'pointer' }}
-                            onClick={() => navigate(`/product/${item.sku}`)}
+                            onClick={() => openCartItem(item)}
                           >
                             <img src={item.image ? formatAssetUrl(item.image) : logo} alt={item.name} />
                           </div>
@@ -460,12 +502,13 @@ function CartPage({
                               style={{ cursor: 'pointer', transition: 'color 0.2s', fontSize: '15px' }}
                               onMouseEnter={(e) => e.target.style.color = 'var(--blue)'}
                               onMouseLeave={(e) => e.target.style.color = 'inherit'}
-                              onClick={() => navigate(`/product/${item.sku}`)}
+                              onClick={() => openCartItem(item)}
                             >
                               {item.name}
                             </h4>
                             <span>SKU: {item.sku}</span>
                             {item.unitSize && <span style={{ display: 'block', marginTop: '2px' }}>Size: {item.unitSize}</span>}
+                            {renderGeneDesignEditButton(item)}
                           </div>
                           <div className="cart-qty-ctrl">
                             <button type="button" onClick={() => onUpdateQty(item.sku, item.unitSize, item.quantity - 1)}>-</button>
@@ -531,7 +574,7 @@ function CartPage({
                           <div 
                             className="cart-item-image" 
                             style={{ cursor: 'pointer' }}
-                            onClick={() => navigate(`/product/${item.sku}`)}
+                            onClick={() => openCartItem(item)}
                           >
                             <img src={item.image ? formatAssetUrl(item.image) : logo} alt={item.name} />
                           </div>
@@ -540,12 +583,13 @@ function CartPage({
                               style={{ cursor: 'pointer', transition: 'color 0.2s', fontSize: '15px' }}
                               onMouseEnter={(e) => e.target.style.color = 'var(--blue)'}
                               onMouseLeave={(e) => e.target.style.color = 'inherit'}
-                              onClick={() => navigate(`/product/${item.sku}`)}
+                              onClick={() => openCartItem(item)}
                             >
                               {item.name}
                             </h4>
                             <span>SKU: {item.sku}</span>
                             {item.unitSize && <span style={{ display: 'block', marginTop: '2px' }}>Size: {item.unitSize}</span>}
+                            {renderGeneDesignEditButton(item)}
                           </div>
                           <div className="cart-qty-ctrl">
                             <button type="button" onClick={() => onUpdateQty(item.sku, item.unitSize, item.quantity - 1)}>-</button>
@@ -611,7 +655,7 @@ function CartPage({
                           <div 
                             className="cart-item-image" 
                             style={{ cursor: 'pointer' }}
-                            onClick={() => navigate(`/product/${item.sku}`)}
+                            onClick={() => openCartItem(item)}
                           >
                             <img src={item.image ? formatAssetUrl(item.image) : logo} alt={item.name} />
                           </div>
@@ -620,12 +664,13 @@ function CartPage({
                               style={{ cursor: 'pointer', transition: 'color 0.2s', fontSize: '15px' }}
                               onMouseEnter={(e) => e.target.style.color = 'var(--blue)'}
                               onMouseLeave={(e) => e.target.style.color = 'inherit'}
-                              onClick={() => navigate(`/product/${item.sku}`)}
+                              onClick={() => openCartItem(item)}
                             >
                               {item.name}
                             </h4>
                             <span>SKU: {item.sku}</span>
                             {item.unitSize && <span style={{ display: 'block', marginTop: '2px' }}>Size: {item.unitSize}</span>}
+                            {renderGeneDesignEditButton(item)}
                           </div>
                           <div className="cart-qty-ctrl">
                             <button type="button" onClick={() => onUpdateQty(item.sku, item.unitSize, item.quantity - 1)}>-</button>

@@ -29,6 +29,37 @@ import DesignPage from './pages/DesignPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import CatalogSummaryPage from './pages/CatalogSummaryPage';
 
+const buildCartItem = (product, quantity, selectedUnit) => {
+  const hasSelectedUnit = Boolean(selectedUnit);
+  const sku = product.product_sku || product.catalog_number || product.external_id;
+  const unitSize = hasSelectedUnit ? (selectedUnit?.unit_size || '') : (product.unit_size || '');
+
+  const rawPrice = hasSelectedUnit ? selectedUnit?.unit_price : (product.unit_price || product.list_price || 0);
+  const parsedPrice = typeof rawPrice === 'string' ? rawPrice.replace(/[^0-9.-]/g, '') : rawPrice;
+  const price = parsedPrice && !isNaN(Number(parsedPrice)) ? Number(parsedPrice) : 0;
+
+  const rawListPrice = hasSelectedUnit ? selectedUnit?.list_price : (product.list_price || product.price_range || 0);
+  const parsedListPrice = typeof rawListPrice === 'string' ? rawListPrice.replace(/[^0-9.-]/g, '') : rawListPrice;
+  const listPrice = parsedListPrice && !isNaN(Number(parsedListPrice)) ? Number(parsedListPrice) : 0;
+
+  const image = product.image
+    || product.image_url
+    || (product.images && (typeof product.images[0] === 'string' ? product.images[0] : product.images[0]?.image))
+    || '';
+
+  return {
+    sku,
+    name: product.product_name,
+    unitSize,
+    price,
+    listPrice,
+    image,
+    quantity,
+    shippingCost: getProductShippingCost(product),
+    product,
+  };
+};
+
 function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [searchParams, setSearchParams] = useState(new URLSearchParams(window.location.search));
@@ -74,26 +105,10 @@ function App() {
 
   const handleAddToCart = (product, quantity, selectedUnit) => {
     setCart((prevCart) => {
-      const hasSelectedUnit = Boolean(selectedUnit);
-      const sku = product.product_sku || product.catalog_number || product.external_id;
-      const unitSizeText = hasSelectedUnit ? (selectedUnit?.unit_size || '') : (product.unit_size || '');
-      
-      const rawPrice = hasSelectedUnit ? selectedUnit?.unit_price : (product.unit_price || product.list_price || 0);
-      const parsedPrice = typeof rawPrice === 'string'
-        ? rawPrice.replace(/[^0-9.-]/g, '')
-        : rawPrice;
-      const price = parsedPrice && !isNaN(Number(parsedPrice)) ? Number(parsedPrice) : 0;
-      
-      const rawListPrice = hasSelectedUnit ? selectedUnit?.list_price : (product.list_price || product.price_range || 0);
-      const parsedListPrice = typeof rawListPrice === 'string'
-        ? rawListPrice.replace(/[^0-9.-]/g, '')
-        : rawListPrice;
-      const listPrice = parsedListPrice && !isNaN(Number(parsedListPrice)) ? Number(parsedListPrice) : 0;
-      
-      const image = product.image || product.image_url || (product.images && (typeof product.images[0] === 'string' ? product.images[0] : product.images[0]?.image)) || '';
+      const nextItem = buildCartItem(product, quantity, selectedUnit);
 
       const existingItemIndex = prevCart.findIndex(
-        (item) => item.sku === sku && item.unitSize === unitSizeText
+        (item) => item.sku === nextItem.sku && item.unitSize === nextItem.unitSize
       );
 
       if (existingItemIndex > -1) {
@@ -101,25 +116,40 @@ function App() {
         updatedCart[existingItemIndex] = {
           ...updatedCart[existingItemIndex],
           quantity: updatedCart[existingItemIndex].quantity + quantity,
+          product,
         };
         return updatedCart;
       } else {
-        const shippingCost = getProductShippingCost(product);
-        return [
-          ...prevCart,
-          {
-            sku,
-            name: product.product_name,
-            unitSize: unitSizeText,
-            price,
-            listPrice,
-            image,
-            quantity,
-            shippingCost,
-            product,
-          },
-        ];
+        return [...prevCart, nextItem];
       }
+    });
+  };
+
+  const handleUpdateCartItem = (originalSku, originalUnitSize, product, quantity, selectedUnit) => {
+    setCart((prevCart) => {
+      const originalIndex = prevCart.findIndex(
+        (item) => item.sku === originalSku && item.unitSize === originalUnitSize
+      );
+      if (originalIndex === -1) return prevCart;
+
+      const replacement = buildCartItem(product, quantity, selectedUnit);
+      const duplicateIndex = prevCart.findIndex((item, index) => (
+        index !== originalIndex
+        && item.sku === replacement.sku
+        && item.unitSize === replacement.unitSize
+      ));
+
+      if (duplicateIndex !== -1) {
+        return prevCart
+          .map((item, index) => (
+            index === duplicateIndex
+              ? { ...replacement, quantity: item.quantity + replacement.quantity }
+              : item
+          ))
+          .filter((_, index) => index !== originalIndex);
+      }
+
+      return prevCart.map((item, index) => (index === originalIndex ? replacement : item));
     });
   };
 
@@ -217,6 +247,7 @@ function App() {
   };
 
   const isRequestQuotePage = currentPath === '/request-quote';
+  const isContactPage = currentPath === '/contact';
   const isAdminPage = currentPath === '/admin';
   const isSearchPage = currentPath === '/search';
   const isProductPage = currentPath.startsWith('/product/');
@@ -296,7 +327,7 @@ function App() {
           }} 
           onLogout={handleAdminLogout}
         />
-      ) : isRequestQuotePage ? (
+      ) : isRequestQuotePage || isContactPage ? (
         <RequestQuotePage
           navigate={navigate}
           cart={cart}
@@ -304,6 +335,7 @@ function App() {
           currentUser={currentUser}
           currentUserProfile={currentUserProfile}
           quotePrefill={searchParams}
+          mode={isContactPage ? 'contact' : 'quote'}
         />
       ) : isSearchPage ? (
         <SearchPage 
@@ -357,7 +389,13 @@ function App() {
         <DesignPage
           navigate={navigate}
           onAddToCart={handleAddToCart}
+          onUpdateCartItem={handleUpdateCartItem}
           catalogNumber={searchParams.get('catalog') || ''}
+          editingCartItem={cart.find((item) => (
+            item.sku === searchParams.get('editSku')
+            && item.unitSize === (searchParams.get('editUnit') || '')
+            && item.product?.gene_design?.design
+          )) || null}
         />
       ) : isBlogPage ? (
         <BlogDetailPage
