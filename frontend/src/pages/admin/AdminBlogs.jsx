@@ -760,11 +760,16 @@ function AdminBlogs() {
                     rel="noopener noreferrer"
                     aria-label={`View ${blog.title} on the customer-facing blog page`}
                   >
-                    View Blog
+                    View
                   </a>
                   <button className="admin-action-btn edit" onClick={() => handleEdit(blog.id)}>Edit</button>
-                  <button className={`admin-action-btn star ${blog.is_featured ? 'active' : ''}`} onClick={() => handleToggleFeatured(blog)}>
-                    {blog.is_featured ? '★ Featured' : '☆ Feature'}
+                  <button
+                    className={`admin-action-btn star ${blog.is_featured ? 'active' : ''}`}
+                    onClick={() => handleToggleFeatured(blog)}
+                    aria-label={blog.is_featured ? `Remove ${blog.title} from featured blogs` : `Feature ${blog.title}`}
+                    title={blog.is_featured ? 'Remove from featured blogs' : 'Feature this blog'}
+                  >
+                    {blog.is_featured ? '★' : '☆'}
                   </button>
                   <button className="admin-action-btn delete" onClick={() => handleDelete(blog.id)}>Delete</button>
                 </div>
@@ -892,7 +897,7 @@ function AdminBlogs() {
                           <td>{category.display_order}</td>
                           <td>
                             <strong>{category.name}</strong>
-                            <code>/{category.slug}</code>
+                            <code>/blogs/category/{category.slug}</code>
                           </td>
                           <td>{category.description || '—'}</td>
                           <td>
@@ -902,7 +907,18 @@ function AdminBlogs() {
                           </td>
                           <td>{category.blog_count || 0}</td>
                           <td>
-                            <button type="button" className="admin-action-btn edit" onClick={() => startEditCategory(category)}>Edit</button>
+                            <div className="admin-blog-category-actions">
+                              <a
+                                className="admin-action-btn view"
+                                href={`/blogs/category/${encodeURIComponent(category.slug)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`View ${category.name} on the customer-facing Blogs page`}
+                              >
+                                View
+                              </a>
+                              <button type="button" className="admin-action-btn edit" onClick={() => startEditCategory(category)}>Edit</button>
+                            </div>
                           </td>
                         </tr>
                       ))}

@@ -1148,7 +1148,10 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 {specificationKeyFeatures && (
                   <tr>
                     <td>Key Features</td>
-                    <td dangerouslySetInnerHTML={{ __html: formatRichText(specificationKeyFeatures) }} />
+                    <td
+                      className="product-key-features-value"
+                      dangerouslySetInnerHTML={{ __html: formatRichText(specificationKeyFeatures) }}
+                    />
                   </tr>
                 )}
                 {product.description && (

@@ -5,10 +5,10 @@ import { apiFetch } from '../utils/api';
 const steps = [
   { id: 'category', label: 'Select Category' },
   { id: 'functionType', label: 'Select Function Type' },
-  { id: 'deliveryType', label: 'Select Delivery Type' },
+  { id: 'deliveryType', label: 'Select Vector Backbone' },
   { id: 'structureMap', label: 'Select Structure Map' },
   { id: 'targetGene', label: 'Provide Target Gene Info' },
-  { id: 'format', label: 'Select Format Type' },
+  { id: 'format', label: 'Select Delivery Type' },
 ];
 
 const emptyMetadata = {
@@ -468,11 +468,11 @@ function DesignPage({
     return [
       `Category: ${categoryLabel || '-'}`,
       `Function Type: ${functionTypeLabel || '-'}`,
-      `Delivery Type: ${deliveryTypeLabel || '-'}`,
+      `Vector Backbone: ${deliveryTypeLabel || '-'}`,
       `Structure Map: ${structureDescription || '-'}`,
       `Target Gene: ${targetGeneLabel || '-'}`,
       `Target Sequence: ${targetSequence || '-'}`,
-      `Format Types: ${selectedFormats.map(({ type, option }) => {
+      `Delivery Types: ${selectedFormats.map(({ type, option }) => {
         const key = makePriceKey(type.code_id, option.unit_amount);
         return `${type.name} — ${option.unit_amount} x${formatQuantities[key] || 1} (SKU: ${buildDesignSku(type.code_id)})`;
       }).join('; ') || '-'}`,
@@ -492,13 +492,22 @@ function DesignPage({
   const selectedStepTags = [
     { step: 'Step 1', label: 'Category', values: [categoryLabel].filter(Boolean) },
     { step: 'Step 2', label: 'Function Type', values: [functionTypeLabel].filter(Boolean) },
-    { step: 'Step 3', label: 'Delivery Type', values: [deliveryTypeLabel].filter(Boolean) },
+    { step: 'Step 3', label: 'Vector Backbone', values: [deliveryTypeLabel].filter(Boolean) },
     {
       step: 'Step 4',
       label: 'Structure Map',
       values: structureSelections
         .filter(({ substep, option }) => substep.code !== 'S2' && option)
-        .map(({ substep, option }) => `${substep.name}: ${option.value}`),
+        .map(({ substep, option }) => ({
+          label: `${substep.name}: ${option.value}`,
+          tone: {
+            S1: 'promoter',
+            S3: 'tag',
+            S4: 'fluorescence',
+            S5: 'selection',
+            S6: 'antibiotic',
+          }[substep.code] || '',
+        })),
     },
     {
       step: 'Step 5',
@@ -509,7 +518,7 @@ function DesignPage({
           : targetGeneLabel,
       ].filter(Boolean),
     },
-    { step: 'Step 6', label: 'Format Type', values: formatLabels },
+    { step: 'Step 6', label: 'Delivery Type', values: formatLabels },
   ];
 
   const selectCategory = (code) => {
@@ -1143,9 +1152,17 @@ function DesignPage({
                     <span className="design-canvas-tag-label">{group.label}</span>
                     <div className="design-canvas-tag-list">
                       {group.values.length > 0 ? (
-                        group.values.map((value) => (
-                          <span className="design-canvas-tag" key={value}>{value}</span>
-                        ))
+                        group.values.map((value) => {
+                          const tag = typeof value === 'string' ? { label: value, tone: '' } : value;
+                          return (
+                            <span
+                              className={`design-canvas-tag ${tag.tone ? `is-${tag.tone}` : ''}`}
+                              key={`${group.step}-${tag.tone}-${tag.label}`}
+                            >
+                              {tag.label}
+                            </span>
+                          );
+                        })
                       ) : (
                         <span className="design-canvas-tag empty">-</span>
                       )}
@@ -1229,7 +1246,7 @@ function DesignPage({
           <dl className="design-selection-summary-grid">
             <div><dt>Category</dt><dd>{categoryLabel || '-'}</dd></div>
             <div><dt>Function Type</dt><dd>{functionTypeLabel || '-'}</dd></div>
-            <div><dt>Delivery Type</dt><dd>{deliveryTypeLabel || '-'}</dd></div>
+            <div><dt>Vector Backbone</dt><dd>{deliveryTypeLabel || '-'}</dd></div>
             {structureSelections.filter(({ substep }) => substep.code !== 'S2').map(({ substep, option }) => (
               <div className="half" key={substep.code}>
                 <dt>{substep.name}</dt>
@@ -1239,11 +1256,11 @@ function DesignPage({
             <div><dt>Target Gene</dt><dd>{targetGeneLabel || '-'}</dd></div>
             <div><dt>Target Sequence</dt><dd>{targetSequence || '-'}</dd></div>
           </dl>
-          <section className="design-order-summary" aria-label="Selected formats and pricing">
+          <section className="design-order-summary" aria-label="Selected delivery types and pricing">
             <div className="design-order-summary-heading">
               <div>
                 <span>Pricing</span>
-                <h3>Selected Formats</h3>
+                <h3>Selected Delivery Types</h3>
               </div>
               <span className="design-price-currency">USD</span>
             </div>

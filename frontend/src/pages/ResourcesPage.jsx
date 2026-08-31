@@ -29,7 +29,7 @@ const inferBlogCategory = (blog) => {
   return 'Biotech Outlook';
 };
 
-function ResourcesPage({ navigate, searchParams }) {
+function ResourcesPage({ navigate, searchParams, categorySlug = '' }) {
   const [blogs, setBlogs] = useState([]);
   const [blogCategories, setBlogCategories] = useState([]);
   const [resources, setResources] = useState([]);
@@ -77,6 +77,24 @@ function ResourcesPage({ navigate, searchParams }) {
     setSearchTerm('');
   }, [activeTab]);
 
+  useEffect(() => {
+    if (activeTab !== 'blogs') return;
+
+    if (!categorySlug) {
+      setActiveCategory('All');
+      return;
+    }
+
+    const matchingCategory = blogCategories.find(
+      (category) => String(category.slug || '').toLowerCase() === String(categorySlug).toLowerCase(),
+    );
+    if (matchingCategory) {
+      setActiveCategory(matchingCategory.name);
+    } else if (blogCategories.length > 0) {
+      setActiveCategory('All');
+    }
+  }, [activeTab, blogCategories, categorySlug]);
+
   const enrichedBlogs = useMemo(() => (
     blogs.map((blog) => ({
       ...blog,
@@ -95,6 +113,10 @@ function ResourcesPage({ navigate, searchParams }) {
       return ['All', ...Array.from(cats)];
     }
   }, [activeTab, blogCategories, enrichedBlogs, resources]);
+
+  const blogCategorySlugs = useMemo(() => new Map(
+    blogCategories.map((category) => [category.name, category.slug]),
+  ), [blogCategories]);
 
   const featuredBlogs = useMemo(() => (
     enrichedBlogs.filter((blog) => blog.is_featured)
@@ -369,7 +391,15 @@ function ResourcesPage({ navigate, searchParams }) {
                 key={category}
                 className={activeCategory === category ? 'is-active' : ''}
                 type="button"
-                onClick={() => setActiveCategory(category)}
+                onClick={() => {
+                  setActiveCategory(category);
+                  if (activeTab === 'blogs') {
+                    const slug = blogCategorySlugs.get(category);
+                    navigate(category === 'All' || !slug
+                      ? '/blogs'
+                      : `/blogs/category/${encodeURIComponent(slug)}`);
+                  }
+                }}
               >
                 <span>{category}</span>
                 <small>{categoryCounts[category] || 0}</small>
