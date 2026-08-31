@@ -866,7 +866,7 @@ function HomePage({ navigate, searchParams }) {
           <p>Get exclusive discounts on large orders and custom solutions tailored to your needs.</p>
           <div>
             <a className="primary-button" href="/request-quote" onClick={(e) => { e.preventDefault(); navigate('/request-quote'); }}>Request a Quote</a>
-            <a className="secondary-button" href="#" onClick={(e) => e.preventDefault()}>Contact Us <span>→</span></a>
+            <a className="secondary-button" href="/contact" onClick={(e) => { e.preventDefault(); navigate('/contact'); }}>Contact Us <span>→</span></a>
           </div>
         </section>
       </main>

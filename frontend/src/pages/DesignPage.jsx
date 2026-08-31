@@ -129,13 +129,33 @@ const SummaryIcon = () => (
   </svg>
 );
 
-function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
-  const [activeStep, setActiveStep] = useState(0);
+function DesignPage({
+  navigate,
+  onAddToCart,
+  onUpdateCartItem,
+  catalogNumber = '',
+  editingCartItem = null,
+}) {
+  const editingSnapshot = editingCartItem?.product?.gene_design || null;
+  const isEditingCartItem = Boolean(editingSnapshot?.design);
+  const restoredDesign = isEditingCartItem
+    ? {
+        ...initialDesign,
+        ...editingSnapshot.design,
+        structureMap: { ...(editingSnapshot.design.structureMap || {}) },
+        format: { ...(editingSnapshot.design.format || {}) },
+      }
+    : initialDesign;
+  const restoredQuantityKey = editingSnapshot?.format_code && editingSnapshot?.unit_amount
+    ? makePriceKey(editingSnapshot.format_code, editingSnapshot.unit_amount)
+    : '';
+
+  const [activeStep, setActiveStep] = useState(isEditingCartItem ? steps.length - 1 : 0);
   const [metadata, setMetadata] = useState(emptyMetadata);
   const [metadataLoading, setMetadataLoading] = useState(true);
   const [metadataError, setMetadataError] = useState('');
-  const [design, setDesign] = useState(initialDesign);
-  const [showSummary, setShowSummary] = useState(false);
+  const [design, setDesign] = useState(restoredDesign);
+  const [showSummary, setShowSummary] = useState(isEditingCartItem);
   const [geneSearchForm, setGeneSearchForm] = useState(emptyGeneSearch);
   const [geneSearchQuery, setGeneSearchQuery] = useState({ ...emptyGeneSearch, page: 1 });
   const [geneSearchData, setGeneSearchData] = useState({
@@ -150,7 +170,9 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
   const [priceLookup, setPriceLookup] = useState({ results: [] });
   const [priceLoading, setPriceLoading] = useState(false);
   const [priceError, setPriceError] = useState('');
-  const [formatQuantities, setFormatQuantities] = useState({});
+  const [formatQuantities, setFormatQuantities] = useState(() => (
+    restoredQuantityKey ? { [restoredQuantityKey]: editingCartItem.quantity || 1 } : {}
+  ));
   const [cartNotice, setCartNotice] = useState('');
 
   useEffect(() => {
@@ -163,7 +185,7 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
         const nextMetadata = { ...emptyMetadata, ...data };
         setMetadata(nextMetadata);
 
-        const prefill = parseCatalogDesignPrefill(catalogNumber);
+        const prefill = isEditingCartItem ? null : parseCatalogDesignPrefill(catalogNumber);
         const category = prefill && nextMetadata.categories.find((item) => (
           item.function_types.some((functionType) => functionType.symbol_id === prefill.functionType)
         ));
@@ -198,7 +220,7 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
     return () => {
       isCurrent = false;
     };
-  }, [catalogNumber]);
+  }, [catalogNumber, isEditingCartItem]);
 
   useEffect(() => {
     if (design.targetGeneMode !== 'search') return undefined;
@@ -252,6 +274,8 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
   }, [design.format, metadata.format_types]);
 
   useEffect(() => {
+    if (metadataLoading) return;
+
     const activeKeys = new Set(selectedFormats.map(({ type, option }) => (
       makePriceKey(type.code_id, option.unit_amount)
     )));
@@ -263,7 +287,7 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
       return next;
     });
     setCartNotice('');
-  }, [selectedFormats]);
+  }, [metadataLoading, selectedFormats]);
 
   const structureSelections = metadata.structure_substeps.map((substep) => {
     const selectedCode = design.structureMap[substep.code];
@@ -408,9 +432,19 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
     }
     return `${design.functionType}${design.deliveryType}-${designStructureCode}-${targetCode}-${formatCode}`;
   };
+  const buildDesignProductName = (formatName) => {
+    const functionName = selectedFunctionType?.abbreviation || functionTypeLabel;
+    const deliveryName = selectedDeliveryType?.abbreviation || deliveryTypeLabel;
+    const geneName = design.targetGeneRecord?.symbol
+      || selectedTargetGene?.abbreviation
+      || targetGeneLabel;
+    if (!functionName || !deliveryName || !geneName || !formatName) return '';
+    return `${functionName} ${deliveryName} Kit — Gene ${geneName}, ${formatName} type`;
+  };
   const formatSummaries = selectedFormats.map(({ type, option }) => ({
     label: `${type.name} — ${option.unit_amount}`,
-    sku: buildDesignSku(type.code_id),
+    productName: buildDesignProductName(type.name),
+    catalogNumber: buildDesignSku(type.code_id),
   }));
   const pricedSelections = priceLookup.results.filter((price) => !price.quote_only);
   const quoteOnlySelections = priceLookup.results.filter((price) => price.quote_only);
@@ -595,30 +629,59 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
     setCartNotice('');
   };
 
+  const buildGeneDesignProduct = (price) => {
+    const formatKey = makeFormatKey(price.format_code, price.unit_amount);
+    return {
+      product_sku: buildDesignSku(price.format_code),
+      product_name: buildDesignProductName(price.format_name),
+      description: designDescription,
+      source_type: 'product',
+      shipping_cost: price.format_code === 'k' ? 100 : 60,
+      gene_design: {
+        version: 1,
+        format_code: price.format_code,
+        unit_amount: price.unit_amount,
+        design: {
+          ...design,
+          structureMap: { ...design.structureMap },
+          targetGeneRecord: design.targetGeneRecord ? { ...design.targetGeneRecord } : null,
+          format: { [price.format_code]: formatKey },
+        },
+      },
+    };
+  };
+
   const addDesignSelectionsToCart = () => {
     if (!onAddToCart || pricedSelections.length === 0) return;
 
-    pricedSelections.forEach((price) => {
+    pricedSelections.forEach((price, index) => {
       const key = makePriceKey(price.format_code, price.unit_amount);
       const quantity = formatQuantities[key] || 1;
-      const sku = buildDesignSku(price.format_code);
       const effectivePrice = getEffectivePrice(price);
-      onAddToCart(
-        {
-          product_sku: sku,
-          product_name: `Gene Design — ${price.format_name}`,
-          description: designDescription,
-          source_type: 'product',
-          shipping_cost: price.format_code === 'k' ? 100 : 60,
-        },
-        quantity,
-        {
-          unit_size: price.unit_amount,
-          unit_price: effectivePrice,
-          list_price: Number(price.list_price) || effectivePrice,
-        },
-      );
+      const product = buildGeneDesignProduct(price);
+      const selectedUnit = {
+        unit_size: price.unit_amount,
+        unit_price: effectivePrice,
+        list_price: Number(price.list_price) || effectivePrice,
+      };
+
+      if (isEditingCartItem && index === 0 && onUpdateCartItem) {
+        onUpdateCartItem(
+          editingCartItem.sku,
+          editingCartItem.unitSize,
+          product,
+          quantity,
+          selectedUnit,
+        );
+      } else {
+        onAddToCart(product, quantity, selectedUnit);
+      }
     });
+
+    if (isEditingCartItem) {
+      navigate('/cart');
+      return;
+    }
 
     const skippedText = quoteOnlySelections.length > 0
       ? ` ${quoteOnlySelections.length} quote-only selection${quoteOnlySelections.length === 1 ? ' was' : 's were'} not added.`
@@ -909,7 +972,6 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
                 </span>
                 <span className="design-format-description">{formatType.description}</span>
                 <dl className="design-format-facts">
-                  <div><dt>Shipping</dt><dd>{formatType.shipping_temperature}</dd></div>
                   <div><dt>Storage</dt><dd>{formatType.storage}</dd></div>
                   <div><dt>Stability</dt><dd>{formatType.stability}</dd></div>
                 </dl>
@@ -995,6 +1057,14 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
 
   return (
     <main className="design-page">
+      {isEditingCartItem && (
+        <div className="design-edit-notice" role="status">
+          <span>
+            Editing <strong>{editingCartItem.name}</strong>. Update any step, then use <strong>Update Cart</strong> in the summary.
+          </span>
+          <button type="button" onClick={() => navigate('/cart')}>Cancel editing</button>
+        </div>
+      )}
       <nav className="design-stepper" aria-label="Design steps">
         {steps.map((step, index) => (
           <button
@@ -1019,22 +1089,41 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
               deliveryTypeName={deliveryTypeLabel}
               targetGeneName={design.targetGeneRecord?.gene_name || selectedTargetGene?.name || ''}
             />
-            <div className="design-canvas-tags" aria-label="Selected design options by step">
-              {selectedStepTags.map((group) => (
-                <div className="design-canvas-tag-group" key={group.step}>
-                  <span className="design-canvas-tag-step">{group.step}</span>
-                  <span className="design-canvas-tag-label">{group.label}</span>
-                  <div className="design-canvas-tag-list">
-                    {group.values.length > 0 ? (
-                      group.values.map((value) => (
-                        <span className="design-canvas-tag" key={value}>{value}</span>
-                      ))
-                    ) : (
-                      <span className="design-canvas-tag empty">-</span>
-                    )}
+            <div className="design-canvas-details">
+              <section className="design-product-identity" aria-label="Designed product name and catalog number">
+                <span className="design-product-identity-heading">
+                  Designed Product{formatSummaries.length === 1 ? '' : 's'}
+                </span>
+                {formatSummaries.length > 0 ? (
+                  <div className="design-product-identity-list">
+                    {formatSummaries.map((item) => (
+                      <article key={item.catalogNumber || item.label}>
+                        <strong>{item.productName}</strong>
+                        <span>Catalog Number <code>{item.catalogNumber}</code></span>
+                      </article>
+                    ))}
                   </div>
-                </div>
-              ))}
+                ) : (
+                  <p>Select a format in Step 6 to generate the product name and catalog number.</p>
+                )}
+              </section>
+              <div className="design-canvas-tags" aria-label="Selected design options by step">
+                {selectedStepTags.map((group) => (
+                  <div className="design-canvas-tag-group" key={group.step}>
+                    <span className="design-canvas-tag-step">{group.step}</span>
+                    <span className="design-canvas-tag-label">{group.label}</span>
+                    <div className="design-canvas-tag-list">
+                      {group.values.length > 0 ? (
+                        group.values.map((value) => (
+                          <span className="design-canvas-tag" key={value}>{value}</span>
+                        ))
+                      ) : (
+                        <span className="design-canvas-tag empty">-</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -1091,6 +1180,23 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
           aria-labelledby="design-summary-title"
         >
           <h2 id="design-summary-title"><SummaryIcon /> Design Summary</h2>
+          <section
+            className="design-summary-product-panel"
+            aria-labelledby="design-summary-product-title"
+          >
+            <h3 id="design-summary-product-title">
+              Designed Product{formatSummaries.length === 1 ? '' : 's'}
+            </h3>
+            <div className="design-summary-product-list">
+              {formatSummaries.length > 0 ? formatSummaries.map((item) => (
+                <article key={item.catalogNumber || item.label}>
+                  <strong>{item.productName}</strong>
+                  <span>{item.label}</span>
+                  <span>Catalog Number <code>{item.catalogNumber}</code></span>
+                </article>
+              )) : '-'}
+            </div>
+          </section>
           <dl className="design-selection-summary-grid">
             <div><dt>Category</dt><dd>{categoryLabel || '-'}</dd></div>
             <div><dt>Function Type</dt><dd>{functionTypeLabel || '-'}</dd></div>
@@ -1103,17 +1209,6 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
             ))}
             <div><dt>Target Gene</dt><dd>{targetGeneLabel || '-'}</dd></div>
             <div><dt>Target Sequence</dt><dd>{targetSequence || '-'}</dd></div>
-            <div className="span-2">
-              <dt>Formats / SKU Numbers</dt>
-              <dd className="design-summary-format-list">
-                {formatSummaries.length > 0 ? formatSummaries.map((item) => (
-                  <span key={item.sku || item.label}>
-                    <span>{item.label}</span>
-                    {item.sku && <code>{item.sku}</code>}
-                  </span>
-                )) : '-'}
-              </dd>
-            </div>
           </dl>
           <section className="design-order-summary" aria-label="Selected formats and pricing">
             <div className="design-order-summary-heading">
@@ -1210,7 +1305,7 @@ function DesignPage({ navigate, onAddToCart, catalogNumber = '' }) {
                   disabled={pricedSelections.length === 0}
                   onClick={addDesignSelectionsToCart}
                 >
-                  Add Selection(s) to Cart
+                  {isEditingCartItem ? 'Update Cart' : 'Add Selection(s) to Cart'}
                 </button>
                 {cartNotice && (
                   <div className="design-cart-notice" role="status">

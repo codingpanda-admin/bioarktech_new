@@ -1145,28 +1145,22 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
             <div className="tab-header" style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Product Information</div>
             <table className="product-specifications-table">
               <tbody>
-                {product.description && (
-                  <tr>
-                    <td>Description</td>
-                    <td dangerouslySetInnerHTML={{ __html: formatRichText(product.description) }} />
-                  </tr>
-                )}
                 {specificationKeyFeatures && (
                   <tr>
                     <td>Key Features</td>
                     <td dangerouslySetInnerHTML={{ __html: formatRichText(specificationKeyFeatures) }} />
                   </tr>
                 )}
+                {product.description && (
+                  <tr>
+                    <td>Application</td>
+                    <td dangerouslySetInnerHTML={{ __html: formatRichText(product.description) }} />
+                  </tr>
+                )}
                 {specificationStorage && (
                   <tr>
                     <td>Storage &amp; Stability</td>
                     <td dangerouslySetInnerHTML={{ __html: formatRichText(specificationStorage) }} />
-                  </tr>
-                )}
-                {product.ship_info && (
-                  <tr>
-                    <td>Shipping Info</td>
-                    <td dangerouslySetInnerHTML={{ __html: formatRichText(product.ship_info) }} />
                   </tr>
                 )}
               </tbody>

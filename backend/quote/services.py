@@ -8,8 +8,9 @@ from .models import Quote
 
 
 def build_quote_notification_message(quote, supplemental_fields=None):
+    is_contact_message = str(quote.service_type or '').strip().casefold() == 'contact us'
     lines = [
-        'New Quote Request from Bioark Tech',
+        'New Contact Message from Bioark Tech' if is_contact_message else 'New Quote Request from Bioark Tech',
         'Customer Information:',
         '-----------------------',
         f'Quote ID: {quote.id}',
@@ -22,7 +23,7 @@ def build_quote_notification_message(quote, supplemental_fields=None):
         ('Phone', quote.phone),
         ('Company/Institution', quote.company),
         ('Department', quote.department),
-        ('Service Type', quote.service_type),
+        ('Service Type', None if is_contact_message else quote.service_type),
         ('Timeline', quote.timeline),
         ('Budget', quote.budget),
     ]
@@ -40,7 +41,7 @@ def build_quote_notification_message(quote, supplemental_fields=None):
     if quote.additional_info:
         lines.extend([
             '',
-            'Additional Information:',
+            'Message:' if is_contact_message else 'Additional Information:',
             '-----------------------',
             quote.additional_info,
         ])
@@ -54,7 +55,11 @@ def send_quote_notification(quote, supplemental_fields=None):
         raise ImproperlyConfigured('EMAIL_NOTIFICATION_RECIPIENT must not be blank.')
 
     return send_mail(
-        subject='New Quote from Bioark Tech',
+        subject=(
+            'New Contact Message from Bioark Tech'
+            if str(quote.service_type or '').strip().casefold() == 'contact us'
+            else 'New Quote from Bioark Tech'
+        ),
         message=build_quote_notification_message(quote, supplemental_fields),
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[recipient],
