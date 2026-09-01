@@ -1277,7 +1277,12 @@ label,
 }
 
 .categories-section .category-row {
-  padding-top: 20px;
+  padding-top: 0;
+}
+
+.categories-section + .featured-solutions-section {
+  margin-top: -20px;
+  padding-top: 16px;
 }
 
 .products-carousel.category-carousel-static {
@@ -2334,6 +2339,52 @@ label,
   box-shadow: inset 0 0 0 5px #fff;
   border-color: var(--blue);
   background: var(--blue);
+}
+
+.blog-sidebar .document-hierarchy-nav {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.document-filter-level-1 {
+  display: grid;
+  gap: 7px;
+}
+
+.blog-sidebar .document-level-1-button {
+  color: #17365d;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.document-filter-level-2 {
+  display: grid;
+  gap: 6px;
+  margin-left: 11px;
+  padding-left: 16px;
+  border-left: 1px solid #d7e3f2;
+}
+
+.blog-sidebar .document-level-2-button {
+  min-height: 24px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.blog-sidebar .document-level-2-button::before {
+  width: 18px;
+  height: 18px;
+  margin-right: 7px;
+  border-radius: 50%;
+}
+
+.blog-sidebar .document-hierarchy-nav button small {
+  display: inline-flex;
+  min-width: 24px;
+  justify-content: flex-end;
+  color: #71839b;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .blog-results {
@@ -7429,6 +7480,7 @@ label,
 }
 
 .admin-dashboard-primary-action,
+.admin-dashboard-analytics-action,
 .admin-dashboard-secondary-action {
   display: inline-flex;
   align-items: center;
@@ -7448,6 +7500,18 @@ label,
   background: #fff;
 }
 
+.admin-dashboard-analytics-action {
+  gap: 9px;
+  color: #06224b;
+  background: #75ead0;
+  text-decoration: none;
+}
+
+.admin-dashboard-analytics-action span {
+  font-size: 16px;
+  line-height: 1;
+}
+
 .admin-dashboard-primary-action span {
   display: grid;
   min-width: 22px;
@@ -7464,6 +7528,10 @@ label,
   color: #fff;
   border-color: rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.08);
+}
+
+.admin-dashboard-analytics-action:hover {
+  transform: translateY(-1px);
 }
 
 .admin-dashboard-primary-action:hover,
@@ -10473,6 +10541,10 @@ label,
 .admin-public-detail-link:hover,
 .admin-public-detail-link:focus-visible {
   color: #094cb4;
+}
+
+.admin-gene-design-catalog-link {
+  font-weight: 700;
 }
 
 .admin-section-description {

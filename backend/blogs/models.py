@@ -51,9 +51,52 @@ class BlogAttachment(models.Model):
         return self.original_name
 
 
+class ResourceDocumentGroup(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    display_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'resource_document_group'
+        ordering = ('display_order', 'name')
+
+
+class ResourceDocumentSubgroup(models.Model):
+    group = models.ForeignKey(
+        ResourceDocumentGroup,
+        on_delete=models.PROTECT,
+        related_name='subgroups',
+    )
+    name = models.CharField(max_length=100)
+    display_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.group.name} / {self.name}'
+
+    class Meta:
+        db_table = 'resource_document_subgroup'
+        ordering = ('group__display_order', 'display_order', 'name')
+        constraints = [
+            models.UniqueConstraint(
+                fields=('group', 'name'),
+                name='resource_doc_subgroup_group_name_uniq',
+            ),
+        ]
+
+
 class ResourceDocument(models.Model):
     name = models.CharField(max_length=200)
-    category = models.CharField(max_length=100)
+    subgroup = models.ForeignKey(
+        ResourceDocumentSubgroup,
+        on_delete=models.PROTECT,
+        related_name='documents',
+    )
     description = models.CharField(max_length=500, blank=True, null=True)
     download_url = models.CharField(max_length=500, blank=True, null=True)
     file = models.FileField(upload_to='resource_documents/', blank=True, null=True)

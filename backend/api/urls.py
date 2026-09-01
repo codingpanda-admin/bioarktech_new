@@ -20,6 +20,9 @@ from .admin_views import (
     admin_update_blog_category,
     admin_list_resources, admin_get_resource, admin_create_resource,
     admin_update_resource, admin_delete_resource,
+    admin_list_resource_groups, admin_create_resource_group,
+    admin_update_resource_group, admin_create_resource_subgroup,
+    admin_update_resource_subgroup,
     admin_list_all_users, admin_get_user, admin_create_user,
     admin_update_user, admin_delete_user, admin_toggle_admin,
     admin_list_quotes, admin_get_quote, admin_mark_quote_read,
@@ -117,6 +120,11 @@ urlpatterns = [
     path('admin-panel/blogs/<int:blog_id>/delete/', admin_delete_blog),
 
     # Resources (documents)
+    path('admin-panel/resource-groups/', admin_list_resource_groups),
+    path('admin-panel/resource-groups/create/', admin_create_resource_group),
+    path('admin-panel/resource-groups/<int:group_id>/update/', admin_update_resource_group),
+    path('admin-panel/resource-subgroups/create/', admin_create_resource_subgroup),
+    path('admin-panel/resource-subgroups/<int:subgroup_id>/update/', admin_update_resource_subgroup),
     path('admin-panel/resources/', admin_list_resources),
     path('admin-panel/resources/create/', admin_create_resource),
     path('admin-panel/resources/<int:resource_id>/', admin_get_resource),

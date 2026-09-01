@@ -10,7 +10,7 @@ from blogs.models import Blog, BlogCategory
 from django.utils.dateparse import parse_datetime
 
 # Check if blogs and resources are already populated
-from blogs.models import ResourceDocument
+from blogs.models import ResourceDocument, ResourceDocumentGroup, ResourceDocumentSubgroup
 if Blog.objects.exists() and ResourceDocument.objects.exists():
     print("Blogs and resource documents already populated. Skipping population script.")
     sys.exit(0)
@@ -57,18 +57,15 @@ if not ResourceDocument.objects.exists():
     print("Populating Resource Documents...")
     from django.conf import settings
     from products.models import ManualFile, Product
-    def get_category(name):
-        name_lower = name.lower()
-        if 'msds' in name_lower or 'sds' in name_lower or 'safety data' in name_lower:
-            return 'MSDS'
-        elif 'protocol' in name_lower or 'guide' in name_lower or 'manual' in name_lower:
-            return 'Protocols & Manuals'
-        elif 'handbook' in name_lower:
-            return 'Handbooks'
-        elif 'sequence' in name_lower:
-            return 'Sequences'
-        else:
-            return 'Product Manuals'
+    default_resource_group, _ = ResourceDocumentGroup.objects.get_or_create(
+        name='Product Documents',
+        defaults={'display_order': 0},
+    )
+    default_resource_subgroup, _ = ResourceDocumentSubgroup.objects.get_or_create(
+        group=default_resource_group,
+        name='Product Manual',
+        defaults={'display_order': 0},
+    )
 
     count = 0
     # Add from ManualFile (Premium Manuals)
@@ -79,7 +76,7 @@ if not ResourceDocument.objects.exists():
         if os.path.exists(full_path):
             doc = ResourceDocument(
                 name=m.name,
-                category='Product Manuals',
+                subgroup=default_resource_subgroup,
                 description=f"Technical manual for {m.name}",
                 download_url=m.manual.url if m.manual else '',
                 file=m.manual
@@ -128,7 +125,7 @@ if not ResourceDocument.objects.exists():
                                 
                         doc = ResourceDocument(
                             name=doc_name,
-                            category=get_category(doc_name),
+                            subgroup=default_resource_subgroup,
                             description=f"Technical document for {p.product_name}",
                             download_url=normalized_url,
                             file=file_path

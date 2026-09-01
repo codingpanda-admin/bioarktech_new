@@ -29,6 +29,9 @@ const inferBlogCategory = (blog) => {
   return 'Biotech Outlook';
 };
 
+const documentLevel1Filter = (resource) => `level1:${resource.level_1_group_id ?? resource.level_1_group ?? 'documents'}`;
+const documentLevel2Filter = (resource) => `level2:${resource.level_2_group_id ?? resource.level_2_group ?? resource.category ?? 'general'}`;
+
 function ResourcesPage({ navigate, searchParams, categorySlug = '' }) {
   const [blogs, setBlogs] = useState([]);
   const [blogCategories, setBlogCategories] = useState([]);
@@ -122,6 +125,45 @@ function ResourcesPage({ navigate, searchParams, categorySlug = '' }) {
     enrichedBlogs.filter((blog) => blog.is_featured)
   ), [enrichedBlogs]);
 
+  const documentHierarchy = useMemo(() => {
+    const level1Map = new Map();
+
+    resources.forEach((resource) => {
+      const level1Key = documentLevel1Filter(resource);
+      const level2Key = documentLevel2Filter(resource);
+      if (!level1Map.has(level1Key)) {
+        level1Map.set(level1Key, {
+          key: level1Key,
+          name: resource.level_1_group || 'Documents',
+          order: Number(resource.level_1_group_order || 0),
+          count: 0,
+          level2Map: new Map(),
+        });
+      }
+
+      const level1 = level1Map.get(level1Key);
+      level1.count += 1;
+      if (!level1.level2Map.has(level2Key)) {
+        level1.level2Map.set(level2Key, {
+          key: level2Key,
+          name: resource.level_2_group || resource.category || 'General',
+          order: Number(resource.level_2_group_order || 0),
+          count: 0,
+        });
+      }
+      level1.level2Map.get(level2Key).count += 1;
+    });
+
+    return Array.from(level1Map.values())
+      .map((level1) => ({
+        ...level1,
+        level2Groups: Array.from(level1.level2Map.values()).sort(
+          (left, right) => left.order - right.order || left.name.localeCompare(right.name),
+        ),
+      }))
+      .sort((left, right) => left.order - right.order || left.name.localeCompare(right.name));
+  }, [resources]);
+
   // Featured posts remain highlighted above, but they also belong in the
   // complete article listing and participate in its category/search filters.
   const listingBlogs = enrichedBlogs;
@@ -172,8 +214,10 @@ function ResourcesPage({ navigate, searchParams, categorySlug = '' }) {
 
   const visibleResources = useMemo(() => (
     resources.filter((r) => {
-      const matchesCategory = activeCategory === 'All' || r.category === activeCategory;
-      const searchableText = `${r.name || ''} ${r.category || ''} ${r.description || ''}`.toLowerCase();
+      const matchesCategory = activeCategory === 'All'
+        || (activeCategory.startsWith('level1:') && documentLevel1Filter(r) === activeCategory)
+        || (activeCategory.startsWith('level2:') && documentLevel2Filter(r) === activeCategory);
+      const searchableText = `${r.name || ''} ${r.level_1_group || ''} ${r.level_2_group || ''} ${r.category || ''} ${r.description || ''}`.toLowerCase();
       const matchesSearch = searchableText.includes(searchTerm.trim().toLowerCase());
       return matchesCategory && matchesSearch;
     })
@@ -384,28 +428,64 @@ function ResourcesPage({ navigate, searchParams, categorySlug = '' }) {
             />
           </div>
 
-          <h2>Categories</h2>
-          <nav aria-label="Categories">
-            {categoriesList.map((category) => (
-              <button
-                key={category}
-                className={activeCategory === category ? 'is-active' : ''}
-                type="button"
-                onClick={() => {
-                  setActiveCategory(category);
-                  if (activeTab === 'blogs') {
+          <h2>{activeTab === 'blogs' ? 'Categories' : 'Document Groups'}</h2>
+          {activeTab === 'blogs' ? (
+            <nav aria-label="Categories">
+              {categoriesList.map((category) => (
+                <button
+                  key={category}
+                  className={activeCategory === category ? 'is-active' : ''}
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory(category);
                     const slug = blogCategorySlugs.get(category);
                     navigate(category === 'All' || !slug
                       ? '/blogs'
                       : `/blogs/category/${encodeURIComponent(slug)}`);
-                  }
-                }}
+                  }}
+                >
+                  <span>{category}</span>
+                  <small>{categoryCounts[category] || 0}</small>
+                </button>
+              ))}
+            </nav>
+          ) : (
+            <nav className="document-hierarchy-nav" aria-label="Document groups">
+              <button
+                className={`document-all-filter ${activeCategory === 'All' ? 'is-active' : ''}`}
+                type="button"
+                onClick={() => setActiveCategory('All')}
               >
-                <span>{category}</span>
-                <small>{categoryCounts[category] || 0}</small>
+                <span>All Documents</span>
+                <small>{resources.length}</small>
               </button>
-            ))}
-          </nav>
+              {documentHierarchy.map((level1) => (
+                <div className="document-filter-level-1" key={level1.key}>
+                  <button
+                    className={`document-level-1-button ${activeCategory === level1.key ? 'is-active' : ''}`}
+                    type="button"
+                    onClick={() => setActiveCategory(level1.key)}
+                  >
+                    <span>{level1.name}</span>
+                    <small>{level1.count}</small>
+                  </button>
+                  <div className="document-filter-level-2">
+                    {level1.level2Groups.map((level2) => (
+                      <button
+                        className={`document-level-2-button ${activeCategory === level2.key ? 'is-active' : ''}`}
+                        key={level2.key}
+                        type="button"
+                        onClick={() => setActiveCategory(level2.key)}
+                      >
+                        <span>{level2.name}</span>
+                        <small>{level2.count}</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </nav>
+          )}
         </aside>
 
         <section className="blog-results" aria-label="Results">
