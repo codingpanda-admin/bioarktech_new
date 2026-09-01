@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Advancing Therapies</title>
+  <desc id="desc">An engineered cell with a therapeutic medical cross</desc>
+  <defs>
+    <radialGradient id="bg" cx="38%" cy="30%" r="76%">
+      <stop offset="0" stop-color="#F9FCFF"/>
+      <stop offset="1" stop-color="#EAF2FF"/>
+    </radialGradient>
+    <linearGradient id="stroke" x1="59" y1="54" x2="197" y2="201" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1F55B5"/>
+      <stop offset="1" stop-color="#2D74E6"/>
+    </linearGradient>
+  </defs>
+  <circle cx="128" cy="128" r="108" fill="url(#bg)"/>
+  <path d="M128 51C143 51 152 63 165 68C179 74 195 70 202 83C209 96 199 109 199 124C199 139 210 152 202 166C194 180 177 176 164 184C151 191 143 204 128 204C113 204 105 191 92 184C79 176 62 180 54 166C46 152 57 139 57 124C57 109 47 96 54 83C61 70 77 74 91 68C104 63 113 51 128 51Z" stroke="url(#stroke)" stroke-width="7" stroke-linejoin="round"/>
+  <circle cx="115" cy="124" r="31" stroke="#79A8F2" stroke-width="6"/>
+  <path d="M105 124H125M115 114V134" stroke="url(#stroke)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M145 151C158 146 168 135 172 121" stroke="url(#stroke)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M158 120L173 119L178 134" stroke="url(#stroke)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

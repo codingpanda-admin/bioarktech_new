@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef, useImperativeHandle } 
 import { apiFetch, API_URL, formatAssetUrl } from '../../utils/api';
 import { formatRichText } from '../../utils/richText';
 import { cleanRichTextPasteHtml, isMicrosoftOfficeHtml } from '../../utils/richTextPaste';
+import { getGeneDesignPath } from '../../utils/geneDesignCatalog';
 
 const richTextToPlainText = (value) => {
   const source = String(value || '');
@@ -91,6 +92,26 @@ const PublicDetailLink = ({ identifier }) => {
       title={`Open ${publicPath} in a new tab`}
     >
       {publicPath}
+    </a>
+  );
+};
+
+const GeneDesignCatalogLink = ({ catalogNumber, enabled }) => {
+  if (!catalogNumber) return <span>—</span>;
+  const designPath = enabled ? getGeneDesignPath(catalogNumber) : '';
+
+  if (!designPath) return <span>{catalogNumber}</span>;
+
+  return (
+    <a
+      className="admin-public-detail-link admin-gene-design-catalog-link"
+      href={designPath}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Open this catalog configuration in Gene Design"
+      aria-label={`Open Gene Design for catalog number ${catalogNumber} in a new tab`}
+    >
+      {catalogNumber}
     </a>
   );
 };
@@ -2659,7 +2680,12 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                                     <td>
                                       <PublicDetailLink identifier={product.external_id || product.catalog_number} />
                                     </td>
-                                    <td>{product.catalog_number || '—'}</td>
+                                    <td>
+                                      <GeneDesignCatalogLink
+                                        catalogNumber={product.catalog_number}
+                                        enabled={categoryFilter === 'products'}
+                                      />
+                                    </td>
                                     <td>{product.list_price || '—'}</td>
                                     {catalogStatus === 'deactivated' && (
                                       <td>

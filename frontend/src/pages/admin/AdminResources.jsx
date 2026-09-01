@@ -1,607 +1,329 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiFetch, API_URL, formatAssetUrl } from '../../utils/api';
+
+const DEFAULT_LEVEL_1 = 'Product Documents';
+const DEFAULT_LEVEL_2 = 'Product Manual';
+const fieldStyle = { padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 8, background: '#fff', fontSize: 13, fontFamily: 'inherit' };
 
 function AdminResources() {
   const [resources, setResources] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [editingResource, setEditingResource] = useState(null);
+  const [success, setSuccess] = useState('');
+  const [editor, setEditor] = useState(null);
+  const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [successMsg, setSuccessMsg] = useState('');
-  const [fileObject, setFileObject] = useState(null);
+  const [manageGroups, setManageGroups] = useState(false);
+  const [groupEditor, setGroupEditor] = useState(null);
+  const [groupSaving, setGroupSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const [level1Filter, setLevel1Filter] = useState('All');
+  const [level2Filter, setLevel2Filter] = useState('All');
+  const [sort, setSort] = useState({ field: 'date_created', order: 'desc' });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [collapsedLevel1Groups, setCollapsedLevel1Groups] = useState(() => new Set());
+  const [collapsedLevel2Groups, setCollapsedLevel2Groups] = useState(() => new Set());
+  const [preview, setPreview] = useState(null);
 
-  // Search, Filter, Sort and Pagination State
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [sortBy, setSortBy] = useState('date_created');
-  const [sortOrder, setSortOrder] = useState('desc');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [previewFileUrl, setPreviewFileUrl] = useState(null);
-
-  const loadResources = useCallback(async () => {
-    setLoading(true);
+  const loadData = useCallback(async (showLoader = true) => {
+    if (showLoader) setLoading(true);
     setError('');
     try {
-      const data = await apiFetch('/api/admin-panel/resources/');
-      setResources(data.results || data.resources || []);
+      const [documents, hierarchy] = await Promise.all([
+        apiFetch('/api/admin-panel/resources/'),
+        apiFetch('/api/admin-panel/resource-groups/'),
+      ]);
+      setResources(documents.results || []);
+      setGroups(hierarchy.results || []);
     } catch (err) {
-      setError(err.message || 'Failed to load resources.');
+      setError(err.message || 'Failed to load resource documents.');
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadResources();
-  }, [loadResources]);
+    // Initial synchronization with the Resource Documents API.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData();
+  }, [loadData]);
 
-  const showSuccess = (msg) => {
-    setSuccessMsg(msg);
-    setTimeout(() => setSuccessMsg(''), 3000);
+  const flash = (message) => {
+    setSuccess(message);
+    window.setTimeout(() => setSuccess(''), 3000);
   };
 
-  const handleCreate = () => {
-    setEditingResource({
-      name: '',
-      category: '',
-      description: '',
-      download_url: '',
-    });
+  const defaults = useMemo(() => {
+    const level1 = groups.find((item) => item.name === DEFAULT_LEVEL_1) || groups[0];
+    const level2 = level1?.subgroups?.find((item) => item.name === DEFAULT_LEVEL_2) || level1?.subgroups?.[0];
+    return { level1: level1?.id || '', level2: level2?.id || '' };
+  }, [groups]);
+
+  const selectedEditorGroup = groups.find((item) => String(item.id) === String(editor?.level_1_group_id));
+
+  const startCreate = () => {
+    if (!defaults.level2) {
+      setError('Create a Level 1 group and a Level 2 group before adding a document.');
+      setManageGroups(true);
+      return;
+    }
+    setEditor({ name: '', description: '', download_url: '', level_1_group_id: defaults.level1, level_2_group_id: defaults.level2 });
+    setFile(null);
     setError('');
-    setSuccessMsg('');
-    setFileObject(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleEdit = async (resourceId) => {
+  const startEdit = async (id) => {
     try {
       setError('');
-      setSuccessMsg('');
-      const data = await apiFetch(`/api/admin-panel/resources/${resourceId}/`);
-      setEditingResource(data);
-      setFileObject(null);
+      setEditor(await apiFetch(`/api/admin-panel/resources/${id}/`));
+      setFile(null);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err) {
-      setError(err.message);
-    }
+    } catch (err) { setError(err.message); }
   };
 
-  const handleCancelEdit = () => {
-    setEditingResource(null);
-    setFileObject(null);
-    setError('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleDelete = async (resourceId) => {
-    if (!confirm('Are you sure you want to delete this document?')) return;
-    try {
-      await apiFetch(`/api/admin-panel/resources/${resourceId}/delete/`, { method: 'POST' });
-      showSuccess('Document deleted.');
-      loadResources();
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleSave = async (e) => {
-    e.preventDefault();
+  const saveDocument = async (event) => {
+    event.preventDefault();
     setSaving(true);
     setError('');
     try {
-      const isNew = !editingResource.id;
-      const endpoint = isNew
-        ? '/api/admin-panel/resources/create/'
-        : `/api/admin-panel/resources/${editingResource.id}/update/`;
-
-      // Use FormData if there is a file to upload
-      if (fileObject) {
-        const formData = new FormData();
-        formData.append('name', editingResource.name);
-        formData.append('category', editingResource.category);
-        formData.append('description', editingResource.description || '');
-        formData.append('download_url', editingResource.download_url || '');
-        formData.append('file', fileObject);
-
-        let csrfToken = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('csrftoken='))
-          ?.split('=')[1];
-
-        if (!csrfToken) {
-          const csrfRes = await fetch(`${API_URL}/api/csrf/`, { credentials: 'include' });
-          const csrfData = await csrfRes.json();
-          csrfToken = csrfData.csrftoken;
-        }
-
-        const response = await fetch(`${API_URL}${endpoint}`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'X-CSRFToken': csrfToken },
-          body: formData,
-        });
-
+      const isNew = !editor.id;
+      const endpoint = isNew ? '/api/admin-panel/resources/create/' : `/api/admin-panel/resources/${editor.id}/update/`;
+      const values = {
+        name: editor.name,
+        level_2_group_id: editor.level_2_group_id,
+        description: editor.description || '',
+        download_url: editor.download_url || '',
+      };
+      if (file) {
+        const data = new FormData();
+        Object.entries(values).forEach(([key, value]) => data.append(key, value));
+        data.append('file', file);
+        let csrf = document.cookie.split('; ').find((row) => row.startsWith('csrftoken='))?.split('=')[1];
+        if (!csrf) csrf = (await (await fetch(`${API_URL}/api/csrf/`, { credentials: 'include' })).json()).csrftoken;
+        const response = await fetch(`${API_URL}${endpoint}`, { method: 'POST', credentials: 'include', headers: { 'X-CSRFToken': csrf }, body: data });
         if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.detail || 'Failed to save document.');
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.error || body.detail || 'Failed to save document.');
         }
       } else {
-        await apiFetch(endpoint, {
-          method: 'POST',
-          body: {
-            name: editingResource.name,
-            category: editingResource.category,
-            description: editingResource.description,
-            download_url: editingResource.download_url,
-          },
-        });
+        await apiFetch(endpoint, { method: 'POST', body: values });
       }
-
-      showSuccess(isNew ? 'Document created!' : 'Document updated!');
-      setEditingResource(null);
-      setFileObject(null);
-      loadResources();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
+      flash(isNew ? 'Document created!' : 'Document updated!');
+      setEditor(null);
+      setFile(null);
+      await loadData(false);
+    } catch (err) { setError(err.message); }
+    finally { setSaving(false); }
   };
 
-  const updateField = (field, value) => {
-    setEditingResource(prev => ({ ...prev, [field]: value }));
+  const deleteDocument = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this document?')) return;
+    try {
+      await apiFetch(`/api/admin-panel/resources/${id}/delete/`, { method: 'POST' });
+      flash('Document deleted.');
+      await loadData(false);
+    } catch (err) { setError(err.message); }
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  const chooseLevel1 = (id) => {
+    const group = groups.find((item) => String(item.id) === String(id));
+    setEditor((current) => ({ ...current, level_1_group_id: id, level_2_group_id: group?.subgroups?.[0]?.id || '' }));
   };
 
-  // Search & Filtering logic
-  const uniqueCategories = useMemo(() => {
-    const cats = new Set(resources.map(r => r.category));
-    return ['All', ...Array.from(cats)];
-  }, [resources]);
+  const editLevel1 = (item) => setGroupEditor({ type: 'level1', id: item?.id, name: item?.name || '', display_order: item?.display_order || 0 });
+  const editLevel2 = (parentId, item) => setGroupEditor({ type: 'level2', id: item?.id, name: item?.name || '', display_order: item?.display_order || 0, level_1_group_id: parentId });
 
-  const filteredResources = useMemo(() => {
-    return resources.filter((r) => {
-      const matchesCategory = selectedCategory === 'All' || r.category === selectedCategory;
-      const searchableText = `${r.name || ''} ${r.category || ''} ${r.description || ''}`.toLowerCase();
-      const matchesSearch = searchableText.includes(searchTerm.trim().toLowerCase());
-      return matchesCategory && matchesSearch;
+  const saveGroup = async (event) => {
+    event.preventDefault();
+    setGroupSaving(true);
+    setError('');
+    try {
+      const base = groupEditor.type === 'level1' ? 'resource-groups' : 'resource-subgroups';
+      const endpoint = groupEditor.id ? `/api/admin-panel/${base}/${groupEditor.id}/update/` : `/api/admin-panel/${base}/create/`;
+      await apiFetch(endpoint, { method: 'POST', body: groupEditor });
+      flash(`${groupEditor.type === 'level1' ? 'Level 1' : 'Level 2'} group ${groupEditor.id ? 'updated' : 'created'}.`);
+      setGroupEditor(null);
+      await loadData(false);
+    } catch (err) { setError(err.message); }
+    finally { setGroupSaving(false); }
+  };
+
+  const filterSubgroups = useMemo(() => level1Filter === 'All'
+    ? groups.flatMap((group) => group.subgroups || [])
+    : groups.find((group) => String(group.id) === level1Filter)?.subgroups || [], [groups, level1Filter]);
+
+  const activeLevel2Filter = level2Filter === 'All'
+    || filterSubgroups.some((item) => String(item.id) === level2Filter)
+    ? level2Filter
+    : 'All';
+
+  const visible = useMemo(() => resources.filter((item) => {
+    const text = `${item.name || ''} ${item.level_1_group || ''} ${item.level_2_group || ''} ${item.description || ''}`.toLowerCase();
+    return (level1Filter === 'All' || String(item.level_1_group_id) === level1Filter)
+      && (activeLevel2Filter === 'All' || String(item.level_2_group_id) === activeLevel2Filter)
+      && text.includes(search.trim().toLowerCase());
+  }).sort((a, b) => {
+    let left = a[sort.field] || '';
+    let right = b[sort.field] || '';
+    if (typeof left === 'string') { left = left.toLowerCase(); right = String(right).toLowerCase(); }
+    return left === right ? 0 : (left < right ? -1 : 1) * (sort.order === 'asc' ? 1 : -1);
+  }), [resources, level1Filter, activeLevel2Filter, search, sort]);
+
+  const pages = Math.ceil(visible.length / pageSize);
+  const rows = visible.slice((page - 1) * pageSize, page * pageSize);
+  const groupedRows = useMemo(() => groups.map((level1) => {
+    const level2Groups = (level1.subgroups || []).map((level2) => ({
+      ...level2,
+      documents: rows.filter((document) => String(document.level_2_group_id) === String(level2.id)),
+    })).filter((level2) => level2.documents.length > 0);
+
+    return {
+      ...level1,
+      level2Groups,
+      documentCount: level2Groups.reduce((count, level2) => count + level2.documents.length, 0),
+    };
+  }).filter((level1) => level1.documentCount > 0), [groups, rows]);
+
+  const toggleLevel1Group = (groupId) => {
+    setCollapsedLevel1Groups((current) => {
+      const next = new Set(current);
+      if (next.has(groupId)) next.delete(groupId);
+      else next.add(groupId);
+      return next;
     });
-  }, [resources, selectedCategory, searchTerm]);
+  };
 
-  // Sorting logic
-  const sortedResources = useMemo(() => {
-    const sorted = [...filteredResources];
-    sorted.sort((a, b) => {
-      let valA = a[sortBy] || '';
-      let valB = b[sortBy] || '';
-
-      if (typeof valA === 'string') {
-        valA = valA.toLowerCase();
-        valB = valB.toLowerCase();
-      }
-
-      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
-      return 0;
+  const toggleLevel2Group = (groupId) => {
+    setCollapsedLevel2Groups((current) => {
+      const next = new Set(current);
+      if (next.has(groupId)) next.delete(groupId);
+      else next.add(groupId);
+      return next;
     });
-    return sorted;
-  }, [filteredResources, sortBy, sortOrder]);
-
-  // Pagination logic
-  const totalItems = sortedResources.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const paginatedResources = useMemo(() => {
-    const startIdx = (currentPage - 1) * itemsPerPage;
-    return sortedResources.slice(startIdx, startIdx + itemsPerPage);
-  }, [sortedResources, currentPage, itemsPerPage]);
-
-  // Reset page to 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedCategory, sortBy, sortOrder, itemsPerPage]);
+  };
 
   const toggleSort = (field) => {
-    if (sortBy === field) {
-      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
-    }
+    setSort((current) => current.field === field ? { field, order: current.order === 'asc' ? 'desc' : 'asc' } : { field, order: 'asc' });
+    setPage(1);
   };
+  const marker = (field) => sort.field === field ? (sort.order === 'asc' ? ' ↑' : ' ↓') : ' ↕';
 
-  const renderSortIndicator = (field) => {
-    if (sortBy !== field) return <span style={{ color: '#ccc', marginLeft: '6px' }}>↕</span>;
-    return sortOrder === 'asc' 
-      ? <span style={{ color: 'var(--blue)', marginLeft: '6px', fontWeight: 'bold' }}>↑</span> 
-      : <span style={{ color: 'var(--blue)', marginLeft: '6px', fontWeight: 'bold' }}>↓</span>;
-  };
-
-  if (editingResource) {
-    return (
-      <div className="admin-blog-editor-page">
-        <div className="admin-editor-header">
-          <div>
-            <button type="button" className="admin-back-button" onClick={handleCancelEdit}>
-              Back to Documents
-            </button>
-            <h2 id="admin-content-title">{editingResource.id ? 'Edit Document' : 'Create Document'}</h2>
-          </div>
-          <div className="admin-editor-header-actions">
-            <button type="button" className="secondary-admin-button" onClick={handleCancelEdit}>Cancel</button>
-            <button type="submit" form="admin-resource-editor-form" className="primary-button" disabled={saving}>
-              {saving ? 'Saving...' : (editingResource.id ? 'Update Document' : 'Create Document')}
-            </button>
-          </div>
-        </div>
-
-        {error && <div className="admin-alert error">{error}</div>}
-
-        <form id="admin-resource-editor-form" onSubmit={handleSave} className="admin-editor-panel">
-          <div className="admin-form-grid">
-            <label className="admin-form-field span-2">
-              <span>Document Name *</span>
-              <input type="text" value={editingResource.name || ''} onChange={(e) => updateField('name', e.target.value)} required maxLength="200" />
-            </label>
-            <label className="admin-form-field">
-              <span>Category / Tag *</span>
-              <input type="text" value={editingResource.category || ''} onChange={(e) => updateField('category', e.target.value)} required maxLength="100" placeholder="e.g. Product Manuals, Protocols" />
-            </label>
-            <label className="admin-form-field span-3">
-              <span>Description</span>
-              <input type="text" value={editingResource.description || ''} onChange={(e) => updateField('description', e.target.value)} maxLength="400" placeholder="Brief description of the document contents" />
-            </label>
-            <label className="admin-form-field span-3">
-              <span>Download URL (Optional if uploading a file)</span>
-              <input type="text" value={editingResource.download_url || ''} onChange={(e) => updateField('download_url', e.target.value)} maxLength="500" placeholder="e.g. /media/manual_files/file.pdf or external URL" />
-            </label>
-            <label className="admin-form-field span-3">
-              <span>Upload File (Will override/populate Download URL if empty)</span>
-              <input type="file" onChange={(e) => setFileObject(e.target.files[0] || null)} />
-              {editingResource.download_url && !fileObject && (
-                <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--muted)' }}>
-                  Current Link: <a href={formatAssetUrl(editingResource.download_url)} target="_blank" rel="noopener noreferrer">{editingResource.download_url}</a>
-                </div>
-              )}
-            </label>
-          </div>
-          <div className="admin-editor-footer">
-            <button type="button" className="secondary-admin-button" onClick={handleCancelEdit}>Cancel</button>
-            <button type="submit" className="primary-button" disabled={saving}>
-              {saving ? 'Saving...' : (editingResource.id ? 'Update Document' : 'Create Document')}
-            </button>
-          </div>
-        </form>
+  if (editor) return (
+    <div className="admin-blog-editor-page">
+      <div className="admin-editor-header">
+        <div><button type="button" className="admin-back-button" onClick={() => { setEditor(null); setFile(null); setError(''); }}>Back to Documents</button><h2 id="admin-content-title">{editor.id ? 'Edit Document' : 'Create Document'}</h2></div>
+        <div className="admin-editor-header-actions"><button type="button" className="secondary-admin-button" onClick={() => setEditor(null)}>Cancel</button><button type="submit" form="resource-form" className="primary-button" disabled={saving}>{saving ? 'Saving...' : 'Save Document'}</button></div>
       </div>
-    );
-  }
-
-  return (
-    <>
-      <div className="admin-section-header">
-        <h2 id="admin-content-title">Resource Documents</h2>
-        <button className="primary-button" onClick={handleCreate}>+ Add Document</button>
-      </div>
-
-      {successMsg && <div className="admin-alert success">{successMsg}</div>}
       {error && <div className="admin-alert error">{error}</div>}
-
-      {/* Advanced Filter, Search, and Show entries controls */}
-      <div 
-        className="admin-controls-row" 
-        style={{ 
-          display: 'flex', 
-          gap: '16px', 
-          marginBottom: '20px', 
-          flexWrap: 'wrap', 
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          background: 'var(--panel)',
-          padding: '16px',
-          borderRadius: '10px',
-          border: '1px solid var(--line)'
-        }}
-      >
-        <div style={{ flex: '1', minWidth: '260px', display: 'flex', gap: '10px' }}>
-          <input 
-            type="text" 
-            placeholder="Search documents by name or description..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 14px',
-              borderRadius: '8px',
-              border: '1px solid var(--line)',
-              fontSize: '14px',
-              background: '#fff',
-              outline: 'none',
-              transition: 'border-color 0.2s'
-            }}
-          />
+      <form id="resource-form" onSubmit={saveDocument} className="admin-editor-panel">
+        <div className="admin-form-grid">
+          <label className="admin-form-field"><span>Document Name *</span><input required maxLength="200" value={editor.name || ''} onChange={(event) => setEditor({ ...editor, name: event.target.value })} /></label>
+          <label className="admin-form-field"><span>Level 1 Group *</span><select required value={editor.level_1_group_id || ''} onChange={(event) => chooseLevel1(event.target.value)}><option value="" disabled>Select Level 1</option>{groups.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+          <label className="admin-form-field"><span>Level 2 Group *</span><select required value={editor.level_2_group_id || ''} onChange={(event) => setEditor({ ...editor, level_2_group_id: event.target.value })}><option value="" disabled>Select Level 2</option>{(selectedEditorGroup?.subgroups || []).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+          <label className="admin-form-field span-3"><span>Description</span><input maxLength="500" value={editor.description || ''} onChange={(event) => setEditor({ ...editor, description: event.target.value })} /></label>
+          <label className="admin-form-field span-3"><span>Download URL (optional when uploading a file)</span><input maxLength="500" value={editor.download_url || ''} onChange={(event) => setEditor({ ...editor, download_url: event.target.value })} /></label>
+          <label className="admin-form-field span-3"><span>Upload File</span><input type="file" onChange={(event) => setFile(event.target.files[0] || null)} />{editor.download_url && !file && <small>Current link: <a href={formatAssetUrl(editor.download_url)} target="_blank" rel="noreferrer">{editor.download_url}</a></small>}</label>
         </div>
-        
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              style={{
-                padding: '10px 14px',
-                borderRadius: '8px',
-                border: '1px solid var(--line)',
-                fontSize: '14px',
-                background: '#fff',
-                outline: 'none',
-                cursor: 'pointer',
-                minWidth: '180px'
-              }}
-            >
-              <option value="All">All Categories</option>
-              {uniqueCategories.filter(c => c !== 'All').map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
+        <div className="admin-editor-footer"><button type="button" className="secondary-admin-button" onClick={() => setEditor(null)}>Cancel</button><button type="submit" className="primary-button" disabled={saving}>{saving ? 'Saving...' : 'Save Document'}</button></div>
+      </form>
+    </div>
+  );
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--muted)' }}>Show:</span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => setItemsPerPage(Number(e.target.value))}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: '1px solid var(--line)',
-                fontSize: '13px',
-                background: '#fff',
-                cursor: 'pointer'
-              }}
-            >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
-          </div>
-        </div>
-      </div>
+  return <>
+    <div className="admin-section-header"><h2 id="admin-content-title">Resource Documents</h2><div style={{ display: 'flex', gap: 10 }}><button className="secondary-admin-button" onClick={() => { setManageGroups(true); setGroupEditor(null); }}>Manage Groups</button><button className="primary-button" onClick={startCreate}>+ Add Document</button></div></div>
+    {success && <div className="admin-alert success">{success}</div>}{error && <div className="admin-alert error">{error}</div>}
+    <div className="admin-controls-row" style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', background: 'var(--panel)', padding: 16, borderRadius: 10, border: '1px solid var(--line)' }}>
+      <input type="search" placeholder="Search documents..." value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} style={{ ...fieldStyle, flex: '1 1 260px' }} />
+      <select value={level1Filter} onChange={(event) => { setLevel1Filter(event.target.value); setLevel2Filter('All'); setPage(1); }} style={{ ...fieldStyle, width: 190 }}><option value="All">All Level 1 Groups</option>{groups.map((item) => <option key={item.id} value={String(item.id)}>{item.name}</option>)}</select>
+      <select value={activeLevel2Filter} onChange={(event) => { setLevel2Filter(event.target.value); setPage(1); }} style={{ ...fieldStyle, width: 190 }}><option value="All">All Level 2 Groups</option>{filterSubgroups.map((item) => <option key={item.id} value={String(item.id)}>{item.name}</option>)}</select>
+      <select value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }} style={{ ...fieldStyle, width: 90 }}>{[5, 10, 20, 50].map((count) => <option key={count}>{count}</option>)}</select>
+    </div>
+    {loading ? <div className="admin-empty-table">Loading documents...</div> : rows.length === 0 ? <div className="admin-empty-table">No matching documents found.</div> : (
+      <div className="admin-grouped-products admin-resource-groups">
+        {groupedRows.map((level1) => {
+          const isLevel1Collapsed = collapsedLevel1Groups.has(level1.id);
+          return (
+            <section key={level1.id} className={`admin-category-group ${isLevel1Collapsed ? 'is-collapsed' : ''}`}>
+              <h3 className="admin-category-title">
+                <button
+                  type="button"
+                  className="admin-category-toggle"
+                  aria-expanded={!isLevel1Collapsed}
+                  aria-controls={`resource-level-1-${level1.id}`}
+                  onClick={() => toggleLevel1Group(level1.id)}
+                >
+                  <span className="admin-category-toggle-icon" aria-hidden="true">{isLevel1Collapsed ? '+' : '-'}</span>
+                  <span>{level1.name}</span>
+                </button>
+                <span className="admin-category-badge">{level1.documentCount} documents</span>
+              </h3>
 
-      {loading ? (
-        <div className="admin-empty-table">Loading documents...</div>
-      ) : resources.length === 0 ? (
-        <div className="admin-empty-table">No documents found in database.</div>
-      ) : paginatedResources.length === 0 ? (
-        <div className="admin-empty-table">No matching documents found. Try resetting filters.</div>
-      ) : (
-        <>
-          <div className="admin-table-container">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th 
-                    onClick={() => toggleSort('name')} 
-                    style={{ cursor: 'pointer', userSelect: 'none', width: '25%' }}
-                  >
-                    Name {renderSortIndicator('name')}
-                  </th>
-                  <th 
-                    onClick={() => toggleSort('category')} 
-                    style={{ cursor: 'pointer', userSelect: 'none', width: '20%' }}
-                  >
-                    Category {renderSortIndicator('category')}
-                  </th>
-                  <th 
-                    onClick={() => toggleSort('description')} 
-                    style={{ cursor: 'pointer', userSelect: 'none', width: '35%' }}
-                  >
-                    Description {renderSortIndicator('description')}
-                  </th>
-                  <th 
-                    onClick={() => toggleSort('date_created')} 
-                    style={{ cursor: 'pointer', userSelect: 'none', width: '10%' }}
-                  >
-                    Date Added {renderSortIndicator('date_created')}
-                  </th>
-                  <th style={{ width: '10%' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedResources.map((r) => {
-                  const docUrl = r.download_url ? formatAssetUrl(r.download_url) : '#';
-                  return (
-                    <tr key={r.id}>
-                      <td>
-                        <strong>{r.name}</strong>
-                        {r.download_url && (
-                          <div style={{ marginTop: '4px' }}>
-                            <button
-                              onClick={() => setPreviewFileUrl(docUrl)}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                color: 'var(--blue)',
-                                fontSize: '12px',
-                                padding: 0,
-                                cursor: 'pointer',
-                                fontWeight: '600'
-                              }}
-                              type="button"
-                            >
-                              👁️ Preview Document
-                            </button>
+              {!isLevel1Collapsed && (
+                <div id={`resource-level-1-${level1.id}`} className="admin-category-panel">
+                  {level1.level2Groups.map((level2) => {
+                    const isLevel2Collapsed = collapsedLevel2Groups.has(level2.id);
+                    return (
+                      <div key={level2.id} className={`admin-subgroup-group ${isLevel2Collapsed ? 'is-collapsed' : ''}`}>
+                        <h4 className="admin-subgroup-title">
+                          <button
+                            type="button"
+                            className="admin-subgroup-toggle"
+                            aria-expanded={!isLevel2Collapsed}
+                            aria-controls={`resource-level-2-${level2.id}`}
+                            onClick={() => toggleLevel2Group(level2.id)}
+                          >
+                            <span className="admin-category-toggle-icon" aria-hidden="true">{isLevel2Collapsed ? '+' : '-'}</span>
+                            <span className="admin-subgroup-identity">
+                              <span>{level2.name} ({level2.document_count ?? level2.documents.length})</span>
+                            </span>
+                          </button>
+                        </h4>
+
+                        {!isLevel2Collapsed && (
+                          <div id={`resource-level-2-${level2.id}`} className="admin-data-table-wrap">
+                            <table className="admin-data-table">
+                              <thead><tr>
+                                {[['name', 'Name', '30%'], ['description', 'Description', '42%'], ['date_created', 'Date', '14%']].map(([field, label, width]) => (
+                                  <th key={field} onClick={() => toggleSort(field)} style={{ cursor: 'pointer', width }}>{label}{marker(field)}</th>
+                                ))}
+                                <th style={{ width: '14%' }}>Actions</th>
+                              </tr></thead>
+                              <tbody>{level2.documents.map((item) => <tr key={item.id}>
+                                <td><strong>{item.name}</strong>{item.download_url && <div><button type="button" onClick={() => setPreview(formatAssetUrl(item.download_url))} style={{ border: 0, background: 'none', color: 'var(--blue)', padding: '4px 0', cursor: 'pointer', fontWeight: 600 }}>Preview Document</button></div>}</td>
+                                <td>{item.description || '—'}</td>
+                                <td>{item.date_created ? new Date(item.date_created).toLocaleDateString() : '—'}</td>
+                                <td><div className="admin-row-actions"><button className="admin-action-btn edit" onClick={() => startEdit(item.id)}>Edit</button><button className="admin-action-btn delete" onClick={() => deleteDocument(item.id)}>Delete</button></div></td>
+                              </tr>)}</tbody>
+                            </table>
                           </div>
                         )}
-                      </td>
-                      <td>
-                        <span style={{
-                          background: 'var(--panel)',
-                          border: '1px solid var(--line)',
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          fontSize: '11px',
-                          fontWeight: '600',
-                          color: 'var(--muted)'
-                        }}>{r.category}</span>
-                      </td>
-                      <td>{r.description || '—'}</td>
-                      <td style={{ fontSize: '13px' }}>{formatDate(r.date_created)}</td>
-                      <td>
-                        <div className="admin-row-actions" style={{ display: 'flex', gap: '8px' }}>
-                          <button className="admin-action-btn edit" onClick={() => handleEdit(r.id)}>Edit</button>
-                          <button className="admin-action-btn delete" onClick={() => handleDelete(r.id)}>Delete</button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          );
+        })}
+      </div>
+    )}
+    {pages > 1 && <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 18 }}><span>Page {page} of {pages}</span><div style={{ display: 'flex', gap: 8 }}><button className="secondary-admin-button" disabled={page === 1} onClick={() => setPage(page - 1)}>Previous</button><button className="secondary-admin-button" disabled={page === pages} onClick={() => setPage(page + 1)}>Next</button></div></div>}
 
-          {/* Premium Pagination Controls */}
-          {totalPages > 1 && (
-            <div 
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginTop: '20px',
-                padding: '16px',
-                background: '#fff',
-                border: '1px solid var(--line)',
-                borderRadius: '8px',
-                flexWrap: 'wrap',
-                gap: '12px'
-              }}
-            >
-              <span style={{ fontSize: '14px', color: 'var(--muted)' }}>
-                Showing {Math.min(totalItems, (currentPage - 1) * itemsPerPage + 1)} to {Math.min(totalItems, currentPage * itemsPerPage)} of {totalItems} entries
-              </span>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className="secondary-admin-button"
-                  type="button"
-                  style={{ padding: '6px 12px', fontSize: '13px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
-                >
-                  Previous
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={currentPage === page ? 'primary-button' : 'secondary-admin-button'}
-                    type="button"
-                    style={{
-                      padding: '6px 12px',
-                      fontSize: '13px',
-                      background: currentPage === page ? 'var(--blue)' : '#fff',
-                      color: currentPage === page ? '#fff' : 'var(--ink)',
-                      borderColor: currentPage === page ? 'var(--blue)' : 'var(--line)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {page}
-                  </button>
-                ))}
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  className="secondary-admin-button"
-                  type="button"
-                  style={{ padding: '6px 12px', fontSize: '13px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {previewFileUrl && (
-        <div 
-          className="document-preview-backdrop" 
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(6, 23, 60, 0.75)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1100,
-            padding: '24px'
-          }}
-          onClick={() => setPreviewFileUrl(null)}
-        >
-          <div 
-            className="document-preview-modal" 
-            style={{
-              backgroundColor: '#fff',
-              borderRadius: '16px',
-              width: 'min(1200px, 100%)',
-              height: 'min(85vh, 900px)',
-              display: 'flex',
-              flexDirection: 'column',
-              boxShadow: '0 24px 64px rgba(6, 23, 60, 0.25)',
-              overflow: 'hidden'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div 
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '16px 24px',
-                borderBottom: '1px solid var(--line)',
-                background: 'var(--panel)'
-              }}
-            >
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: 'var(--ink)' }}>Document Preview</h3>
-              <button 
-                onClick={() => setPreviewFileUrl(null)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '24px',
-                  cursor: 'pointer',
-                  color: 'var(--muted)',
-                  lineHeight: 1,
-                  padding: '4px'
-                }}
-                aria-label="Close preview"
-                type="button"
-              >
-                &times;
-              </button>
-            </div>
-            <div style={{ flex: 1, position: 'relative', background: '#f1f5f9' }}>
-              <iframe 
-                src={previewFileUrl ? `${previewFileUrl}?t=${new Date().getTime()}` : ''} 
-                title="Document Preview"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  border: 'none'
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
+    {manageGroups && <div className="admin-modal-overlay" onClick={() => { setManageGroups(false); setGroupEditor(null); }}><div className="admin-modal admin-modal-lg" onClick={(event) => event.stopPropagation()}>
+      <div className="admin-modal-header"><div><h3>Document Groups</h3><p style={{ margin: '4px 0 0', color: 'var(--muted)' }}>Each Level 2 group belongs to one Level 1 group.</p></div><button className="admin-modal-close" onClick={() => setManageGroups(false)}>×</button></div>
+      <div className="admin-modal-body"><button type="button" className="primary-button" onClick={() => editLevel1()}>+ Add Level 1 Group</button>
+        {groupEditor && <form onSubmit={saveGroup} style={{ marginTop: 16, padding: 16, border: '1px solid var(--line)', borderRadius: 10, background: 'var(--panel)' }}><h4 style={{ marginTop: 0 }}>{groupEditor.id ? 'Edit' : 'Create'} {groupEditor.type === 'level1' ? 'Level 1' : 'Level 2'} Group</h4>
+          {groupEditor.type === 'level2' && <label className="admin-form-field"><span>Parent Level 1 *</span><select required value={groupEditor.level_1_group_id} onChange={(event) => setGroupEditor({ ...groupEditor, level_1_group_id: event.target.value })}>{groups.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px auto', gap: 10, alignItems: 'end', marginTop: 10 }}><label className="admin-form-field"><span>Name *</span><input required maxLength="100" value={groupEditor.name} onChange={(event) => setGroupEditor({ ...groupEditor, name: event.target.value })} /></label><label className="admin-form-field"><span>Display Order</span><input type="number" min="0" value={groupEditor.display_order} onChange={(event) => setGroupEditor({ ...groupEditor, display_order: Number(event.target.value) })} /></label><div style={{ display: 'flex', gap: 8 }}><button type="button" className="secondary-admin-button" onClick={() => setGroupEditor(null)}>Cancel</button><button className="primary-button" disabled={groupSaving}>{groupSaving ? 'Saving...' : 'Save'}</button></div></div>
+        </form>}
+        <div style={{ display: 'grid', gap: 14, marginTop: 18 }}>{groups.map((group) => <section key={group.id} style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: 'var(--panel)' }}><strong>Level 1: {group.name}</strong><div style={{ display: 'flex', gap: 8 }}><button className="admin-action-btn edit" onClick={() => editLevel1(group)}>Edit</button><button className="secondary-admin-button" onClick={() => editLevel2(group.id)}>+ Add Level 2</button></div></div><div style={{ padding: '8px 14px' }}>{group.subgroups.length === 0 ? <p style={{ color: 'var(--muted)' }}>No Level 2 groups yet.</p> : group.subgroups.map((item) => <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--line)' }}><span>Level 2: <strong>{item.name}</strong> <small style={{ color: 'var(--muted)' }}>({item.document_count} documents)</small></span><button className="admin-action-btn edit" onClick={() => editLevel2(group.id, item)}>Edit</button></div>)}</div></section>)}</div>
+      </div><div className="admin-modal-footer"><button className="secondary-admin-button" onClick={() => setManageGroups(false)}>Close</button></div>
+    </div></div>}
+    {preview && <div onClick={() => setPreview(null)} style={{ position: 'fixed', inset: 0, zIndex: 1100, padding: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(6,23,60,.75)' }}><div onClick={(event) => event.stopPropagation()} style={{ width: 'min(1200px,100%)', height: '85vh', background: '#fff', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}><div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid var(--line)' }}><h3 style={{ margin: 0 }}>Document Preview</h3><button className="admin-modal-close" onClick={() => setPreview(null)}>×</button></div><iframe src={preview} title="Document Preview" style={{ flex: 1, width: '100%', border: 0 }} /></div></div>}
+  </>;
 }
 
 export default AdminResources;

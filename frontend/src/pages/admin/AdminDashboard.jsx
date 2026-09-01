@@ -112,6 +112,15 @@ function AdminDashboard({ onNavigate }) {
           <h2 id="admin-content-title">Dashboard Overview</h2>
           <p>Monitor your catalog, content, and customer activity from one workspace.</p>
           <div className="admin-dashboard-hero-actions">
+            <a
+              href="https://analytics.google.com/analytics/web/?authuser=0#/a203284310p483258026/reports/intelligenthome"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="admin-dashboard-analytics-action"
+            >
+              Open Google Analytics
+              <span aria-hidden="true">↗</span>
+            </a>
             <button type="button" className="admin-dashboard-primary-action" onClick={() => onNavigate('Quotes')}>
               Review quote requests
               {unreadQuotes > 0 && <span>{unreadQuotes}</span>}

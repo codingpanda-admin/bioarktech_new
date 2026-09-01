@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Enabling Discovery</title>
+  <desc id="desc">A research microscope illuminating a discovery</desc>
+  <defs>
+    <radialGradient id="bg" cx="38%" cy="30%" r="76%">
+      <stop offset="0" stop-color="#F9FCFF"/>
+      <stop offset="1" stop-color="#EAF2FF"/>
+    </radialGradient>
+    <linearGradient id="stroke" x1="67" y1="52" x2="192" y2="203" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1F55B5"/>
+      <stop offset="1" stop-color="#2D74E6"/>
+    </linearGradient>
+  </defs>
+  <circle cx="128" cy="128" r="108" fill="url(#bg)"/>
+  <path d="M112 58H150L143 80H119L112 58Z" fill="#F9FCFF" stroke="url(#stroke)" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M126 80L111 125" stroke="url(#stroke)" stroke-width="10" stroke-linecap="round"/>
+  <path d="M99 118L127 128" stroke="url(#stroke)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M150 94C173 106 184 130 178 153C171 179 148 194 116 194C94 194 76 185 68 170" stroke="url(#stroke)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M91 153H166" stroke="url(#stroke)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M83 198H178" stroke="url(#stroke)" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="171" cy="71" r="12" stroke="#79A8F2" stroke-width="5"/>
+  <path d="M171 48V39M171 103V94M148 71H139M203 71H194M155 55L149 49M193 93L187 87M187 55L193 49" stroke="#79A8F2" stroke-width="5" stroke-linecap="round"/>
+</svg>

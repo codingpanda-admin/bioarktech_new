@@ -32,6 +32,6 @@ def get_blog_categories(request):
 
 @api_view(["GET"])
 def get_all_resources(request):
-    resources = ResourceDocument.objects.all().order_by('-date_created')
+    resources = ResourceDocument.objects.select_related('subgroup__group').order_by('-date_created')
     serializer = ResourceDocumentSerializer(resources, many=True)
     return JsonResponse(serializer.data, safe=False)

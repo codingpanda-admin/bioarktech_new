@@ -43,6 +43,19 @@ class PreviewBlogSerializer(serializers.ModelSerializer):
         ]
 
 class ResourceDocumentSerializer(serializers.ModelSerializer):
+    category = serializers.CharField(source='subgroup.name', read_only=True)
+    level_1_group_id = serializers.IntegerField(source='subgroup.group_id', read_only=True)
+    level_1_group = serializers.CharField(source='subgroup.group.name', read_only=True)
+    level_1_group_order = serializers.IntegerField(source='subgroup.group.display_order', read_only=True)
+    level_2_group_id = serializers.IntegerField(source='subgroup_id', read_only=True)
+    level_2_group = serializers.CharField(source='subgroup.name', read_only=True)
+    level_2_group_order = serializers.IntegerField(source='subgroup.display_order', read_only=True)
+
     class Meta:
         model = ResourceDocument
-        fields = '__all__'
+        fields = [
+            'id', 'name', 'category', 'level_1_group_id', 'level_1_group',
+            'level_1_group_order', 'level_2_group_id', 'level_2_group',
+            'level_2_group_order', 'description', 'download_url', 'file',
+            'date_created',
+        ]

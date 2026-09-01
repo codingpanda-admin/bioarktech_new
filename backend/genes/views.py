@@ -123,6 +123,7 @@ def get_design_metadata(request):
 
 @api_view(['GET'])
 def search_gene_library(request):
+    target_sequence = request.query_params.get('target_sequence', '').strip()
     species = request.query_params.get('species', '').strip()
     gene_name = request.query_params.get('gene_name', '').strip()
     description = request.query_params.get('description', '').strip()
@@ -137,6 +138,8 @@ def search_gene_library(request):
         page_size = 20
 
     genes = GeneLibrary.objects.all()
+    if target_sequence:
+        genes = genes.filter(target_sequence__iexact=target_sequence)
     if species:
         genes = genes.filter(species__iexact=species)
     if gene_name:

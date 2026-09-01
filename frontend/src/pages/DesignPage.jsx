@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import GeneStructureVisual from '../components/GeneStructureVisual';
 import { apiFetch } from '../utils/api';
+import { parseGeneDesignCatalogNumber } from '../utils/geneDesignCatalog';
 
 const steps = [
   { id: 'category', label: 'Select Category' },
@@ -38,27 +39,6 @@ const emptyGeneSearch = {
 
 const makeFormatKey = (formatCode, unitAmount) => `${formatCode}::${unitAmount}`;
 const makePriceKey = (formatCode, unitAmount) => `${formatCode}::${unitAmount}`;
-
-const parseCatalogDesignPrefill = (catalogNumber) => {
-  const segments = String(catalogNumber || '')
-    .replace(/\s+/g, '')
-    .toUpperCase()
-    .split('-');
-  const selectionCode = segments[0] || '';
-  const structureCode = segments[1] || '';
-
-  if (!/^[A-Z]{2}[STLM]$/.test(selectionCode) || !/^[A-Z0-9]{6}$/.test(structureCode)) {
-    return null;
-  }
-
-  return {
-    functionType: selectionCode.slice(0, 2),
-    deliveryType: selectionCode.slice(2),
-    structureMap: Object.fromEntries(
-      [...structureCode].map((valueCode, index) => [`S${index + 1}`, valueCode]),
-    ),
-  };
-};
 
 const getDiscountPriceDetails = (price) => {
   const listPrice = price?.list_price !== null && price?.list_price !== ''
@@ -185,33 +165,87 @@ function DesignPage({
     let isCurrent = true;
 
     apiFetch('/api/genes/design-metadata/')
-      .then((data) => {
+      .then(async (data) => {
         if (!isCurrent) return;
 
         const nextMetadata = { ...emptyMetadata, ...data };
         setMetadata(nextMetadata);
 
-        const prefill = isEditingCartItem ? null : parseCatalogDesignPrefill(catalogNumber);
+        const prefill = isEditingCartItem ? null : parseGeneDesignCatalogNumber(catalogNumber);
         const category = prefill && nextMetadata.categories.find((item) => (
-          item.function_types.some((functionType) => functionType.symbol_id === prefill.functionType)
+          item.function_types.some((functionType) => (
+            String(functionType.symbol_id).toUpperCase() === prefill.functionType
+          ))
         ));
         const hasDeliveryType = prefill && nextMetadata.delivery_types.some(
-          (deliveryType) => deliveryType.symbol_id === prefill.deliveryType,
+          (deliveryType) => String(deliveryType.symbol_id).toUpperCase() === prefill.deliveryType,
         );
-        const hasValidStructure = prefill && nextMetadata.structure_substeps.every((substep) => (
-          substep.options.some((option) => option.value_code === prefill.structureMap[substep.code])
-        ));
+        const validStructureMap = prefill
+          ? Object.fromEntries(nextMetadata.structure_substeps.flatMap((substep) => {
+              const valueCode = prefill.structureMap[substep.code];
+              const isValid = substep.options.some((option) => (
+                String(option.value_code).toUpperCase() === valueCode
+              ));
+              return isValid ? [[substep.code, valueCode]] : [];
+            }))
+          : {};
+        const staticTargetGene = prefill?.targetGene
+          ? nextMetadata.target_gene_options.find((option) => (
+              String(option.code_id).toUpperCase() === prefill.targetGene
+            ))
+          : null;
+        const isReservedStaticTarget = ['000000', 'XXXXXX'].includes(prefill?.targetGene);
+        const hasBasePrefill = Boolean(
+          category
+          || hasDeliveryType
+          || Object.keys(validStructureMap).length
+          || staticTargetGene,
+        );
 
-        if (prefill && category && hasDeliveryType && hasValidStructure) {
+        if (prefill && hasBasePrefill) {
           setDesign((previous) => ({
             ...previous,
-            category: category.code,
-            functionType: prefill.functionType,
-            deliveryType: prefill.deliveryType,
-            structureMap: prefill.structureMap,
+            ...(category ? {
+              category: category.code,
+              functionType: prefill.functionType,
+            } : {}),
+            ...(hasDeliveryType ? { deliveryType: prefill.deliveryType } : {}),
+            structureMap: {
+              ...previous.structureMap,
+              ...validStructureMap,
+            },
+            ...(staticTargetGene ? {
+              targetGeneMode: 'static',
+              targetGene: staticTargetGene.code_id,
+              targetGeneRecord: null,
+            } : {}),
           }));
           setActiveStep(0);
           setShowSummary(false);
+        }
+
+        if (prefill?.targetGene && !isReservedStaticTarget && !staticTargetGene) {
+          try {
+            const geneData = await apiFetch(
+              `/api/genes/gene-library/?target_sequence=${encodeURIComponent(prefill.targetGene)}&page_size=1`,
+            );
+            const libraryTargetGene = (geneData.results || []).find((gene) => (
+              String(gene.target_sequence || '').toUpperCase() === prefill.targetGene
+            )) || null;
+
+            if (isCurrent && libraryTargetGene) {
+              setDesign((previous) => ({
+                ...previous,
+                targetGeneMode: 'search',
+                targetGene: libraryTargetGene.target_sequence,
+                targetGeneRecord: libraryTargetGene,
+              }));
+              setActiveStep(0);
+              setShowSummary(false);
+            }
+          } catch {
+            // Keep the valid Step 1-4 prefill if the Step 5 lookup is unavailable.
+          }
         }
       })
       .catch(() => {
