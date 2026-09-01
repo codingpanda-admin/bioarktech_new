@@ -9,7 +9,7 @@ from .admin_views import (
     admin_delete_product_category,
     admin_create_catalog_group, admin_update_catalog_group,
     admin_list_products, admin_get_product, admin_create_product,
-    admin_update_product, admin_delete_product, admin_upload_product_image,
+    admin_update_product, admin_delete_product, admin_purge_product, admin_upload_product_image,
     admin_upload_catalog_video,
     admin_list_featured_products, admin_list_presented_services, admin_get_featured_product,
     admin_create_featured_product, admin_update_featured_product,
@@ -28,7 +28,7 @@ from .admin_views import (
     admin_list_quotes, admin_get_quote, admin_mark_quote_read,
     admin_delete_quote,
     admin_list_services, admin_get_service, admin_create_service,
-    admin_update_service, admin_delete_service, admin_upload_service_document,
+    admin_update_service, admin_delete_service, admin_purge_service, admin_upload_service_document,
     admin_list_media, admin_upload_media, admin_delete_media,
     admin_list_slides, admin_get_slide, admin_create_slide,
     admin_update_slide, admin_reorder_slides, admin_delete_slide,
@@ -100,6 +100,7 @@ urlpatterns = [
     path('admin-panel/products/<int:product_id>/', admin_get_product),
     path('admin-panel/products/<int:product_id>/update/', admin_update_product),
     path('admin-panel/products/<int:product_id>/delete/', admin_delete_product),
+    path('admin-panel/products/<int:product_id>/purge/', admin_purge_product),
 
     # Featured Products
     path('admin-panel/featured-products/', admin_list_featured_products),
@@ -152,6 +153,7 @@ urlpatterns = [
     path('admin-panel/services/<int:service_id>/', admin_get_service),
     path('admin-panel/services/<int:service_id>/update/', admin_update_service),
     path('admin-panel/services/<int:service_id>/delete/', admin_delete_service),
+    path('admin-panel/services/<int:service_id>/purge/', admin_purge_service),
 
     # Media
     path('admin-panel/media/', admin_list_media),

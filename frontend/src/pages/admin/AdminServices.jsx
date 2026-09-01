@@ -236,6 +236,18 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
     }
   };
 
+  const handlePurge = async (serviceId, serviceTitle) => {
+    const displayName = serviceTitle || 'this service';
+    if (!confirm(`Permanently purge "${displayName}"? This cannot be undone.`)) return;
+    try {
+      await apiFetch(`/api/admin-panel/services/${serviceId}/purge/`, { method: 'POST' });
+      showSuccess('Service permanently purged.');
+      loadServices();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleToggleFeatured = async (serviceId, currentStatus) => {
     try {
       const updatedStatus = !currentStatus;
@@ -1337,7 +1349,17 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                                 )}
                                 <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(service.id); }}>Edit</button>
                                 {service.hidden ? (
-                                  <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleActivate(service.id); }}>Activate</button>
+                                  <>
+                                    <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleActivate(service.id); }}>Activate</button>
+                                    <button
+                                      type="button"
+                                      className="admin-action-btn delete"
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handlePurge(service.id, service.title); }}
+                                      title="Permanently purge"
+                                    >
+                                      Purge
+                                    </button>
+                                  </>
                                 ) : (
                                   <button
                                     type="button"
