@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import QuoteRequestForm from '../components/QuoteRequestForm';
 
 function RequestQuotePage({ navigate, cart, onClearCart, currentUser, currentUserProfile, quotePrefill, mode = 'quote' }) {
@@ -6,6 +6,12 @@ function RequestQuotePage({ navigate, cart, onClearCart, currentUser, currentUse
   const isContactPage = mode === 'contact';
   const quoteContext = `${mode}:${quotePrefill?.toString() || 'default'}`;
   const isCartQuote = !isContactPage && quotePrefill?.get('source') === 'cart';
+
+  useEffect(() => {
+    if (isContactPage) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+  }, [isContactPage]);
 
   const handleConfirmationClose = () => {
     setShowConfirmation(false);

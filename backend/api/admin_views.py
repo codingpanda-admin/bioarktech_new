@@ -15,7 +15,10 @@ from products.models import (
     Product, FeaturedProduct, ProductsUnion, Image,
     UnitPrice, ManualFile, ProductCategory, CatalogGroup,
 )
-from blogs.models import Blog, BlogAttachment, BlogCategory, ResourceDocument
+from blogs.models import (
+    Blog, BlogAttachment, BlogCategory, ResourceDocument,
+    ResourceDocumentGroup, ResourceDocumentSubgroup,
+)
 from users.models import User, Address
 from quote.models import Quote
 from interface.models import (
@@ -1666,6 +1669,199 @@ def admin_delete_blog(request, blog_id):
 #  RESOURCES CRUD
 # ===========================================================================
 
+DEFAULT_RESOURCE_GROUP = 'Product Documents'
+DEFAULT_RESOURCE_SUBGROUP = 'Product Manual'
+
+
+def _default_resource_subgroup():
+    group, _ = ResourceDocumentGroup.objects.get_or_create(
+        name=DEFAULT_RESOURCE_GROUP,
+        defaults={'display_order': 0},
+    )
+    subgroup, _ = ResourceDocumentSubgroup.objects.get_or_create(
+        group=group,
+        name=DEFAULT_RESOURCE_SUBGROUP,
+        defaults={'display_order': 0},
+    )
+    return subgroup
+
+
+def _resource_subgroup_from_request(data, current=None):
+    raw_id = data.get('level_2_group_id', data.get('subgroup_id'))
+    if raw_id in (None, ''):
+        if current is not None:
+            return current
+        return _default_resource_subgroup()
+    try:
+        return ResourceDocumentSubgroup.objects.select_related('group').get(id=int(raw_id))
+    except (TypeError, ValueError, ResourceDocumentSubgroup.DoesNotExist):
+        raise ValueError('Select a valid Level 2 group.')
+
+
+def _resource_display_order(value, default=0):
+    if value in (None, ''):
+        return default
+    try:
+        order = int(value)
+    except (TypeError, ValueError):
+        raise ValueError('Display order must be a non-negative whole number.')
+    if order < 0:
+        raise ValueError('Display order must be a non-negative whole number.')
+    return order
+
+
+def _resource_group_name(value, label):
+    name = str(value or '').strip()
+    if not name:
+        raise ValueError(f'{label} group name is required.')
+    if len(name) > 100:
+        raise ValueError(f'{label} group name cannot exceed 100 characters.')
+    return name
+
+
+def _serialize_resource(request, resource):
+    subgroup = resource.subgroup
+    return {
+        'id': resource.id,
+        'name': resource.name,
+        # Retained as a response alias for existing customer-facing consumers.
+        'category': subgroup.name,
+        'level_1_group_id': subgroup.group_id,
+        'level_1_group': subgroup.group.name,
+        'level_2_group_id': subgroup.id,
+        'level_2_group': subgroup.name,
+        'description': resource.description,
+        'download_url': resource.download_url,
+        'file': request.build_absolute_uri(resource.file.url) if resource.file else None,
+        'date_created': resource.date_created,
+    }
+
+
+@api_view(['GET'])
+def admin_list_resource_groups(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    groups = ResourceDocumentGroup.objects.prefetch_related('subgroups__documents')
+    return Response({'results': [
+        {
+            'id': group.id,
+            'name': group.name,
+            'display_order': group.display_order,
+            'subgroups': [
+                {
+                    'id': subgroup.id,
+                    'name': subgroup.name,
+                    'level_1_group_id': group.id,
+                    'display_order': subgroup.display_order,
+                    'document_count': len(subgroup.documents.all()),
+                }
+                for subgroup in group.subgroups.all()
+            ],
+        }
+        for group in groups
+    ]})
+
+
+@api_view(['POST'])
+def admin_create_resource_group(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        name = _resource_group_name(request.data.get('name'), 'Level 1')
+        if ResourceDocumentGroup.objects.filter(name__iexact=name).exists():
+            raise ValueError('A Level 1 group with this name already exists.')
+        group = ResourceDocumentGroup.objects.create(
+            name=name,
+            display_order=_resource_display_order(request.data.get('display_order')),
+        )
+        return Response({'id': group.id, 'message': 'Level 1 group created successfully'}, status=status.HTTP_201_CREATED)
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def admin_update_resource_group(request, group_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        group = ResourceDocumentGroup.objects.get(id=group_id)
+        name = _resource_group_name(request.data.get('name', group.name), 'Level 1')
+        if ResourceDocumentGroup.objects.exclude(id=group.id).filter(name__iexact=name).exists():
+            raise ValueError('A Level 1 group with this name already exists.')
+        group.name = name
+        if 'display_order' in request.data:
+            group.display_order = _resource_display_order(request.data.get('display_order'))
+        group.save()
+        return Response({'message': 'Level 1 group updated successfully'})
+    except ResourceDocumentGroup.DoesNotExist:
+        return Response({'error': 'Level 1 group not found'}, status=status.HTTP_404_NOT_FOUND)
+    except ValueError as exc:
+        return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def admin_create_resource_subgroup(request):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        group_id = request.data.get('level_1_group_id')
+        if group_id in (None, ''):
+            raise ValueError('Select a valid Level 1 group.')
+        group = ResourceDocumentGroup.objects.get(id=int(group_id))
+        name = _resource_group_name(request.data.get('name'), 'Level 2')
+        if ResourceDocumentSubgroup.objects.filter(group=group, name__iexact=name).exists():
+            raise ValueError('This Level 1 group already contains a Level 2 group with that name.')
+        subgroup = ResourceDocumentSubgroup.objects.create(
+            group=group,
+            name=name,
+            display_order=_resource_display_order(request.data.get('display_order')),
+        )
+        return Response({'id': subgroup.id, 'message': 'Level 2 group created successfully'}, status=status.HTTP_201_CREATED)
+    except (TypeError, ValueError) as exc:
+        return Response({'error': str(exc) or 'Select a valid Level 1 group.'}, status=status.HTTP_400_BAD_REQUEST)
+    except ResourceDocumentGroup.DoesNotExist:
+        return Response({'error': 'Select a valid Level 1 group.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def admin_update_resource_subgroup(request, subgroup_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        subgroup = ResourceDocumentSubgroup.objects.get(id=subgroup_id)
+        group_id = request.data.get('level_1_group_id', subgroup.group_id)
+        group = ResourceDocumentGroup.objects.get(id=int(group_id))
+        name = _resource_group_name(request.data.get('name', subgroup.name), 'Level 2')
+        duplicate = ResourceDocumentSubgroup.objects.exclude(id=subgroup.id).filter(
+            group=group,
+            name__iexact=name,
+        ).exists()
+        if duplicate:
+            raise ValueError('This Level 1 group already contains a Level 2 group with that name.')
+        subgroup.group = group
+        subgroup.name = name
+        if 'display_order' in request.data:
+            subgroup.display_order = _resource_display_order(request.data.get('display_order'))
+        subgroup.save()
+        return Response({'message': 'Level 2 group updated successfully'})
+    except ResourceDocumentSubgroup.DoesNotExist:
+        return Response({'error': 'Level 2 group not found'}, status=status.HTTP_404_NOT_FOUND)
+    except ResourceDocumentGroup.DoesNotExist:
+        return Response({'error': 'Select a valid Level 1 group.'}, status=status.HTTP_400_BAD_REQUEST)
+    except (TypeError, ValueError) as exc:
+        message = str(exc) if str(exc) else 'Select a valid Level 1 group.'
+        return Response({'error': message}, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['GET'])
 def admin_list_resources(request):
     err = _check_admin(request)
@@ -1673,18 +1869,8 @@ def admin_list_resources(request):
         return err
 
     try:
-        resources = ResourceDocument.objects.all().order_by('-date_created')
-        data = []
-        for r in resources:
-            data.append({
-                'id': r.id,
-                'name': r.name,
-                'category': r.category,
-                'description': r.description,
-                'download_url': r.download_url,
-                'file': request.build_absolute_uri(r.file.url) if r.file else None,
-                'date_created': r.date_created,
-            })
+        resources = ResourceDocument.objects.select_related('subgroup__group').order_by('-date_created')
+        data = [_serialize_resource(request, resource) for resource in resources]
         return Response({'results': data})
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -1697,17 +1883,8 @@ def admin_get_resource(request, resource_id):
         return err
 
     try:
-        r = ResourceDocument.objects.get(id=resource_id)
-        data = {
-            'id': r.id,
-            'name': r.name,
-            'category': r.category,
-            'description': r.description,
-            'download_url': r.download_url,
-            'file': request.build_absolute_uri(r.file.url) if r.file else None,
-            'date_created': r.date_created,
-        }
-        return Response(data)
+        resource = ResourceDocument.objects.select_related('subgroup__group').get(id=resource_id)
+        return Response(_serialize_resource(request, resource))
     except ResourceDocument.DoesNotExist:
         return Response({'error': 'Resource not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
@@ -1724,7 +1901,7 @@ def admin_create_resource(request):
         d = request.data
         r = ResourceDocument(
             name=d.get('name', ''),
-            category=d.get('category', ''),
+            subgroup=_resource_subgroup_from_request(d),
             description=d.get('description', ''),
             download_url=d.get('download_url', ''),
         )
@@ -1746,9 +1923,11 @@ def admin_update_resource(request, resource_id):
         r = ResourceDocument.objects.get(id=resource_id)
         d = request.data
 
-        for field in ['name', 'category', 'description', 'download_url']:
+        for field in ['name', 'description', 'download_url']:
             if field in d:
                 setattr(r, field, d[field])
+
+        r.subgroup = _resource_subgroup_from_request(d, current=r.subgroup)
 
         if request.FILES.get('file'):
             r.file = request.FILES['file']

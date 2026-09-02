@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import GeneStructureVisual from '../components/GeneStructureVisual';
 import { apiFetch } from '../utils/api';
+import { parseGeneDesignCatalogNumber } from '../utils/geneDesignCatalog';
 
 const steps = [
   { id: 'category', label: 'Select Category' },
   { id: 'functionType', label: 'Select Function Type' },
-  { id: 'deliveryType', label: 'Select Delivery Type' },
+  { id: 'deliveryType', label: 'Select Vector Backbone' },
   { id: 'structureMap', label: 'Select Structure Map' },
   { id: 'targetGene', label: 'Provide Target Gene Info' },
-  { id: 'format', label: 'Select Format Type' },
+  { id: 'format', label: 'Select Delivery Type' },
 ];
 
 const emptyMetadata = {
@@ -38,27 +39,6 @@ const emptyGeneSearch = {
 
 const makeFormatKey = (formatCode, unitAmount) => `${formatCode}::${unitAmount}`;
 const makePriceKey = (formatCode, unitAmount) => `${formatCode}::${unitAmount}`;
-
-const parseCatalogDesignPrefill = (catalogNumber) => {
-  const segments = String(catalogNumber || '')
-    .replace(/\s+/g, '')
-    .toUpperCase()
-    .split('-');
-  const selectionCode = segments[0] || '';
-  const structureCode = segments[1] || '';
-
-  if (!/^[A-Z]{2}[STLM]$/.test(selectionCode) || !/^[A-Z0-9]{6}$/.test(structureCode)) {
-    return null;
-  }
-
-  return {
-    functionType: selectionCode.slice(0, 2),
-    deliveryType: selectionCode.slice(2),
-    structureMap: Object.fromEntries(
-      [...structureCode].map((valueCode, index) => [`S${index + 1}`, valueCode]),
-    ),
-  };
-};
 
 const getDiscountPriceDetails = (price) => {
   const listPrice = price?.list_price !== null && price?.list_price !== ''
@@ -185,33 +165,87 @@ function DesignPage({
     let isCurrent = true;
 
     apiFetch('/api/genes/design-metadata/')
-      .then((data) => {
+      .then(async (data) => {
         if (!isCurrent) return;
 
         const nextMetadata = { ...emptyMetadata, ...data };
         setMetadata(nextMetadata);
 
-        const prefill = isEditingCartItem ? null : parseCatalogDesignPrefill(catalogNumber);
+        const prefill = isEditingCartItem ? null : parseGeneDesignCatalogNumber(catalogNumber);
         const category = prefill && nextMetadata.categories.find((item) => (
-          item.function_types.some((functionType) => functionType.symbol_id === prefill.functionType)
+          item.function_types.some((functionType) => (
+            String(functionType.symbol_id).toUpperCase() === prefill.functionType
+          ))
         ));
         const hasDeliveryType = prefill && nextMetadata.delivery_types.some(
-          (deliveryType) => deliveryType.symbol_id === prefill.deliveryType,
+          (deliveryType) => String(deliveryType.symbol_id).toUpperCase() === prefill.deliveryType,
         );
-        const hasValidStructure = prefill && nextMetadata.structure_substeps.every((substep) => (
-          substep.options.some((option) => option.value_code === prefill.structureMap[substep.code])
-        ));
+        const validStructureMap = prefill
+          ? Object.fromEntries(nextMetadata.structure_substeps.flatMap((substep) => {
+              const valueCode = prefill.structureMap[substep.code];
+              const isValid = substep.options.some((option) => (
+                String(option.value_code).toUpperCase() === valueCode
+              ));
+              return isValid ? [[substep.code, valueCode]] : [];
+            }))
+          : {};
+        const staticTargetGene = prefill?.targetGene
+          ? nextMetadata.target_gene_options.find((option) => (
+              String(option.code_id).toUpperCase() === prefill.targetGene
+            ))
+          : null;
+        const isReservedStaticTarget = ['000000', 'XXXXXX'].includes(prefill?.targetGene);
+        const hasBasePrefill = Boolean(
+          category
+          || hasDeliveryType
+          || Object.keys(validStructureMap).length
+          || staticTargetGene,
+        );
 
-        if (prefill && category && hasDeliveryType && hasValidStructure) {
+        if (prefill && hasBasePrefill) {
           setDesign((previous) => ({
             ...previous,
-            category: category.code,
-            functionType: prefill.functionType,
-            deliveryType: prefill.deliveryType,
-            structureMap: prefill.structureMap,
+            ...(category ? {
+              category: category.code,
+              functionType: prefill.functionType,
+            } : {}),
+            ...(hasDeliveryType ? { deliveryType: prefill.deliveryType } : {}),
+            structureMap: {
+              ...previous.structureMap,
+              ...validStructureMap,
+            },
+            ...(staticTargetGene ? {
+              targetGeneMode: 'static',
+              targetGene: staticTargetGene.code_id,
+              targetGeneRecord: null,
+            } : {}),
           }));
           setActiveStep(0);
           setShowSummary(false);
+        }
+
+        if (prefill?.targetGene && !isReservedStaticTarget && !staticTargetGene) {
+          try {
+            const geneData = await apiFetch(
+              `/api/genes/gene-library/?target_sequence=${encodeURIComponent(prefill.targetGene)}&page_size=1`,
+            );
+            const libraryTargetGene = (geneData.results || []).find((gene) => (
+              String(gene.target_sequence || '').toUpperCase() === prefill.targetGene
+            )) || null;
+
+            if (isCurrent && libraryTargetGene) {
+              setDesign((previous) => ({
+                ...previous,
+                targetGeneMode: 'search',
+                targetGene: libraryTargetGene.target_sequence,
+                targetGeneRecord: libraryTargetGene,
+              }));
+              setActiveStep(0);
+              setShowSummary(false);
+            }
+          } catch {
+            // Keep the valid Step 1-4 prefill if the Step 5 lookup is unavailable.
+          }
         }
       })
       .catch(() => {
@@ -468,11 +502,11 @@ function DesignPage({
     return [
       `Category: ${categoryLabel || '-'}`,
       `Function Type: ${functionTypeLabel || '-'}`,
-      `Delivery Type: ${deliveryTypeLabel || '-'}`,
+      `Vector Backbone: ${deliveryTypeLabel || '-'}`,
       `Structure Map: ${structureDescription || '-'}`,
       `Target Gene: ${targetGeneLabel || '-'}`,
       `Target Sequence: ${targetSequence || '-'}`,
-      `Format Types: ${selectedFormats.map(({ type, option }) => {
+      `Delivery Types: ${selectedFormats.map(({ type, option }) => {
         const key = makePriceKey(type.code_id, option.unit_amount);
         return `${type.name} — ${option.unit_amount} x${formatQuantities[key] || 1} (SKU: ${buildDesignSku(type.code_id)})`;
       }).join('; ') || '-'}`,
@@ -492,13 +526,22 @@ function DesignPage({
   const selectedStepTags = [
     { step: 'Step 1', label: 'Category', values: [categoryLabel].filter(Boolean) },
     { step: 'Step 2', label: 'Function Type', values: [functionTypeLabel].filter(Boolean) },
-    { step: 'Step 3', label: 'Delivery Type', values: [deliveryTypeLabel].filter(Boolean) },
+    { step: 'Step 3', label: 'Vector Backbone', values: [deliveryTypeLabel].filter(Boolean) },
     {
       step: 'Step 4',
       label: 'Structure Map',
       values: structureSelections
         .filter(({ substep, option }) => substep.code !== 'S2' && option)
-        .map(({ substep, option }) => `${substep.name}: ${option.value}`),
+        .map(({ substep, option }) => ({
+          label: `${substep.name}: ${option.value}`,
+          tone: {
+            S1: 'promoter',
+            S3: 'tag',
+            S4: 'fluorescence',
+            S5: 'selection',
+            S6: 'antibiotic',
+          }[substep.code] || '',
+        })),
     },
     {
       step: 'Step 5',
@@ -509,7 +552,7 @@ function DesignPage({
           : targetGeneLabel,
       ].filter(Boolean),
     },
-    { step: 'Step 6', label: 'Format Type', values: formatLabels },
+    { step: 'Step 6', label: 'Delivery Type', values: formatLabels },
   ];
 
   const selectCategory = (code) => {
@@ -1143,9 +1186,17 @@ function DesignPage({
                     <span className="design-canvas-tag-label">{group.label}</span>
                     <div className="design-canvas-tag-list">
                       {group.values.length > 0 ? (
-                        group.values.map((value) => (
-                          <span className="design-canvas-tag" key={value}>{value}</span>
-                        ))
+                        group.values.map((value) => {
+                          const tag = typeof value === 'string' ? { label: value, tone: '' } : value;
+                          return (
+                            <span
+                              className={`design-canvas-tag ${tag.tone ? `is-${tag.tone}` : ''}`}
+                              key={`${group.step}-${tag.tone}-${tag.label}`}
+                            >
+                              {tag.label}
+                            </span>
+                          );
+                        })
                       ) : (
                         <span className="design-canvas-tag empty">-</span>
                       )}
@@ -1229,7 +1280,7 @@ function DesignPage({
           <dl className="design-selection-summary-grid">
             <div><dt>Category</dt><dd>{categoryLabel || '-'}</dd></div>
             <div><dt>Function Type</dt><dd>{functionTypeLabel || '-'}</dd></div>
-            <div><dt>Delivery Type</dt><dd>{deliveryTypeLabel || '-'}</dd></div>
+            <div><dt>Vector Backbone</dt><dd>{deliveryTypeLabel || '-'}</dd></div>
             {structureSelections.filter(({ substep }) => substep.code !== 'S2').map(({ substep, option }) => (
               <div className="half" key={substep.code}>
                 <dt>{substep.name}</dt>
@@ -1239,11 +1290,11 @@ function DesignPage({
             <div><dt>Target Gene</dt><dd>{targetGeneLabel || '-'}</dd></div>
             <div><dt>Target Sequence</dt><dd>{targetSequence || '-'}</dd></div>
           </dl>
-          <section className="design-order-summary" aria-label="Selected formats and pricing">
+          <section className="design-order-summary" aria-label="Selected delivery types and pricing">
             <div className="design-order-summary-heading">
               <div>
                 <span>Pricing</span>
-                <h3>Selected Formats</h3>
+                <h3>Selected Delivery Types</h3>
               </div>
               <span className="design-price-currency">USD</span>
             </div>

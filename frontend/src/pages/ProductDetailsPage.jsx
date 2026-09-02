@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { logo, apiFetch, formatAssetUrl } from '../utils/api';
 import { formatRichText } from '../utils/richText';
+import { getGeneDesignPath } from '../utils/geneDesignCatalog';
 import QuoteRequestForm from '../components/QuoteRequestForm';
 import {
   CONSUMABLES_CATEGORIES,
@@ -350,10 +351,8 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   const availabilityLabel = product.availability;
   const quoteOnly = isQuoteOnlyProduct(product);
   const productCode = product.catalog_number || product.product_sku || product.external_id || product.externalId || '';
-  const geneDesignCatalogSegments = String(productCode).replace(/\s+/g, '').toUpperCase().split('-');
-  const canCustomizeGeneDesign = !isReagent
-    && /^[A-Z]{2}[STLM]$/.test(geneDesignCatalogSegments[0] || '')
-    && /^[A-Z0-9]{6}$/.test(geneDesignCatalogSegments[1] || '');
+  const geneDesignPath = !isReagent ? getGeneDesignPath(productCode) : '';
+  const canCustomizeGeneDesign = Boolean(geneDesignPath);
   const detailsContent = formatRichText(
     product.content_text || product.contentText || product.raw_detail?.contentText || ''
   );
@@ -1077,7 +1076,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
               <button
                 type="button"
                 className="secondary-button product-gene-design-button"
-                onClick={() => navigate(`/design?catalog=${encodeURIComponent(String(productCode).trim())}`)}
+                onClick={() => navigate(geneDesignPath)}
               >
                 Customize Gene Design
               </button>
@@ -1148,7 +1147,10 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 {specificationKeyFeatures && (
                   <tr>
                     <td>Key Features</td>
-                    <td dangerouslySetInnerHTML={{ __html: formatRichText(specificationKeyFeatures) }} />
+                    <td
+                      className="product-key-features-value"
+                      dangerouslySetInnerHTML={{ __html: formatRichText(specificationKeyFeatures) }}
+                    />
                   </tr>
                 )}
                 {product.description && (

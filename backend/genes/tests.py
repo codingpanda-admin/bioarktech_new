@@ -241,6 +241,17 @@ class GeneLibrarySearchTests(TestCase):
         self.assertEqual(data['total'], 1)
         self.assertEqual(data['results'][0]['target_sequence'], 'MGENE1')
 
+    def test_finds_gene_by_exact_target_sequence_case_insensitively(self):
+        response = self.client.get(
+            '/api/genes/gene-library/',
+            {'target_sequence': 'hgene1'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['total'], 1)
+        self.assertEqual(data['results'][0]['target_sequence'], 'HGENE1')
+
 
 class GeneLibraryBulkUpsertTests(TestCase):
     @staticmethod

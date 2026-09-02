@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Impacting the Future</title>
+  <desc id="desc">A connected globe with a forward path</desc>
+  <defs>
+    <radialGradient id="bg" cx="38%" cy="30%" r="76%">
+      <stop offset="0" stop-color="#F9FCFF"/>
+      <stop offset="1" stop-color="#EAF2FF"/>
+    </radialGradient>
+    <linearGradient id="stroke" x1="55" y1="54" x2="199" y2="201" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1F55B5"/>
+      <stop offset="1" stop-color="#2D74E6"/>
+    </linearGradient>
+  </defs>
+  <circle cx="128" cy="128" r="108" fill="url(#bg)"/>
+  <circle cx="120" cy="130" r="66" stroke="url(#stroke)" stroke-width="7"/>
+  <path d="M54 130H186M120 64C102 82 94 104 94 130C94 156 102 178 120 196M120 64C138 82 146 104 146 130C146 156 138 178 120 196M68 94H172M68 166H151" stroke="#79A8F2" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="73" cy="95" r="8" fill="#F9FCFF" stroke="url(#stroke)" stroke-width="5"/>
+  <circle cx="148" cy="166" r="8" fill="#F9FCFF" stroke="url(#stroke)" stroke-width="5"/>
+  <path d="M147 166C171 166 189 151 197 130" stroke="url(#stroke)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M185 131L198 126L204 139" stroke="url(#stroke)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
