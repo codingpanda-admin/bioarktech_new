@@ -1018,6 +1018,53 @@ def admin_delete_product(request, product_id):
 
 
 @api_view(['POST'])
+def admin_purge_product(request, product_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        with transaction.atomic():
+            product = Product.objects.select_for_update().get(product_id=product_id)
+            if not product.hidden:
+                return Response(
+                    {'error': 'Only deactivated products or reagents can be permanently purged.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            item_type = 'reagent' if str(product.source_type or '').lower() == 'reagent' else 'product'
+            catalog_number = str(product.catalog_number or '').strip()
+            if not catalog_number and str(product.external_id or '').lower().startswith('fp-'):
+                catalog_number = str(product.external_id)[3:].strip()
+
+            product.delete()
+
+            # FeaturedProduct is a legacy companion record connected by catalog
+            # number rather than a foreign key. Remove it only when no remaining
+            # canonical product uses the same catalog number.
+            if catalog_number and not Product.objects.filter(
+                catalog_number__iexact=catalog_number,
+            ).exists():
+                featured_product = FeaturedProduct.objects.filter(
+                    catalog_number__iexact=catalog_number,
+                ).first()
+                if featured_product:
+                    union_id = featured_product.union_id
+                    if union_id:
+                        # Deleting the union also cascades its featured row,
+                        # images, manuals, and unit-price records.
+                        ProductsUnion.objects.filter(pk=union_id).delete()
+                    else:
+                        featured_product.delete()
+
+        return Response({'message': f'{item_type.capitalize()} permanently purged.'})
+    except Product.DoesNotExist:
+        return Response({'error': 'Product or reagent not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
 def admin_upload_product_image(request):
     err = _check_admin(request)
     if err:
@@ -2550,6 +2597,32 @@ def admin_delete_service(request, service_id):
         s.hidden = True
         s.save(update_fields=['hidden'])
         return Response({'message': 'Service deactivated successfully'})
+    except ServiceMode.DoesNotExist:
+        return Response({'error': 'Service not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def admin_purge_service(request, service_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        with transaction.atomic():
+            service = ServiceMode.objects.select_for_update().get(id=service_id)
+            if not service.hidden:
+                return Response(
+                    {'error': 'Only deactivated services can be permanently purged.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if service.image:
+                service.image.delete(save=False)
+            service.delete()
+
+        return Response({'message': 'Service permanently purged.'})
     except ServiceMode.DoesNotExist:
         return Response({'error': 'Service not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:

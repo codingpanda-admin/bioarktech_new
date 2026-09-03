@@ -1254,6 +1254,19 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
     }
   };
 
+  const handlePurge = async (productId, productName) => {
+    const itemLabel = categoryFilter === 'products' ? 'product' : 'reagent';
+    const displayName = productName || `this ${itemLabel}`;
+    if (!confirm(`Permanently purge "${displayName}"? This cannot be undone.`)) return;
+    try {
+      await apiFetch(`/api/admin-panel/products/${productId}/purge/`, { method: 'POST' });
+      showSuccess(`${itemLabel === 'product' ? 'Product' : 'Reagent'} permanently purged.`);
+      loadProducts();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleToggleFeatured = async (productId, currentStatus) => {
     try {
       const updatedStatus = !currentStatus;
@@ -2748,7 +2761,17 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                                         )}
                                         <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(pId); }}>Edit</button>
                                         {product.hidden ? (
-                                          <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleActivate(pId); }}>Activate</button>
+                                          <>
+                                            <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleActivate(pId); }}>Activate</button>
+                                            <button
+                                              type="button"
+                                              className="admin-action-btn delete"
+                                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handlePurge(pId, product.product_name); }}
+                                              title="Permanently purge"
+                                            >
+                                              Purge
+                                            </button>
+                                          </>
                                         ) : (
                                           <button
                                             type="button"
