@@ -128,6 +128,10 @@ const getCategoryHref = (category) => {
   return `/search?category=${searchCategory}&cat=${encodeURIComponent(categoryId)}`;
 };
 
+const getFeaturedColumnCount = () => (
+  typeof window !== 'undefined' && window.innerWidth <= 720 ? 1 : 4
+);
+
 const HomeSectionHeading = ({ id, title, href, linkLabel, navigate }) => (
   <div className="home-section-heading">
     <h2 id={id}>{title}</h2>
@@ -155,7 +159,9 @@ function HomePage({ navigate, searchParams }) {
   const [blogCategories, setBlogCategories] = useState([]);
   const [activeBlogCategory, setActiveBlogCategory] = useState('All');
   const [loading, setLoading] = useState(true);
-  const [featuredStartIndex, setFeaturedStartIndex] = useState(0);
+  const [featuredStartRow, setFeaturedStartRow] = useState(0);
+  const [featuredExpanded, setFeaturedExpanded] = useState(false);
+  const [featuredColumnCount, setFeaturedColumnCount] = useState(getFeaturedColumnCount);
   const [generalProductsStartIndex, setGeneralProductsStartIndex] = useState(0);
   const [servicesStartIndex, setServicesStartIndex] = useState(0);
   const [hasPopularCategoryOverflow, setHasPopularCategoryOverflow] = useState(false);
@@ -299,24 +305,49 @@ function HomePage({ navigate, searchParams }) {
   }, [activeSlideIndex]);
 
   useEffect(() => {
-    setFeaturedStartIndex(0);
-  }, [featuredProducts.length]);
+    const updateFeaturedColumnCount = () => setFeaturedColumnCount(getFeaturedColumnCount());
+    window.addEventListener('resize', updateFeaturedColumnCount);
+    return () => window.removeEventListener('resize', updateFeaturedColumnCount);
+  }, []);
 
-  const visibleFeaturedProducts = featuredProducts.length
-    ? Array.from({ length: Math.min(4, featuredProducts.length) }, (_, offset) => {
-        const index = (featuredStartIndex + offset) % featuredProducts.length;
-        return { product: featuredProducts[index], index };
-      })
-    : [];
+  useEffect(() => {
+    setFeaturedStartRow(0);
+    setFeaturedExpanded(false);
+  }, [featuredProducts.length, featuredColumnCount]);
+
+  const featuredRowCount = Math.ceil(featuredProducts.length / featuredColumnCount);
+  const featuredVisibleRowCount = featuredExpanded ? 2 : 1;
+  const featuredMaxStartRow = Math.max(0, featuredRowCount - featuredVisibleRowCount);
+  const effectiveFeaturedStartRow = Math.min(featuredStartRow, featuredMaxStartRow);
+  const featuredStartIndex = effectiveFeaturedStartRow * featuredColumnCount;
+  const featuredWindowSize = featuredColumnCount * featuredVisibleRowCount;
+  const visibleFeaturedProducts = featuredProducts
+    .slice(featuredStartIndex, featuredStartIndex + featuredWindowSize)
+    .map((product, offset) => ({ product, index: featuredStartIndex + offset }));
+  const canRollFeaturedUp = featuredExpanded || effectiveFeaturedStartRow > 0;
+  const canRollFeaturedDown = featuredRowCount > 1 && (
+    !featuredExpanded || effectiveFeaturedStartRow < featuredRowCount - 2
+  );
 
   const rollFeaturedProducts = (direction) => {
-    if (featuredProducts.length <= 1) return;
+    if (direction === 'down') {
+      if (featuredRowCount <= 1) return;
+      if (!featuredExpanded) {
+        setFeaturedStartRow(0);
+        setFeaturedExpanded(true);
+        return;
+      }
+      setFeaturedStartRow((currentRow) => (
+        Math.min(currentRow + 1, Math.max(0, featuredRowCount - 2))
+      ));
+      return;
+    }
 
-    setFeaturedStartIndex((currentIndex) => (
-      direction === 'next'
-        ? (currentIndex + 1) % featuredProducts.length
-        : (currentIndex - 1 + featuredProducts.length) % featuredProducts.length
-    ));
+    if (effectiveFeaturedStartRow > 0) {
+      setFeaturedStartRow((currentRow) => Math.max(0, currentRow - 1));
+    } else if (featuredExpanded) {
+      setFeaturedExpanded(false);
+    }
   };
 
   useEffect(() => {
@@ -560,16 +591,17 @@ function HomePage({ navigate, searchParams }) {
           <p className="section-subtitle">
             Featured products, reagents, and scientific services selected to accelerate your research.
           </p>
-          <div className="products-carousel" aria-label="Featured products, reagents, and services carousel">
+          <div className={`featured-solutions-carousel ${featuredExpanded ? 'is-expanded' : ''}`} aria-label="Featured products, reagents, and services carousel">
             <button
-              className="product-carousel-control product-carousel-prev"
+              className="product-carousel-control featured-solutions-control featured-solutions-up"
               type="button"
-              aria-label="Previous featured item"
-              onClick={() => rollFeaturedProducts('prev')}
-              disabled={featuredProducts.length <= 1}
+              aria-label={effectiveFeaturedStartRow === 0 ? 'Collapse featured solutions to one row' : 'Show previous featured solutions row'}
+              aria-controls="featured-solutions-grid"
+              onClick={() => rollFeaturedProducts('up')}
+              disabled={!canRollFeaturedUp}
             />
-            <div className="product-carousel-viewport">
-              <div className="product-grid product-carousel-grid">
+            <div className="product-carousel-viewport featured-solutions-viewport">
+              <div id="featured-solutions-grid" className="product-grid product-carousel-grid featured-solutions-grid">
                 {visibleFeaturedProducts.map(({ product: prod, index }) => {
                   const name = prod.product_name;
                   const itemType = prod.item_type || (prod.source_type === 'reagent' ? 'reagent' : 'product');
@@ -608,11 +640,13 @@ function HomePage({ navigate, searchParams }) {
               </div>
             </div>
             <button
-              className="product-carousel-control product-carousel-next"
+              className="product-carousel-control featured-solutions-control featured-solutions-down"
               type="button"
-              aria-label="Next featured item"
-              onClick={() => rollFeaturedProducts('next')}
-              disabled={featuredProducts.length <= 1}
+              aria-label={featuredExpanded ? 'Show next featured solutions row' : 'Show two rows of featured solutions'}
+              aria-controls="featured-solutions-grid"
+              aria-expanded={featuredExpanded}
+              onClick={() => rollFeaturedProducts('down')}
+              disabled={!canRollFeaturedDown}
             />
           </div>
         </section>
@@ -777,14 +811,14 @@ function HomePage({ navigate, searchParams }) {
             <div className="about-copy">
               <h2 id="about-title">About BioArk</h2>
               <p>
-                <strong>BioArk Technologies is a genome engineering company delivering integrated solutions for gene editing research and development.</strong>{' '}
-                From molecular cloning, viral packaging, and genome engineering to stable cell line development, our services help researchers move efficiently from design to validated results.
+                <strong>BioArk Technologies is a genome engineering company advancing gene editing from design to discovery.</strong>{' '}
+                We deliver <strong>integrated genome engineering solutions</strong>—from molecular cloning and viral packaging to genome engineering and stable cell line development—helping researchers move faster from <strong>design to validated results</strong>.
               </p>
               <p>
-                We provide <strong>high-quality research reagents</strong> engineered to support demanding molecular biology and gene editing applications, making advanced research more reliable, efficient, and accessible.
+                We also develop <strong>high-quality research reagents</strong> that make demanding molecular biology and gene editing applications <strong>more reliable, efficient, and accessible</strong>.
               </p>
               <p>
-                Our proprietary <strong>CRISPR Reporter technology</strong> and <strong>CRISPR Trinity™ Platform</strong> address complex genome engineering challenges and enable next-generation applications in cell and gene therapy—advancing our mission to <strong>bridge scientific discovery with real-world solutions and turn breakthrough genome engineering into meaningful impact beyond the laboratory.</strong>
+                Powered by our proprietary <strong>CRISPR Universal Reporter</strong> and <strong>CRISPR Trinity™ Platform</strong>, BioArk is building the next generation of genome engineering technologies—<strong>bridging scientific discovery with real-world solutions and turning innovation into impact.</strong>
               </p>
             </div>
             <div className="video-card">
