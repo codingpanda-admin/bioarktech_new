@@ -467,25 +467,45 @@ function DesignPage({
   )).join('').toUpperCase();
   const buildDesignSku = (formatCode) => {
     const targetCode = String(design.targetGene || '').trim().toUpperCase();
-    if (!design.functionType || !design.deliveryType || designStructureCode.length !== 6 || !targetCode || !formatCode) {
-      return '';
-    }
-    return `${design.functionType}${design.deliveryType}-${designStructureCode}-${targetCode}-${formatCode}`;
+    const functionAndBackboneCode = `${design.functionType || ''}${design.deliveryType || ''}`.toUpperCase();
+    const skuParts = [
+      functionAndBackboneCode,
+      designStructureCode.length === 6 ? designStructureCode : '',
+      targetCode,
+      String(formatCode || '').trim().toUpperCase(),
+    ].filter(Boolean);
+    return skuParts.join('-');
   };
-  const buildDesignProductName = (formatName) => {
+  const buildDesignProductName = (formatName = '') => {
     const functionName = selectedFunctionType?.abbreviation || functionTypeLabel;
     const deliveryName = selectedDeliveryType?.abbreviation || deliveryTypeLabel;
     const geneName = design.targetGeneRecord?.symbol
       || selectedTargetGene?.abbreviation
       || targetGeneLabel;
-    if (!functionName || !deliveryName || !geneName || !formatName) return '';
-    return `${functionName} ${deliveryName} Kit — Gene ${geneName}, ${formatName} type`;
+    const baseName = [functionName, deliveryName].filter(Boolean).join(' ');
+    let productName = baseName
+      ? `${baseName}${deliveryName ? ' Kit' : ''}`
+      : categoryLabel;
+
+    if (geneName) {
+      productName = `${productName ? `${productName} — ` : ''}Gene ${geneName}`;
+    }
+    if (formatName) {
+      productName = `${productName ? `${productName}${geneName ? ', ' : ' — '}` : ''}${formatName} type`;
+    }
+    return productName;
   };
-  const formatSummaries = selectedFormats.map(({ type, option }) => ({
-    label: `${type.name} — ${option.unit_amount}`,
-    productName: buildDesignProductName(type.name),
-    catalogNumber: buildDesignSku(type.code_id),
-  }));
+  const formatSummaries = selectedFormats.length > 0
+    ? selectedFormats.map(({ type, option }) => ({
+        label: `${type.name} — ${option.unit_amount}`,
+        productName: buildDesignProductName(type.name),
+        catalogNumber: buildDesignSku(type.code_id),
+      }))
+    : [{
+        label: '',
+        productName: buildDesignProductName(),
+        catalogNumber: buildDesignSku(''),
+      }];
   const pricedSelections = priceLookup.results.filter((price) => !price.quote_only);
   const quoteOnlySelections = priceLookup.results.filter((price) => price.quote_only);
   const pricedOrderTotal = pricedSelections.reduce((total, price) => {
@@ -1166,18 +1186,14 @@ function DesignPage({
                 <span className="design-product-identity-heading">
                   Designed Product{formatSummaries.length === 1 ? '' : 's'}
                 </span>
-                {formatSummaries.length > 0 ? (
-                  <div className="design-product-identity-list">
-                    {formatSummaries.map((item) => (
-                      <article key={item.catalogNumber || item.label}>
-                        <strong>{item.productName}</strong>
-                        <span>Catalog Number <code>{item.catalogNumber}</code></span>
-                      </article>
-                    ))}
-                  </div>
-                ) : (
-                  <p>Select a format in Step 6 to generate the product name and catalog number.</p>
-                )}
+                <div className="design-product-identity-list">
+                  {formatSummaries.map((item) => (
+                    <article key={item.catalogNumber || item.label || 'progressive-product'}>
+                      <strong>{item.productName}</strong>
+                      <span>Catalog Number <code>{item.catalogNumber}</code></span>
+                    </article>
+                  ))}
+                </div>
               </section>
               <div className="design-canvas-tags" aria-label="Selected design options by step">
                 {selectedStepTags.map((group) => (
@@ -1268,13 +1284,13 @@ function DesignPage({
               Designed Product{formatSummaries.length === 1 ? '' : 's'}
             </h3>
             <div className="design-summary-product-list">
-              {formatSummaries.length > 0 ? formatSummaries.map((item) => (
-                <article key={item.catalogNumber || item.label}>
+              {formatSummaries.map((item) => (
+                <article key={item.catalogNumber || item.label || 'progressive-product'}>
                   <strong>{item.productName}</strong>
                   <span>{item.label}</span>
                   <span>Catalog Number <code>{item.catalogNumber}</code></span>
                 </article>
-              )) : '-'}
+              ))}
             </div>
           </section>
           <dl className="design-selection-summary-grid">

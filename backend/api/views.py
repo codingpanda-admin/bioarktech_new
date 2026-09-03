@@ -506,7 +506,8 @@ def search_product(request):
             'external_id': linked_product.external_id if linked_product else None,
             'externalId': linked_product.external_id if linked_product else None,
             'product_name': fp.product_name,
-            'description': fp.description,
+            'short_description': linked_product.short_description,
+            'description': linked_product.short_description,
             'unit_price': price,
             'list_price': linked_product.list_price or '',
             'discounted_price': linked_product.discounted_price or '',
@@ -579,7 +580,8 @@ def search_product(request):
             'externalId': p.external_id,
             'catalog_number': p.catalog_number,
             'product_name': p.product_name,
-            'description': p.description,
+            'short_description': p.short_description,
+            'description': p.short_description,
             'unit_price': 0.0,
             'list_price': p.list_price or '',
             'discounted_price': p.discounted_price or '',
@@ -626,9 +628,6 @@ def search_product(request):
         services = ServiceMode.objects.filter(**service_filters)
 
         for s in services:
-            # Clean HTML content for description snippet
-            clean_desc = re.sub(r'<[^>]*>', '', s.content)[:180] + "..." if s.content else ""
-            
             # Map category to service category external ID
             svc_cat = s.category or 'services'
             if svc_cat == 'genome-editing':
@@ -650,7 +649,8 @@ def search_product(request):
                 'externalId': s.url,
                 'catalog_number': s.catalog_number or s.url.upper(),
                 'product_name': s.title,
-                'description': clean_desc,
+                'short_description': s.short_description,
+                'description': s.short_description,
                 'unit_price': 0.0,
                 'list_price': 'Contact for Quote',
                 'image': image_candidates[0] if image_candidates else None,

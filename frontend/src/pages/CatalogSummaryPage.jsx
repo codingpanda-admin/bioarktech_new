@@ -60,8 +60,9 @@ function CatalogSummaryPage({ navigate, kind, externalId }) {
   }
 
   const family = getCatalogFamily(pageData.product_type);
-  const browseUrl = `/search?category=${family.searchCategory}&cat=${encodeURIComponent(pageData.category_external_id)}`;
   const isGroup = pageData.kind === 'group';
+  const groupFilter = isGroup ? `&group=${encodeURIComponent(pageData.name)}` : '';
+  const browseUrl = `/search?category=${family.searchCategory}&cat=${encodeURIComponent(pageData.category_external_id)}${groupFilter}`;
   const summaryAvailable = hasVisibleRichText(pageData.summary);
 
   return (

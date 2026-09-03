@@ -287,6 +287,7 @@ class Product(models.Model):
     product_id = models.BigAutoField(primary_key=True)
     external_id = models.CharField(max_length=100, unique=True)
     product_name = models.CharField(max_length=255)
+    short_description = models.CharField(max_length=500, blank=True, default='')
     description = models.TextField(blank=True, null=True)
     image_url = models.TextField(blank=True, null=True)
     product_link = models.TextField(blank=True, null=True)

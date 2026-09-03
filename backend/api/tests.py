@@ -234,6 +234,7 @@ class CatalogBulkUploadTests(TestCase):
         created, _, _ = _import_product({
             'external_id': product.external_id,
             'product_name': 'Imported Product',
+            'short_description': 'A concise imported product summary.',
             'category_external_id': self.product_category.external_id,
             'group_external_id': self.product_group.external_id,
             'details': 'Plain text details',
@@ -251,6 +252,7 @@ class CatalogBulkUploadTests(TestCase):
         self.assertEqual(product.manuals, ['Keep Manual'])
         self.assertEqual(product.manual_urls, ['media/manual_files/keep.pdf'])
         self.assertEqual(product.content_text, 'Plain text details')
+        self.assertEqual(product.short_description, 'A concise imported product summary.')
 
     def test_reagent_import_creates_a_reagent(self):
         created, external_id, _ = _import_product({
@@ -277,6 +279,7 @@ class CatalogBulkUploadTests(TestCase):
         created, _, _ = _import_service({
             'external_id': service.url,
             'service_name': 'Imported Service',
+            'short_description': 'A concise imported service summary.',
             'category_external_id': self.service_category.external_id,
             'group_external_id': self.service_group.external_id,
             'service_details': 'Plain service details',
@@ -287,6 +290,7 @@ class CatalogBulkUploadTests(TestCase):
         service.refresh_from_db()
         self.assertFalse(created)
         self.assertEqual(service.content, 'Plain service details')
+        self.assertEqual(service.short_description, 'A concise imported service summary.')
         self.assertEqual(service.manuals, [{'name': 'Keep PDF', 'manual': 'media/manual_files/keep.pdf'}])
         self.assertEqual(service.videos, ['media/service-videos/keep.mp4'])
 

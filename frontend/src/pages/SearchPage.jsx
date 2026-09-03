@@ -51,13 +51,13 @@ function SearchResultImage({ item, visualType }) {
   );
 }
 
-function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCategory }) {
+function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCategory, initialSelectedGroup }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [sortBy, setSortBy] = useState(currentQuery ? 'relevance' : 'name-asc');
   const [selectedCategory, setSelectedCategory] = useState(initialSelectedCategory);
-  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(initialSelectedGroup);
   const [groupFiltersExpanded, setGroupFiltersExpanded] = useState(false);
   const [expandedFilterSections, setExpandedFilterSections] = useState({
     products: true,
@@ -139,12 +139,12 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
 
   useEffect(() => {
     setSelectedCategory(initialSelectedCategory);
-    setSelectedSubcategory(null);
-  }, [initialSelectedCategory]);
+    setSelectedSubcategory(initialSelectedGroup);
+  }, [initialSelectedCategory, initialSelectedGroup]);
 
   useEffect(() => {
-    setSelectedSubcategory(null);
-  }, [currentQuery, currentCategory]);
+    setSelectedSubcategory(initialSelectedGroup);
+  }, [currentQuery, currentCategory, initialSelectedGroup]);
 
   useEffect(() => {
     setSortBy(currentQuery ? 'relevance' : 'name-asc');
@@ -848,6 +848,18 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
           -webkit-box-orient: vertical;
         }
 
+        .card-short-description {
+          display: -webkit-box;
+          min-height: 40px;
+          margin: 0 0 12px;
+          overflow: hidden;
+          color: #64748b;
+          font-size: 12px;
+          line-height: 1.65;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+        }
+
         .card-price-row {
           display: flex;
           align-items: baseline;
@@ -1246,6 +1258,7 @@ function SearchPage({ navigate, currentQuery, currentCategory, initialSelectedCa
                         <span className="card-product-group">{prod.product_group}</span>
                       )}
                       <h3 className="card-title" title={prod.product_name}>{prod.product_name}</h3>
+                      <p className="card-short-description">{prod.short_description || ''}</p>
                       
                       <div className="card-price-row">
                         {cardType === 'service' ? (

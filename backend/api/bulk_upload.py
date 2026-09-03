@@ -38,6 +38,7 @@ PRODUCT_HEADERS = [
     'display_on_homepage',
     'active',
     'display_order',
+    'short_description',
 ]
 
 SERVICE_HEADERS = [
@@ -55,6 +56,7 @@ SERVICE_HEADERS = [
     'recommended_service',
     'display_on_homepage',
     'active',
+    'short_description',
 ]
 
 REQUIRED_HEADERS = {
@@ -74,6 +76,15 @@ def _cell_text(value):
     if isinstance(value, Decimal):
         return format(value, 'f')
     return str(value).strip()
+
+
+def _short_description(value):
+    text = _cell_text(value)
+    if '\n' in text or '\r' in text:
+        raise ValueError('short_description must be one line.')
+    if len(text) > 500:
+        raise ValueError('short_description cannot exceed 500 characters.')
+    return text
 
 
 def _normalized_header(value):
@@ -197,6 +208,7 @@ def _import_product(row, item_type):
 
     product.external_id = external_id
     product.product_name = name
+    product.short_description = _short_description(row.get('short_description'))
     product.category = category
     product.category_external_id = category.external_id
     product.catalog_group = group
@@ -257,6 +269,7 @@ def _import_service(row):
 
     service.url = external_id
     service.title = name
+    service.short_description = _short_description(row.get('short_description'))
     service.category_ref = category
     service.category = category.external_id
     service.catalog_group = group
