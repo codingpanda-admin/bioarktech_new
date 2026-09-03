@@ -97,7 +97,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'product_id', 'external_id', 'externalId', 'product_name', 'description', 'image_url',
+            'product_id', 'external_id', 'externalId', 'product_name', 'short_description', 'description', 'image_url',
             'product_link', 'category_external_id', 'catalog_group_id', 'product_group', 'source_type',
             'display_order', 'source_created_at_ms', 'source_created_at',
             'catalog_number', 'show_catalog_number', 'availability', 'list_price', 'discounted_price', 'price_range',
@@ -148,7 +148,7 @@ class PreviewFeaturedProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'product_name', 'external_id', 'externalId', 'catalog_number', 'unit_price',
+            'product_name', 'short_description', 'external_id', 'externalId', 'catalog_number', 'unit_price',
             'list_price', 'discounted_price', 'options', 'option_prices',
             'option_discounted_prices', 'first_option_price',
             'first_option_discounted_price', 'image',

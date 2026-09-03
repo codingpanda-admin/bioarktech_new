@@ -592,14 +592,25 @@ function HomePage({ navigate, searchParams }) {
             Featured products, reagents, and scientific services selected to accelerate your research.
           </p>
           <div className={`featured-solutions-carousel ${featuredExpanded ? 'is-expanded' : ''}`} aria-label="Featured products, reagents, and services carousel">
-            <button
-              className="product-carousel-control featured-solutions-control featured-solutions-up"
-              type="button"
-              aria-label={effectiveFeaturedStartRow === 0 ? 'Collapse featured solutions to one row' : 'Show previous featured solutions row'}
-              aria-controls="featured-solutions-grid"
-              onClick={() => rollFeaturedProducts('up')}
-              disabled={!canRollFeaturedUp}
-            />
+            <div className="featured-solutions-side-controls is-left" aria-label="Featured solutions controls on left">
+              <button
+                className="product-carousel-control featured-solutions-control featured-solutions-up"
+                type="button"
+                aria-label={effectiveFeaturedStartRow === 0 ? 'Collapse featured solutions to one row' : 'Show previous featured solutions row'}
+                aria-controls="featured-solutions-grid"
+                onClick={() => rollFeaturedProducts('up')}
+                disabled={!canRollFeaturedUp}
+              />
+              <button
+                className="product-carousel-control featured-solutions-control featured-solutions-down"
+                type="button"
+                aria-label={featuredExpanded ? 'Show next featured solutions row' : 'Show two rows of featured solutions'}
+                aria-controls="featured-solutions-grid"
+                aria-expanded={featuredExpanded}
+                onClick={() => rollFeaturedProducts('down')}
+                disabled={!canRollFeaturedDown}
+              />
+            </div>
             <div className="product-carousel-viewport featured-solutions-viewport">
               <div id="featured-solutions-grid" className="product-grid product-carousel-grid featured-solutions-grid">
                 {visibleFeaturedProducts.map(({ product: prod, index }) => {
@@ -618,13 +629,14 @@ function HomePage({ navigate, searchParams }) {
                     <article className="product-card" key={`${prod.catalog_number || prod.product_sku || name}-${index}`}>
                       <span className={`featured-item-type-badge ${itemType}`}>{itemLabel}</span>
                       {imgUrl ? (
-                        <div style={{ height: '140px', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '20px 0' }}>
+                        <div style={{ height: '110px', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '12px 0' }}>
                           <img src={imgUrl} alt={name} style={{ maxHeight: '100%', maxWidth: '100%', borderRadius: '8px' }} />
                         </div>
                       ) : (
                         <ProductVisual type={prod.visual || 'bottle'} />
                       )}
                       <h3>{name}</h3>
+                      <p className="product-card-short-description">{prod.short_description || ''}</p>
                       {itemType !== 'service' && (
                         <p className="rating">★★★★★ <span>({prod.reviews || '45'})</span></p>
                       )}
@@ -639,15 +651,25 @@ function HomePage({ navigate, searchParams }) {
                 })}
               </div>
             </div>
-            <button
-              className="product-carousel-control featured-solutions-control featured-solutions-down"
-              type="button"
-              aria-label={featuredExpanded ? 'Show next featured solutions row' : 'Show two rows of featured solutions'}
-              aria-controls="featured-solutions-grid"
-              aria-expanded={featuredExpanded}
-              onClick={() => rollFeaturedProducts('down')}
-              disabled={!canRollFeaturedDown}
-            />
+            <div className="featured-solutions-side-controls is-right" aria-label="Featured solutions controls on right">
+              <button
+                className="product-carousel-control featured-solutions-control featured-solutions-up"
+                type="button"
+                aria-label={effectiveFeaturedStartRow === 0 ? 'Collapse featured solutions to one row' : 'Show previous featured solutions row'}
+                aria-controls="featured-solutions-grid"
+                onClick={() => rollFeaturedProducts('up')}
+                disabled={!canRollFeaturedUp}
+              />
+              <button
+                className="product-carousel-control featured-solutions-control featured-solutions-down"
+                type="button"
+                aria-label={featuredExpanded ? 'Show next featured solutions row' : 'Show two rows of featured solutions'}
+                aria-controls="featured-solutions-grid"
+                aria-expanded={featuredExpanded}
+                onClick={() => rollFeaturedProducts('down')}
+                disabled={!canRollFeaturedDown}
+              />
+            </div>
           </div>
         </section>
 
@@ -657,7 +679,7 @@ function HomePage({ navigate, searchParams }) {
               <HomeSectionHeading
                 id="general-products-title"
                 title="Products"
-                href="/search?category=reagents"
+                href="/search?category=products"
                 linkLabel="View all products"
                 navigate={navigate}
               />
@@ -685,7 +707,7 @@ function HomePage({ navigate, searchParams }) {
 
                       return (
                         <article
-                          className="product-card"
+                          className="product-card home-product-card"
                           key={`${productId}-${index}`}
                           role="link"
                           tabIndex={0}
@@ -696,18 +718,19 @@ function HomePage({ navigate, searchParams }) {
                               openProduct();
                             }
                           }}
-                          style={{ display: 'flex', flexDirection: 'column', height: '410px', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', border: '1px solid var(--line)', background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)', cursor: 'pointer' }}
+                          style={{ display: 'flex', flexDirection: 'column', minHeight: '350px', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', border: '1px solid var(--line)', background: '#fff', borderRadius: '12px', padding: '18px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)', cursor: 'pointer' }}
                         >
                           {imgUrl ? (
-                            <div style={{ height: '150px', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '10px 0 20px 0' }}>
+                            <div style={{ height: '115px', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '8px 0 10px 0' }}>
                               <img src={imgUrl} alt={name} style={{ maxHeight: '100%', maxWidth: '100%', borderRadius: '8px', objectFit: 'contain' }} />
                             </div>
                           ) : (
                             <ProductVisual type={prod.visual || 'bottle'} />
                           )}
-                          <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'space-between' }}>
+                          <div className="home-product-card-content" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                             <div>
-                              <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: '0 0 10px 0', minHeight: '48px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', color: 'var(--ink)' }}>{name}</h3>
+                              <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: '0 0 4px 0', minHeight: '24px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', color: 'var(--ink)' }}>{name}</h3>
+                              <p className="product-card-short-description" style={{ marginTop: 0 }}>{prod.short_description || ''}</p>
                               <p className="rating" style={{ margin: '0 0 12px 0' }}>★★★★★ <span style={{ color: 'var(--ink-light)', fontSize: '0.85rem' }}>(4.8)</span></p>
                               <CatalogPrice item={prod} className="price" />
                             </div>
@@ -757,33 +780,31 @@ function HomePage({ navigate, searchParams }) {
                   <div className="services-carousel-grid">
                     {visibleFeaturedServices.map(({ service, index }) => {
                       const name = service.title;
-                      const cleanText = service.content
-                        ? service.content.replace(/<[^>]*>/g, '').substring(0, 75) + '...'
-                        : 'Custom research services for your workflows.';
+                      const shortDescription = service.short_description || '';
                       const imgUrl = service.image ? formatAssetUrl(service.image) : null;
                       const serviceHref = `/product/${service.url}`;
 
                       return (
-                        <article key={`${service.id}-${index}`} className="service-card" style={{ display: 'flex', flexDirection: 'column', height: '420px', background: '#fff', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(5, 31, 78, 0.04)', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}>
+                        <article key={`${service.id}-${index}`} className="service-card" style={{ display: 'flex', flexDirection: 'column', minHeight: '360px', background: '#fff', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(5, 31, 78, 0.04)', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}>
                           {imgUrl ? (
-                            <div style={{ height: '180px', overflow: 'hidden', position: 'relative' }}>
+                            <div style={{ height: '140px', overflow: 'hidden', position: 'relative' }}>
                               <img src={imgUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }} />
                               <div style={{ position: 'absolute', top: '15px', right: '15px', background: 'rgba(0, 111, 242, 0.9)', color: '#fff', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600' }}>
                                 {service.category ? service.category.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Service'}
                               </div>
                             </div>
                           ) : (
-                            <div style={{ height: '180px', background: 'linear-gradient(135deg, var(--blue) 0%, #1e40af 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '20px', color: '#fff', position: 'relative' }}>
+                            <div style={{ height: '140px', background: 'linear-gradient(135deg, var(--blue) 0%, #1e40af 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '20px', color: '#fff', position: 'relative' }}>
                               <div style={{ fontSize: '3rem', marginBottom: '10px' }}>🧬</div>
                               <div style={{ position: 'absolute', top: '15px', right: '15px', background: 'rgba(255, 255, 255, 0.2)', color: '#fff', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600', backdropFilter: 'blur(4px)' }}>
                                 {service.category ? service.category.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Service'}
                               </div>
                             </div>
                           )}
-                          <div style={{ padding: '24px 24px 12px', display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'flex-start' }}>
+                          <div style={{ padding: '20px 20px 10px', display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'flex-start' }}>
                             <div>
                               <h3 className="service-card-title" style={{ fontSize: '1.25rem', fontWeight: '700', margin: '0 0 12px 0', color: 'var(--blue-dark)', lineHeight: '1.4' }}>{name}</h3>
-                              <p className="service-card-preview" style={{ fontSize: '0.95rem', color: 'var(--ink-light)', lineHeight: '1.6', margin: '0 0 22px 0' }}>{cleanText}</p>
+                              <p className="service-card-preview" style={{ fontSize: 'calc(0.95rem - 1px)', color: 'var(--ink-light)', lineHeight: '1.6', margin: '0 0 12px 0' }}>{shortDescription}</p>
                             </div>
                             <div className="service-card-actions">
                               <a href={serviceHref} className="product-card-action" onClick={(e) => { e.preventDefault(); navigate(serviceHref); }}>Explore Service <span>→</span></a>

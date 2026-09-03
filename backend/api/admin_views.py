@@ -688,6 +688,7 @@ def admin_get_product(request, product_id):
             'id': p.product_id,
             'external_id': p.external_id,
             'product_name': p.product_name,
+            'short_description': p.short_description,
             'description': p.description,
             'image_url': p.image_url,
             'product_link': p.product_link,
@@ -893,6 +894,7 @@ def admin_create_product(request):
         p = Product(
             external_id=d.get('external_id', ''),
             product_name=d.get('product_name', ''),
+            short_description=d.get('short_description', ''),
             description=d.get('description', ''),
             image_url=d.get('image_url', ''),
             product_link=d.get('product_link', ''),
@@ -957,7 +959,7 @@ def admin_update_product(request, product_id):
             d['manual_urls'] = urls
 
         updatable_fields = [
-            'external_id', 'product_name', 'description', 'image_url',
+            'external_id', 'product_name', 'short_description', 'description', 'image_url',
             'product_link', 'category_external_id', 'product_group',
             'source_type', 'display_order', 'catalog_number', 'show_catalog_number', 'availability',
             'list_price', 'discounted_price', 'price_range', 'quote_only', 'is_featured', 'show_on_screen',
@@ -2381,6 +2383,7 @@ def admin_list_services(request):
                 'url': s.url,
                 'external_id': s.url,
                 'title': s.title,
+                'short_description': s.short_description,
                 'catalog_number': s.catalog_number,
                 'show_catalog_number': s.show_catalog_number,
                 'content': s.content,
@@ -2417,6 +2420,7 @@ def admin_get_service(request, service_id):
             'url': s.url,
             'external_id': s.url,
             'title': s.title,
+            'short_description': s.short_description,
             'catalog_number': s.catalog_number,
             'show_catalog_number': s.show_catalog_number,
             'content': s.content,
@@ -2468,6 +2472,7 @@ def admin_create_service(request):
         s = ServiceMode(
             url=d.get('url', ''),
             title=d.get('title', ''),
+            short_description=d.get('short_description', ''),
             catalog_number=d.get('catalog_number', ''),
             show_catalog_number=show_catalog_number_val,
             content=d.get('content', ''),
@@ -2508,7 +2513,7 @@ def admin_update_service(request, service_id):
         s = ServiceMode.objects.get(id=service_id)
         d = request.data
 
-        for field in ['url', 'title', 'catalog_number', 'content', 'technique', 'price', 'performance_data', 'category', 'service_group']:
+        for field in ['url', 'title', 'short_description', 'catalog_number', 'content', 'technique', 'price', 'performance_data', 'category', 'service_group']:
             if field in d:
                 setattr(s, field, d[field])
 

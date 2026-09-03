@@ -1156,6 +1156,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
       external_id: '',
       catalog_number: '',
       show_catalog_number: true,
+      short_description: '',
       description: '',
       image_url: '',
       images: [],
@@ -2056,6 +2057,15 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
               checked={editingProduct.show_catalog_number !== false}
               onChange={(checked) => updateField('show_catalog_number', checked)}
             />
+            <label className="admin-form-field span-3">
+              <span>Short Description</span>
+              <input
+                type="text"
+                maxLength="500"
+                value={editingProduct.short_description || ''}
+                onChange={(e) => updateField('short_description', e.target.value)}
+              />
+            </label>
             <label className="admin-form-field">
               <span>Category *</span>
               <select
@@ -2843,6 +2853,15 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                   checked={editingProduct.show_catalog_number !== false}
                   onChange={(checked) => updateField('show_catalog_number', checked)}
                 />
+                <label className="admin-form-field span-3">
+                  <span>Short Description</span>
+                  <input
+                    type="text"
+                    maxLength="500"
+                    value={editingProduct.short_description || ''}
+                    onChange={(e) => updateField('short_description', e.target.value)}
+                  />
+                </label>
                 <label className="admin-form-field">
                   <span>Category *</span>
                   <select 

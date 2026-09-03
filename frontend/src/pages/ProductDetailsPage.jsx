@@ -349,6 +349,16 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
       || serviceCategoryValues.includes(category.label.toLowerCase())
     ));
   const availabilityLabel = product.availability;
+  const normalizedAvailability = String(availabilityLabel || '').trim();
+  const productIsAvailable = Boolean(normalizedAvailability)
+    && !/(out of stock|unavailable|not available|discontinued)/i.test(normalizedAvailability);
+  const estimatedShipDate = new Date();
+  estimatedShipDate.setDate(estimatedShipDate.getDate() + 7);
+  const estimatedShipDateLabel = new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(estimatedShipDate);
   const quoteOnly = isQuoteOnlyProduct(product);
   const productCode = product.catalog_number || product.product_sku || product.external_id || product.externalId || '';
   const geneDesignPath = !isReagent ? getGeneDesignPath(productCode) : '';
@@ -454,10 +464,11 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
   ];
   const showThumbnailNav = productMedia.length > 4;
 
-  const scrollThumbnails = (direction) => {
+  const scrollThumbnails = (direction, orientation = 'horizontal') => {
     if (!thumbnailStripRef.current) return;
     thumbnailStripRef.current.scrollBy({
-      left: direction * 260,
+      left: orientation === 'horizontal' ? direction * 260 : 0,
+      top: orientation === 'vertical' ? direction * 260 : 0,
       behavior: 'smooth',
     });
   };
@@ -480,15 +491,15 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
     )
   );
 
-  const renderMediaThumbnails = (itemLabel) => (
+  const renderMediaThumbnails = (itemLabel, orientation = 'horizontal') => (
     productMedia.length > 1 && (
-      <div className={`product-thumbnail-carousel ${showThumbnailNav ? 'has-nav' : 'no-nav'}`}>
+      <div className={`product-thumbnail-carousel is-${orientation} ${showThumbnailNav ? 'has-nav' : 'no-nav'}`}>
         {showThumbnailNav && (
           <button
             type="button"
             className="product-thumbnail-nav"
-            aria-label={`Previous ${itemLabel} media`}
-            onClick={() => scrollThumbnails(-1)}
+            aria-label={orientation === 'vertical' ? `Scroll ${itemLabel} media up` : `Previous ${itemLabel} media`}
+            onClick={() => scrollThumbnails(-1, orientation)}
           >
             <span className="product-thumbnail-chevron prev" aria-hidden="true" />
           </button>
@@ -517,8 +528,8 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
           <button
             type="button"
             className="product-thumbnail-nav"
-            aria-label={`Next ${itemLabel} media`}
-            onClick={() => scrollThumbnails(1)}
+            aria-label={orientation === 'vertical' ? `Scroll ${itemLabel} media down` : `Next ${itemLabel} media`}
+            onClick={() => scrollThumbnails(1, orientation)}
           >
             <span className="product-thumbnail-chevron next" aria-hidden="true" />
           </button>
@@ -953,27 +964,47 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
       <div className="content" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: '48px', marginBottom: '40px' }}>
         
         {/* Gallery Section */}
-        <div className="product-detail-gallery">
+        <div className={`product-detail-gallery ${productMedia.length > 1 ? 'has-thumbnails' : 'no-thumbnails'}`}>
+          {renderMediaThumbnails(isReagent ? 'reagent' : 'product', 'vertical')}
           <div className="product-main-image-frame">
             {renderSelectedMedia('product-main-image')}
           </div>
-          {renderMediaThumbnails(isReagent ? 'reagent' : 'product')}
         </div>
 
         {/* Info Panel Section */}
         <div className="product-container" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div className="product-detail-title-block">
             <h2>{name}</h2>
-            {productCode && (
-              <p className="product-detail-catalog-number">Catalog #: {productCode}</p>
-            )}
           </div>
+
+          {/* Price display */}
+          {showDiscount ? (
+            <div>
+              <p className="discount-price" style={{ margin: 0, fontSize: '24px', fontWeight: 600, display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
+                <span className="discount-percent" style={{ background: '#f44336', color: '#fff', padding: '3px 8px', borderRadius: '4px', fontSize: '14px' }}>
+                  -{discountPercent}%
+                </span>
+                <span className="price" style={{ color: 'var(--blue)' }}>{formatProductPrice(selectedPrice)}</span>
+              </p>
+              <p className="list-price-block" style={{ margin: '5px 0 0', color: 'var(--muted)' }}>
+                List Price: <span className="list-price" style={{ textDecoration: 'line-through' }}>{formatProductPrice(listPrice)}</span>
+              </p>
+            </div>
+          ) : (
+            <p className="price" style={{ fontSize: '28px', fontWeight: 600, color: 'var(--blue)', margin: 0 }}>
+              {displayPrice}
+            </p>
+          )}
+
+          {productCode && (
+            <p className="product-detail-catalog-number">Catalog #: {productCode}</p>
+          )}
+
           <div className="product-detail-labels" aria-label="Product labels">
             {categoryLabel && <span className="product-detail-pill category">{categoryLabel}</span>}
             {isReagent && productGroupLabel && (
               <span className="product-detail-pill subgroup">{productGroupLabel}</span>
             )}
-            {availabilityLabel && <span className="product-detail-pill availability">{availabilityLabel}</span>}
           </div>
 
           {/* Available size and price options */}
@@ -1017,42 +1048,45 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
             </div>
           )}
 
-          {/* Price display */}
-          {showDiscount ? (
-            <div>
-              <p className="discount-price" style={{ margin: 0, fontSize: '24px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span className="discount-percent" style={{ background: '#f44336', color: '#fff', padding: '3px 8px', borderRadius: '4px', fontSize: '14px' }}>
-                  -{discountPercent}%
+          {availabilityLabel && (
+            <div className={`product-availability-panel ${productIsAvailable ? 'is-available' : 'is-unavailable'}`} aria-label="Product availability">
+              <div className="product-availability-header">
+                <strong className="product-availability-title">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 6.75h11.5v9H3zM14.5 10h3.25L21 13.25v2.5h-6.5zM6.75 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM17.75 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+                  </svg>
+                  Availability:
+                </strong>
+                <span className="product-availability-status">
+                  {productIsAvailable ? 'Available' : normalizedAvailability}
                 </span>
-                <span className="price" style={{ color: 'var(--blue)' }}>{formatProductPrice(selectedPrice)}</span>
-              </p>
-              <p className="list-price-block" style={{ margin: '5px 0 0', color: 'var(--muted)' }}>
-                List Price: <span className="list-price" style={{ textDecoration: 'line-through' }}>{formatProductPrice(listPrice)}</span>
-              </p>
-            </div>
-          ) : (
-            <p className="price" style={{ fontSize: '28px', fontWeight: 600, color: 'var(--blue)', margin: 0 }}>
-              {displayPrice}
-            </p>
-          )}
-
-          {/* Quantity Selector */}
-          {!quoteOnly && (
-            <div className="quantity" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px' }}>
-              <label htmlFor="qty" style={{ fontWeight: 500 }}>Qty</label>
-              <input 
-                id="qty" 
-                type="number" 
-                min="1" 
-                value={quantity} 
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                style={{ width: '60px', padding: '8px', borderRadius: '6px', border: '1px solid var(--line)', textAlign: 'center' }}
-              />
+              </div>
+              <div className="product-availability-message">
+                <span className="product-availability-check" aria-hidden="true">✓</span>
+                <span>
+                  {productIsAvailable
+                    ? `In stock & estimated to ship in 3–7 days by ${estimatedShipDateLabel}.`
+                    : normalizedAvailability}
+                </span>
+              </div>
             </div>
           )}
 
           {/* Actions */}
           <div className="product-detail-actions">
+            {!quoteOnly && (
+              <div className="quantity" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px' }}>
+                <label htmlFor="qty" style={{ fontWeight: 500 }}>Qty</label>
+                <input
+                  id="qty"
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  style={{ width: '60px', padding: '8px', borderRadius: '6px', border: '1px solid var(--line)', textAlign: 'center' }}
+                />
+              </div>
+            )}
             {quoteOnly ? (
               <button
                 type="button"
@@ -1081,14 +1115,6 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                 Customize Gene Design
               </button>
             )}
-            <button 
-              type="button" 
-              className="secondary-button" 
-              onClick={() => navigate('/')}
-              style={{ padding: '12px 28px', border: '1px solid var(--line)', background: 'transparent', color: 'var(--ink)' }}
-            >
-              Back to Products
-            </button>
           </div>
         </div>
       </div>
