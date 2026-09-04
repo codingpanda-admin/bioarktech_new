@@ -503,7 +503,7 @@ function DesignPage({
       }))
     : [{
         label: '',
-        productName: buildDesignProductName(),
+        productName: buildDesignProductName() || 'Custom Plasmid Map',
         catalogNumber: buildDesignSku(''),
       }];
   const pricedSelections = priceLookup.results.filter((price) => !price.quote_only);

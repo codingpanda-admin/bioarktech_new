@@ -581,6 +581,7 @@ function HomePage({ navigate, searchParams }) {
         </section>
 
         <section className="products-section featured-solutions-section" aria-labelledby="products-title">
+          <div className="home-section-inner" style={{ margin: '0 auto', padding: '0 20px' }}>
           <HomeSectionHeading
             id="products-title"
             title="Featured Solutions"
@@ -591,7 +592,7 @@ function HomePage({ navigate, searchParams }) {
           <p className="section-subtitle">
             Featured products, reagents, and scientific services selected to accelerate your research.
           </p>
-          <div className={`featured-solutions-carousel ${featuredExpanded ? 'is-expanded' : ''}`} aria-label="Featured products, reagents, and services carousel">
+          <div className={`products-carousel featured-solutions-carousel ${featuredExpanded ? 'is-expanded' : ''}`} aria-label="Featured products, reagents, and services carousel">
             <div className="featured-solutions-side-controls is-left" aria-label="Featured solutions controls on left">
               <button
                 className="product-carousel-control featured-solutions-control featured-solutions-up"
@@ -636,7 +637,6 @@ function HomePage({ navigate, searchParams }) {
                         <ProductVisual type={prod.visual || 'bottle'} />
                       )}
                       <h3>{name}</h3>
-                      <p className="product-card-short-description">{prod.short_description || ''}</p>
                       {itemType !== 'service' && (
                         <p className="rating">★★★★★ <span>({prod.reviews || '45'})</span></p>
                       )}
@@ -670,6 +670,7 @@ function HomePage({ navigate, searchParams }) {
                 disabled={!canRollFeaturedDown}
               />
             </div>
+          </div>
           </div>
         </section>
 
@@ -844,7 +845,7 @@ function HomePage({ navigate, searchParams }) {
             </div>
             <div className="video-card">
               <video controls preload="metadata" playsInline aria-label="BioArk Tech introduction">
-                <source src="/bioark-tech-intro-1280x540.mp4" type="video/mp4" />
+                <source src="/bioark-tech-intro-4x3.mp4" type="video/mp4" />
                 Your browser does not support embedded video.
               </video>
             </div>
