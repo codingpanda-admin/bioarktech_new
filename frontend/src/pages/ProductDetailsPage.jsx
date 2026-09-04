@@ -961,7 +961,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
         <span aria-current="page">{name}</span>
       </nav>
 
-      <div className="content" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: '48px', marginBottom: '40px' }}>
+      <div className="content product-detail-hero" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: '48px', marginBottom: '40px' }}>
         
         {/* Gallery Section */}
         <div className={`product-detail-gallery ${productMedia.length > 1 ? 'has-thumbnails' : 'no-thumbnails'}`}>
@@ -975,6 +975,17 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
         <div className="product-container" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div className="product-detail-title-block">
             <h2>{name}</h2>
+          </div>
+
+          {productCode && (
+            <p className="product-detail-catalog-number">Catalog #: {productCode}</p>
+          )}
+
+          <div className="product-detail-labels" aria-label="Product labels">
+            {categoryLabel && <span className="product-detail-pill category">{categoryLabel}</span>}
+            {isReagent && productGroupLabel && (
+              <span className="product-detail-pill subgroup">{productGroupLabel}</span>
+            )}
           </div>
 
           {/* Price display */}
@@ -995,17 +1006,6 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
               {displayPrice}
             </p>
           )}
-
-          {productCode && (
-            <p className="product-detail-catalog-number">Catalog #: {productCode}</p>
-          )}
-
-          <div className="product-detail-labels" aria-label="Product labels">
-            {categoryLabel && <span className="product-detail-pill category">{categoryLabel}</span>}
-            {isReagent && productGroupLabel && (
-              <span className="product-detail-pill subgroup">{productGroupLabel}</span>
-            )}
-          </div>
 
           {/* Available size and price options */}
           {hasProductPriceOptions && (
