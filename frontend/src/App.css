@@ -1872,7 +1872,7 @@ label,
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
-  align-items: center;
+  align-items: stretch;
 }
 
 .about-copy h2 {
@@ -1963,10 +1963,10 @@ label,
 
 .video-card {
   position: relative;
-  width: 85%;
+  width: calc(100% - 10px);
   justify-self: end;
   margin-right: 10px;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: auto;
   min-height: 0;
   overflow: hidden;
   border-radius: 8px;
@@ -1975,6 +1975,8 @@ label,
 }
 
 .video-card video {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
@@ -3268,7 +3270,8 @@ label,
 .investor-overview,
 .investor-section,
 .investor-partner-card {
-  width: min(1180px, calc(100% - 64px));
+  width: var(--public-content-width);
+  max-width: none;
   margin-inline: auto;
 }
 
@@ -3530,7 +3533,6 @@ label,
   display: grid;
   justify-items: center;
   gap: 18px;
-  max-width: 920px;
   margin-top: 78px;
   padding: 48px 42px;
   text-align: center;
@@ -3591,13 +3593,14 @@ label,
 
 .why-bioark-intro,
 .team-section {
-  width: min(1180px, calc(100% - 64px));
+  width: var(--public-content-width);
+  max-width: none;
   margin-inline: auto;
 }
 
 .why-bioark-intro {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 370px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 76px;
   align-items: start;
   padding: 66px 0 76px;
@@ -3621,6 +3624,7 @@ label,
 
 .why-bioark-highlights {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   padding-top: 58px;
 }
@@ -3677,11 +3681,14 @@ label,
 
 .team-card-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 30px;
 }
 
 .team-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   min-height: 265px;
   padding: 28px;
 }
@@ -3690,7 +3697,8 @@ label,
   display: grid;
   grid-template-columns: 78px minmax(0, 1fr);
   gap: 18px;
-  align-items: center;
+  align-items: start;
+  min-height: 124px;
 }
 
 .team-avatar {
@@ -3735,11 +3743,14 @@ label,
   line-height: 1.6;
 }
 
-.team-card a,
 .team-read-more {
   display: inline-flex;
-  margin-top: 22px;
-  padding: 0;
+  align-self: flex-start;
+  margin-top: auto;
+  padding-top: 22px;
+  padding-right: 0;
+  padding-bottom: 0;
+  padding-left: 0;
   border: 0;
   color: #082c52;
   background: transparent;
@@ -6017,6 +6028,10 @@ label,
     padding-top: 0;
   }
 
+  .team-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .investor-visuals {
     max-width: 760px;
   }
@@ -6228,6 +6243,11 @@ label,
     grid-template-columns: 1fr;
   }
 
+  .video-card {
+    width: calc(100% - 10px);
+    aspect-ratio: 4 / 3;
+  }
+
   .bulk-cta h2 {
     font-size: 30px;
   }
@@ -6357,6 +6377,10 @@ label,
     padding: 42px 0 52px;
   }
 
+  .why-bioark-highlights {
+    grid-template-columns: 1fr;
+  }
+
   .why-bioark-copy p {
     margin-top: 20px;
     font-size: 16px;
@@ -6373,6 +6397,10 @@ label,
 
   .team-card {
     padding: 22px;
+  }
+
+  .team-card-header {
+    min-height: 0;
   }
 
   .team-bio-modal-backdrop {

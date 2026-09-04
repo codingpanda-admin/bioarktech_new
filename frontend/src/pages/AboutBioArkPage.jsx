@@ -222,7 +222,7 @@ function AboutBioArkPage() {
                   Read More
                 </button>
               ) : (
-                <a href="#" onClick={(event) => event.preventDefault()}>Read more</a>
+                <a className="team-read-more" href="#" onClick={(event) => event.preventDefault()}>Read more</a>
               )}
             </article>
           ))}
