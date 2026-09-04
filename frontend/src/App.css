@@ -3599,14 +3599,17 @@ label,
 }
 
 .why-bioark-intro {
+  padding: 66px 0 76px;
+}
+
+.why-bioark-intro-content {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 76px;
   align-items: start;
-  padding: 66px 0 76px;
 }
 
-.why-bioark-copy h2,
+.why-bioark-section-title,
 .team-section h2 {
   margin: 0;
   color: #07182f;
@@ -3626,7 +3629,6 @@ label,
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
-  padding-top: 58px;
 }
 
 .why-highlight-card,
@@ -3674,9 +3676,14 @@ label,
   padding-top: 18px;
 }
 
+.why-bioark-section-title,
 .team-section h2 {
   margin-bottom: 48px;
   text-align: center;
+}
+
+.why-bioark-copy > .page-rich-text:first-of-type > :first-child {
+  margin-top: 0;
 }
 
 .team-card-grid {
@@ -3698,7 +3705,7 @@ label,
   grid-template-columns: 78px minmax(0, 1fr);
   gap: 18px;
   align-items: start;
-  min-height: 124px;
+  min-height: 170px;
 }
 
 .team-avatar {
@@ -3762,7 +3769,7 @@ label,
 }
 
 .team-card-biography {
-  margin: 32px 0 0;
+  margin: 19px 0 0;
   color: #607086;
   font-size: 16px;
   line-height: 1.6;
@@ -6019,13 +6026,9 @@ label,
     grid-template-columns: 1fr;
   }
 
-  .why-bioark-intro {
+  .why-bioark-intro-content {
     grid-template-columns: 1fr;
     gap: 34px;
-  }
-
-  .why-bioark-highlights {
-    padding-top: 0;
   }
 
   .team-card-grid {
@@ -6391,6 +6394,7 @@ label,
     gap: 22px;
   }
 
+  .why-bioark-section-title,
   .team-section h2 {
     margin-bottom: 26px;
   }
