@@ -462,9 +462,32 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
     ...productImages.map((url) => ({ type: 'image', url: formatAssetUrl(url) })),
     ...productVideos.map((url) => ({ type: 'video', url: formatAssetUrl(url) })),
   ];
-  const showThumbnailNav = productMedia.length > 4;
+  const showThumbnailNav = productMedia.length > (isService ? 4 : 1);
+  const selectedMediaIndex = productMedia.findIndex(
+    (media) => media.type === selectedMedia.type && media.url === selectedMedia.url
+  );
 
   const scrollThumbnails = (direction, orientation = 'horizontal') => {
+    if (orientation === 'vertical') {
+      const nextIndex = Math.max(0, Math.min(productMedia.length - 1, selectedMediaIndex + direction));
+      const nextMedia = productMedia[nextIndex];
+      if (!nextMedia) return;
+      setSelectedMedia(nextMedia);
+
+      const strip = thumbnailStripRef.current;
+      const thumbnail = strip?.children[nextIndex];
+      if (thumbnail) {
+        // Scroll only the thumbnail strip, keeping the page and main panel still.
+        const thumbnailRect = thumbnail.getBoundingClientRect();
+        const stripRect = strip.getBoundingClientRect();
+        strip.scrollTo({
+          top: strip.scrollTop + thumbnailRect.top - stripRect.top
+            - (strip.clientHeight - thumbnailRect.height) / 2,
+          behavior: 'smooth',
+        });
+      }
+      return;
+    }
     if (!thumbnailStripRef.current) return;
     thumbnailStripRef.current.scrollBy({
       left: orientation === 'horizontal' ? direction * 260 : 0,
@@ -498,7 +521,8 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
           <button
             type="button"
             className="product-thumbnail-nav"
-            aria-label={orientation === 'vertical' ? `Scroll ${itemLabel} media up` : `Previous ${itemLabel} media`}
+            aria-label={`Previous ${itemLabel} media`}
+            disabled={orientation === 'vertical' && selectedMediaIndex <= 0}
             onClick={() => scrollThumbnails(-1, orientation)}
           >
             <span className="product-thumbnail-chevron prev" aria-hidden="true" />
@@ -528,7 +552,8 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
           <button
             type="button"
             className="product-thumbnail-nav"
-            aria-label={orientation === 'vertical' ? `Scroll ${itemLabel} media down` : `Next ${itemLabel} media`}
+            aria-label={`Next ${itemLabel} media`}
+            disabled={orientation === 'vertical' && selectedMediaIndex >= productMedia.length - 1}
             onClick={() => scrollThumbnails(1, orientation)}
           >
             <span className="product-thumbnail-chevron next" aria-hidden="true" />
