@@ -8,7 +8,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from interface.models import ServiceMode
-from products.models import CatalogGroup, FeaturedProduct, Product, ProductCategory
+from products.models import CatalogGroup, FeaturedProduct, Product, ProductCategory, ProductsUnion
 from users.models import User
 
 from .admin_views import (
@@ -234,6 +234,7 @@ class CatalogBulkUploadTests(TestCase):
         created, _, _ = _import_product({
             'external_id': product.external_id,
             'product_name': 'Imported Product',
+            'short_description': 'A concise imported product summary.',
             'category_external_id': self.product_category.external_id,
             'group_external_id': self.product_group.external_id,
             'details': 'Plain text details',
@@ -251,6 +252,7 @@ class CatalogBulkUploadTests(TestCase):
         self.assertEqual(product.manuals, ['Keep Manual'])
         self.assertEqual(product.manual_urls, ['media/manual_files/keep.pdf'])
         self.assertEqual(product.content_text, 'Plain text details')
+        self.assertEqual(product.short_description, 'A concise imported product summary.')
 
     def test_reagent_import_creates_a_reagent(self):
         created, external_id, _ = _import_product({
@@ -277,6 +279,7 @@ class CatalogBulkUploadTests(TestCase):
         created, _, _ = _import_service({
             'external_id': service.url,
             'service_name': 'Imported Service',
+            'short_description': 'A concise imported service summary.',
             'category_external_id': self.service_category.external_id,
             'group_external_id': self.service_group.external_id,
             'service_details': 'Plain service details',
@@ -287,6 +290,7 @@ class CatalogBulkUploadTests(TestCase):
         service.refresh_from_db()
         self.assertFalse(created)
         self.assertEqual(service.content, 'Plain service details')
+        self.assertEqual(service.short_description, 'A concise imported service summary.')
         self.assertEqual(service.manuals, [{'name': 'Keep PDF', 'manual': 'media/manual_files/keep.pdf'}])
         self.assertEqual(service.videos, ['media/service-videos/keep.mp4'])
 
@@ -304,6 +308,108 @@ class CatalogBulkUploadTests(TestCase):
                 'product_name': 'Wrong Type',
                 'category_external_id': self.product_category.external_id,
             }, 'product')
+
+
+class CatalogPurgeAdminTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = User.objects.create_user(
+            email='catalog-purge-admin@example.com',
+            password='test-password',
+            is_admin=True,
+        )
+        self.client.force_authenticate(user=self.admin)
+
+    def test_active_product_cannot_be_purged(self):
+        product = Product.objects.create(
+            external_id='active-purge-product',
+            product_name='Active Product',
+            source_type='product',
+            hidden=False,
+        )
+
+        response = self.client.post(
+            f'/api/admin-panel/products/{product.product_id}/purge/',
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(Product.objects.filter(product_id=product.product_id).exists())
+
+    def test_deactivated_product_and_legacy_featured_record_are_purged(self):
+        product = Product.objects.create(
+            external_id='deactivated-purge-product',
+            product_name='Deactivated Product',
+            catalog_number='PURGE-001',
+            source_type='product',
+            hidden=True,
+        )
+        featured = FeaturedProduct.objects.create(
+            catalog_number=product.catalog_number,
+            product_name=product.product_name,
+            description='',
+            key_features='',
+            performance_data='',
+            storage_info='',
+            ship_info='',
+            shelf_status=False,
+            units_in_stock=0,
+            units='',
+        )
+        union_id = featured.union_id
+
+        response = self.client.post(
+            f'/api/admin-panel/products/{product.product_id}/purge/',
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Product.objects.filter(product_id=product.product_id).exists())
+        self.assertFalse(FeaturedProduct.objects.filter(catalog_number='PURGE-001').exists())
+        self.assertFalse(ProductsUnion.objects.filter(pk=union_id).exists())
+
+    def test_deactivated_reagent_can_be_purged(self):
+        reagent = Product.objects.create(
+            external_id='deactivated-purge-reagent',
+            product_name='Deactivated Reagent',
+            source_type='reagent',
+            hidden=True,
+        )
+
+        response = self.client.post(
+            f'/api/admin-panel/products/{reagent.product_id}/purge/',
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Product.objects.filter(product_id=reagent.product_id).exists())
+        self.assertEqual(response.data['message'], 'Reagent permanently purged.')
+
+    def test_service_must_be_deactivated_before_it_can_be_purged(self):
+        active_service = ServiceMode.objects.create(
+            url='active-purge-service',
+            title='Active Service',
+            hidden=False,
+        )
+        deactivated_service = ServiceMode.objects.create(
+            url='deactivated-purge-service',
+            title='Deactivated Service',
+            hidden=True,
+        )
+
+        active_response = self.client.post(
+            f'/api/admin-panel/services/{active_service.id}/purge/',
+            format='json',
+        )
+        purge_response = self.client.post(
+            f'/api/admin-panel/services/{deactivated_service.id}/purge/',
+            format='json',
+        )
+
+        self.assertEqual(active_response.status_code, 400)
+        self.assertTrue(ServiceMode.objects.filter(id=active_service.id).exists())
+        self.assertEqual(purge_response.status_code, 200)
+        self.assertFalse(ServiceMode.objects.filter(id=deactivated_service.id).exists())
 
 class CatalogSearchTests(TestCase):
     def setUp(self):

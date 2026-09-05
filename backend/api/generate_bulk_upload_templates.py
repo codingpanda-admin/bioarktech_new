@@ -47,6 +47,7 @@ HEADER_HELP = {
     'external_id': 'Required. Stable public identifier. Existing IDs update the matching item.',
     'product_name': 'Required. Customer-facing product or reagent name.',
     'service_name': 'Required. Customer-facing service name (maximum 60 characters).',
+    'short_description': 'Optional one-line customer-facing summary used on catalog display cards (maximum 500 characters).',
     'category_external_id': 'Required. Choose an ID from the Reference IDs sheet.',
     'group_external_id': 'Optional. Choose a group that belongs to the selected category.',
     'catalog_number': 'Optional customer-facing catalog number.',
@@ -84,6 +85,7 @@ BOOLEAN_HEADERS = {
 }
 
 WIDE_HEADERS = {
+    'short_description',
     'description',
     'details',
     'service_details',
@@ -344,6 +346,7 @@ def verify_template(item_type, path):
         'group_external_id': group_id,
         'active': 'Yes',
         'show_catalog_number': 'Yes',
+        'short_description': 'Template verification short description.',
     }
     if item_type == 'service':
         values.update({'service_name': 'Template Verification Service', 'service_details': 'Plain text'})

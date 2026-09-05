@@ -169,23 +169,25 @@ function AboutBioArkPage() {
       </section>}
 
       {overview && <section className="why-bioark-intro">
-        <div className="why-bioark-copy">
-          <h2>{overview.section_title}</h2>
-          {(overview.paragraphs || []).map((paragraph, index) => (
-            <RichContent key={`${index}-${paragraph.slice(0, 24)}`} value={paragraph} />
-          ))}
-        </div>
+        <h2 className="why-bioark-section-title">{overview.section_title}</h2>
+        <div className="why-bioark-intro-content">
+          <div className="why-bioark-copy">
+            {(overview.paragraphs || []).map((paragraph, index) => (
+              <RichContent key={`${index}-${paragraph.slice(0, 24)}`} value={paragraph} />
+            ))}
+          </div>
 
-        <div className="why-bioark-highlights" aria-label="BioArk highlights">
-          {highlights.map((item) => (
-            <article className="why-highlight-card" key={item.title}>
-              <span aria-hidden="true">{item.icon}</span>
-              <div>
-                <h3>{item.title}</h3>
-                <RichContent value={item.text} />
-              </div>
-            </article>
-          ))}
+          <div className="why-bioark-highlights" aria-label="BioArk highlights">
+            {highlights.map((item) => (
+              <article className="why-highlight-card" key={item.title}>
+                <span aria-hidden="true">{item.icon}</span>
+                <div>
+                  <h3>{item.title}</h3>
+                  <RichContent value={item.text} />
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </section>}
 
@@ -222,7 +224,7 @@ function AboutBioArkPage() {
                   Read More
                 </button>
               ) : (
-                <a href="#" onClick={(event) => event.preventDefault()}>Read more</a>
+                <a className="team-read-more" href="#" onClick={(event) => event.preventDefault()}>Read more</a>
               )}
             </article>
           ))}

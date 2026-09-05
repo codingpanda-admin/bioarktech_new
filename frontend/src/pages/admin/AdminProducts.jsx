@@ -1156,6 +1156,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
       external_id: '',
       catalog_number: '',
       show_catalog_number: true,
+      short_description: '',
       description: '',
       image_url: '',
       images: [],
@@ -1248,6 +1249,19 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
         body: { hidden: false }
       });
       showSuccess(`${itemLabel === 'product' ? 'Product' : 'Reagent'} activated successfully.`);
+      loadProducts();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handlePurge = async (productId, productName) => {
+    const itemLabel = categoryFilter === 'products' ? 'product' : 'reagent';
+    const displayName = productName || `this ${itemLabel}`;
+    if (!confirm(`Permanently purge "${displayName}"? This cannot be undone.`)) return;
+    try {
+      await apiFetch(`/api/admin-panel/products/${productId}/purge/`, { method: 'POST' });
+      showSuccess(`${itemLabel === 'product' ? 'Product' : 'Reagent'} permanently purged.`);
       loadProducts();
     } catch (err) {
       setError(err.message);
@@ -2043,6 +2057,15 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
               checked={editingProduct.show_catalog_number !== false}
               onChange={(checked) => updateField('show_catalog_number', checked)}
             />
+            <label className="admin-form-field span-3">
+              <span>Short Description</span>
+              <input
+                type="text"
+                maxLength="500"
+                value={editingProduct.short_description || ''}
+                onChange={(e) => updateField('short_description', e.target.value)}
+              />
+            </label>
             <label className="admin-form-field">
               <span>Category *</span>
               <select
@@ -2748,7 +2771,17 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                                         )}
                                         <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(pId); }}>Edit</button>
                                         {product.hidden ? (
-                                          <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleActivate(pId); }}>Activate</button>
+                                          <>
+                                            <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleActivate(pId); }}>Activate</button>
+                                            <button
+                                              type="button"
+                                              className="admin-action-btn delete"
+                                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handlePurge(pId, product.product_name); }}
+                                              title="Permanently purge"
+                                            >
+                                              Purge
+                                            </button>
+                                          </>
                                         ) : (
                                           <button
                                             type="button"
@@ -2820,6 +2853,15 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                   checked={editingProduct.show_catalog_number !== false}
                   onChange={(checked) => updateField('show_catalog_number', checked)}
                 />
+                <label className="admin-form-field span-3">
+                  <span>Short Description</span>
+                  <input
+                    type="text"
+                    maxLength="500"
+                    value={editingProduct.short_description || ''}
+                    onChange={(e) => updateField('short_description', e.target.value)}
+                  />
+                </label>
                 <label className="admin-form-field">
                   <span>Category *</span>
                   <select 

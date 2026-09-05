@@ -128,6 +128,10 @@ const getCategoryHref = (category) => {
   return `/search?category=${searchCategory}&cat=${encodeURIComponent(categoryId)}`;
 };
 
+const getFeaturedColumnCount = () => (
+  typeof window !== 'undefined' && window.innerWidth <= 720 ? 1 : 4
+);
+
 const HomeSectionHeading = ({ id, title, href, linkLabel, navigate }) => (
   <div className="home-section-heading">
     <h2 id={id}>{title}</h2>
@@ -155,7 +159,9 @@ function HomePage({ navigate, searchParams }) {
   const [blogCategories, setBlogCategories] = useState([]);
   const [activeBlogCategory, setActiveBlogCategory] = useState('All');
   const [loading, setLoading] = useState(true);
-  const [featuredStartIndex, setFeaturedStartIndex] = useState(0);
+  const [featuredStartRow, setFeaturedStartRow] = useState(0);
+  const [featuredExpanded, setFeaturedExpanded] = useState(false);
+  const [featuredColumnCount, setFeaturedColumnCount] = useState(getFeaturedColumnCount);
   const [generalProductsStartIndex, setGeneralProductsStartIndex] = useState(0);
   const [servicesStartIndex, setServicesStartIndex] = useState(0);
   const [hasPopularCategoryOverflow, setHasPopularCategoryOverflow] = useState(false);
@@ -299,24 +305,49 @@ function HomePage({ navigate, searchParams }) {
   }, [activeSlideIndex]);
 
   useEffect(() => {
-    setFeaturedStartIndex(0);
-  }, [featuredProducts.length]);
+    const updateFeaturedColumnCount = () => setFeaturedColumnCount(getFeaturedColumnCount());
+    window.addEventListener('resize', updateFeaturedColumnCount);
+    return () => window.removeEventListener('resize', updateFeaturedColumnCount);
+  }, []);
 
-  const visibleFeaturedProducts = featuredProducts.length
-    ? Array.from({ length: Math.min(4, featuredProducts.length) }, (_, offset) => {
-        const index = (featuredStartIndex + offset) % featuredProducts.length;
-        return { product: featuredProducts[index], index };
-      })
-    : [];
+  useEffect(() => {
+    setFeaturedStartRow(0);
+    setFeaturedExpanded(false);
+  }, [featuredProducts.length, featuredColumnCount]);
+
+  const featuredRowCount = Math.ceil(featuredProducts.length / featuredColumnCount);
+  const featuredVisibleRowCount = featuredExpanded ? 2 : 1;
+  const featuredMaxStartRow = Math.max(0, featuredRowCount - featuredVisibleRowCount);
+  const effectiveFeaturedStartRow = Math.min(featuredStartRow, featuredMaxStartRow);
+  const featuredStartIndex = effectiveFeaturedStartRow * featuredColumnCount;
+  const featuredWindowSize = featuredColumnCount * featuredVisibleRowCount;
+  const visibleFeaturedProducts = featuredProducts
+    .slice(featuredStartIndex, featuredStartIndex + featuredWindowSize)
+    .map((product, offset) => ({ product, index: featuredStartIndex + offset }));
+  const canRollFeaturedUp = featuredExpanded || effectiveFeaturedStartRow > 0;
+  const canRollFeaturedDown = featuredRowCount > 1 && (
+    !featuredExpanded || effectiveFeaturedStartRow < featuredRowCount - 2
+  );
 
   const rollFeaturedProducts = (direction) => {
-    if (featuredProducts.length <= 1) return;
+    if (direction === 'down') {
+      if (featuredRowCount <= 1) return;
+      if (!featuredExpanded) {
+        setFeaturedStartRow(0);
+        setFeaturedExpanded(true);
+        return;
+      }
+      setFeaturedStartRow((currentRow) => (
+        Math.min(currentRow + 1, Math.max(0, featuredRowCount - 2))
+      ));
+      return;
+    }
 
-    setFeaturedStartIndex((currentIndex) => (
-      direction === 'next'
-        ? (currentIndex + 1) % featuredProducts.length
-        : (currentIndex - 1 + featuredProducts.length) % featuredProducts.length
-    ));
+    if (effectiveFeaturedStartRow > 0) {
+      setFeaturedStartRow((currentRow) => Math.max(0, currentRow - 1));
+    } else if (featuredExpanded) {
+      setFeaturedExpanded(false);
+    }
   };
 
   useEffect(() => {
@@ -550,6 +581,7 @@ function HomePage({ navigate, searchParams }) {
         </section>
 
         <section className="products-section featured-solutions-section" aria-labelledby="products-title">
+          <div className="home-section-inner" style={{ margin: '0 auto', padding: '0 20px' }}>
           <HomeSectionHeading
             id="products-title"
             title="Featured Solutions"
@@ -560,16 +592,28 @@ function HomePage({ navigate, searchParams }) {
           <p className="section-subtitle">
             Featured products, reagents, and scientific services selected to accelerate your research.
           </p>
-          <div className="products-carousel" aria-label="Featured products, reagents, and services carousel">
-            <button
-              className="product-carousel-control product-carousel-prev"
-              type="button"
-              aria-label="Previous featured item"
-              onClick={() => rollFeaturedProducts('prev')}
-              disabled={featuredProducts.length <= 1}
-            />
-            <div className="product-carousel-viewport">
-              <div className="product-grid product-carousel-grid">
+          <div className={`products-carousel featured-solutions-carousel ${featuredExpanded ? 'is-expanded' : ''}`} aria-label="Featured products, reagents, and services carousel">
+            <div className="featured-solutions-side-controls is-left" aria-label="Featured solutions controls on left">
+              <button
+                className="product-carousel-control featured-solutions-control featured-solutions-up"
+                type="button"
+                aria-label={effectiveFeaturedStartRow === 0 ? 'Collapse featured solutions to one row' : 'Show previous featured solutions row'}
+                aria-controls="featured-solutions-grid"
+                onClick={() => rollFeaturedProducts('up')}
+                disabled={!canRollFeaturedUp}
+              />
+              <button
+                className="product-carousel-control featured-solutions-control featured-solutions-down"
+                type="button"
+                aria-label={featuredExpanded ? 'Show next featured solutions row' : 'Show two rows of featured solutions'}
+                aria-controls="featured-solutions-grid"
+                aria-expanded={featuredExpanded}
+                onClick={() => rollFeaturedProducts('down')}
+                disabled={!canRollFeaturedDown}
+              />
+            </div>
+            <div className="product-carousel-viewport featured-solutions-viewport">
+              <div id="featured-solutions-grid" className="product-grid product-carousel-grid featured-solutions-grid">
                 {visibleFeaturedProducts.map(({ product: prod, index }) => {
                   const name = prod.product_name;
                   const itemType = prod.item_type || (prod.source_type === 'reagent' ? 'reagent' : 'product');
@@ -586,7 +630,7 @@ function HomePage({ navigate, searchParams }) {
                     <article className="product-card" key={`${prod.catalog_number || prod.product_sku || name}-${index}`}>
                       <span className={`featured-item-type-badge ${itemType}`}>{itemLabel}</span>
                       {imgUrl ? (
-                        <div style={{ height: '140px', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '20px 0' }}>
+                        <div style={{ height: '110px', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '12px 0' }}>
                           <img src={imgUrl} alt={name} style={{ maxHeight: '100%', maxWidth: '100%', borderRadius: '8px' }} />
                         </div>
                       ) : (
@@ -607,13 +651,26 @@ function HomePage({ navigate, searchParams }) {
                 })}
               </div>
             </div>
-            <button
-              className="product-carousel-control product-carousel-next"
-              type="button"
-              aria-label="Next featured item"
-              onClick={() => rollFeaturedProducts('next')}
-              disabled={featuredProducts.length <= 1}
-            />
+            <div className="featured-solutions-side-controls is-right" aria-label="Featured solutions controls on right">
+              <button
+                className="product-carousel-control featured-solutions-control featured-solutions-up"
+                type="button"
+                aria-label={effectiveFeaturedStartRow === 0 ? 'Collapse featured solutions to one row' : 'Show previous featured solutions row'}
+                aria-controls="featured-solutions-grid"
+                onClick={() => rollFeaturedProducts('up')}
+                disabled={!canRollFeaturedUp}
+              />
+              <button
+                className="product-carousel-control featured-solutions-control featured-solutions-down"
+                type="button"
+                aria-label={featuredExpanded ? 'Show next featured solutions row' : 'Show two rows of featured solutions'}
+                aria-controls="featured-solutions-grid"
+                aria-expanded={featuredExpanded}
+                onClick={() => rollFeaturedProducts('down')}
+                disabled={!canRollFeaturedDown}
+              />
+            </div>
+          </div>
           </div>
         </section>
 
@@ -623,7 +680,7 @@ function HomePage({ navigate, searchParams }) {
               <HomeSectionHeading
                 id="general-products-title"
                 title="Products"
-                href="/search?category=reagents"
+                href="/search?category=products"
                 linkLabel="View all products"
                 navigate={navigate}
               />
@@ -651,7 +708,7 @@ function HomePage({ navigate, searchParams }) {
 
                       return (
                         <article
-                          className="product-card"
+                          className="product-card home-product-card"
                           key={`${productId}-${index}`}
                           role="link"
                           tabIndex={0}
@@ -662,18 +719,19 @@ function HomePage({ navigate, searchParams }) {
                               openProduct();
                             }
                           }}
-                          style={{ display: 'flex', flexDirection: 'column', height: '410px', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', border: '1px solid var(--line)', background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)', cursor: 'pointer' }}
+                          style={{ display: 'flex', flexDirection: 'column', minHeight: '350px', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', border: '1px solid var(--line)', background: '#fff', borderRadius: '12px', padding: '18px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)', cursor: 'pointer' }}
                         >
                           {imgUrl ? (
-                            <div style={{ height: '150px', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '10px 0 20px 0' }}>
+                            <div style={{ height: '115px', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '8px 0 10px 0' }}>
                               <img src={imgUrl} alt={name} style={{ maxHeight: '100%', maxWidth: '100%', borderRadius: '8px', objectFit: 'contain' }} />
                             </div>
                           ) : (
                             <ProductVisual type={prod.visual || 'bottle'} />
                           )}
-                          <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'space-between' }}>
+                          <div className="home-product-card-content" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                             <div>
-                              <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: '0 0 10px 0', minHeight: '48px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', color: 'var(--ink)' }}>{name}</h3>
+                              <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: '0 0 4px 0', minHeight: '24px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', color: 'var(--ink)' }}>{name}</h3>
+                              <p className="product-card-short-description" style={{ marginTop: 0 }}>{prod.short_description || ''}</p>
                               <p className="rating" style={{ margin: '0 0 12px 0' }}>★★★★★ <span style={{ color: 'var(--ink-light)', fontSize: '0.85rem' }}>(4.8)</span></p>
                               <CatalogPrice item={prod} className="price" />
                             </div>
@@ -723,33 +781,31 @@ function HomePage({ navigate, searchParams }) {
                   <div className="services-carousel-grid">
                     {visibleFeaturedServices.map(({ service, index }) => {
                       const name = service.title;
-                      const cleanText = service.content
-                        ? service.content.replace(/<[^>]*>/g, '').substring(0, 75) + '...'
-                        : 'Custom research services for your workflows.';
+                      const shortDescription = service.short_description || '';
                       const imgUrl = service.image ? formatAssetUrl(service.image) : null;
                       const serviceHref = `/product/${service.url}`;
 
                       return (
-                        <article key={`${service.id}-${index}`} className="service-card" style={{ display: 'flex', flexDirection: 'column', height: '420px', background: '#fff', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(5, 31, 78, 0.04)', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}>
+                        <article key={`${service.id}-${index}`} className="service-card" style={{ display: 'flex', flexDirection: 'column', minHeight: '360px', background: '#fff', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(5, 31, 78, 0.04)', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}>
                           {imgUrl ? (
-                            <div style={{ height: '180px', overflow: 'hidden', position: 'relative' }}>
+                            <div style={{ height: '140px', overflow: 'hidden', position: 'relative' }}>
                               <img src={imgUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }} />
                               <div style={{ position: 'absolute', top: '15px', right: '15px', background: 'rgba(0, 111, 242, 0.9)', color: '#fff', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600' }}>
                                 {service.category ? service.category.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Service'}
                               </div>
                             </div>
                           ) : (
-                            <div style={{ height: '180px', background: 'linear-gradient(135deg, var(--blue) 0%, #1e40af 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '20px', color: '#fff', position: 'relative' }}>
+                            <div style={{ height: '140px', background: 'linear-gradient(135deg, var(--blue) 0%, #1e40af 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '20px', color: '#fff', position: 'relative' }}>
                               <div style={{ fontSize: '3rem', marginBottom: '10px' }}>🧬</div>
                               <div style={{ position: 'absolute', top: '15px', right: '15px', background: 'rgba(255, 255, 255, 0.2)', color: '#fff', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600', backdropFilter: 'blur(4px)' }}>
                                 {service.category ? service.category.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Service'}
                               </div>
                             </div>
                           )}
-                          <div style={{ padding: '24px 24px 12px', display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'flex-start' }}>
+                          <div style={{ padding: '20px 20px 10px', display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'flex-start' }}>
                             <div>
                               <h3 className="service-card-title" style={{ fontSize: '1.25rem', fontWeight: '700', margin: '0 0 12px 0', color: 'var(--blue-dark)', lineHeight: '1.4' }}>{name}</h3>
-                              <p className="service-card-preview" style={{ fontSize: '0.95rem', color: 'var(--ink-light)', lineHeight: '1.6', margin: '0 0 22px 0' }}>{cleanText}</p>
+                              <p className="service-card-preview" style={{ fontSize: 'calc(0.95rem - 1px)', color: 'var(--ink-light)', lineHeight: '1.6', margin: '0 0 12px 0' }}>{shortDescription}</p>
                             </div>
                             <div className="service-card-actions">
                               <a href={serviceHref} className="product-card-action" onClick={(e) => { e.preventDefault(); navigate(serviceHref); }}>Explore Service <span>→</span></a>
@@ -777,19 +833,19 @@ function HomePage({ navigate, searchParams }) {
             <div className="about-copy">
               <h2 id="about-title">About BioArk</h2>
               <p>
-                <strong>BioArk Technologies is a genome engineering company delivering integrated solutions for gene editing research and development.</strong>{' '}
-                From molecular cloning, viral packaging, and genome engineering to stable cell line development, our services help researchers move efficiently from design to validated results.
+                <strong>BioArk Technologies is a genome engineering company advancing gene editing from design to discovery.</strong>{' '}
+                We deliver <strong>integrated genome engineering solutions</strong>—from molecular cloning and viral packaging to genome engineering and stable cell line development—helping researchers move faster from <strong>design to validated results</strong>.
               </p>
               <p>
-                We provide <strong>high-quality research reagents</strong> engineered to support demanding molecular biology and gene editing applications, making advanced research more reliable, efficient, and accessible.
+                We also develop <strong>high-quality research reagents</strong> that make demanding molecular biology and gene editing applications <strong>more reliable, efficient, and accessible</strong>.
               </p>
               <p>
-                Our proprietary <strong>CRISPR Reporter technology</strong> and <strong>CRISPR Trinity™ Platform</strong> address complex genome engineering challenges and enable next-generation applications in cell and gene therapy—advancing our mission to <strong>bridge scientific discovery with real-world solutions and turn breakthrough genome engineering into meaningful impact beyond the laboratory.</strong>
+                Powered by our proprietary <strong>CRISPR Universal Reporter</strong> and <strong>CRISPR Trinity™ Platform</strong>, BioArk is building the next generation of genome engineering technologies—<strong>bridging scientific discovery with real-world solutions and turning innovation into impact.</strong>
               </p>
             </div>
             <div className="video-card">
               <video controls preload="metadata" playsInline aria-label="BioArk Tech introduction">
-                <source src="/bioark-tech-intro-1280x540.mp4" type="video/mp4" />
+                <source src="/bioark-tech-intro-4x3.mp4" type="video/mp4" />
                 Your browser does not support embedded video.
               </video>
             </div>

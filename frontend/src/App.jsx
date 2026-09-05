@@ -355,6 +355,7 @@ function App() {
           currentQuery={searchParams.get('q') || ''} 
           currentCategory={searchParams.get('category') || ''} 
           initialSelectedCategory={searchParams.get('cat') || null}
+          initialSelectedGroup={searchParams.get('group') || null}
         />
       ) : isProductPage ? (
         <ProductDetailsPage 

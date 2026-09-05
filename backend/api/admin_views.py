@@ -688,6 +688,7 @@ def admin_get_product(request, product_id):
             'id': p.product_id,
             'external_id': p.external_id,
             'product_name': p.product_name,
+            'short_description': p.short_description,
             'description': p.description,
             'image_url': p.image_url,
             'product_link': p.product_link,
@@ -893,6 +894,7 @@ def admin_create_product(request):
         p = Product(
             external_id=d.get('external_id', ''),
             product_name=d.get('product_name', ''),
+            short_description=d.get('short_description', ''),
             description=d.get('description', ''),
             image_url=d.get('image_url', ''),
             product_link=d.get('product_link', ''),
@@ -957,7 +959,7 @@ def admin_update_product(request, product_id):
             d['manual_urls'] = urls
 
         updatable_fields = [
-            'external_id', 'product_name', 'description', 'image_url',
+            'external_id', 'product_name', 'short_description', 'description', 'image_url',
             'product_link', 'category_external_id', 'product_group',
             'source_type', 'display_order', 'catalog_number', 'show_catalog_number', 'availability',
             'list_price', 'discounted_price', 'price_range', 'quote_only', 'is_featured', 'show_on_screen',
@@ -1013,6 +1015,53 @@ def admin_delete_product(request, product_id):
         return Response({'message': 'Product deactivated successfully'})
     except Product.DoesNotExist:
         return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def admin_purge_product(request, product_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        with transaction.atomic():
+            product = Product.objects.select_for_update().get(product_id=product_id)
+            if not product.hidden:
+                return Response(
+                    {'error': 'Only deactivated products or reagents can be permanently purged.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            item_type = 'reagent' if str(product.source_type or '').lower() == 'reagent' else 'product'
+            catalog_number = str(product.catalog_number or '').strip()
+            if not catalog_number and str(product.external_id or '').lower().startswith('fp-'):
+                catalog_number = str(product.external_id)[3:].strip()
+
+            product.delete()
+
+            # FeaturedProduct is a legacy companion record connected by catalog
+            # number rather than a foreign key. Remove it only when no remaining
+            # canonical product uses the same catalog number.
+            if catalog_number and not Product.objects.filter(
+                catalog_number__iexact=catalog_number,
+            ).exists():
+                featured_product = FeaturedProduct.objects.filter(
+                    catalog_number__iexact=catalog_number,
+                ).first()
+                if featured_product:
+                    union_id = featured_product.union_id
+                    if union_id:
+                        # Deleting the union also cascades its featured row,
+                        # images, manuals, and unit-price records.
+                        ProductsUnion.objects.filter(pk=union_id).delete()
+                    else:
+                        featured_product.delete()
+
+        return Response({'message': f'{item_type.capitalize()} permanently purged.'})
+    except Product.DoesNotExist:
+        return Response({'error': 'Product or reagent not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -2334,6 +2383,7 @@ def admin_list_services(request):
                 'url': s.url,
                 'external_id': s.url,
                 'title': s.title,
+                'short_description': s.short_description,
                 'catalog_number': s.catalog_number,
                 'show_catalog_number': s.show_catalog_number,
                 'content': s.content,
@@ -2370,6 +2420,7 @@ def admin_get_service(request, service_id):
             'url': s.url,
             'external_id': s.url,
             'title': s.title,
+            'short_description': s.short_description,
             'catalog_number': s.catalog_number,
             'show_catalog_number': s.show_catalog_number,
             'content': s.content,
@@ -2421,6 +2472,7 @@ def admin_create_service(request):
         s = ServiceMode(
             url=d.get('url', ''),
             title=d.get('title', ''),
+            short_description=d.get('short_description', ''),
             catalog_number=d.get('catalog_number', ''),
             show_catalog_number=show_catalog_number_val,
             content=d.get('content', ''),
@@ -2461,7 +2513,7 @@ def admin_update_service(request, service_id):
         s = ServiceMode.objects.get(id=service_id)
         d = request.data
 
-        for field in ['url', 'title', 'catalog_number', 'content', 'technique', 'price', 'performance_data', 'category', 'service_group']:
+        for field in ['url', 'title', 'short_description', 'catalog_number', 'content', 'technique', 'price', 'performance_data', 'category', 'service_group']:
             if field in d:
                 setattr(s, field, d[field])
 
@@ -2550,6 +2602,32 @@ def admin_delete_service(request, service_id):
         s.hidden = True
         s.save(update_fields=['hidden'])
         return Response({'message': 'Service deactivated successfully'})
+    except ServiceMode.DoesNotExist:
+        return Response({'error': 'Service not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def admin_purge_service(request, service_id):
+    err = _check_admin(request)
+    if err:
+        return err
+
+    try:
+        with transaction.atomic():
+            service = ServiceMode.objects.select_for_update().get(id=service_id)
+            if not service.hidden:
+                return Response(
+                    {'error': 'Only deactivated services can be permanently purged.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if service.image:
+                service.image.delete(save=False)
+            service.delete()
+
+        return Response({'message': 'Service permanently purged.'})
     except ServiceMode.DoesNotExist:
         return Response({'error': 'Service not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:

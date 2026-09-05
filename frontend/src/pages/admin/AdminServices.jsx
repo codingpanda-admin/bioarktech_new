@@ -157,6 +157,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
       title: '',
       catalog_number: '',
       show_catalog_number: true,
+      short_description: '',
       content: '',
       technique: '',
       price: '',
@@ -230,6 +231,18 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
         body: { hidden: false },
       });
       showSuccess('Service activated successfully.');
+      loadServices();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handlePurge = async (serviceId, serviceTitle) => {
+    const displayName = serviceTitle || 'this service';
+    if (!confirm(`Permanently purge "${displayName}"? This cannot be undone.`)) return;
+    try {
+      await apiFetch(`/api/admin-panel/services/${serviceId}/purge/`, { method: 'POST' });
+      showSuccess('Service permanently purged.');
       loadServices();
     } catch (err) {
       setError(err.message);
@@ -338,6 +351,7 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
       const formData = new FormData();
       formData.append('url', editingService.url);
       formData.append('title', editingService.title);
+      formData.append('short_description', editingService.short_description || '');
       formData.append('catalog_number', editingService.catalog_number || '');
       formData.append('show_catalog_number', editingService.show_catalog_number === false ? 'false' : 'true');
       formData.append('content', latestContent);
@@ -783,6 +797,15 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
               checked={editingService.show_catalog_number !== false}
               onChange={(checked) => updateField('show_catalog_number', checked)}
             />
+            <label className="admin-form-field span-3">
+              <span>Short Description</span>
+              <input
+                type="text"
+                maxLength="500"
+                value={editingService.short_description || ''}
+                onChange={(e) => updateField('short_description', e.target.value)}
+              />
+            </label>
             <label className="admin-form-field">
               <span>Category *</span>
               <select
@@ -1337,7 +1360,17 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                                 )}
                                 <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(service.id); }}>Edit</button>
                                 {service.hidden ? (
-                                  <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleActivate(service.id); }}>Activate</button>
+                                  <>
+                                    <button type="button" className="admin-action-btn edit" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleActivate(service.id); }}>Activate</button>
+                                    <button
+                                      type="button"
+                                      className="admin-action-btn delete"
+                                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handlePurge(service.id, service.title); }}
+                                      title="Permanently purge"
+                                    >
+                                      Purge
+                                    </button>
+                                  </>
                                 ) : (
                                   <button
                                     type="button"

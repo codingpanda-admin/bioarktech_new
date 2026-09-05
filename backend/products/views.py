@@ -737,6 +737,7 @@ def load_product_by_external_id(request, external_id):
                 data['externalId'] = featured_product.catalog_number
         if source_product:
             data['product_name'] = source_product.product_name
+            data['short_description'] = source_product.short_description
             data['category_external_id'] = source_product.category_external_id
             data['category_name'] = get_product_category_name(source_product)
             data['product_group'] = source_product.product_group
@@ -811,9 +812,6 @@ def load_product_by_external_id(request, external_id):
             if cat_obj:
                 cat_name = cat_obj.category_name
         
-        # Clean HTML content for description snippet
-        import re
-        clean_desc = re.sub(r'<[^>]*>', '', service.content)[:250] + "..." if service.content else ""
         service_documents = _get_service_documents(service.manuals)
 
         service_data = {
@@ -831,7 +829,8 @@ def load_product_by_external_id(request, external_id):
             'availability': 'Quote Required',
             'quote_only': True,
             'quoteOnly': True,
-            'description': clean_desc,
+            'short_description': service.short_description,
+            'description': service.short_description,
             'content_text': service.content,
             'technique': service.technique,
             'price': service.price,
@@ -880,6 +879,7 @@ def get_latest_featured_products(request):
     featured_items.extend([
         {
             'product_name': service.title,
+            'short_description': service.short_description,
             'external_id': service.url,
             'externalId': service.url,
             'catalog_number': service.catalog_number or service.url.upper(),
