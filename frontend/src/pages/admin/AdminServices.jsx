@@ -3,6 +3,7 @@ import { apiFetch, API_URL, formatAssetUrl } from '../../utils/api';
 import {
   CatalogCategoryEditorPage,
   CatalogGroupEditorModal,
+  DeleteCatalogGroupButton,
   CatalogNumberDisplayToggle,
   CatalogVideoEditor,
   DeactivateIcon,
@@ -1229,7 +1230,8 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                                   )}
                                 </span>
                               </button>
-                              {catalogGroup && (
+                          {catalogGroup && (
+                              <div className="admin-row-actions">
                                 <button
                                   type="button"
                                   className="admin-action-btn edit"
@@ -1237,11 +1239,24 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
                                 >
                                   Edit Group
                                 </button>
+                                <DeleteCatalogGroupButton group={catalogGroup} onDeleted={() => {
+                                  showSuccess('Group deleted.');
+                                  loadServices();
+                                }} />
+                              </div>
                               )}
                             </h4>
                       {!isGroupCollapsed && (
                       <div id={groupPanelId} className="admin-data-table-wrap">
-                    <table className="admin-data-table">
+                    <table className={`admin-data-table admin-item-list-table ${catalogStatus === 'deactivated' ? 'has-status-column' : ''}`}>
+                      <colgroup>
+                        <col className="admin-item-col-name" />
+                        <col className="admin-item-col-catalog" />
+                        <col className="admin-item-col-external-id" />
+                        <col className="admin-item-col-url" />
+                        {catalogStatus === 'deactivated' && <col className="admin-item-col-status" />}
+                        <col className="admin-item-col-actions" />
+                      </colgroup>
                       <thead>
                         <tr>
                           <th>Title</th>
@@ -1409,6 +1424,13 @@ function AdminServices({ initialEditId = null, onInitialEditHandled }) {
           category={editingCatalogGroup.category}
           itemType="service"
           onClose={() => setEditingCatalogGroup(null)}
+          onDeleted={() => {
+            const deletedId = editingCatalogGroup.group.group_id;
+            setCatalogRows((rows) => rows.map((row) => ({ ...row, groups: (row.groups || []).filter((group) => group.group_id !== deletedId) })));
+            setEditingCatalogGroup(null);
+            showSuccess('Group deleted.');
+            loadServices();
+          }}
           onSaved={(savedGroup) => {
             setEditingCatalogGroup(null);
             showSuccess(`Service group ${savedGroup.group_name} saved.`);

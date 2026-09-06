@@ -4565,6 +4565,51 @@ label,
   font-weight: 700;
 }
 
+/* Grouped product, reagent and service lists share content-independent widths. */
+.admin-item-list-table {
+  table-layout: fixed;
+  min-width: 1200px;
+}
+
+.admin-item-list-table.has-status-column {
+  min-width: 1320px;
+}
+
+.admin-item-col-external-id { width: 140px; }
+.admin-item-col-url { width: 190px; }
+.admin-item-col-catalog { width: 155px; }
+.admin-item-col-price { width: 100px; }
+.admin-item-col-status { width: 120px; }
+.admin-item-col-actions { width: 240px; }
+
+.admin-item-list-table td {
+  overflow-wrap: anywhere;
+}
+
+.admin-item-list-table td code {
+  white-space: normal;
+}
+
+.admin-item-list-table .admin-public-detail-link {
+  max-width: 100%;
+}
+
+.admin-item-list-table .admin-product-cell,
+.admin-item-list-table .admin-row-actions {
+  flex-wrap: wrap;
+}
+
+.admin-item-list-table .admin-product-cell > strong,
+.admin-item-list-table .admin-product-cell > span:not(.admin-badge) {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.admin-item-list-table .admin-thumb,
+.admin-item-list-table .admin-action-btn {
+  flex-shrink: 0;
+}
+
 .admin-page-content-editor {
   display: grid;
   gap: 20px;
@@ -6844,6 +6889,7 @@ label,
 }
 
 .product-detail-gallery.has-thumbnails {
+  position: relative;
   width: min(100%, 550px);
   display: grid;
   grid-template-columns: 74px minmax(0, 1fr);
@@ -6852,6 +6898,7 @@ label,
 }
 
 .product-detail-gallery.has-thumbnails .product-main-image-frame {
+  grid-column: 2;
   width: 100%;
   height: 100%;
   min-height: 420px;
@@ -6912,9 +6959,14 @@ label,
 }
 
 .product-thumbnail-carousel.is-vertical {
+  /* Let the main frame/info determine height, never the thumbnail count. */
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
   width: 74px;
-  height: 100%;
-  min-height: 420px;
+  height: auto;
+  min-height: 0;
   max-width: none;
   overflow: hidden;
   align-items: stretch;
@@ -6924,7 +6976,8 @@ label,
 
 .product-thumbnail-carousel.is-vertical.has-nav {
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 40px minmax(0, 1fr) 40px;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
 }
 
 .product-thumbnail-carousel.is-vertical.no-nav {
@@ -6940,7 +6993,8 @@ label,
   min-height: 0;
   flex-direction: column;
   overflow-x: hidden;
-  overflow-y: auto;
+  /* Keep programmatic arrow scrolling without a scrollbar or wheel scrolling. */
+  overflow-y: hidden;
   scroll-snap-type: y proximity;
   padding: 2px 0;
 }
@@ -6949,27 +7003,44 @@ label,
   scroll-snap-align: start;
 }
 
+.product-thumbnail-carousel.is-vertical.has-nav .product-thumbnail-strip {
+  /* Leave the first/last thumbnail reachable beneath the inset controls. */
+  padding-block: 36px;
+  scroll-padding-block: 36px;
+}
+
 .product-thumbnail-carousel.is-vertical .product-thumbnail-nav {
-  position: relative;
+  position: absolute;
+  left: 0;
   z-index: 1;
   width: 74px;
-  height: 40px;
+  height: 28px;
+  background: rgba(240, 240, 240, 0.94);
+  color: #607086;
+}
+
+.product-thumbnail-carousel.is-vertical .product-thumbnail-nav:first-child {
+  top: 0;
+}
+
+.product-thumbnail-carousel.is-vertical .product-thumbnail-nav:last-child {
+  bottom: 0;
 }
 
 .product-thumbnail-carousel.is-vertical .product-thumbnail-chevron {
   border: 0;
-  border-right: 12px solid transparent;
-  border-left: 12px solid transparent;
+  border-right: 8px solid transparent;
+  border-left: 8px solid transparent;
 }
 
 .product-thumbnail-carousel.is-vertical .product-thumbnail-chevron.prev {
   border-right-color: transparent;
-  border-bottom: 14px solid currentColor;
+  border-bottom: 9px solid currentColor;
 }
 
 .product-thumbnail-carousel.is-vertical .product-thumbnail-chevron.next {
   border-left-color: transparent;
-  border-top: 14px solid currentColor;
+  border-top: 9px solid currentColor;
 }
 
 .product-thumbnail-strip {
@@ -7070,6 +7141,12 @@ label,
   outline-offset: 3px;
 }
 
+.product-thumbnail-carousel.is-vertical .product-thumbnail-nav:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}
+
 .product-thumbnail-chevron {
   width: 0;
   height: 0;
@@ -7113,7 +7190,6 @@ label,
 
   .product-thumbnail-carousel.is-vertical {
     width: 60px;
-    min-height: 340px;
   }
 
   .product-thumbnail-carousel.is-vertical .product-thumbnail-button,

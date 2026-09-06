@@ -350,8 +350,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
     ));
   const availabilityLabel = product.availability;
   const normalizedAvailability = String(availabilityLabel || '').trim();
-  const productIsAvailable = Boolean(normalizedAvailability)
-    && !/(out of stock|unavailable|not available|discontinued)/i.test(normalizedAvailability);
+  const productIsAvailable = normalizedAvailability.toLowerCase() === 'in stock';
   const estimatedShipDate = new Date();
   estimatedShipDate.setDate(estimatedShipDate.getDate() + 7);
   const estimatedShipDateLabel = new Intl.DateTimeFormat('en-US', {
@@ -462,9 +461,32 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
     ...productImages.map((url) => ({ type: 'image', url: formatAssetUrl(url) })),
     ...productVideos.map((url) => ({ type: 'video', url: formatAssetUrl(url) })),
   ];
-  const showThumbnailNav = productMedia.length > 4;
+  const showThumbnailNav = productMedia.length > (isService ? 4 : 1);
+  const selectedMediaIndex = productMedia.findIndex(
+    (media) => media.type === selectedMedia.type && media.url === selectedMedia.url
+  );
 
   const scrollThumbnails = (direction, orientation = 'horizontal') => {
+    if (orientation === 'vertical') {
+      const nextIndex = Math.max(0, Math.min(productMedia.length - 1, selectedMediaIndex + direction));
+      const nextMedia = productMedia[nextIndex];
+      if (!nextMedia) return;
+      setSelectedMedia(nextMedia);
+
+      const strip = thumbnailStripRef.current;
+      const thumbnail = strip?.children[nextIndex];
+      if (thumbnail) {
+        // Scroll only the thumbnail strip, keeping the page and main panel still.
+        const thumbnailRect = thumbnail.getBoundingClientRect();
+        const stripRect = strip.getBoundingClientRect();
+        strip.scrollTo({
+          top: strip.scrollTop + thumbnailRect.top - stripRect.top
+            - (strip.clientHeight - thumbnailRect.height) / 2,
+          behavior: 'smooth',
+        });
+      }
+      return;
+    }
     if (!thumbnailStripRef.current) return;
     thumbnailStripRef.current.scrollBy({
       left: orientation === 'horizontal' ? direction * 260 : 0,
@@ -498,7 +520,8 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
           <button
             type="button"
             className="product-thumbnail-nav"
-            aria-label={orientation === 'vertical' ? `Scroll ${itemLabel} media up` : `Previous ${itemLabel} media`}
+            aria-label={`Previous ${itemLabel} media`}
+            disabled={orientation === 'vertical' && selectedMediaIndex <= 0}
             onClick={() => scrollThumbnails(-1, orientation)}
           >
             <span className="product-thumbnail-chevron prev" aria-hidden="true" />
@@ -528,7 +551,8 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
           <button
             type="button"
             className="product-thumbnail-nav"
-            aria-label={orientation === 'vertical' ? `Scroll ${itemLabel} media down` : `Next ${itemLabel} media`}
+            aria-label={`Next ${itemLabel} media`}
+            disabled={orientation === 'vertical' && selectedMediaIndex >= productMedia.length - 1}
             onClick={() => scrollThumbnails(1, orientation)}
           >
             <span className="product-thumbnail-chevron next" aria-hidden="true" />
@@ -1048,8 +1072,8 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
             </div>
           )}
 
-          {availabilityLabel && (
-            <div className={`product-availability-panel ${productIsAvailable ? 'is-available' : 'is-unavailable'}`} aria-label="Product availability">
+          {normalizedAvailability && (
+            <div className={`product-availability-panel ${productIsAvailable ? 'is-available' : 'is-custom'}`} aria-label="Product availability">
               <div className="product-availability-header">
                 <strong className="product-availability-title">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1057,12 +1081,12 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                   </svg>
                   Availability:
                 </strong>
-                <span className="product-availability-status">
-                  {productIsAvailable ? 'Available' : normalizedAvailability}
-                </span>
+                {productIsAvailable && (
+                  <span className="product-availability-status">Available</span>
+                )}
               </div>
               <div className="product-availability-message">
-                <span className="product-availability-check" aria-hidden="true">✓</span>
+                {productIsAvailable && <span className="product-availability-check" aria-hidden="true">✓</span>}
                 <span>
                   {productIsAvailable
                     ? `In stock & estimated to ship in 3–7 days by ${estimatedShipDateLabel}.`

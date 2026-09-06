@@ -10,6 +10,7 @@ from django.db.models import F, Q
 from orders.models import OrderItem
 from genes.models import *
 from django.core.paginator import Paginator
+from .media_utils import dedupe_product_images
 
 
 # Create your views here.
@@ -760,22 +761,13 @@ def load_product_by_external_id(request, external_id):
             # when they exist, but fall back to the canonical Product images so
             # the detail page does not lose valid reagent/product photography.
             featured_images = list(data.get('images') or [])
-            source_images = list(dict.fromkeys([
+            source_images = dedupe_product_images([
                 source_product.image_url,
                 *(source_product.images or []),
-            ]))
-            source_images = [image for image in source_images if image]
-
-            def image_path(image):
-                if isinstance(image, dict):
-                    return image.get('image') or image.get('url') or image.get('image_url') or ''
-                return str(image or '')
-
-            seen_image_paths = {image_path(image) for image in featured_images if image_path(image)}
-            for source_image in source_images:
-                if source_image not in seen_image_paths:
-                    featured_images.append(source_image)
-                    seen_image_paths.add(source_image)
+            ])
+            # Production imports expose the same file through multiple routes.
+            # Compare file identities while retaining the preferred legacy URL.
+            featured_images = dedupe_product_images([*featured_images, *source_images])
 
             if source_images and not data.get('images'):
                 data['image_url'] = source_images[0]
