@@ -1019,6 +1019,43 @@ def admin_delete_product(request, product_id):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@api_view(['DELETE'])
+@transaction.atomic
+def admin_delete_catalog_group(request, group_id):
+    err = _check_admin(request)
+    if err:
+        return err
+    try:
+        group = CatalogGroup.objects.select_for_update().get(group_id=group_id)
+    except CatalogGroup.DoesNotExist:
+        return Response({'error': 'Group not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Include hidden items and imports that still use category/group text fields.
+    product_count = Product.objects.filter(catalog_group=group).count()
+    service_count = ServiceMode.objects.filter(catalog_group=group).count()
+    legacy_products = Product.objects.filter(catalog_group__isnull=True).filter(
+        Q(category_id=group.category_id) | Q(category_external_id=group.category.external_id)
+    ).values_list('product_group', flat=True)
+    legacy_services = ServiceMode.objects.filter(catalog_group__isnull=True).filter(
+        Q(category_ref_id=group.category_id) | Q(category=group.category.external_id)
+    ).values_list('service_group', flat=True)
+    product_count += sum(CatalogGroup.normalize_name(name) == group.normalized_name
+                         for name in legacy_products if name)
+    service_count += sum(CatalogGroup.normalize_name(name) == group.normalized_name
+                         for name in legacy_services if name)
+    if product_count or service_count:
+        return Response({
+            'error': f'Cannot delete group "{group.group_name}": it contains '
+                     f'{product_count + service_count} item(s), including active or inactive items. '
+                     'Delete these items first (permanently purge any deactivated items), '
+                     'then delete the group.',
+            'item_count': product_count + service_count,
+        }, status=status.HTTP_409_CONFLICT)
+
+    group.delete()
+    return Response({'message': 'Group deleted successfully.'})
+
+
 @api_view(['POST'])
 def admin_purge_product(request, product_id):
     err = _check_admin(request)

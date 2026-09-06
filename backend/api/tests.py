@@ -559,6 +559,84 @@ class CatalogHierarchyTests(TestCase):
         self.assertEqual(service.catalog_group.normalized_name, 'cell-engineering')
 
 
+class CatalogGroupDeletionTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = User.objects.create_user(email='group-delete@example.com', password='test', is_admin=True)
+        self.client.force_authenticate(user=self.admin)
+
+    def make_group(self, kind):
+        category, _ = ProductCategory.objects.get_or_create(
+            external_id=f'delete-test-{kind}',
+            defaults={'category_name': kind, 'product_type': kind},
+        )
+        return CatalogGroup.objects.create(category=category, group_name=f'Test {kind} group')
+
+    def delete_group(self, group):
+        return self.client.delete(f'/api/admin-panel/catalog-groups/{group.pk}/delete/')
+
+    def make_item(self, group, hidden):
+        if group.category.product_type == 'service':
+            return ServiceMode.objects.create(title='Test service', url='delete-test-service', content='',
+                                              catalog_group=group, hidden=hidden)
+        return Product.objects.create(product_name='Test item', external_id=f'item-{group.pk}',
+                                      catalog_group=group, hidden=hidden, source_type=group.category.product_type)
+
+    def test_empty_groups_can_be_deleted_for_all_three_types(self):
+        for kind in ('product', 'reagent', 'service'):
+            with self.subTest(kind=kind):
+                group = self.make_group(kind)
+                category_id = group.category_id
+                self.assertEqual(self.delete_group(group).status_code, 200)
+                self.assertFalse(CatalogGroup.objects.filter(pk=group.pk).exists())
+                self.assertTrue(ProductCategory.objects.filter(pk=category_id).exists())
+
+    def test_active_and_inactive_items_block_deletion(self):
+        for kind in ('product', 'reagent', 'service'):
+            for hidden in (False, True):
+                with self.subTest(kind=kind, hidden=hidden):
+                    group = self.make_group(kind)
+                    item = self.make_item(group, hidden)
+                    response = self.delete_group(group)
+                    self.assertEqual(response.status_code, 409)
+                    self.assertEqual(response.data['item_count'], 1)
+                    self.assertIn('Delete these items first', response.data['error'])
+                    item.refresh_from_db()
+                    self.assertEqual(item.catalog_group_id, group.pk)
+                    item.delete()
+                    self.assertEqual(self.delete_group(group).status_code, 200)
+
+    def test_legacy_text_membership_also_blocks_deletion(self):
+        for kind in ('product', 'reagent', 'service'):
+            with self.subTest(kind=kind):
+                group = self.make_group(kind)
+                item = self.make_item(group, True)
+                type(item).objects.filter(pk=item.pk).update(catalog_group=None)
+                self.assertEqual(self.delete_group(group).status_code, 409)
+                item.delete()
+                self.assertEqual(self.delete_group(group).status_code, 200)
+
+    def test_items_in_another_group_do_not_block_deletion(self):
+        group = self.make_group('product')
+        sibling = CatalogGroup.objects.create(category=group.category, group_name='Other group')
+        item = self.make_item(sibling, False)
+        self.assertEqual(self.delete_group(group).status_code, 200)
+        item.refresh_from_db()
+        self.assertEqual(item.catalog_group_id, sibling.pk)
+
+    def test_admin_permission_is_required(self):
+        group = self.make_group('product')
+        self.client.force_authenticate(user=None)
+        self.assertIn(self.delete_group(group).status_code, (401, 403))
+        member = User.objects.create_user(email='member-delete@example.com', password='test')
+        self.client.force_authenticate(user=member)
+        self.assertEqual(self.delete_group(group).status_code, 403)
+        self.assertTrue(CatalogGroup.objects.filter(pk=group.pk).exists())
+
+    def test_missing_group_returns_not_found(self):
+        self.assertEqual(self.client.delete('/api/admin-panel/catalog-groups/99999999/delete/').status_code, 404)
+
+
 class CatalogGroupExternalIdAdminTests(TestCase):
     def setUp(self):
         self.client = APIClient()
