@@ -350,8 +350,7 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
     ));
   const availabilityLabel = product.availability;
   const normalizedAvailability = String(availabilityLabel || '').trim();
-  const productIsAvailable = Boolean(normalizedAvailability)
-    && !/(out of stock|unavailable|not available|discontinued)/i.test(normalizedAvailability);
+  const productIsAvailable = normalizedAvailability.toLowerCase() === 'in stock';
   const estimatedShipDate = new Date();
   estimatedShipDate.setDate(estimatedShipDate.getDate() + 7);
   const estimatedShipDateLabel = new Intl.DateTimeFormat('en-US', {
@@ -1073,8 +1072,8 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
             </div>
           )}
 
-          {availabilityLabel && (
-            <div className={`product-availability-panel ${productIsAvailable ? 'is-available' : 'is-unavailable'}`} aria-label="Product availability">
+          {normalizedAvailability && (
+            <div className={`product-availability-panel ${productIsAvailable ? 'is-available' : 'is-custom'}`} aria-label="Product availability">
               <div className="product-availability-header">
                 <strong className="product-availability-title">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1082,12 +1081,12 @@ function ProductDetailsPage({ navigate, skuOrCatalog, onAddToCart, currentUser, 
                   </svg>
                   Availability:
                 </strong>
-                <span className="product-availability-status">
-                  {productIsAvailable ? 'Available' : normalizedAvailability}
-                </span>
+                {productIsAvailable && (
+                  <span className="product-availability-status">Available</span>
+                )}
               </div>
               <div className="product-availability-message">
-                <span className="product-availability-check" aria-hidden="true">✓</span>
+                {productIsAvailable && <span className="product-availability-check" aria-hidden="true">✓</span>}
                 <span>
                   {productIsAvailable
                     ? `In stock & estimated to ship in 3–7 days by ${estimatedShipDateLabel}.`

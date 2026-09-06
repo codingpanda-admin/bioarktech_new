@@ -808,7 +808,29 @@ export const ProductContentEditor = React.forwardRef(function ProductContentEdit
   );
 });
 
-export const CatalogGroupEditorModal = ({ group, category, itemType, onClose, onSaved }) => {
+export const DeleteCatalogGroupButton = ({ group, onDeleted, disabled = false }) => {
+  const [deleting, setDeleting] = useState(false);
+  const handleDelete = async () => {
+    if (!window.confirm(`Delete group "${group.group_name}"? Only groups with no active or inactive items can be deleted.`)) return;
+    setDeleting(true);
+    try {
+      await apiFetch(`/api/admin-panel/catalog-groups/${group.group_id}/delete/`, { method: 'DELETE' });
+    } catch (err) {
+      window.alert(err.message || 'Unable to delete this group.');
+      setDeleting(false);
+      return;
+    }
+    setDeleting(false);
+    onDeleted();
+  };
+  return (
+    <button type="button" className="admin-action-btn delete" disabled={disabled || deleting} onClick={handleDelete}>
+      {deleting ? 'Deleting...' : 'Delete Group'}
+    </button>
+  );
+};
+
+export const CatalogGroupEditorModal = ({ group, category, itemType, onClose, onSaved, onDeleted }) => {
   const summaryEditorRef = useRef(null);
   const [groupName, setGroupName] = useState(group?.group_name || '');
   const [externalId, setExternalId] = useState(group?.external_id || '');
@@ -890,6 +912,7 @@ export const CatalogGroupEditorModal = ({ group, category, itemType, onClose, on
             </div>
           </div>
           <div className="admin-modal-footer">
+            {isEditing && onDeleted && <DeleteCatalogGroupButton group={group} onDeleted={onDeleted} disabled={saving} />}
             <button type="button" className="secondary-admin-button" disabled={saving} onClick={onClose}>Cancel</button>
             <button type="submit" className="primary-button" disabled={saving}>
               {saving ? 'Saving...' : isEditing ? 'Save Group' : 'Create Group'}
@@ -2659,6 +2682,7 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                             </span>
                           </button>
                           {catalogGroup && (
+                            <div className="admin-row-actions">
                             <button
                               type="button"
                               className="admin-action-btn edit"
@@ -2666,11 +2690,25 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
                             >
                               Edit Group
                             </button>
+                            <DeleteCatalogGroupButton group={catalogGroup} onDeleted={() => {
+                              showSuccess('Group deleted.');
+                              loadProducts();
+                            }} />
+                            </div>
                           )}
                         </h4>
                         {!isGroupCollapsed && (
                         <div id={groupPanelId} className="admin-data-table-wrap">
-                          <table className="admin-data-table">
+                          <table className={`admin-data-table admin-item-list-table ${catalogStatus === 'deactivated' ? 'has-status-column' : ''}`}>
+                            <colgroup>
+                              <col className="admin-item-col-name" />
+                              <col className="admin-item-col-external-id" />
+                              <col className="admin-item-col-url" />
+                              <col className="admin-item-col-catalog" />
+                              <col className="admin-item-col-price" />
+                              {catalogStatus === 'deactivated' && <col className="admin-item-col-status" />}
+                              <col className="admin-item-col-actions" />
+                            </colgroup>
                             <thead>
                               <tr>
                                 <SortableHeader label="Name" field="product_name" sortKey={sortKey} sortConfig={sortConfig} />
@@ -2820,6 +2858,13 @@ function AdminProducts({ categoryFilter = null, initialEditId = null, onInitialE
           category={editingCatalogGroup.category}
           itemType={currentProductType}
           onClose={() => setEditingCatalogGroup(null)}
+          onDeleted={() => {
+            const deletedId = editingCatalogGroup.group.group_id;
+            setCatalogRows((rows) => rows.map((row) => ({ ...row, groups: (row.groups || []).filter((group) => group.group_id !== deletedId) })));
+            setEditingCatalogGroup(null);
+            showSuccess('Group deleted.');
+            loadProducts();
+          }}
           onSaved={(savedGroup) => {
             setEditingCatalogGroup(null);
             showSuccess(`${currentProductType === 'reagent' ? 'Reagent' : 'Product'} group ${savedGroup.group_name} saved.`);

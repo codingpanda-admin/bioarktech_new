@@ -4565,6 +4565,51 @@ label,
   font-weight: 700;
 }
 
+/* Grouped product, reagent and service lists share content-independent widths. */
+.admin-item-list-table {
+  table-layout: fixed;
+  min-width: 1200px;
+}
+
+.admin-item-list-table.has-status-column {
+  min-width: 1320px;
+}
+
+.admin-item-col-external-id { width: 140px; }
+.admin-item-col-url { width: 190px; }
+.admin-item-col-catalog { width: 155px; }
+.admin-item-col-price { width: 100px; }
+.admin-item-col-status { width: 120px; }
+.admin-item-col-actions { width: 240px; }
+
+.admin-item-list-table td {
+  overflow-wrap: anywhere;
+}
+
+.admin-item-list-table td code {
+  white-space: normal;
+}
+
+.admin-item-list-table .admin-public-detail-link {
+  max-width: 100%;
+}
+
+.admin-item-list-table .admin-product-cell,
+.admin-item-list-table .admin-row-actions {
+  flex-wrap: wrap;
+}
+
+.admin-item-list-table .admin-product-cell > strong,
+.admin-item-list-table .admin-product-cell > span:not(.admin-badge) {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.admin-item-list-table .admin-thumb,
+.admin-item-list-table .admin-action-btn {
+  flex-shrink: 0;
+}
+
 .admin-page-content-editor {
   display: grid;
   gap: 20px;
